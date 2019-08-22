@@ -129,6 +129,63 @@ http{
   ```
 * 前端代码打包后（生成index.html）放置root指向的目录
 
+>location
+* 根据请求的URI设置配置
+  ```
+  location [modifier] uri
+  ```
+* 若无指定修饰符，则视路径为前缀，其后可任意匹配。
+  ```
+  location /index/ {
+      #...
+  }
+  => /index
+  => /index123
+  => /index/dev/index.html
+  ```
+* 在给定的上下文里可使用多个location指令。
+  ```
+  server {
+      listen 80;
+      server_name gardenpzq.cn;
+      location / {
+          return 200 "root";
+      }
+      location /index {
+          return 200 "index";
+      }
+  }
+  ```
+* 修饰符优先级
+  * 精确匹配，修饰符为=
+  * 优先匹配，修饰符为^~
+  * 正则匹配，修饰符为~获取~*
+  * 无修饰符【前缀】匹配
+  ```
+  location /match {
+      return 200 'Prefix match: matches everything that starting with /match';
+  }
+  location ~* /match[0-9] {
+      return 200 'Case insensitive regex match';
+  }
+  location ~ /MATCH[0-9] {
+      return 200 'Case sensitive regex match';
+  }
+  location ^~ /match0 {
+      return 200 'Preferential match';
+  }
+  location = /match {
+      return 200 'Exact match';
+  }
+  ```
+  ```
+  /match/    # => 'Exact match'
+  /match0    # => 'Preferential match'
+  /match1    # => 'Case insensitive regex match'
+  /MATCH1    # => 'Case sensitive regex match'
+  /match-abc # => 'Prefix match: matches everything that starting with /match'
+  ```
+
 
 ## 常用命令
 >启动nginx
