@@ -111,6 +111,25 @@ http{
                        => server *.gardenpzq.cn
   ```
 
+>root
+* 设置请求的根目录，允许nginx将传入的请求映射到文件系统。
+* 默认将返回文件系统根目录的index.html资源，若资源不存在，则返回403。
+* 一般使用在server上下文以及location上下文，若location的父级上下文是server，使用root指令时将覆盖。
+  ```
+  server{
+      listen 80;
+      server_name gardenpzq.cn;
+      root /usr/share/nginx/html; # 请求/映射至该目录，将返回html目录下的index.html
+  }
+  ```
+  ```
+  location /index {
+      root /usr/share/nginx/html; # 请求/index映射至该目录，将返回html目录下的index.html
+  }
+  ```
+* 前端代码打包后（生成index.html）放置root指向的目录
+
+
 ## 常用命令
 >启动nginx
 * [sudo] nginx
