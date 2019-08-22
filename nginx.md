@@ -79,6 +79,20 @@ http{
 ```
 
 ## 指令
+>server_name
+* 匹配请求头的Host，确定虚拟主机。
+* 匹配顺序（Nginx 会存储 3 个哈希表：确切的名字，以星号开始的通配符，和以星号结尾的通配符。如果结果不在任何表中，则将按顺序进行正则表达式测试）
+  * 确切的名字，如server_name gardenpzq.cn gardenqaq.cn; 
+  * 最长的通配符名称以星号开始，如server *.gardenpzq.cn;
+  * 最长的通配符名称以星号结尾，如server gardenpzq.*;
+  * 正则表达，如server ~^[0-9]*\.gardenpzq\.cn$;
+* 以点符号为开始的值含义
+  ```
+  server .gardenpzq.cn => server gardenpzq.cn
+                       => server www.gardenpzq.cn
+                       => server *.gardenpzq.cn
+  ```
+
 ## 常用命令
 >启动nginx
 * [sudo] nginx
