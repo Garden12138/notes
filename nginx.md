@@ -79,6 +79,24 @@ http{
 ```
 
 ## 指令
+>listen
+* 匹配接受IP以及端口值，确定虚拟主机。
+  ```
+  listen 127.0.0.1:80;   # 显示IP
+  listen 127.0.0.1;      # 使用默认端口80
+  listen 80;             # 使用默认本机IP
+  listen gardenpzq.cn:80 # 使用主机名
+  listen [::]:80;        # IPv6 address
+  ```
+* 匹配套接字
+  ```
+  listen unix:/var/run/nginx.sock;
+  ```
+* 如果指令不存在，则使用*:80;
+  ```
+  listen *:80;
+  ```
+
 >server_name
 * 匹配请求头的Host，确定虚拟主机。
 * 匹配顺序（Nginx 会存储 3 个哈希表：确切的名字，以星号开始的通配符，和以星号结尾的通配符。如果结果不在任何表中，则将按顺序进行正则表达式测试）
