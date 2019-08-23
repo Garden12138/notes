@@ -216,6 +216,11 @@ http{
   sendfile on;
   tcp_nopush on;
   ```
+>worker_process
+* 指定nginx运行核心数，一般设置为auto。
+  ```
+  worker_process auto;
+  ```
 
 ## 常用命令
 >启动nginx
