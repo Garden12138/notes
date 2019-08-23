@@ -186,6 +186,16 @@ http{
   /match-abc # => 'Prefix match: matches everything that starting with /match'
   ```
 
+>try_files
+* 尝试不同路径，找到一个路径就返回。一般用用于查询静态文件。
+  ```
+  try_files $uri index.html =404;
+  # 对于/garden.html请求，尝试以下顺序返回文件
+  => 1. $uri(/garden.html)
+  => 2. index.html
+  => 3. 返回404
+  ```
+* 最后一个选项为当前虚拟主机内重定向。
 
 ## 常用命令
 >启动nginx
