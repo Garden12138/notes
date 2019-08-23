@@ -259,6 +259,17 @@ http{
   gzip_types image/x-icon;
   ```
 
+>add_header Cache-Control|Pragma
+* 缓存，HTTP/1.1使用Cache-Control管理缓存；HTTP/1.0使用Pragma管理缓存。
+  ```
+  location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+  expires 1M;
+  add_header Cache-Control public;
+  add_header Pragma public;
+  add_header Vary Accept-Encoding; # 告诉公共缓存，通过URL结合URI和Accept-Encoding header区分资源，避免出现不同浏览器（支持gzip与不支持gzip浏览器）在CDN中获取无效文件的情况（gzip浏览器会提取未打包的文件）
+  }
+  ```
+
 ## 常用命令
 >启动nginx
 ```
