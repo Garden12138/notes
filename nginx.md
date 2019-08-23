@@ -226,26 +226,72 @@ http{
 * 指定一个工作进程每次可打开的连接数。
   ```
   worker_connections 1024;
-  ```  
+  ```
+
+>worker_rlimit_nofile
+* 指定一个进程可打开的文件数目限制，一般为connections*2为安全数目。
+  ```
+  worker_rlimit_nofile 2048;
+  ```
+
+>gzip
+* 压缩文件大小，压缩级别由1至9递增，压缩级别越高，文件越小，CPU使用率越高。
+* 启用gzip可以显著降低响应的报文大小，故客户端响应会加快。
+  ```
+  gzip on;               # enable gzip
+  gzip_http_version 1.1; # turn on gzip for http 1.1 and above
+  gzip_disable "msie6";  # IE 6 had issues with gzip
+  gzip_comp_level 5;     # inc compresion level, and CPU usage
+  gzip_min_length 100;   # minimal weight to gzip file
+  gzip_proxied any;      # enable gzip for proxied requests (e.g. CDN)
+  gzip_buffers 16 8k;    # compression buffers (if we exceed this value, disk will be used instead of RAM)
+  gzip_vary on;          # add header Vary Accept-Encoding (more on that in Caching section)
+  
+  # define files which should be compressed
+  gzip_types text/plain;
+  gzip_types text/css;
+  gzip_types application/javascript;
+  gzip_types application/json; 
+  gzip_types application/vnd.ms-fontobject;
+  gzip_types application/x-font-ttf;
+  gzip_types font/opentype;
+  gzip_types image/svg+xml;
+  gzip_types image/x-icon;
+  ```
 
 ## 常用命令
 >启动nginx
-* [sudo] nginx
-* service nginx start
+```
+[sudo] nginx
+service nginx start
+```
 
 >停止nginx
-* service nginx stop
+```
+service nginx stop
+```
 
 >重启nginx
-* service nginx restart
+```
+service nginx restart
+```
 
 >查看nginx状态
-* service nginx status
+```
+service nginx status
+```
 
 >管理nginx实例
-* 快速关闭：[sudo] nginx -s stop
-* 优雅关闭[等待woker线程完成处理]：[sudo] nginx -s quit
-* 重载配置文件：[sudo] nginx -s reload
-* 重新打开日志文件： [sudo] nginx -s reopen
+```
+[sudo] nginx -s stop   # 快速关闭
+[sudo] nginx -s quit   # 优雅关闭[等待woker线程完成处理]
+[sudo] nginx -s reload # 重载配置文件
+[sudo] nginx -s reopen # 重新打开日志文件
+```
+
+>查看一个进程可打开的文件数目限制
+```
+ulimit -Sn
+```
 
 ## 应用场景
