@@ -217,10 +217,16 @@ http{
   tcp_nopush on;
   ```
 >worker_process
-* 指定nginx运行核心数，一般设置为auto。
+* 指定nginx运行核心数（工作进程数），一般设置为auto。
   ```
   worker_process auto;
   ```
+
+>worker_connections
+* 指定一个工作进程每次可打开的连接数。
+  ```
+  worker_connections 1024;
+  ```  
 
 ## 常用命令
 >启动nginx
