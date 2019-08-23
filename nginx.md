@@ -210,6 +210,13 @@ http{
   sendfile on;
   ```
 
+>tcp_nopush
+* 一次性优化数据的发送量，在发送给客户端之前，它将强制等待包达到最长长度，并且只有在sendfile开启时才起作用。
+  ```
+  sendfile on;
+  tcp_nopush on;
+  ```
+
 ## 常用命令
 >启动nginx
 * [sudo] nginx
