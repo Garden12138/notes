@@ -270,6 +270,15 @@ http{
   }
   ```
 
+>client_body_timeout|client_header_timeout|send_timeout
+* client_body_timeout与client_header_timeout超时设置表示nginx在抛出408（请求超时）之前应等待客户端传输主体与头信息的时间。
+* send_timeout设置向客户端发送响应的超时时间（指将响应信息写进缓冲池再从缓存池获取响应信息写入相应体的时间）。若客户端在给定时间内没收到任何内容，连接会被关闭。
+```
+client_body_timeout 12;
+client_header_timeout 12;
+send_timeout 10;
+```
+
 ## 常用命令
 >启动nginx
 ```
