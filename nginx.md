@@ -204,6 +204,12 @@ http{
   tcp_nodelay on;
   ```
 
+>sendfile
+* 传递对象指针的发送文件方式，在nginx中打开。
+  ```
+  sendfile on;
+  ```
+
 ## 常用命令
 >启动nginx
 * [sudo] nginx
