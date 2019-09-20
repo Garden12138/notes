@@ -279,6 +279,8 @@ client_header_timeout 12;
 send_timeout 10;
 ```
 
+>
+
 ## 常用命令
 >启动nginx
 ```
