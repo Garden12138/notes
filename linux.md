@@ -31,8 +31,13 @@ rm -rvf b
 -v explain what is being done
 -f ignore nonexistent files and arguments, never prompt
 ```
-
-
+> 漫游
+```
+## 查看/var目录下的文件详细信息并按最新创建时间显示
+ls -lt /var
+-l use a long listing format
+-t sort by modification time, newest first
+```
 
 > 文本处理
 
