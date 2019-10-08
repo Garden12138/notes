@@ -35,8 +35,25 @@ rm -rvf b
 ```
 ## 查看/var目录下的文件详细信息并按最新创建时间显示
 ls -lt /var
+## options
 -l use a long listing format
 -t sort by modification time, newest first
+```
+```
+## 查看当前终端所在目录
+pwd
+```
+```
+## 切换至/var目录
+cd /var
+```
+```
+## 查找当前目录下所有以abc开头并且不含.md扩展名的具有0777权限的文件
+find . -type -f -iname "abc*" ! -iname "*.md" -perm 0777
+## options
+-type set search result type
+-iname set ignore case search name
+-perm set search permission
 ```
 
 > 文本处理
