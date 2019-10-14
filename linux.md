@@ -58,6 +58,32 @@ find . -type -f -iname "abc*" ! -iname "*.md" -perm 0777
 
 > 文本处理
 
+> 查看文件
+```
+## 查看cat.log文件内容并显示行数
+cat -n cat.log
+## options
+-n number all output lines
+```
+```
+## 查看less.log文件，并匹配less内容
+cat less.log
+/less
+## options
+e move next line
+y move last line
+f move next screen
+b move last screen
+n search the next matching text
+N search the last matching text
+g jump the first line
+G jump the last line
+## 查看历史命令
+history | less
+```
+```
+## tail
+```
 > 压缩
 
 > 日常运维
