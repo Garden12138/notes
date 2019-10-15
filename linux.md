@@ -134,7 +134,13 @@ shutdown +5 "System will shutdown after 5 minutes"
 -r reboot the machine
 ```
 ```
-## mount
+## 将/dev/SSD1用唯读模式挂在/mnt目录下
+mount -o ro /dev/SSD1 /mnt
+## 将/tmp/image.iso这个光碟的image档使用loop模式挂在/mnt/cdrom目录下
+mount -o loop /tmp/image /mnt/cdrom
+## options
+-o ro use only read mode
+-o loop use loop mode to split a file as a hard disk and hang it on the system
 ```
 ```
 ## chmod
