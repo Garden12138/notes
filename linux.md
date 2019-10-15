@@ -56,8 +56,6 @@ find . -type -f -iname "abc*" ! -iname "*.md" -perm 0777
 -perm set search permission
 ```
 
-> 文本处理
-
 > 查看文件
 ```
 ## 查看cat.log文件内容并显示行数
@@ -92,6 +90,17 @@ head -n100 tail.log
 -f output appended data as the file grows
 -n output the last K lines, instead of the last 10
 ```
+
+> 过滤
+```
+## 查看grep.log日志关键字grep的前10行与后10行内容
+grep -rn 'grep' -A10 -B10 grep.log
+-r like --directories=recurse
+-n print line number with output lines
+```
+
+> 文本处理
+
 > 压缩
 
 > 日常运维
