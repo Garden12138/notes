@@ -117,30 +117,51 @@ tar -xzvf tartest.tar
 -x extract files from an archive
 -z filter the archive through gzip
 -v verbosely list files processed
--f use archive file or device ARCHIVE
-```
-```
-## bzip2
-```
-```
-## gzip
-```
-```
-## unzip
-```
-```
-## unrar
+-f use archive file or device archive
 ```
 
 > 日常运维
 
+```
+## 立即关机停机
+shutdown -h now
+## 立即关机并重新开机
+shutdown -r now
+## 5分钟后关机并提示
+shutdown +5 "System will shutdown after 5 minutes"
+## options
+-h power-off the machine,halt the machine 
+-r reboot the machine
+```
+```
+## mount
+```
+```
+## chmod
+```
+```
+## su
+```
+```
+## yum
+```
+```
+## password
+```
+```
+## service
+```
+```
+## systemctl
+```
 > 系统状态概览
 
 > 工作常用
 
 > PS
-```
-## 查看命令用法
-order --help
-example: ls --help
-```
+  * 查看命令用法 
+    ```
+    order --help
+    example: ls --help
+    ```
+  * [菜鸟教程](https://www.runoob.com/linux/linux-command-manual.html)
