@@ -82,7 +82,15 @@ G jump the last line
 history | less
 ```
 ```
-## tail
+## 滚动查看tail.log日志
+tail -f tail.log
+## 查看tail.log后100行日志内容
+tail -n100 tail.log
+## 查看tail.log前100行日志内容
+head -n100 tail.log
+## options
+-f output appended data as the file grows
+-n output the last K lines, instead of the last 10
 ```
 > 压缩
 
