@@ -97,11 +97,40 @@ head -n100 tail.log
 grep -rn 'grep' -A10 -B10 grep.log
 -r like --directories=recurse
 -n print line number with output lines
+-A after maching text n line 
+-B before maching text n line
 ```
 
 > 文本处理
 
 > 压缩
+```
+## 压缩tartest.c文件
+tar -czvf tartest.tar tartest.c
+## 查看tartest.tar文件信息
+tar -tzvf tartest.tar
+## 解压tartest.tar文件
+tar -xzvf tartest.tar
+## options
+-c create a new archive
+-t list the contents of an archive
+-x extract files from an archive
+-z filter the archive through gzip
+-v verbosely list files processed
+-f use archive file or device ARCHIVE
+```
+```
+## bzip2
+```
+```
+## gzip
+```
+```
+## unzip
+```
+```
+## unrar
+```
 
 > 日常运维
 
