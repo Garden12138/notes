@@ -224,7 +224,9 @@ free -t
 -t show total for RAM + swap
 ```
 ```
-## df
+## 查看系统磁盘使用情况
+df -h
+-h print sizes in human readable format (e.g., 1K 234M 2G)
 ```
 ```
 ## ifconfig
