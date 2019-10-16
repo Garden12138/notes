@@ -263,7 +263,8 @@ netstat -anpu
 env
 ```
 ```
-## export
+## 设置jdk环境变量
+export PATH=$PATH:/usr/java/jdk1.8.0_152/bin
 ```
 ```
 ## xargs
