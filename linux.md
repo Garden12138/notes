@@ -191,7 +191,12 @@ yum install wget -y
 -y  answer yes for all questions
 ```
 ```
-## password
+## 修改garden用户密码
+passwd garden
+## 显示garden账号密码信息
+passwd -S garden
+## options
+-S report password status on the named account (root only)
 ```
 ```
 ## service
