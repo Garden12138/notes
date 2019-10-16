@@ -182,7 +182,8 @@ x run-perm,1
 -R change files and directories recursively
 ```
 ```
-## su
+## 切换至garden用户
+su - garden
 ```
 ```
 ## yum
