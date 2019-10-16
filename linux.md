@@ -221,11 +221,13 @@ top -p 233
 ```
 ## 查看系统内存使用情况
 free -t
+## options
 -t show total for RAM + swap
 ```
 ```
 ## 查看系统磁盘使用情况
 df -h
+## options
 -h print sizes in human readable format (e.g., 1K 234M 2G)
 ```
 ```
