@@ -199,11 +199,11 @@ passwd -S garden
 -S report password status on the named account (root only)
 ```
 ```
-## service
+## 重启mysql服务
+service mysql restart
+systemctl restart mysqld
 ```
-```
-## systemctl
-```
+
 > 系统状态概览
 
 > 工作常用
