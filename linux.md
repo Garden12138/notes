@@ -231,7 +231,8 @@ df -h
 -h print sizes in human readable format (e.g., 1K 234M 2G)
 ```
 ```
-## ifconfig
+## 查看系统网络配置情况
+ifconfig
 ```
 ```
 ## uname
