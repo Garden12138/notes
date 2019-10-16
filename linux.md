@@ -267,7 +267,14 @@ env
 export PATH=$PATH:/usr/java/jdk1.8.0_152/bin
 ```
 ```
-## xargs
+## 删除当前目录下的所有.class文件
+find . | grep '.class$' | xargs rm -rvf 
+## 将当前目录下的rmvb文件移动至/usr/local目录
+ls *.rmvb | xagrs -nl -i cp {} /usr/local
+## options
+-n use at most MAX-ARGS arguments per command line
+-l Use at most MAX-LINES nonblank input lines per command line
+-i Replace R in initial arguments with names read from standard input. If R is unspecified, assume {}
 ```
 ```
 ## date
