@@ -241,7 +241,8 @@ uname -a
 -a print all information
 ```
 ```
-## ping
+## 查看当前操作系统是否与百度相连通
+ping www.baidu.com
 ```
 ```
 ## netstat
