@@ -186,7 +186,9 @@ x run-perm,1
 su - garden
 ```
 ```
-## yum
+## 下载wget命令
+yum install wget -y
+-y  answer yes for all questions
 ```
 ```
 ## password
