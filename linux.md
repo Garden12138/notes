@@ -235,7 +235,10 @@ df -h
 ifconfig
 ```
 ```
-## uname
+## 查看系统当前内核信息
+uname -a
+## options
+-a print all information
 ```
 ```
 ## ping
