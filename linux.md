@@ -210,7 +210,10 @@ systemctl restart mysqld
 ps -ef | grep java
 ```
 ```
-## top
+## 查看所有进程的CPU以及内存使用率
+top -c
+## 查看233进程的CPU以及内存使用率
+top -p 233
 ```
 ```
 ## free
