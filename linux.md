@@ -151,7 +151,34 @@ chown -R garden:gradengroup *
 -R operate on files and directories recursively
 ``` 
 ```
-## chmod
+## 将chmod.txt文件设置为所有人皆可读取
+chmod ugo+r chmod.txt
+chmod a+r chmod.txt
+## 将chmod.txt文件设置为所有人皆可写入
+chmod ugo+w chmod.txt
+chmod a+w chmod.txt
+## 将chmod.txt文件设置为所有人皆可执行
+chmod ugo+x chmod.txt
+chmod a+x chmod.txt
+## 将chmod.txt文件设置为所有人皆可读写执行
+chmod ugo=rwx chmod.txt
+chmod a=rwx chmod.txt
+chmod 777 chmod.txt
+## 将文件 chmod1.txt与chmod2.txt设为该文件拥有者与其所属同一个群体者可写入，但其他以外的人则不可写入
+chmod ug+w,o-w  chmod1.txt chmod2.txt
+## 将目前目录下的所有文件与子目录皆设为任何人可读取
+chmod -R a+r *
+## options
+u user
+g group of user
+o other user
+a all user
++ add perm
+- cancel perm
+= give perm
+r read-perm,4
+w write-perm,2
+x run-perm,1
 ```
 ```
 ## su
