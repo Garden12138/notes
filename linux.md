@@ -179,6 +179,7 @@ a all user
 r read-perm,4
 w write-perm,2
 x run-perm,1
+-R change files and directories recursively
 ```
 ```
 ## su
