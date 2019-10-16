@@ -231,7 +231,7 @@ df -h
 -h print sizes in human readable format (e.g., 1K 234M 2G)
 ```
 ```
-## 查看系统网络配置情况
+## 查看系统网络配置信息
 ifconfig
 ```
 ```
@@ -245,7 +245,16 @@ uname -a
 ping www.baidu.com
 ```
 ```
-## netstat
+## 查看当前系统的所有tcp连接
+netstat -anpt
+## 查看当前系统的所有udp连接
+netstat -anpu
+##
+-a display all sockets
+-n don't resolve names 
+-t tcp protocol
+-p display PID/Program name for sockets
+-u udp protocol
 ```
 
 > 工作常用
