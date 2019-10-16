@@ -205,8 +205,60 @@ systemctl restart mysqld
 ```
 
 > 系统状态概览
+```
+## 查看java进程
+ps -ef | grep java
+```
+```
+## top
+```
+```
+## free
+```
+```
+## df
+```
+```
+## ifconfig
+```
+```
+## uname
+```
+```
+## ping
+```
+```
+## netstat
+```
 
 > 工作常用
+```
+## export
+```
+```
+## xargs
+```
+```
+## date
+```
+```
+## whereis
+```
+```
+## crontab
+```
+```
+## scp
+```
+```
+ssh
+```
+```
+wget
+```
+```
+mysql
+```
 
 > PS
   * 查看命令用法 
