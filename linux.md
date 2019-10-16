@@ -143,6 +143,14 @@ mount -o loop /tmp/image /mnt/cdrom
 -o loop use loop mode to split a file as a hard disk and hang it on the system
 ```
 ```
+## 将chown.txt文件设置所属用户以及用户组为garden，gardengroup
+chown garden:gardengroup chown.txt
+## 将当前目录下的所有文件及其子文件设置所属用户以及用户组为garden，gardengroup
+chown -R garden:gradengroup *
+## options
+-R operate on files and directories recursively
+``` 
+```
 ## chmod
 ```
 ```
