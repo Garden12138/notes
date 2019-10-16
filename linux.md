@@ -214,9 +214,14 @@ ps -ef | grep java
 top -c
 ## 查看233进程的CPU以及内存使用率
 top -p 233
+## options
+-c complete command
+-p pid
 ```
 ```
-## free
+## 查看系统内存使用情况
+free -t
+-t show total for RAM + swap
 ```
 ```
 ## df
