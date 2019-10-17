@@ -307,7 +307,17 @@ ssh -v -p 22 root@39.108.168.201
 -p specified port
 ```
 ```
-wget
+## 使用断点续传方式下载百度首页并且命名为baidu.html
+wget -o baidu.html -c http://www.baidu.com/index.html
+## 使用后台方式下载百度首页并且命名为baidu.html
+wget -o baidu.html -b http://www.baidu.com/index.html
+## options
+-o write documents to file
+-c resume getting a partially-downloaded file
+-b go to background after startup
+```
+```
+curl
 ```
 ```
 mysql
