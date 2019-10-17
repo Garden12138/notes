@@ -317,7 +317,10 @@ wget -o baidu.html -b http://www.baidu.com/index.html
 -b go to background after startup
 ```
 ```
-curl
+## 对https://www.example.com发出GET请求
+curl https://www.example.com
+## 对https://www.example.com发出POST请求
+curl -X POST https://www.example.com
 ```
 ```
 ## 使用root用户登录39.108.168.201数据库服务器
