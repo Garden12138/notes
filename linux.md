@@ -277,7 +277,8 @@ ls *.rmvb | xagrs -nl -i cp {} /usr/local
 -i Replace R in initial arguments with names read from standard input. If R is unspecified, assume {}
 ```
 ```
-## date
+## 显示系统当前时间
+date
 ```
 ```
 ## whereis
