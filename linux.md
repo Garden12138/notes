@@ -281,7 +281,13 @@ ls *.rmvb | xagrs -nl -i cp {} /usr/local
 date
 ```
 ```
-## whereis
+## 显示bash命令的二进制程序地址
+whereis -b bash
+## 显示bash命令的帮助文档地址
+whereis -m bash
+## options
+-b search only for binaries
+-m search only for manuals
 ```
 ```
 ## crontab
