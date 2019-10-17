@@ -320,7 +320,8 @@ wget -o baidu.html -b http://www.baidu.com/index.html
 curl
 ```
 ```
-mysql
+## 使用root用户登录39.108.168.201数据库服务器
+mysql -u roor -p -h 39.108.168.2011
 ```
 
 > PS
