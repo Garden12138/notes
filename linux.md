@@ -294,7 +294,10 @@ whereis -m bash
 0 0 * * * /sbin/service sshd restart 
 ```
 ```
-## scp
+## 将scp.txt文件传输至39.108.168.201的/tmp目录下
+scp scp.txt root@39.108.168.201:/tmp
+## 将scp.txt文件覆盖至39.108.168.201的/tmp/scp.txt
+scp scp.txt root@39.108.168.201:/tmp/scp.txt
 ```
 ```
 ssh
