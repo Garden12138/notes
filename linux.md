@@ -290,7 +290,8 @@ whereis -m bash
 -m search only for manuals
 ```
 ```
-## crontab
+## 每天凌晨0点重启SSH服务
+0 0 * * * /sbin/service sshd restart 
 ```
 ```
 ## scp
