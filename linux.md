@@ -300,7 +300,11 @@ scp scp.txt root@39.108.168.201:/tmp
 scp scp.txt root@39.108.168.201:/tmp/scp.txt
 ```
 ```
-ssh
+## 远程登录主机39.108.168.201
+ssh -v -p 22 root@39.108.168.201
+## options
+-v detailed output process
+-p specified port
 ```
 ```
 wget
