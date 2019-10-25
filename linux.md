@@ -1,7 +1,6 @@
 ## 常用命令
 
 > 目录/文件操作
-
 ```
 ## 创建目录以及父目录a/b/c/d 
 mkdir -p a/b/c/d
@@ -31,6 +30,7 @@ rm -rvf b
 -v explain what is being done
 -f ignore nonexistent files and arguments, never prompt
 ```
+
 > 漫游
 ```
 ## 查看/var目录下的文件详细信息并按最新创建时间显示
@@ -90,6 +90,29 @@ head -n100 tail.log
 -f output appended data as the file grows
 -n output the last K lines, instead of the last 10
 ```
+```
+## 打印csv文件的第一列以及第二列
+awk -F "," '{print $1,$2}' test.csv
+## 查看网络连接所处于的网络状态
+netstat -ant | awk 'BEGIN{print "State","Count"} /^tcp/ {rt[${6}]++} END{ for(i in rt){print i,rt[i]} }
+## 输出Recv-Q不为0的记录
+netstat -ant | awk '$2 > 0 {print}'
+## 查看外网连接数，根据IP分组
+netstat -ant | awk '/^tcp/ {print $4}' | awk -F ":" '!/^:/ {print $1}' |sort | uniq -c'
+## 以逗号,冒号:分隔符打印test.txt文件的第一列以及第二列并以符号-分割输出 
+awk 'BEGIN{FS="[,:]";OFS="-"} {print$1,$}' test.txt
+## 以逗号分割打印test.txt文件第三列内容
+awk 'BEGIN {FS=','} if(NF == 3){print}' test.txt
+## 打印test.txt文件并显示行号
+awk '{print NR,$0}' text.txt
+## options
+-F field separator
+$1 first field,$0 deputy original string
+FS field separator
+OFS output field separator
+NF field number
+NR line number
+```
 
 > 过滤
 ```
@@ -121,7 +144,6 @@ tar -xzvf tartest.tar
 ```
 
 > 日常运维
-
 ```
 ## 立即关机停机
 shutdown -h now
