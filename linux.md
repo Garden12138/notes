@@ -113,6 +113,27 @@ OFS output field separator
 NF field number
 NR line number
 ```
+```
+## 打印第五行test.log内容
+sed -n '5 p' test.log
+## 打印第一行至第五行test.log内容
+sed -n '1,5 p' test.log
+sed -n '1,+4 p' test.log
+## 打印第一行至最后一行test.log内容
+sed -n '1,$ p' test.log
+## 打印奇数行test.log内容
+sed -n '1~2 p' test.log
+## 打印偶数行test.log内容
+sed -n '2~2 p' test.log
+## 打印以2019开头至出现api字样之间行的test.log内容
+sed -n '/^2019/,/api/ p' test.log
+## 打印长度不少于100字符的test.log行内容
+sed -n '^.{50} p' test.log
+## 统计test.log每个单词出现的次数
+sed 's/ /\n/g' test.log | sort | uniq -c 
+## options
+-n suppress automatic printing of pattern space
+```
 
 > 过滤
 ```
@@ -125,6 +146,21 @@ grep -rn 'grep' -A10 -B10 grep.log
 ```
 
 > 文本处理
+```
+## 删除text.log第一行至第五行内容
+sed '1,5 d' text.log
+## 输出text.log第一行至第五行内容到text_bk.log文件
+sed -n '1,5 w text_bk.log' text.log
+## 删除text.log所有以#开头的行以及空行
+sed -e 's/#.*//' -e '/^$/ d' text.log
+## 将2019开头至出现api字样之间行的test.log内容的a字符或者b字符或者c字符替换为d字符
+sed -n '/^2019/,/api/ s/[a,b,c]/d/g' test.log
+## 将text.log的每一行使用""引号
+sed -n 's/.*/"$"/' test.log
+## options
+-n
+-e
+```
 
 > 压缩
 ```
