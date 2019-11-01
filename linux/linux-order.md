@@ -382,7 +382,17 @@ curl -X POST https://www.example.com
 ```
 ```
 ## 使用root用户登录39.108.168.201数据库服务器
-mysql -u roor -p -h 39.108.168.2011
+mysql -u root -p -h 39.108.168.201
+```
+```
+## 查看CPU占用最高的java线程
+top
+shift + p
+top -Hp pid
+printf 0x%x pid
+whereis java
+cd ../bin
+jstack pid
 ```
 
 > PS
