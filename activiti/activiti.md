@@ -1,0 +1,39 @@
+#### 快速开始
+* 导入Activiti包
+* 获取工作流引擎
+* 定义工作流
+* 部署工作流
+* 执行工作流
+
+#### 数据库表说明
+* 通用数据表
+  * act_ge_property：属性表，保存流程引擎的key-value键值属性，Acitiviti将全部的属性抽象成为key-value对。
+  * act_ge_bytearray：资源表，保存流程定义的相关资源。
+* 流程定义存储表
+  * act_re_model：模型信息表，用于web设计器。
+  * act_re_procdef：流程定义信息表。
+  * act_procdef_info：流程定义动态改变信息表。
+  * act_re_deployment：流程部署记录表。
+* 身份数据表
+  * act_id_user：用户基本信息表。
+  * act_id_info：用户扩展信息表。
+  * act_id_group：群组。
+  * act_id_membership：用户与群组关系。
+* 运行时流程数据表
+  * act_ru_execution：流程实例与分支执行信息。
+  * act_ru_task：用户任务信息。
+  * act_ru_variable：变量信息。
+  * act_ru_identitylink：参与者相关信息。
+  * act_ru_event_subscr：事件监听表。
+  * act_ru_job：作业表。
+  * act_ru_timer_job：定时器作业表。
+  * act_ru_suspended_job：暂停作业表。
+  * act_ru_deadletter_job：死信表。
+* 历史数据表
+  * act_hi_procinst：流程实例表
+  * act_hi_detai：流程明细表
+  * act_hi_taskinst：历史任务表
+  * act_hi_actinst：历史行为表
+  * act_hi_attachment：附件表
+  * act_hi_comment：评论表
+  * 
