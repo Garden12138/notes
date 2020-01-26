@@ -37,3 +37,36 @@
     # 升级Maven，与Windows原理一致
     ```
 > 安装目录分析
+  * bin
+    ```
+    mvn: 基于Unix的shell脚本，配置Java命令，准备classpath和Java系统属性后执行Java命令。
+    mvn.cmd: 基于Windows的cmd脚本，作用同mvn。
+    mvnDebug: 基于Unix的shell脚本，使用Debug模式配置Java命令，准备classpath和Java系统属性后执行Java命令。
+    mvnDebug.cmd: 基于Windows的cmd脚本，作用同mvnDebug。
+    m2.conf: classworlds的配置文件。
+    mvnyjp: shell脚本，用于分析Maven构建过程。
+    ```
+  * boot
+    ```
+    plexus-classworlds: 是一个类加载器框架，Maven使用该框架加载自己的类型。详细参考http://classworlds.codehanus.org/
+    ```
+  * conf
+    ```
+    settins.xml: 直接修改该文件，在机器上全局定制Maven行为。一般情况下，更倾向Copy该文件至~/.m2/repository/，然后修改该文件，在用户范围内全局定制Maven行为。
+    ```
+  * lib
+    ```
+    该目录包含所有Maven运行时需要的Java类型。
+    ```
+  * LICENSE
+    ```
+    该文件记录了Maven使用的软件许可证Apache License Version 2.0
+    ```
+  * NOTICE
+    ```
+    该文件记录了Maven包含的第三方软件。
+    ```
+  * README.txt
+    ```
+    该文件包含了Maven的简要介绍，包括安装需求及如何安装的简要指令等。
+    ```
