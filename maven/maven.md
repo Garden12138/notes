@@ -74,3 +74,16 @@
     ```
     该目录包含repository目录，放置Maven本地仓库，所有的Maven构件都存储在该仓库。
     ```
+> maven安装最佳实践  
+  * 设置MAVEN_OPTS环境变量
+    ```
+    设置MAVEN_OPTS的值为 -Xms128m -Xmx512m，该环境变量可解决Maven在运行时可能出现的内存溢出的问题（mvn命令实质是java命令）。
+    ```
+  * 配置用户范围settings.xml
+    ```
+    $M2_HOME/conf/settings.xml为整台机器的所有用户范围内的Maven行为配置，~/.m2/settings.xml为当前用户范围内的Maven行为配置。推荐使用用户范围内的Maven行为可避免无意识地影响到系统中的其他用户且便于升级。
+    ```
+  * 不使用IDE内嵌Maven
+    ```
+    内嵌Maven一般为最新Maven，最新版本Maven容易存在不稳定因素，并且最新内嵌Maven与本地Maven在使用命令行时可能由于版本不一致容易造成构建行为不一致的情况。
+    ```
