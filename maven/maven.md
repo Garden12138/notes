@@ -202,4 +202,20 @@
   * 使用Archetype生成项目骨架
     ```
     mvn archetype:generate
-    ```   
+    ```
+> 坐标和依赖
+  * 何为Maven坐标
+    * 坐标是Maven管理项目依赖中唯一标记Java构件的标识，坐标元素包括groupId，artifactId，version，packaging，classifier。
+  * 坐标详解
+    * groupId：必须，定义当前Maven项目（模块）隶属的实际项目，如实际项目为SpringFramework，其对应的Maven项目（模块）包括spring-core，spring-context等。命名规则通常与域名反向一一对应，如groupId为org.sonatype.nexus，org.sonatype表示Sonatype公司建立的一个非盈利性组织，nexus表示Nexus这一实际项目，该groupId与域名nexus.sonatype.org反向一一对应。
+    * artifactId：必须，定义实际项目中的一个Maven项目（模块）。命名规则为通常以实际项目名作为前缀，如artifactId为nexus-indexer，其中nexus为实际项目名。
+    * version：必须，定义当前Maven项目（模块）所处版本。
+    * packaging：可选，定义当前Maven项目（模块）打包方式，默认为jar。
+    * classifier：帮助定义构建输出的一些附属构建（如nexus-indexer-2.0.0-javadoc.jar，nexus-indexer-2.0.0-sources.jar），不是项目直接默认生成，而是由附加插件帮助生成。
+  * account-email
+  * 依赖的配置
+  * 依赖范围
+  * 传递性依赖
+  * 依赖调解
+  * 可选依赖
+  * 最佳实践
