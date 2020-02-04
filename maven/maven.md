@@ -242,6 +242,7 @@
   * 依赖范围
     * 依赖范围用来控制依赖与三种classpath的关系，用元素scope表示，默认为compile。
     * 依赖范围与classpath的关系如下
+
       依赖范围（Scope） | 对于编译classpath | 对于测试classpath | 对于运行classpath | example 
       :-: | :-: | :-: | :-: | :-:
       compile | √ | √ | √ | spring-core 
@@ -254,6 +255,7 @@
   * 传递性依赖
     * 假设hello-world有一个compile范围的spring-core依赖，spring-core有一个compile范围的commons-logging依赖，那么commons-logging为hello-world的传递性依赖，spring-core为hello-world的第一直接依赖，commons-logging为hello-world的第二直接依赖。传递性依赖与依赖范围有关。
     * 依赖范围影响传递性依赖
+    
       第一直接依赖范围\第二直接依赖范围 | compile | test | provided | runtime 
       :-: | :-: | :-: | :-: | :-:
       compile | compile | × | × | runtime
@@ -307,3 +309,12 @@
         ## 分析已解析依赖
         mvn dependency:analyze
         ```
+> 仓库
+  * 何为Maven仓库
+  * 仓库的布局
+  * 仓库的分类
+  * 远程仓库的配置
+  * 快照版本
+  * 从仓库解析依赖的机制
+  * 镜像
+  * 仓库搜索服务        
