@@ -255,7 +255,7 @@
   * 传递性依赖
     * 假设hello-world有一个compile范围的spring-core依赖，spring-core有一个compile范围的commons-logging依赖，那么commons-logging为hello-world的传递性依赖，spring-core为hello-world的第一直接依赖，commons-logging为hello-world的第二直接依赖。传递性依赖与依赖范围有关。
     * 依赖范围影响传递性依赖
-    
+
       第一直接依赖范围\第二直接依赖范围 | compile | test | provided | runtime 
       :-: | :-: | :-: | :-: | :-:
       compile | compile | × | × | runtime
@@ -311,8 +311,40 @@
         ```
 > 仓库
   * 何为Maven仓库
+    * 在Maven中，任何一个依赖，插件和项目构建输出都称为构件。构件的逻辑表示方式为坐标和依赖，物理表示方式为仓库。Maven可以在某个位置统一存储所有Maven项目共享的构件，这个统一的位置成为仓库。
   * 仓库的布局
+    * 任何一个构件都有唯一的坐标，根据这个坐标可以定义其在仓库中的唯一存储路径，这就是Maven的仓库布局方式。
+    * 仓库的布局方式为groupId/artifactId/version/artifactId-version-classifier.packaging
   * 仓库的分类
+    * 仓库分为本地仓库和远程仓库。当Maven根据坐标寻找构件的时候，Maven先检查本地仓库是否存在目标构件，若不存在则从远程仓库查找并下载构件至本地仓库使用。远程仓库默认为中央仓库，还可以为私服或者其他开源远程仓库。
+    * 本地仓库，当Maven在执行编译或者测试时，如需要使用依赖文件，它总是基于坐标使用本地仓库的依赖文件。默认情况下，本地仓库路径为用户目录/.m2/repository，若需要修改本地仓库路径，只需编辑用户目录/.m2/repository/settings.xml（由Maven安装目录下的conf/settings.xml复制而来）的localRepository元素值为自定义本地仓库地址即可。
+      ```
+      <settings>
+        <localRepository>/usr/local/maven/m2/repository</localRepository>
+      </settings>
+      ```
+    * 远程仓库，当Maven无法从本地仓库找到需要的构件的时候，会从远程仓库下载构件至本地仓库。
+      * 中央仓库，是默认的远程仓库。Maven安装文件中自带中央仓库的配置，打开$M2_HOME/lib/maven-model-builder-3.0.jar，访问路径org/apache/maven/pom-4.0.0.xml，可以看到配置：
+        ```
+        <repository>
+          <repository>
+            <!-- 中央仓库唯一标识 -->
+            <id>central</id>
+            <!-- 中央仓库名称 -->
+            <name>Maven Repository Switchboard</name>
+            <!-- 中央仓库地址 -->
+            <url>http://repo1.maven.org/maven2</url>
+            <!-- 中央仓库布局 -->
+            <layout>default</layout>
+            <!-- 是否从中央仓库下载快照版本的构件-->
+            <snapshots>
+              <enabled>false</enabled>
+            </snapshots>
+          </repository>
+        </repository>
+        ```
+      * 私服，是架设在局域网内的仓库服务，代理广域网上的远程仓库，供局域网内的Maven用户使用。当Maven用户需要下载构件的时候，从私服请求，若私服不存在目标构件，则私服通过广域网从外部远程仓库下载，缓存到私服后再提供给局域网内的下载请求。搭建私服可以节省自己外网带宽，加速Maven构建，易部署第三方构件，提高稳定性增强控制以及降低中央仓库的负荷。
+      ![Snipaste_2020-02-08_16-40-53.png](https://i.loli.net/2020/02/08/nS3YpgzbZt6rBJf.png)
   * 远程仓库的配置
   * 快照版本
   * 从仓库解析依赖的机制
