@@ -348,7 +348,7 @@
         ![Snipaste_2020-02-08_16-40-53.png](https://i.loli.net/2020/02/08/nS3YpgzbZt6rBJf.png)
 
   * 远程仓库的配置
-    * 连接远程仓库，若默认的中央仓库无法满足项目要求，可能需要的构件在另外一个远程仓库，可在$M2_HOME/lib/maven-model-builder-3.0.jar中的POM文件中配置另外一个远程仓库。在repositories元素下，可以用repository子元素声明一个或者多个远程仓库。
+    * 连接远程仓库，若默认的中央仓库无法满足项目要求，可能需要的构件在另外一个远程仓库，可在项目POM文件中配置另外一个远程仓库。在repositories元素下，可以用repository子元素声明一个或者多个远程仓库。
       ```
       <repositories>
         <repository>
