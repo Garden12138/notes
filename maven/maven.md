@@ -348,6 +348,38 @@
         ![Snipaste_2020-02-08_16-40-53.png](https://i.loli.net/2020/02/08/nS3YpgzbZt6rBJf.png)
 
   * 远程仓库的配置
+    * 若默认的中央仓库无法满足项目要求，可能需要的构件在另外一个远程仓库，可在$M2_HOME/lib/maven-model-builder-3.0.jar中的POM文件中配置另外一个远程仓库。在repositories元素下，可以用repository子元素声明一个或者多个远程仓库。
+      ```
+      <repositories>
+        <repository>
+          <!-- 指定仓库唯一标识 -->
+          <id>jboss</id>
+          <!-- 指定仓库名称 -->
+          <name>JBoss Repository</name>
+          <!-- 指定仓库地址 -->
+          <url>http://repository.jboss.com/maven2/</url>
+          <!-- 指定仓库布局，元素值为default表示仓库的布局为Maven2或Maven3的默认布局 -->
+          <layout>default</layout>
+          <!-- 指定是否从仓库下载快照版本的构件 -->
+          <snapshots>
+            <enabled>false</enabled>
+            <!-- 指定从远程仓库检查更新频率 -->
+            <!-- 默认值为daily表示每天一次检查更新，never表示从不检查更新 -->
+            <!-- always表示每次构建检查更新，interval:X表示每隔X分钟检查更新 -->
+            <updatePolicy>always</updatePolicy>
+            <!-- 指定检查校验和文件的策略 -->
+            <!-- 当构建部署至仓库中时会部署对应的校验和文件，在下载构建的时候Maven会验证校验和文件 -->
+            <!-- 默认值为warn表示执行构建时候输出警告信息，fail表示遇到校验和错误让构建失败 -->
+            <!-- ignore表示完全忽略校验和错误 -->
+            <checksumPolicy>ignore</checksumPolicy>
+          </snapshots>
+          <!-- 指定是否从仓库下载发布版本的构件 -->
+          <releases>
+            <enabled>false</enabled>
+          </releases>
+        </repository>
+      </repositories>
+      ```
   * 快照版本
   * 从仓库解析依赖的机制
   * 镜像
