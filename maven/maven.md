@@ -348,7 +348,7 @@
         ![Snipaste_2020-02-08_16-40-53.png](https://i.loli.net/2020/02/08/nS3YpgzbZt6rBJf.png)
 
   * 远程仓库的配置
-    * 若默认的中央仓库无法满足项目要求，可能需要的构件在另外一个远程仓库，可在$M2_HOME/lib/maven-model-builder-3.0.jar中的POM文件中配置另外一个远程仓库。在repositories元素下，可以用repository子元素声明一个或者多个远程仓库。
+    * 连接远程仓库，若默认的中央仓库无法满足项目要求，可能需要的构件在另外一个远程仓库，可在$M2_HOME/lib/maven-model-builder-3.0.jar中的POM文件中配置另外一个远程仓库。在repositories元素下，可以用repository子元素声明一个或者多个远程仓库。
       ```
       <repositories>
         <repository>
@@ -375,11 +375,54 @@
           </snapshots>
           <!-- 指定是否从仓库下载发布版本的构件 -->
           <releases>
-            <enabled>false</enabled>
+            <enabled>true</enabled>
           </releases>
         </repository>
       </repositories>
       ```
+    * 认证远程仓库，出于安全考虑，远程仓库（如私服）会设置安全认证信息，为仓库的Maven使用者提供一组用户密码认证信息，maven使用者需在settings.xml中编辑认证信息。
+      ```
+      <settings>
+      ...
+        <servers>
+          <server>
+            <!-- 指定仓库唯一id -->
+            <id>garden-repo</id>
+            <!-- 设置用户密码认证信息 -->
+            <username>garden</username>
+            <password>garden</password>
+          </server>
+        </servers>
+      ...
+      </settings>
+      ```
+    * 部署远程仓库，私服的一大作用是部署第三方构件，包括组织内部生成的构件以及无法从外部仓库直接获取的构件。
+      ```
+      ## 编辑项目POM，配置部署的仓库信息
+      <project>
+        ...
+        <distributionManagement>
+          <!-- 配置发布版本仓库信息 -->
+          <repository>
+            <id>garden-repo</id>
+            <name>Garden Release Repository</name>
+            <url>http://http://39.108.168.201/content/repositories/garden-repo</url>
+            <name></name>
+          </repository>
+          <!-- 配置快照版本仓库信息 -->
+          <snapshotRepository>
+            <id>garden-repo</id>
+            <name>Garden Release Repository</name>
+            <url>http://http://39.108.168.201/content/repositories/garden-repo</url>
+            <name></name>
+          </snapshotRepository>
+        </distributionManagement>
+      </project>
+      ## 编辑本地settings.xml，配置远程仓库认证信息
+      ## 执行mvn clean deploy，项目构建输出并部署
+      mvn clean deploy
+      ```
+      
   * 快照版本
   * 从仓库解析依赖的机制
   * 镜像
