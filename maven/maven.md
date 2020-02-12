@@ -437,4 +437,46 @@
       ![Maven依赖解析机制.jpg](https://i.loli.net/2020/02/12/XoxyR15u9tFOr8A.png)
 
   * 镜像
+    * 仓库X可提供仓库Y存储的所有内容，则X为Y的一个镜像。常见Maven使用者会使用稳定快速的镜像源代替中央远程仓库，或组织内使用私服进行项目开发，会将私服作为组织内Maven使用者的镜像。
+    * 稳定快速的镜像源代替中央远程仓库，在settings.xml文件中添加镜像配置。
+      ```
+      <mirrors>
+        <mirror>
+          <!-- 镜像唯一ID，阿里云Maven中央仓库 -->
+          <id>alimaven-central</id>
+          <!-- 作为中央远程仓库的镜像，中央远程仓库请求转发至该镜像 -->
+          <mirrorOf>central</mirrorOf>
+          <!-- 镜像名称，阿里云Maven -->
+          <name>aliyun maven</name>
+          <!-- 镜像URL，阿里云Maven仓库地址 -->
+          <url>http://maven.aliyun.com/nexus/content/repositories/central/</url>
+        </mirror>
+      <mirrors>  
+      ```
+    * 将私服作为组织内Maven使用者的镜像，在settings.xml文件中添加镜像配置
+      ```
+      <mirrors>
+        <mirror>
+          <!-- 镜像唯一ID，私服仓库 -->
+          <id>internal-repository</id>
+          <!-- 作为中央远程仓库的镜像，所有远程仓库请求转发至该镜像 -->
+          <mirrorOf>*</mirrorOf>
+          <!-- 镜像名称，私服Maven -->
+          <name>internal Repository Manager</name>
+          <!-- 镜像URL，私服Maven仓库地址 -->
+          <url>http://39.108.168.201/maven2</url>
+        </mirror>
+      <mirrors>
+      ```
+    * mirrorOf元素用法
+      ```
+      ## 匹配所有远程仓库
+      <mirrorOf>*</mirrorOf>
+      ## 匹配所有远程仓库，本地远程仓库除外
+      <mirrorOf>external:*</mirrorOf>
+      ## 匹配仓库repo1，仓库repo2，使用逗号分隔多个远程仓库
+      <mirrorOf>repo1,repo2</mirrorOf>
+      ## 匹配所有远程仓库，仓库repo1除外，使用感叹号将仓库从匹配中排除
+      <mirrorOf>*,!repo1</mirrorOf>
+      ```
   * 仓库搜索服务        
