@@ -433,5 +433,8 @@
     * 4）若检查依赖版本为RELEASE或LATEST，则基于更新策略读取所有远程仓库的元数据（groupId/artifacrId/maven-metadata.xml）,将于本地仓库的对应元数据合并之后，计算出RELEASE或LATEST真实值，最后根据真实值检查本地仓库和远程仓库。
     * 5）若检查依赖版本为SNAPSHOT，则基于更新策略读取所有远程仓库的元数据（groupId/artifacrId/version/maven-metadata.xml），将于本地仓库的对应元数据合并之后，计算最新快照版本值，最后根据真实值检查本地仓库和远程仓库。
     * 6）若检查依赖版本为时间戳格式（2.0-20200202.202020-20），则替换为非时间戳格式SNAPSHOT。
+      
+      ![Maven依赖解析机制.jpg](https://i.loli.net/2020/02/12/XoxyR15u9tFOr8A.png)
+
   * 镜像
   * 仓库搜索服务        
