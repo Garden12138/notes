@@ -479,4 +479,8 @@
       ## 匹配所有远程仓库，仓库repo1除外，使用感叹号将仓库从匹配中排除
       <mirrorOf>*,!repo1</mirrorOf>
       ```
-  * 仓库搜索服务        
+  * 仓库搜索服务
+    * 使用Maven进行日常开发会遇到寻找依赖的问题，此时需要一些仓库搜索服务帮助开发搜索定位依赖坐标。
+    * 常见的仓库搜索服务
+      * [MVNRepository](https://mvnrepository.com/)
+      * [SonaType Nexus](https://repository.sonatype.org/)  
