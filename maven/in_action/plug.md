@@ -108,5 +108,22 @@
       </build>
       ```
   * 获取插件信息
+    * 寻找合适的插件可正确配置插件，寻找插件的方式主要为在线查找插件信息或者使用maven-help-plugin插件查找插件描述。
+    * 在线查找插件信息
+      * [稳定的Apache官方插件](https://maven.apache.org/plugins/index.html)
+    * 使用maven-help-plugin查找插件描述
+      * 命令格式为mvn help: describe-Dplugin = groupId: artifactId: version
+        ```
+        ## 获取maven-compiler-plugin2.1版本的信息
+        mvn help: describe-Dplugin = org.apache.maven.plugins: maven-compiler-plugin: 2.1
+        ## 获取maven-compiler-plugin最新版本的信息
+        mvn help: describe-Dplugin = org.apache.maven.plugins: maven-compiler-plugin
+        ## 使用目标前缀获取maven-compiler-plugin最新版本的信息
+        mvn help: describe-Dplugin = compiler
+        ## 使用目标前缀获取maven-compiler-plugin最新版本compile目标的信息
+        mvn help: describe-Dplugin = compiler -Dgoal = compile
+        ## 使用目标前缀获取maven-compiler-plugin最新版本compile目标的x详细信息
+        mvn help: describe-Dplugin = compiler -Dgoal = compile -Ddetail
+        ```
   * 从命令行调用插件
   * 插件解析机制
