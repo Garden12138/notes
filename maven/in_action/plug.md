@@ -48,6 +48,65 @@
       </build>
       ```
   * 插件配置
+    * 用户可通过设置插件参数，调整插件目标所执行的任务。插件参数配置可通过命令行输入和POM文件配置的方式实现。
+    * 命令行输入，适用于常变化的参数设置，用户可通过Maven命令带上-Dkey=value格式设置，如下载项目输出构件时跳过测试阶段
+      ```
+      ## 参数-D为Java自带参数，其设置一个Java系统属性，Maven在准备插件时检查系统属性并使用该属性设置插件跳过测试阶段。
+      mvn install -Dmaven.test.skip=true
+      ```
+    * POM文件配置，适用于不常变化的参数设置，用户可通过在POM文件编辑plugin元素及其子元素设置，可分为全局配置与特定配置，全局配置如配置maven-compiler-plugin使用JDK1.8，特定配置如为validate，verify阶段添加特定任务。
+      ```
+      ## 配置maven-compiler-plugin使用JDK1.8
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>2.1</version>
+            <configuration>
+              <source>1.8</source>
+              <target>1.8</target>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+      ## 为validate，verify阶段添加特定任务
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>1.3</version>
+            <executions>
+              <execution>
+                <id>ant-validate</id>
+                <phase>validate</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <tasks>
+                    <echo>starting validate...</echo>
+                  </tasks>
+                </configuration>
+              </execution>
+              <execution>
+                <id>ant-verify</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <tasks>
+                    <echo>starting verify...</echo>
+                  </tasks>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+      ```
   * 获取插件信息
   * 从命令行调用插件
   * 插件解析机制
