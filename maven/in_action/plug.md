@@ -126,4 +126,27 @@
         mvn help: describe-Dplugin = compiler -Dgoal = compile -Ddetail
         ```
   * 从命令行调用插件
+    * Maven支持直接从命令行调用插件目标。调用方式为mvn + 插件前缀（artifactId中间部分，如maven-dependency-plugin的插件前缀为dependency）:插件目标，如mvn dependency:tree 。
   * 插件解析机制
+    * 插件仓库
+      * 插件与依赖同属构件，同基于坐标存储在Maven仓库中。依赖构件当在本地仓库中查找不到时先寻找默认远程仓库再去配置的远程仓库寻找，而插件构件则不会寻找前面配置的远程仓库，因为插件构件仓库有自己的配置方式，如下默认的远程插件仓库配置。可以通过这种方式配置额外的远程插件仓库。
+
+        ![Maven内置的插件仓库配置.png](https://i.loli.net/2020/02/19/qeANCVObdFkcxh3.png)
+
+    * 插件默认groupId
+      * 在POM中配置插件的时候，如果改插件为Mave官方插件（即groupId为org.apache.maven.plugins）,可省略groupId，Maven会自动补齐。
+      * 不建议使用，难可读。推荐使用完整的坐标标记（groupId，artifactId，version）插件构件。
+    * 解析插件版本
+      * Maven在超级POM中为所有核心插件设定了版本，所有项目POM继承了超级POM，项目中使用的核心插件版本为超级POM指定版本，若使用非核心插件又未指定版本时，Maven会寻找本地仓库和远程仓库元数据（groupId/artifactId/maven-metadata.xml）合并，Maven2会使用计算出的latest最新快照版本，Maven3改使用计算出的release最新发布版本。
+    * 解析插件前缀（解析Maven插件命令）
+      * 寻找所有groupId目录下的maven-metadata.xml文件（groupId/maven-metadata.xml）。检查默认的groupId有org.apache.maven.plugin和org.codehanus.mojo两个，也可以通过配置settings.xml文件增加Maven检查的groupId。
+      
+        ![settings上增加Maven检查的groupId配置.png](https://i.loli.net/2020/02/19/9TaWQh5YxsBDzIZ.png)
+
+      * 合并所有元数据内容，遍历所有内容根据插件前缀（prefix）获取artifactId。元数据的内容如下：
+
+        ![插件仓库元数据内容.png](https://i.loli.net/2020/02/19/WCEU52xSlLsZfI7.png)
+
+      * 根据已有的groupId和查找的artifactId解析插件版本，最终获得插件版本version。
+      * 根据groupId，artifactId，version坐标定位至具体插件，执行命令行上的输入插件目标。
+  
