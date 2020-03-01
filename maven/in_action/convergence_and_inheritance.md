@@ -261,5 +261,85 @@
         </project>
         ```
   * 聚合与继承的关系
+    * 聚合是为了方便快速构建项目，继承是为了消除重复配置，两者之间没有必然联系，实际Maven开发中可以将聚合模块与父POM模块结合一起，这样可以解决聚合时子模块不知聚合模块以及继承时父POM不知子POM的问题。
+      ```
+      <!-- 聚合模块（父POM） -->
+      <?xml version="1.0" encoding="UTF-8"?>
+      <project xmlns="http://maven.apache.org/POM/4.0.0"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+      <modelVersion>4.0.0</modelVersion>
+
+      
+      <artifactId>platform-root-dependency</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <packaging>pom</packaging>
+      
+      <name>platform-root-dependency</name>
+      
+      <!-- 聚合的模块 -->
+      <modules>
+        <!-- 相对于当前POM文件的各子模块的POM文件路径 -->
+        <module>platform-dependency</module>
+        <module>platform-register</module>
+        <module>platform-business</module>
+        <module>platform-banner</module>
+        <module>platform-sdk</module>
+      </modules>
+
+      <!-- 继承的元素  -->  
+      <properties>
+        <spring-boot.version>2.1.6.RELEASE</spring-boot.version>
+      </properties>
+
+      <dependencyManagement>
+      <dependencies>
+          <!--spring boot 依赖包版本控制-->
+          <dependency>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-dependencies</artifactId>
+              <version>${spring-boot.version}</version>
+              <!-- 类型为pom以及依赖范围为import表示 -->
+              <!-- 将spring-boot-dependencies的pom的dependencyManagement导入并合并 -->
+              <type>pom</type>
+              <scope>import</scope>
+          </dependency>
+      </dependencies>
+      </dependencyManagement>
+
+      </project>
+      <!-- 子模块（子POM） -->
+      <?xml version="1.0" encoding="UTF-8"?>
+      <project xmlns="http://maven.apache.org/POM/4.0.0"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+      <modelVersion>4.0.0</modelVersion>
+
+      <!-- 继承聚合模块POM -->
+      <parent>
+        <groupId>com.garden</groupId>
+        <artifactId>platform-root-dependency</artifactId>
+        <version>1.0-SNAPSHOT</version>
+        <!-- 可以不指定 默认相对路径为../pom.xml -->
+        <relativePath>../pom.xml</relativePath>
+      </parent>
+
+      <artifactId>register-center</artifactId>
+
+      <version>1.0-SNAPSHOT</version>
+      <packaging>jar</packaging>
+
+      <name>register-center</name>
+
+      <!-- 使用groupId与artifactId声明引入父类Spring Security -->
+      <dependency>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-security</artifactId>
+      </dependency>
+
+      </project>
+      ```
   * 约定优于配置
   * 反应堆
