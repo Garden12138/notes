@@ -342,4 +342,14 @@
       </project>
       ```
   * 约定优于配置
+    * 约定优于配置是Maven最核心的设计理念之一。Maven用户遵循约定，可减少开发重复配置。
+    * Maven约定体现在超级POM，所有POM必须继承超级POM，超级POM约定规则其子POM继承并使用其约定。对于Maven3，超级POM位于$MAVEN_HOME/lib/maven-model-builder-x.x.x.jar中的org/apache/maven/model/pom-4.0.0.xml路径下。
+      * 超级POM约定依赖和插件远程仓库
+
+        ![超级POM约定依赖和插件远程仓库.png](https://i.loli.net/2020/03/02/i1QTJXhO57ANjEH.png)
+
+      * 超级POM约定插件
+      
+        ![超级POM约定插件.png](https://i.loli.net/2020/03/02/2lTWxv9NmX63PRg.png)
+      
   * 反应堆
