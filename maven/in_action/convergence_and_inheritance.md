@@ -353,3 +353,50 @@
         ![超级POM约定插件.png](https://i.loli.net/2020/03/02/2lTWxv9NmX63PRg.png)
       
   * 反应堆
+    * 在多模块项目中，反应堆是所有模块组成的一个构建结构.
+    * 反应堆构建顺序
+      * 以根POM声明的模块顺序为准,若遇到模块中存在继承或者依赖关系,由先构建被继承或者被依赖模块。
+      
+        ![反应堆优先构建被继承或被依赖模块.png](https://i.loli.net/2020/03/02/W4SqwzlFifkNoCK.png)
+
+    * 剪裁反应堆
+      * 为了解决完整反应堆构建中只需构建某个模块的需求，Maven提供了裁剪反应堆的命令行实现。以如下完整的反应堆为例：
+          
+          ![完整的反应堆例子.png](https://i.loli.net/2020/03/02/ARd6gphEwWXNZfQ.png)
+        
+        * 使用-pl选项指定构建某几个模块
+          ```
+          $ mvn clean install -pl account-email,account-persist
+          ```
+
+          ![使用-pl选项指定构建某几个模块.png](https://i.loli.net/2020/03/02/Eubio2O81LfU3Pt.png)
+
+        * 使用-am选项同时构建所列模块的依赖模块
+          ```
+          $ mvn clean install -pl account-email -am
+          ```
+          
+          ![使用-am选项同时构建所列模块的依赖模块.png](https://i.loli.net/2020/03/02/HMJbrzEpFnUOxjL.png)
+
+        * 使用-amd选项同时构建依赖于所列模块的模块 
+          ```
+          $ mvn clean install -pl account-parent -amd
+          ```
+          ![使用-amd选项同时构建依赖于所列模块的模块.png](https://i.loli.net/2020/03/02/Fr7hbmsdk6Ey8gf.png)
+
+        * 使用-rf选项可以在完整的反应堆构建顺序基础上指定从哪个模块开始构建
+          ```
+          $ mvn clean install -rf account-email
+          ```
+          
+          ![使用-rf选项可以在完整的反应堆构建顺序基础上指定从哪个模块开始构建.png](https://i.loli.net/2020/03/02/yojsGPDtdquvfiV.png)
+        
+        * 四个选项可复合使用。
+        * 一般用于庞大的，特别多模块的项目构建。
+
+
+
+
+
+
+
