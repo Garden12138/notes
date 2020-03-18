@@ -22,6 +22,15 @@
     * war方式安装Nexus
       * 解压压缩包至目标目录
       * 将解压后文件放至Tomcat的webapp下，启动Tomcat
+    * [docker方式安装Nexus](https://hub.docker.com/r/sonatype/nexus3)
+      * 拉取sonatype/nexus3镜像
+        ```
+        docker pull sonatype/nexus3
+        ```
+      * 运行nexus容器
+        ```
+        docker run -d -p 8081:8081 --name nexus sonatype/nexus3
+        ```
     * 验证安装
       ```
       ## Bundle方式
@@ -30,6 +39,11 @@
       http://localhost:8080/nexus/
       ```  
   * Nexus的仓库与仓库组
+    * Nexus内置的仓库
+    * Nexus仓库分类概念
+    * 创建Nexus宿主仓库
+    * 创建Nexus代理仓库
+    * 创建Nexus仓库组
   * Nexus的索引与构建搜索
   * 配置Maven从Nexus下载构件
   * 部署构件至Nexus
