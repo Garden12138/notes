@@ -40,10 +40,36 @@
       ```  
   * Nexus的仓库与仓库组
     * Nexus内置的仓库
+      * 点击界面Repositories列表将展示所有类型的Nexus仓库，Name表示仓库名称，Type表示仓库类型(proxy为代理，hosted为宿主，group为仓库组)，Format表示仓库格式，Policy为策略(Release表示发布版本仓库，Snapshot表示快照版本)，Status表示状态，URL表示路径。
     * Nexus仓库分类概念
+      
+      ![各种类型的Nexus仓库.png](https://i.loli.net/2020/03/19/PgoT7JLEFWeabZ3.png)
+
+      Maven可直接从宿主仓库下载构件；Maven也可以从代理仓库下载构件，代理仓库会间接从远程仓库下载并缓存构件；Maven可以从仓库组下载构件，仓库组没有实际内容，它会转向其包含的宿主仓库或者代理仓库获得实际构件的内容。
+
     * 创建Nexus宿主仓库
+      * 点击Repositories，选择Create Repository maven2(hosted)
+      * 设置仓库名称Name
+      * 设置版本策略Version policy
+      * 设置部署策略Deployment policy
+
+      ![SonaType Nexus Repository Manager Create Hosted Repo.png](https://i.loli.net/2020/03/19/cDtP8IH2VYerQJv.png)
+      
     * 创建Nexus代理仓库
+      * 点击Repositories，选择Create Repository maven2(proxy)
+      * 设置仓库名称Name
+      * 设置版本策略Version policy
+      * 设置代理配置Proxy
+
+      ![SonaType Nexus Repository Manager Create Proxy Repo.png](https://i.loli.net/2020/03/19/mH647PC5gElA1uT.png)
+
     * 创建Nexus仓库组
+      * 点击Repositories，选择Create Repository maven2(proxy)
+      * 设置仓库名称Name
+      * 设置组配置Group
+
+      ![SonaType Nexus Repository Manager Create Group Repo.png](https://i.loli.net/2020/03/19/u6Xr8ckdgTRGLVe.png)
+
   * Nexus的索引与构建搜索
   * 配置Maven从Nexus下载构件
   * 部署构件至Nexus
