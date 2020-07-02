@@ -73,6 +73,32 @@
   * Nexus的索引与构建搜索
   * 配置Maven从Nexus下载构件
   * 部署构件至Nexus
+    * 使用Maven部署构件
+
+      ```
+      # 项目POM文件声明私有仓库地址
+      <distributionManagement>
+		  <!-- 声明私有仓库 快照版本-->
+		      <repository>
+              <!-- 与settings.xml文件的 server id 保持一致 -->
+			        <id>garden-snapshots</id>
+			        <name>garden-snapshots</name>
+			        <url>http://localhost:9091/repository/garden-snapshots/</url>
+		      </repository>
+	    </distributionManagement>
+      # Maven配置文件settings.xml声明私有仓库地址
+      <servers>
+          <server>
+              <id>garden-snapshots</id>
+              <username>admin</username>
+              <password>gardem520</password>
+          </server>
+      </servers>
+      # 执行Maven命令 部署构件
+      mvn clean deploy -Dmaven.test.skip=true
+      ```
+
+    * WEB端部署构件
   * Nexus的权限管理
   * Nexus的调度任务
   * 其他私服软件
