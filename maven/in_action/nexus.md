@@ -99,6 +99,15 @@
       ```
 
     * WEB端部署构件
+
+      ```
+      # 执行Maven打包命令 打包构件
+      mvn clean install -Dmaven.test.skip=true
+      # 使用WEB端Upload功能上传构件
+      ```
+      
+      ![Snipaste_2020-07-05_14-07-19.png](https://i.loli.net/2020/07/05/5nKNgaQIWom3rPZ.png)
+
   * Nexus的权限管理
   * Nexus的调度任务
   * 其他私服软件
