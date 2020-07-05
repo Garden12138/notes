@@ -72,6 +72,82 @@
 
   * Nexus的索引与构建搜索
   * 配置Maven从Nexus下载构件
+    * 当前项目从Nexus下载构件
+
+      ```
+      # 在当前项目POM文件中配置仓库和插件仓库
+      <project>
+      ...
+          <repositories>
+              <repository>
+                  <id>garden-public</id>
+                  <name>garden-public</name>
+                  <url>http://localhost:9091/repository/garden-public/</url>
+                  <releases><enable>true</enable></releases>
+                  <snapshots><enable>true</enable></snapshots>
+              </repository>
+          </repositories>
+          <pluginRepositories>
+              <pluginRepository>
+                  <id>garden-public</id>
+                  <name>garden-public</name>
+                  <url>http://localhost:9091/repository/garden-public/</url>
+                  <releases><enable>true</enable></releases>
+                  <snapshots><enable>true</enable></snapshots>
+              </pluginRepository>
+          </pluginRepositories>
+      ...
+      </project>
+      ```
+
+    * 全局项目从Nexus下载构件
+
+      ```
+      # 在Maven的settings文件里的profile属性配置仓库和插件仓库
+      <settings>
+      ...
+          <profiles>
+              <profile>
+                  <id>garden-public</id>
+                  <repositories>
+                  <repository>
+                      <id>garden-public</id>
+                      <name>garden-public</name>
+                      <url>http://localhost:9091/repository/garden-public/</url>
+                      <releases><enable>true</enable></releases>
+                      <snapshots><enable>true</enable></snapshots>
+                  </repository>
+                  </repositories>
+                  <pluginRepositories>
+                  <pluginRepository>
+                      <id>garden-public</id>
+                      <name>garden-public</name>
+                      <url>http://localhost:9091/repository/garden-public/</url>
+                      <releases><enable>true</enable></releases>
+                      <snapshots><enable>true</enable></snapshots>
+                  </pluginRepository>
+                  </pluginRepositories>
+              </profile>
+          </profiles>
+          <activeProfiles>
+              <activeProfile>garden-public</activeProfile>
+          </activeProfiles>
+      ...
+      </settings>
+      # 配置私服镜像，将对所有仓库的下载构件请求转移至私服Nexus，避免请求绕过私服，请求其他仓库
+      <settings>
+      ...
+      <mirrors>
+          <mirror>
+              <id>garden-public-mirror</id>
+              <mirrorOf>*<mirrorOf>
+              <url>http://localhost:9091/repository/garden-public/</url>
+          </mirror>
+      </mirrors>
+      ...
+      </settings>
+      ```
+
   * 部署构件至Nexus
     * 使用Maven部署构件
 
