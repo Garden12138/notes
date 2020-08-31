@@ -71,6 +71,7 @@
       ![SonaType Nexus Repository Manager Create Group Repo.png](https://i.loli.net/2020/03/19/u6Xr8ckdgTRGLVe.png)
 
   * Nexus的索引与构建搜索
+    * 离线更新索引失败！
   * 配置Maven从Nexus下载构件
     * 当前项目从Nexus下载构件
 
