@@ -67,7 +67,7 @@
 
   * 使用示例：
     ```
-    # values()
+    // values()
     public enum ValuesMethod {
         //定义枚举成员
         MEMBER1,MEMBER2,MEMBER3;
@@ -81,7 +81,7 @@
     }
     ```
     ```
-    # valueOf()
+    // valueOf()
     public enum ValueOfMethod {
         //定义枚举成员
         MEMBER1,MEMBER2,MEMBER3;
@@ -94,7 +94,7 @@
     }
     ```
     ```
-    # ordinal()
+    // ordinal()
     public enum OrdinalMethod {
         //定义枚举成员
         MEMBER1,MEMBER2,MEMBER3;
@@ -107,7 +107,7 @@
     }
     ```
     ```
-    # compareTo()
+    // compareTo()
     public enum CompareToMethod {
         //定义枚举成员
         MEMBER1,MEMBER2,MEMBER3;
@@ -121,6 +121,136 @@
     }
     ```
 
-> 枚举实践
+> 枚举实践 
+  * 规范的枚举类型
+    ```
+     // 定义枚举 
+     public enum Season {
+         //定义枚举成员并实例化
+         SPRING(1),SUMMER(2),AUTUMN(3),WINTER(4);
+         //定义新变量
+         private int code;
+         //定义新构造方法
+         private Season(int code) {
+             this.code = code;
+         }
+         //定义新方法
+         public int getCode() {
+             return this.code;
+         }
+     }
+     // 定义传值类型为枚举类型的方法
+     public String getChineseSeason(Season season) {
+         StringBuffer result = new StringBuffer();
+         switch(season) {
+            case SPRING :
+                 result.append("[中文：春天，枚举常量:" + season.name() + "，编码:" + season.getCode() + "]");
+                 break;
+            case SUMMER :
+                 result.append("[中文：夏天，枚举常量:" + season.name() + "，编码:" + season.getCode() + "]");
+                 break;
+            case AUTUMN :
+                 result.append("[中文：秋天，枚举常量:" + season.name() + "，编码:" + season.getCode() + "]");
+                 break;
+            case WINTER :
+                 result.append("[中文：冬天，枚举常量:" + season.name() + "，编码:" + season.getCode() + "]");
+                 break;
+            default:
+                result.append("地球上没有的季节 " + season.name());
+                break;
+         }
+         return result.toString();
+     }
+     // 定义调用示例
+    public void invokeDemo() {
+        for (Season season : Season.values()) {
+            System.out.println(getChineseSeason(season));
+        }
+        //System.out.println(getChineseSeason(5));
+        //此处编译不通过，保证类型安全
+    }
+    ```
+  * 枚举的单例实现
+    * 饿汉式的单例
+      ```
+      // final不允许被继承
+      public final class HungerSingleton {
+          // 静态实例
+          private static HungerSingleton instance = new HungerSingleton();
+          // 私有构造方法不允许外部new
+          private HungerSingleton() {}
+          // 提供一个静态方法供外部获取单例
+          public static HungerSingleton getInstance() {
+              return instance;
+          }
+      }
+      ```
+    * 懒汉式的单例
+      ```
+      // final不允许被继承
+      public final class DoubleCheckedSingleton {
+          // 静态实例
+          private static DoubleCheckedSingleton instance = new DoubleCheckedSingleton();
+          // 私有构造方法不允许外部new
+          private DoubleCheckedSingleton() {}
+          // 提供一个静态方法供外部获取单例
+          public static DoubleCheckedSingleton getInstance() {
+              if (null == instance) {
+                  synchronized (DoubleCheckedSingleton.class) {
+                      if (null == instance) {
+                          instance = new DoubleCheckedSingleton();
+                      }
+                  }
+              }
+              return instance;
+          }
+      }
+      ```
+    * 枚举的单例
+      ```
+      // final不允许被继承
+      public final class EnumSingleton {
+          // 私有构造方法不允许外部new
+          private EnumSingleton() {}
+          // 静态枚举构造单例
+          private static enum SingletonFactory {
+              //定义枚举成员 -单例枚举成员
+              INSTANCE;
+              //定义新变量 -单例对象
+              private EnumSingleton enumSingleton;
+              //定义新方法 -私有构造方法
+              private SingletonFactory() {
+                  enumSingleton = new EnumSingleton();
+              }
+              //定义新方法 -提供一个方法供外部获取单例
+              public EnumSingleton getInstance() {
+                  return enumSingleton;
+              }
+          }
+          //提供一个静态方法供外部获取单例
+          public static EnumSingleton getInstance() {
+              return EnumSingleton.INSTANCE.getInstance();
+          }
+      }
+      ```
 
 > 面试相关
+  * 枚举允许继承类？
+    
+    不允许，JVM在生成枚举时自动继承了Enum类，由于Java为单继承，故不再支持再继承额外的类。
+
+  * 枚举允许被继承？
+
+    不允许，JVM在生成枚举类时，声明为final。
+
+  * 枚举可以用等号比较？
+    
+    可以，JVM会为每个枚举成员实例对应生成一个类对象，这个类对象是用public static final修饰的，在static代码块中初始化，是一个单例。
+
+> 小结
+  * 枚举类型一般用于枚举场景，比如switch，根据不同的枚举成员处理不同的业务逻辑；也适用于生成单例的场景。
+  * 枚举成员常使用私有变量以及私有构造方法赋予成员属性。
+  * 枚举成员对象是一个单例。
+
+> 参考文献
+  * [Java基础之Java枚举](https://juejin.im/post/6844904063935463437)
