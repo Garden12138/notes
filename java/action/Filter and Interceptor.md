@@ -132,6 +132,8 @@
     * 过滤器Filter，多个过滤器，默认根据过滤器名称顺序链式执行doFilter()方法，可使用Spring的@Order注解控制加载顺序。
     * 拦截器Interceptor，多个拦截器，先执行完所有拦截器的preHandle()方法，再执行所有拦截器的postHandle()方法，最后再执行所有拦截器的afterCompletion()方法。preHandle()方法顺序执行，postHandle()方法以及afterCompletion()方法倒序执行。
 
+      ![Snipaste_2020-10-05_21-19-51.png](https://i.loli.net/2020/10/05/4Ul2JZWs9aeVyvG.png)
+
 > 总结
   * 认识过滤器于拦截器的不同，在不同的场景选择最合适的技术方案。
 
