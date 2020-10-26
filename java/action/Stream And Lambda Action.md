@@ -55,6 +55,32 @@
     上述方法由自定义工厂类StreamFactory实现。
 
   * Stream的基础操作
+    * Stream的基础操作可分为两种，一种为中间操作，即对流式数据操作，操作结果返回Stream；另一种为终止操作，即对流式数据封装操作，操作结果返回Stream操作定义的返回类型。
+    * Matching
+      ```
+      //判断集合内是否任意元素符合断言条件 => boolean anyMatch(Predicate<? super T> predicate);
+
+      Arrays.asList("s1", "s3").stream().anyMatch(element -> element.contains("s1"));
+
+      true
+
+      //判断集合内是否全部元素符合断言条件 => boolean allMatch(Predicate<? super T> predicate);
+
+      Arrays.asList("s1", "s1").stream().allMatch(element -> element.contains("s1"));
+
+      true
+
+      //判断集合内是否没有元素符合断言条件 => boolean noneMatch(Predicate<? super T> predicate);
+
+      Arrays.asList("s2", "s3").stream().noneMatch(element -> element.contains("s1"));
+
+      true
+      ```
+    * Filtering
+    * Mapping
+    * FlatMap
+    * Reduction
+    * Collecting
 
 > 内置函数式接口的分类与使用
 
