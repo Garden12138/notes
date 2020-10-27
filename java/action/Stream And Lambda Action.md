@@ -85,6 +85,13 @@
       [s1]
       ```
     * Mapping
+      ```
+      //加工Stream中的值，将加工后的值以新的Stream返回 => <R> Stream<R> map(Function<? super T, ? extends R> mapper);
+
+      Arrays.asList("s1", "s2").stream().map(element -> {return element + "-map";}).collect(Collectors.toList());
+
+      [s1-map, s2-map]
+      ```
     * FlatMap
     * Reduction
     * Collecting
