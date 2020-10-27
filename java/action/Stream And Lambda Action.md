@@ -131,6 +131,13 @@
       6
       ```
     * Collecting
+      ```
+      //将集合数据流转换为指定集合类型 => <R, A> R collect(Collector<? super T, A, R> collector);
+
+      Arrays.asList(1, 2).stream().collect(Collectors.toSet());
+
+      [1, 2]
+      ```
 
 > 内置函数式接口的分类与使用
 
