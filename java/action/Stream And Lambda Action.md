@@ -123,6 +123,13 @@
       [book-1 new!, book-2 new!, book-3 new!, book-4 new!]
       ```
     * Reduction
+      ```
+      //将集合数据以指定值为起始值进行累计数值运算 => T reduce(T identity, BinaryOperator<T> accumulator);
+
+      Arrays.asList(1,2,3).stream().reduce(0,(a,b) -> a + b)
+
+      6
+      ```
     * Collecting
 
 > 内置函数式接口的分类与使用
