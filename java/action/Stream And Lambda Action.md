@@ -77,6 +77,13 @@
       true
       ```
     * Filtering
+      ```
+      //根据断言条件过滤集合数据流 => Stream<T> filter(Predicate<? super T> predicate);
+
+      Arrays.asList("s1", "s2").stream().filter(element -> element.contains("s1")).collect(Collectors.toList());
+
+      [s1]
+      ```
     * Mapping
     * FlatMap
     * Reduction
