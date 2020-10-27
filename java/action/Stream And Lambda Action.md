@@ -93,6 +93,35 @@
       [s1-map, s2-map]
       ```
     * FlatMap
+      ```
+      //先将层级关系铺平,再加工最低层级Stream中的值，最后将加工后的值以新的Stream返回 => <R> Stream<R> flatMap(Function<? super T, ? extends Stream<? extends R>> mapper);
+
+      BookCase bookCaseA = new BookCase("bookCaseA");
+      List<String> bookCaseABooks = new ArrayList<>();
+      bookCaseABooks.add("book-1");
+      bookCaseABooks.add("book-2");
+      bookCaseA.setBooks(bookCaseABooks);
+      BookCase bookCaseB = new BookCase("bookCaseB");
+      List<String> bookCaseBBooks = new ArrayList<>();
+      bookCaseBBooks.add("book-3");
+      bookCaseBBooks.add("book-4");
+      bookCaseB.setBooks(bookCaseBBooks);
+      List<BookCase> bookCases = new ArrayList<>();
+      bookCases.add(bookCaseA);
+      bookCases.add(bookCaseB);
+      bookCases.flatMap(bookCases,object -> {
+            BookCase bookCase = (BookCase) object;
+            List<String> newBooks = new ArrayList<>();
+            for (String book : bookCase.getBooks()) {
+                book += " new!";
+                newBooks.add(book);
+            }
+            bookCase.setBooks(newBooks);
+            return bookCase.getBooks().stream();
+      }).collect(Collectors.toList());
+
+      [book-1 new!, book-2 new!, book-3 new!, book-4 new!]
+      ```
     * Reduction
     * Collecting
 
