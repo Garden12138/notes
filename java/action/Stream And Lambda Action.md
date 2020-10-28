@@ -140,6 +140,28 @@
       ```
 
 > 内置函数式接口的分类与使用
+  * 前言：在Java8之前，在需要使用匿名方法的场景时需要new该匿名类的实现，如线程池中使用匿名方法run()，需new Runnable类且实现run()方法；在Java8之后，可使用lambda表达式简化这一过程，直接使用函数式描述方法参数以及方法体，如下：
+    ```
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
+
+    //ExecutorService using class
+    executorService.submit(new Runnable() {
+        @Override
+        public void run() {
+            log.info("using class new runnable");
+        }
+    });
+    
+    //ExecutorService using lambda
+    executorService.submit(()->log.info("using lambda new runnable"));
+    ```
+    只有匿名类含有类注解@FunctionalInterface时才可使用lambda表达式
+    ```
+    @FunctionalInterface
+    public interface Runnable {
+        public abstract void run();
+    }
+    ```
 
 > Lambda表达式实践
 
