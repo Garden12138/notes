@@ -162,6 +162,9 @@
         public abstract void run();
     }
     ```
+  * Functional Interface，是指带有@FunctionalInterface的Interface，它的特点是有且只有一个抽象方法，如果抽象方法前面携带default关键字则不做计算。Functional Interface一般都在java.util.function包中，根据需实现的方法参数和返回值，可分为多种Functional Interface。
+  * 
+   
 
 > Lambda表达式实践
 
