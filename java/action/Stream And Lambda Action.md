@@ -163,8 +163,83 @@
     }
     ```
   * Functional Interface，是指带有@FunctionalInterface的Interface，它的特点是有且只有一个抽象方法，如果抽象方法前面携带default关键字则不做计算。Functional Interface一般都在java.util.function包中，根据需实现的方法参数和返回值，可分为多种Functional Interface。
-  * 
-   
+  * Function接口：定义了一个抽象方法apply，包含一个参数（T），一个返回（R）。
+    ```
+    @FunctionalInterface
+    public interface Function<T, R> {
+    /**
+     * Applies this function to the given argument.
+     *
+     * @param t the function argument
+     * @return the function result
+     */
+    R apply(T t);
+
+    ...
+    }
+    ```
+    常用于集合类处理，如存储一个以字符串为key，字符串长度为value的键值对，使用map.computeIfAbsent方法；computeIfAbsent方法使用的Function接口的apply方法，参数为K类型，返回为V类型。
+    ```
+    Map<String, Integer> nameMap = new HashMap<>();
+    Integer value = nameMap.computeIfAbsent("name", s -> s.length());
+
+    4
+    ```
+    ```
+    default V computeIfAbsent(K key,
+            Function<? super K, ? extends V> mappingFunction) {
+        Objects.requireNonNull(mappingFunction);
+        V v;
+        if ((v = get(key)) == null) {
+            V newValue;
+            if ((newValue = mappingFunction.apply(key)) != null) {
+                put(key, newValue);
+                return newValue;
+            }
+        }
+
+        return v;
+    }
+    ```
+    Function并没有指名具体参数类型以及返回类型，若需要传入特定类型参数，可使用IntFunction，LongFunction，DoubleFunction。
+    ```
+    @FunctionalInterface
+    public interface IntFunction<R> {
+    /**
+     * Applies this function to the given argument.
+     *
+     * @param value the function argument
+     * @return the function result
+     */
+    R apply(int value);
+    }
+    ```
+    若需要返回特定类型值，可使用ToIntFunction，ToLongFunction，ToDoubleFunction。
+    ```
+    @FunctionalInterface
+    public interface ToDoubleFunction<T> {
+    /**
+     * Applies this function to the given argument.
+     *
+     * @param value the function argument
+     * @return the function result
+     */
+    double applyAsDouble(T value);
+    }
+    ```
+    若需要同时传入特定类型参数和返回特定类型值，可使用DoubleToIntFunction, DoubleToLongFunction, IntToDoubleFunction, IntToLongFunction, LongToIntFunction, LongToDoubleFunction。
+    ```
+    @FunctionalInterface
+    public interface LongToIntFunction {
+    /**
+     * Applies this function to the given argument.
+     *
+     * @param value the function argument
+     * @return the function result
+     */
+    int applyAsInt(long value);
+    }
+    ```
 
 > Lambda表达式实践
 
