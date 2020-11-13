@@ -335,6 +335,61 @@
 
     fasle
     ```
+  * Consumer接口：定义了一个抽象方法accpet，包含一个参数（T），没有返回。
+    ```
+    @FunctionalInterface
+    public interface Consumer<T> {
+    /**
+     * Performs this operation on the given argument.
+     *
+     * @param t the input argument
+     */
+    void accept(T t);
+    ```
+    常用于集合处理，如加工处理数组元素，使用list.forEach方法；forEach方法使用Consumer接口的accept方法，参数为T类型。
+    ```
+    List<Integer> list = new ArrayList<>();
+    list.add(new Integer(1000));
+    list.add(new Integer(2000));
+    list.forEach(e -> e = e.intValue() + 1);
+
+    1001
+    2001
+    ```
+    ```
+    default void forEach(Consumer<? super T> action) {
+      Objects.requireNonNull(action);
+      for (T t : this) {
+        action.accept(t);
+      }
+    }
+    ```
+    若需要传入特定类型参数，可使用IntConsumer, LongConsumer, DoubleConsumer。
+    ```
+    @FunctionalInterface
+    public interface DoubleConsumer {
+    /**
+     * Performs this operation on the given argument.
+     *
+     * @param value the input argument
+     */
+    void accept(double value);
+    }
+    ```
+    若需要传入特定类型额外辅助参数，可使用ObjIntConsumer, ObjLongConsumer, ObjDoubleConsumer。
+    ```
+    @FunctionalInterface
+    public interface ObjDoubleConsumer<T> {
+    /**
+     * Performs this operation on the given arguments.
+     *
+     * @param t the first input argument
+     * @param value the second input argument
+     */
+    void accept(T t, double value);
+    }
+    ```
+
 
 > Lambda表达式实践
 
