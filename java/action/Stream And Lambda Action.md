@@ -301,6 +301,40 @@
     int applyAsInt(T t, U u);
     }
     ```
+  * Supplier接口：定义了一个抽象方法get，包含一个返回（T）,没有参数。
+    ```
+    @FunctionalInterface
+    public interface Supplier<T> {
+    /**
+     * Gets a result.
+     *
+     * @return a result
+     */
+    T get();
+    }
+    ```
+    常用于创建对象，如编写一个用户生成工厂。
+    ```
+    //用户生成工厂Bean
+    @Bean
+    public Supplier<User> userSupplier() {
+      return () -> {
+        User user = new User(UUID.randomUUID().toString());
+        return user;
+      };
+    }
+    //客户端调用
+    @Autowired
+    private Supplier<User> userSupplier;
+    public void useUserSupplier() {
+      //每次调用get()方法都会重新创建一个新对象
+      User user1 = userSupplier.get();
+      User user2 = userSupplier.get();
+      System.out.println(user1 == user2);
+    }
+
+    fasle
+    ```
 
 > Lambda表达式实践
 
