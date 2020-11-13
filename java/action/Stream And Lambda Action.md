@@ -178,7 +178,7 @@
     ...
     }
     ```
-    常用于集合类处理，如存储一个以字符串为key，字符串长度为value的键值对，使用map.computeIfAbsent方法；computeIfAbsent方法使用的Function接口的apply方法，参数为K类型，返回为V类型。
+    常用于集合类处理，如存储一个以字符串为key，字符串长度为value的键值对，使用map.computeIfAbsent方法；computeIfAbsent方法使用Function接口的apply方法，参数为K类型，返回为V类型。
     ```
     Map<String, Integer> nameMap = new HashMap<>();
     Integer value = nameMap.computeIfAbsent("name", s -> s.length());
@@ -238,6 +238,67 @@
      * @return the function result
      */
     int applyAsInt(long value);
+    }
+    ```
+  * BiFunction接口：定义了一个抽象方法apply，包含两个参数（T，U），一个返回（R）。
+    ```
+    @FunctionalInterface
+    public interface BiFunction<T, U, R> {
+    /**
+     * Applies this function to the given arguments.
+     *
+     * @param t the first function argument
+     * @param u the second function argument
+     * @return the function result
+     */
+    R apply(T t, U u);
+    ```
+    常用于集合类处理，如计算指定Key的键值对的Value值，使用map.replaceAll方法；replaceAll方法使用BiFunction接口的apply方法，参数为K，V类型，返回为V类型。
+    ```
+    Map<String, Integer> salaries = new HashMap<>();
+    salaries.put("alice", 100);
+    salaries.put("jack", 200);
+    salaries.put("mark", 300);
+    salaries.replaceAll((name, oldValue) -> name.equals("alice") ? oldValue : oldValue + 200);
+    ```
+    ```
+    default void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+        Objects.requireNonNull(function);
+        for (Map.Entry<K, V> entry : entrySet()) {
+            K k;
+            V v;
+            try {
+                k = entry.getKey();
+                v = entry.getValue();
+            } catch(IllegalStateException ise) {
+                // this usually means the entry is no longer in the map.
+                throw new ConcurrentModificationException(ise);
+            }
+
+            // ise thrown from function is not a cme.
+            v = function.apply(k, v);
+
+            try {
+                entry.setValue(v);
+            } catch(IllegalStateException ise) {
+                // this usually means the entry is no longer in the map.
+                throw new ConcurrentModificationException(ise);
+            }
+        }
+    }
+    ```
+    若需要返回特定类型值，可使用ToIntBiFunction，ToLongBiFunction，ToDoubleBiFunction。
+    ```
+    @FunctionalInterface
+    public interface ToIntBiFunction<T, U> {
+    /**
+     * Applies this function to the given arguments.
+     *
+     * @param t the first function argument
+     * @param u the second function argument
+     * @return the function result
+     */
+    int applyAsInt(T t, U u);
     }
     ```
 
