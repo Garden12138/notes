@@ -468,7 +468,60 @@
         };
     }
     ```
+  * Operator接口：根据操作目可分为UnaryOperator BinaryOperator两大类，其又可分为IntUnaryOperator，LongUnaryOperator，DoubleUnaryOperator，IntBinaryOperator，LongBinaryOperator，DoubleBinaryOperator，接收和返回相同的类型。
+  ```
+  @FunctionalInterface
+  public interface IntUnaryOperator {
+    /**
+     * Applies this operator to the given operand.
+     *
+     * @param operand the operand
+     * @return the operator result
+     */
+    int applyAsInt(int operand);
+  }
+  ```
+  常用于集合数据多目运算，如计算整型集合list元素值之和，使用Stream的reduce方法；reduce方法使用BinaryOperator接口的apply方法，参数为U类型。
+  ```
+  List<Integer> values = Arrays.asList(1, 2, 3, 4, 5);
+  int sum = values.stream().reduce(0, (i1, i2) -> i1 + i2);
 
+  15
+  ```
+  ```
+  @Override
+  public final P_OUT reduce(final P_OUT identity, final BinaryOperator<P_OUT> accumulator) {
+    return evaluate(ReduceOps.makeRef(identity, accumulator, accumulator));
+  }
+
+  public static <T, U> TerminalOp<T, U>
+    makeRef(U seed, BiFunction<U, ? super T, U> reducer, BinaryOperator<U> combiner) {
+        Objects.requireNonNull(reducer);
+        Objects.requireNonNull(combiner);
+        class ReducingSink extends Box<U> implements AccumulatingSink<T, U, ReducingSink> {
+            @Override
+            public void begin(long size) {
+                state = seed;
+            }
+
+            @Override
+            public void accept(T t) {
+                state = reducer.apply(state, t);
+            }
+
+            @Override
+            public void combine(ReducingSink other) {
+                state = combiner.apply(state, other.state);
+            }
+        }
+        return new ReduceOp<T, U, ReducingSink>(StreamShape.REFERENCE) {
+            @Override
+            public ReducingSink makeSink() {
+                return new ReducingSink();
+            }
+        };
+  }
+  ```
 
 > Lambda表达式实践
 
