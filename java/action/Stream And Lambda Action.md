@@ -389,6 +389,40 @@
     void accept(T t, double value);
     }
     ```
+  * BiConsumer接口：定义了一个抽象方法accept，包含两个参数（T，U），没有返回。
+    ```
+    @FunctionalInterface
+    public interface BiConsumer<T, U> {
+    /**
+     * Performs this operation on the given arguments.
+     *
+     * @param t the first input argument
+     * @param u the second input argument
+     */
+    void accept(T t, U u);
+    }
+    ```
+    常用于哈希映射的处理，如对哈希映射的键对应的值进行加工，使用map.forEach方法；forEach方法使用BiConsumer的accept方法，参数为K，V类型。
+    ```
+    map.forEach((key, value) -> value += 1);
+    ```
+    ```
+    default void forEach(BiConsumer<? super K, ? super V> action) {
+        Objects.requireNonNull(action);
+        for (Map.Entry<K, V> entry : entrySet()) {
+            K k;
+            V v;
+            try {
+                k = entry.getKey();
+                v = entry.getValue();
+            } catch(IllegalStateException ise) {
+                // this usually means the entry is no longer in the map.
+                throw new ConcurrentModificationException(ise);
+            }
+            action.accept(k, v);
+        }
+    }
+    ```
 
 
 > Lambda表达式实践
