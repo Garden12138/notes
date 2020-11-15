@@ -402,7 +402,7 @@
     void accept(T t, U u);
     }
     ```
-    常用于哈希映射的处理，如对哈希映射的键对应的值进行加工，使用map.forEach方法；forEach方法使用BiConsumer的accept方法，参数为K，V类型。
+    常用于哈希映射的处理，如对哈希映射的键对应的值进行加工，使用map.forEach方法；forEach方法使用BiConsumer接口的accept方法，参数为K，V类型。
     ```
     map.forEach((key, value) -> value += 1);
     ```
@@ -421,6 +421,51 @@
             }
             action.accept(k, v);
         }
+    }
+    ```
+  * Predicate接口：定义了一个抽象方法test，包含一个参数（T），一个返回（boolean）。
+    ```
+    @FunctionalInterface
+    public interface Predicate<T> {
+    /**
+     * Evaluates this predicate on the given argument.
+     *
+     * @param t the input argument
+     * @return {@code true} if the input argument matches the predicate,
+     * otherwise {@code false}
+     */
+    boolean test(T t);
+    }
+    ```
+    常用于集合类过滤数据，如过滤集合List以'A'开头的元素，使用Stream的filter方法；filter方法使用Predicat接口的test方法，参数为P_OUT类型。
+    ```
+    List<String> elements = Arrays.asList("A", "B", "C", "D", "E");
+    List<String> elementsWithA = elements.stream()
+                                    .filter(e -> e.startsWith("A"))
+                                    .collect(Collectors.toList());
+    ```
+    ```
+    @Override
+    public final Stream<P_OUT> filter(Predicate<? super P_OUT> predicate) {
+        Objects.requireNonNull(predicate);
+        return new StatelessOp<P_OUT, P_OUT>(this, StreamShape.REFERENCE,
+                                     StreamOpFlag.NOT_SIZED) {
+            @Override
+            Sink<P_OUT> opWrapSink(int flags, Sink<P_OUT> sink) {
+                return new Sink.ChainedReference<P_OUT, P_OUT>(sink) {
+                    @Override
+                    public void begin(long size) {
+                        downstream.begin(-1);
+                    }
+
+                    @Override
+                    public void accept(P_OUT u) {
+                        if (predicate.test(u))
+                            downstream.accept(u);
+                    }
+                };
+            }
+        };
     }
     ```
 
