@@ -335,6 +335,18 @@
 
     fasle
     ```
+    若需要返回特定类型值，可使用IntSupplier，LongSupplier，DoubleSupplier，BooleanSupplier。
+    ```
+    @FunctionalInterface
+    public interface BooleanSupplier {
+    /**
+     * Gets a result.
+     *
+     * @return a result
+     */
+    boolean getAsBoolean();
+    }
+    ```
   * Consumer接口：定义了一个抽象方法accpet，包含一个参数（T），没有返回。
     ```
     @FunctionalInterface
@@ -466,6 +478,35 @@
                 };
             }
         };
+    }
+    ```
+    若需要传入特定类型参数，可使用IntPredicate, LongPredicate, DoublePredicate。
+    ```
+    @FunctionalInterface
+    public interface DoublePredicate {
+    /**
+     * Evaluates this predicate on the given argument.
+     *
+     * @param value the input argument
+     * @return {@code true} if the input argument matches the predicate,
+     * otherwise {@code false}
+     */
+    boolean test(double value);
+    }
+    ```
+    若需要传入两个参数（T，U），可使用BiPredicate。
+    ```
+    @FunctionalInterface
+    public interface BiPredicate<T, U> {
+    /**
+     * Evaluates this predicate on the given arguments.
+     *
+     * @param t the first input argument
+     * @param u the second input argument
+     * @return {@code true} if the input arguments match the predicate,
+     * otherwise {@code false}
+     */
+    boolean test(T t, U u);
     }
     ```
   * Operator接口：根据操作目可分为UnaryOperator BinaryOperator两大类，其又可分为IntUnaryOperator，LongUnaryOperator，DoubleUnaryOperator，IntBinaryOperator，LongBinaryOperator，DoubleBinaryOperator，接收和返回相同的类型。
