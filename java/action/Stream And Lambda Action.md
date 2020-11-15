@@ -565,5 +565,73 @@
   ```
 
 > Lambda表达式实践
-
+  * 优先使用标准Functional接口：java8在java.util.function包中定义的标准Functional接口，基本涵盖所需的各种类型，避免重复造轮子。比如：
+    ```
+    //重复造轮子
+    //自定义Functional Interface
+    @FunctionalInterface
+    public interface Usage {
+      String method(String string);
+    }
+    //使用自定义Functional Interface
+    public String test(String string, Usage usage) {
+      return usage.method(string);
+    }
+    //使用标准Functional Interface
+    public String test(String string, Function<String, String> fn) {
+      return fn.apply(string);
+    }
+    ```
+  * 使用注解@FunctionalInterface：注解@FunctionalInterface非必须，但使用其可以避免在违背Functional Interface定义时报警。
+  * 定义Functional Interfaces不滥用Default Methods：Functional Interface中只包含一个抽象未实现的方法，如果该Interface中还有其他抽象方法，可以使用default关键字为其提供一个默认实现，由于class是可多实现Interface，若滥用Default Methods，容易造成多个Interface之间定义相同的default方法，则会报错。
+  * 使用Lambda表达式来实例化Functional Interface：
+    ```
+    //使用new关键字实例化
+    Function<String,Integer> function = new Function<String, Integer>() {
+            @Override
+            public Integer apply(String s) {
+                return Integer.parseInt(s);
+            }
+    };
+    //使用Lambda表达式实例化
+    Function<String,Integer> function = s -> Integer.parseInt(s);
+    ```
+  * 不重写以Functional Interface为参数的方法：
+    ```
+    public class ProcessorImpl implements Processor {
+      @Override
+      public String process(Callable<String> c) throws Exception {
+        // implementation details
+      }
+      
+      @Override
+      public String process(Supplier<String> s) {
+        // implementation details
+      }
+    }
+    ```
+    两个方法名是一样的，只有入参不同，但两个参数都为Functional Interface，都可以用相同的Lambda表达式表示，在使用时由于不知道调用哪个方法，故会报错。解决办法就是不重写，使用不同的方法名。
+    ```
+    String result = processor.process(() -> "test");
+    ```
+  * Lambda表达式不会定义新的作用域范围：使用Lambda表达式可以顶替内部类，但Lambda表达式和内部类是不同的，Lambda表达式并没有定义新的作用域范围，若在表达式中使用this是指向外部类，而内部类则会定义新的作用域范围，使用this则指向内部类本身。
+  * Lambda表达式尽可能简洁：
+    ```
+    //Java通过类型推断来判断入参数类型。故Lambda表达式中可不传参数类型
+    (a, b) -> a.toLowerCase() + b.toLowerCase(); => (String a, String b) -> a.toLowerCase() + b.toLowerCase();
+    //若只有一个参数，可不需带口号
+    a -> a.toLowerCase(); => (a) -> a.toLowerCase();
+    //返回值可不需带return
+    a -> a.toLowerCase(); => a -> return a.toLowerCase();
+    //在可使用方法引用时使用方法引用
+    String::toLowerCase; => a -> a.toLowerCase();
+    ```
+  * Lambda表达式内使用Effectively Final变量：这是近似final变量的意思，只要一个变量被赋值一次，那边编译器将会标志这个变量为Effectively Final变量，由于Lambda表达式经常使用在并行计算的场景中，故支持Effectively Final变量，不支持non-final变量，当有多个线程访问变量时就可防止不可预料的修改。
+    ```
+    String localVariable = "localVariable";
+    Function<String,String> function = s -> {
+      localVariable = s; //编译报错
+      return s;
+    };
+    ```
 > Stream实践
