@@ -635,3 +635,51 @@
     };
     ```
 > Stream实践
+  * 实现if/else逻辑：可使用filter改写if/else实现逻辑。
+    ```
+    //传统写法
+    list.stream().forEach(e -> {
+      if(e.intValue % 2 == 0) {
+        //输出偶数
+        System.out.println(e + " is even number");
+      }else{
+        //输出奇数
+        System.out.println(e + " is odd number");
+      }
+    });
+    //filter写法
+    list.stream().filter(e -> e.intValue % 2 == 0).forEach(e -> System.out.println(e + " is even number"));
+    list.stream().filter(e -> e.intValue % 2 != 0).forEach(e -> System.out.println(e + " is odd number"));
+    ```
+  * Map使用Stream：
+    * Map基本概念
+      ```
+      //创建一个Map
+      Map<String,String> map = new HashMap<>();
+      //获取Map的键值对集合
+      Set<Map.Entry<String,String>> entrySet = map.entrySet();
+      //获取Map的键集合
+      Set<String> keySet = map.keySet();
+      //获取Map的值集合
+      Collection<String> values = map.values();
+      ```
+      Map本身没有Stream，但可通过上述转换成Set，Collection使用Stream。
+      ```
+      Stream<Map.Entry<String, String>> entrySetStream = entrySet.stream();
+      Stream<String> keyStream = keySet.stream();
+      Stream<String> valuesStream = values.stream();
+      ```
+    * 使用Stream获取Map符合某些条件value的key
+      ```
+      List<String> list = entrySetStream.filter(e -> "20".equals(e.getValue()))
+                                        .map(Map.Entry::getKey)
+                                        .collect(Collectors.toList);
+      System.out.println(list);
+      ```
+    * 使用Stream获取Map符合某些条件key的value
+      ```
+      List<String> list = entrySetStream.filter(e -> "garden".equals(e.getKey())
+                                        .map(Map.Entry::getValue)
+                                        .collect(Collectors.toList);
+      System.out.println(list);
+      ```
