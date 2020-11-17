@@ -634,6 +634,60 @@
       return s;
     };
     ```
+  * Lambda表达式的异常处理：
+    * 处理Unchecked Exception：
+      ```
+      //1.直接在lambda内捕获异常并处理
+      list.forEach(i -> {
+        try {
+          System.out.println(1 / i);
+        }catch (ArithmeticException ae) {
+          System.err.println("ArithmeticException occured：" + ae.getMessage());
+        }
+      });
+      //2.使用自定义异常封装类
+      list.forEach(LambdaUncheckedExceptionWrapper.consumerWrapperWithExceptionClass(
+        i -> System.out.println(1 / i),ArithmeticException.class));
+
+      public class LambdaUncheckedExceptionWrapper {
+        /**
+        * Consumer函数式接口参数的非检查异常处理封装方法
+        * @param consumer Consumer函数式接口参数
+        * @param clazz 异常类
+        * @param <T> Consumer函数式接口参数类型
+        * @param <E> 异常类类型
+        * @return
+        */
+        public static <T, E extends Exception> Consumer<T> consumerWrapperWithExceptionClass(Consumer<T> consumer, Class<E> clazz) {
+          return i -> {
+            try {
+              consumer.accept(i);
+            } catch (Exception ex) {
+                try {
+                    E exCast = clazz.cast(ex);
+                    System.err.println(clazz.getName() + " occured : " + exCast.getMessage());
+                } catch (ClassCastException ccEx) {
+                    throw ex;
+                }
+              }
+          };
+        }
+       }
+      ```
+    * 处理Checked Exception：
+      ```
+      static void throwIOException(Integer integer) throws IOException {
+      }
+
+      //直接在lambda内捕获异常或处理
+      list.forEach(i -> {
+        try {
+          throwIOException(i);
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      });
+      ```
 > Stream实践
   * 实现if/else逻辑：可使用filter改写if/else实现逻辑。
     ```
