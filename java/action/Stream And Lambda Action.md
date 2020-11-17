@@ -683,3 +683,27 @@
                                         .collect(Collectors.toList);
       System.out.println(list);
       ```
+  * Stream中使用peek：
+    * peek的定义：
+      ```
+      Stream<T> peek(Consumer<? super T> action)
+      ```
+    * java8的Stream是由数据源，零个或一个或多个中间操作，零个或多个终止操作构成，peek属于中间操作，是lazy操作，需要等待终止操作才会执行，终止操作是Stream的启动操作，故peek需要结合终止操作使用才有效果。 
+      ```
+      //只使用peek操作，Stream不执行
+      Stream<String> stream = Stream.of("one", "two", "three","four");
+      stream.peek(System.out::println); //没有任何输出
+      ```
+    * 常用于中间操作的debug
+      ```
+      Stream.of("one", "two", "three","four").filter(e -> e.length() > 3)
+                .peek(e -> System.out.println("Filtered value: " + e))
+                .map(String::toUpperCase)
+                .peek(e -> System.out.println("Mapped value: " + e))
+                .collect(Collectors.toList());
+
+      Filtered value: three
+      Mapped value: THREE
+      Filtered value: four
+      Mapped value: FOUR
+      ```
