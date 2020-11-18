@@ -761,3 +761,80 @@
       Filtered value: four
       Mapped value: FOUR
       ```
+  * Stream中的Collectors用法：
+    * 通常在Stream的中间操作处理后会将Stream转换成集合类，此时使用Stream的collect方法，collect方法需传入Collector类型参数，可以实现Collector接口或者使用Collectors工具类。以下描述Collectors工具类用法使用这样两个list:
+      ```
+      //无重复list
+      List<String> list = Arrays.asList("echo","mercy","tracer","ana");
+      //重复list
+      List<String> duplicateList = Arrays.asList("echo","echo","mercy","tracer","ana");
+      ```
+    * Collectors.toList()
+      ```
+      //转换成ArrayList
+      List<String> toList = list.stream().collect(Collectors.toList());
+      ```
+    * Collectors.toSet()
+      ```
+      //转换成HashSet
+      Set<String> toSet = list.stream().collect(Collectors.toSet());
+      ```
+    * Collectors.toCollection()
+      ```
+      //转换为指定集合，如LinkedList
+      List<String> toCollection = list.stream().collect(Collectors.toCollection(LinkedList::new));
+      ```
+    * Collectors.toMap()
+      ```
+      //转换为HashMap，第一个参数为类型为Function的keyMapper，指定Function.identity()时为Stream里的元素本身；第二个参数为类型为Function的valueMapper；第三个参数为类型为BinaryOperator的mergeFunction，用于指定key值重复时的选择策略
+      Map<String,Integer> toMap = duplicateList.stream().collect(Collectors.toMap(Function.identity(),String::length,(item,identicalItem) -> item));
+      ```
+    * Collectors.collectingAndThen()
+      ```
+      //转换后集合再做一次操作
+      List<String> collectingAndThen = list.stream().collect(Collectors.collectingAndThen(Collectors.toList(), l -> {
+        l.add("mei");
+        return l;
+      }));
+      ```
+    * Collectors.joining()
+      ```
+      //转换为连接字符串，第一个参数为分隔符号，非必须；第二个参数为前缀，非必须；第三个参数为后缀，非必须
+      String joining = list.stream().collect(Collectors.joining("-","prefix","suffix"));
+      ```
+    * Collectors.counting()
+      ```
+      //转换为Stream元素统计个数
+      Long counting = list.stream().collect(Collectors.counting());
+      ```
+    * Collectors.summarizingDouble/Long/Int()
+      ```
+      //转化为Stream元素统计信息
+      IntSummaryStatistics summarizingInt = list.stream().collect(Collectors.summarizingInt(String::length));
+      ```
+    * Collectors.averagingDouble/Long/Int()
+      ```
+      //转化为Stream元素统计平均值信息
+      Double averagingInt = list.stream().collect(Collectors.averagingInt(String::length));
+      ```
+    * Collectors.summingDouble/Long/Int()
+      ```
+      //转化为Stream元素统计总和值信息
+      Double summingDouble = list.stream().collect(Collectors.summingDouble(String::length));
+      ```
+    * Collectors.maxBy()/minBy()
+      ```
+      //转换为Stream元素统计最大/最小值信息
+      Optional<String> maxByResult = list.stream().collect(Collectors.maxBy(Comparator.naturalOrder()));
+      ```
+    * Collectors.groupingBy()
+      ```
+      //转换为根据某属性进行分组并返回Map
+      Map<Integer, Set<String>> groupingBy = list.stream().collect(Collectors.groupingBy(String::length, Collectors.toSet()));
+      ```
+    * Collectors.partitioningBy()
+      ```
+      //转化为以符合条件与不符合条件为Key的Map
+       Map<Boolean, List<String>> partitioningBy = list.stream()
+                .collect(Collectors.partitioningBy(s -> s.length() > 3));
+      ```
