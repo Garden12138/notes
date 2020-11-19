@@ -838,3 +838,28 @@
        Map<Boolean, List<String>> partitioningBy = list.stream()
                 .collect(Collectors.partitioningBy(s -> s.length() > 3));
       ```
+  * 创建自定义Collector
+    * 前言：自定义Collector可用于Stream的collect方法将数据流结果转换为特定的集合类。
+    * 介绍：Collector包含supplier，accumulator，combiner，finisher，characteristics接口以及两个创建Collector实例的of静态方法。
+
+      ![Collector.png](https://i.loli.net/2020/11/19/hiGtSNEYJsOeord.png)
+
+      * supplier：创建一个初始集合。
+      * accumulator：定义一个累加器，将原始元素添加至初始集合。
+      * combiner：将两个集合合并成一个集合。
+      * finisher：将集合转化为最终集合类型。
+      * characteristics：表示集合的特征，不必须。
+      * of：调用参数supplier，accumulator，combiner，finisher以及characteristics创建Collector实例。
+
+      ![Collector创建原理.png](https://i.loli.net/2020/11/19/bmEnsM41ORULV7p.png)
+       
+       * Collector定义了三个参数T，A，R；T是输入元素的类型，A是supplier创建初始集合类型以及accumulator累加器添加原始原始集合类，R是最终返回类型。Collector的构建过程为supplier创建集合，accumulator将Stream元素分别添加，添加完成后combiner将两个集合合并，最终由finisher转化为最终集合。
+    * 自定义：由上述定义可知，只需要使用Collector的of静态方法，即可创建自定义Collector。
+      ```
+      //创建一个不变Set
+      Collector.of(HashSet::new, Set::add,
+                (left, right) -> {
+                    left.addAll(right);
+                    return left;
+                }, Collections::unmodifiableSet);
+      ```
