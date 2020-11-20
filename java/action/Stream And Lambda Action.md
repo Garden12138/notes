@@ -863,3 +863,46 @@
                     return left;
                 }, Collections::unmodifiableSet);
       ```
+  * Stream的reduce使用
+    * 前言：Stream Api定义了一些reduce操作，如count()，sum()，min()，max()等。若需实现自定义reduce逻辑则可使用reduce方法。
+    * 三种reduce方法：
+      ```
+      //使用集合示例
+      List<Integer> list = Arrays.asList(1,2,3);
+      //一个参数
+      Optional<T> reduce(BinaryOperator<T> accumulator);
+      //计算list集合各Integer元素之和
+      Optional<T> optional = list.stream().reduce((a,b) -> Integer.sum(a,b));
+      System.out.println(optional.get());
+      //或
+      Optional<T> optional = list.stream().reduce(Integer::sum);
+      System.out.println(optional.get());
+      //控制台
+      6
+
+      //两个参数
+      T reduce(T identity, BinaryOperator<T> accumulator);
+      //以100为起始值，计算list集合各Integer元素之和
+      int sum = list.stream().reduce(100,Integer::sum);
+      System.out.println(sum);
+      //若启动并行计算且计算结果要与非并行计算结果一致，identity的取值必须遵循定义对于所有的t,都必须满足 accumulator.apply(identity, t) == t
+        //并行计算
+      int parallelStreamSum = list.parallelStream().reduce(0,Integer::sum);
+      System.out.println(parallelStreamSum);
+        //非并行计算
+      int streamSum = list.stream().reduce(0,Integer::sum);
+      System.out.println(streamSum);
+      //控制台
+      106
+      6
+      6
+
+      //三个参数
+      <U> U reduce(U identity,
+                 BiFunction<U, ? super T, U> accumulator,
+                 BinaryOperator<U> combiner);
+      //并行计算list集合各Integer元素之和，合并结果前每个线程计算结果减去初始值1
+      int parallelStreamSum = list.parallelStream().reduce(1,Integer::sum,(a,b) -> a - b);  System.out.println(parallelStreamSum);
+      //控制台
+      3
+      ```
