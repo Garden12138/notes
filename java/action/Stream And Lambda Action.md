@@ -906,3 +906,43 @@
       //控制台
       3
       ```
+  * Stream中的Spliterator
+    * 定义：Spliterator是java8中引入的一个接口，它通过与Stream配合使用，用于遍历和分割序列。只要用到Stream的地方就会需要Spliterator，如Collection。Collection中创建Stream实例时会传入参数Spliterator。其中Spliterator常用接口tryAdvance，trySplit，estimateSize，characteristics。
+      ```
+      //非并行Stream
+      default Stream<E> stream() {
+        return StreamSupport.stream(spliterator(), false);
+      }
+      //并行Stream
+      default Stream<E> parallelStream() {
+        return StreamSupport.stream(spliterator(), true);
+      }
+      ```
+    * tryAdvance：对Stream中的元素进行处理的方法，若元素存在，则进行处理并返回true，可处理后续Stream元素；若元素不存在，则不处理并返回false，不可处理后续Stream元素。利用这一特性，可在tryAdvance中返回false，中止对后续Stream元素的处理。
+      ```
+      //对list集合的Student类型的name属性拼接符号‘-’
+      Spliterator<Student> spliterator = list.spliterator();
+      while(spliterator.tryAdvance(s -> s.setName(s.getName().concat("-")))) {
+        //...处理一个元素成功后执行的逻辑
+      }
+      ```
+    * trySplit：对Stream进行拆分的方法，一般用于parallelStream，在并行Stream下，我们需要拆分Stream元素让多线程分别去处理。理想情况下，trySplit将Stream拆分成数目相同的两部分以提高性能。
+      ```
+      //拆分一半list集合，并对list集合的Student类型的name属性拼接符号‘-’
+      Spliterator<Student> spliterator = list.spliterator();
+      Spliterator<Student> trySplit = spliterator.trySplit();
+      while(trySplit.tryAdvance(s -> s.setName(s.getName().concat("-")))) {
+        //...处理一个元素成功后执行的逻辑
+      }
+      ```
+    * estimateSize：表示Spliterator中待处理元素的多少的方法。
+      ```
+      //输出list集合的Student类型的name属性拼接符号‘-’前后待处理元素的多少
+      Spliterator<Student> spliterator = list.spliterator();
+      System.out.println("before：" + spliterator.estimateSize());
+      while(spliterator.tryAdvance(s -> s.setName(s.getName().concat("-")))) {
+        //...处理一个元素成功后执行的逻辑
+      }
+      System.out.println("after" + spliterator.estimateSize());
+      ```
+    * characteristics
