@@ -945,4 +945,91 @@
       }
       System.out.println("after" + spliterator.estimateSize());
       ```
-    * characteristics
+  * Stream中break forEach
+    * 前言：Stream的forEach会遍历所有数据，不支持中途break退出遍历，若需要在forEach break，可利用filter过滤退出前数据再进行forEach遍历，或者利用Spliterator的tryAdvance方法返回false停止处理后续元素的原理自定义Spliterator或forEach方法使用遍历。以下break forEach方法使用以下例子：
+      ```
+      Stream<Integer> stream = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+      //当元素值大于5时停止遍历
+      ```
+    * 先filter所需数据再foreach
+      ```
+      //使用filter过滤大于5的数据再遍历
+      stream.filter(i -> i <= 5).forEach(i -> System.out.print(i + " "));
+
+      //控制台
+      1 2 3 4 5
+      ```
+    * 自定义Spliterator
+      ```
+      //自定义Spliterator
+      public class CustomerSpliterator<T> extends Spliterators.AbstractSpliterator<T>  {
+        private Spliterator<T> splitr;
+        private Predicate<T> predicate;
+        private volatile boolean isMatched = true;
+        
+        public CustomerSpliterator(Spliterator<T> splitr, Predicate<T> predicate) {
+          super(splitr.estimateSize(), 0);
+          this.splitr = splitr;
+          this.predicate = predicate;
+        }
+        
+        @Override
+        public synchronized boolean tryAdvance(Consumer<? super T> consumer) {
+          boolean hadNext = splitr.tryAdvance(elem -> {
+            if (predicate.test(elem) && isMatched) {
+              consumer.accept(elem);
+            } else {
+              isMatched = false;
+            }
+          });
+          return hadNext && isMatched;
+        }
+      }
+      //自定义Stream，创建支持自定义Spliterator的Stream实例
+      public class CustomerStream{
+        public static <T> Stream<T> of(Stream<T> stream, Predicate<T> predicate) {
+          CustomerSpliterator<T> customerSpliterator = new CustomerSpliterator<>(stream.spliterator(), predicate);
+          return StreamSupport.stream(customerSpliterator, false);
+        }
+      }
+      //使用支持中止遍历的Stream遍历
+      CustomerStream.of(stream,i -> i <= 5).forEach(i -> System.out.print(i + " "));
+
+      //控制台
+      1 2 3 4 5
+      ```
+    * 自定义forEach
+      ```
+      //自定义forEach
+      public class CustomerForEach {
+        public static class Breaker {
+          private volatile boolean shouldBreak = false;
+          public void stop() {
+            shouldBreak = true;
+          }
+          boolean get() {
+            return shouldBreak;
+          }
+        }
+        
+        public static <T> void forEach(Stream<T> stream, BiConsumer<T, Breaker> consumer){
+          Spliterator<T> spliterator = stream.spliterator();
+          boolean hadNext = true;
+          Breaker breaker = new Breaker();
+          while (hadNext && !breaker.get()) {
+            hadNext = spliterator.tryAdvance(elem -> {
+            consumer.accept(elem, breaker);
+            });
+          }
+        }
+      }
+
+      //使用支持中止遍历的forEach遍历
+      CustomerForEach.forEach(stream, (i, breaker) -> {
+            if (i > 5 ) {
+                breaker.stop();
+            } else {
+                System.err.print(i + " ");
+            }
+      });
+      ```
