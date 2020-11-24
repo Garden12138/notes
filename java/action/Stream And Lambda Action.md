@@ -1059,3 +1059,18 @@
       predicates.add(s -> s.length() > 1);
       list.stream().filter(predicates.stream().reduce(Predicate::and));
       ```
+  * parallelStream使用自定义thread pool
+    * 前言：parallelStream底层是使用ForkJoinPool提交任务，默认情况下ForkJoinPool为每个处理器创建一个线程，没有特殊指定下都会使用这个共享线程池来提交任务。
+    * 使用默认ForkJoinPool：
+      ```
+      //并行计算1到1000总和
+      List<Integer> integerList= IntStream.range(1,1000).boxed().collect(Collectors.toList());
+      Integer total = integerList.parallelStream().reduce(0, Integer::sum);
+      ```
+    * 使用自定义ForkJoinPool：
+      ```
+      //并行计算1到1000总和
+      List<Integer> integerList= IntStream.range(1,1000).boxed().collect(Collectors.toList());
+      ForkJoinPool customerThreadPool = new ForkJoinPool(4);
+      Integer total = customerThreadPool.sumbit(() -> integerList.parallelStream().reduce(0, Integer::sum)).get();
+      ```
