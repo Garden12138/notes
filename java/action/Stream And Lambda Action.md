@@ -1074,3 +1074,5 @@
       ForkJoinPool customerThreadPool = new ForkJoinPool(4);
       Integer total = customerThreadPool.sumbit(() -> integerList.parallelStream().reduce(0, Integer::sum)).get();
       ```
+> 参考文献
+  * [5万字:Stream和Lambda表达式最佳实践-附PDF下载 -by程序员那些事](https://juejin.cn/post/6854573219895050254)
