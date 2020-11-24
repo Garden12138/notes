@@ -1033,3 +1033,29 @@
             }
       });
       ```
+  * Predicate chain的使用
+    * 前言：Predicate是一个FunctionalInterface，抽象方法是test，接受一个参数T，返回boolean类型。通常应用在Stream的filter中，表示是否满足过滤条件。
+    * 基本使用：
+      ```
+      list.stream().filter(s -> s.starWith("a"));
+      ```
+    * 使用多个Predicate：
+      ```
+      list.stream().filter(s -> s.starWith("a"))
+                   .filter(s -> s.length() > 1);
+      ```
+    * 使用复合Predicate：
+      ```
+      list.stream().filter(s -> s.starWith("a") && s.length() > 1);
+      ```
+    * 使用组合Predicate：默认方法提供了Predicate之间的组合操作，如Predicate.and(), Predicate.or(), 和 Predicate.negate()。
+      ```
+      list.stream.filter(((Predicate<String>)s -> s.starWith("a")).and(s.length() > 1));
+      ```
+    * Predicate的集合操作：在Predicate类型的集合添加Predicat条件，使用时通过reduce方法对Predicate条件进行合并运算。
+      ```
+      List<Predicate<String>> predicates = new ArrayList<>();
+      predicates.add(s -> s.starWith("a"));
+      predicates.add(s -> s.length() > 1);
+      list.stream().filter(predicates.stream().reduce(Predicate::and));
+      ```
