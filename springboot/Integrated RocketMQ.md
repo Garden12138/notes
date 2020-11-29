@@ -240,6 +240,27 @@
        }
     }
     ```
+  * 运行效果
+    * 启动NameServer
+      
+      ![RocketMQ_NameServer.png](https://i.loli.net/2020/11/29/EWTKlSwaevQshHz.png)
+
+    * 启动Broker
+      
+      ![RocketMQ_Broker.png](https://i.loli.net/2020/11/29/buniSV7QoO8plvf.png)
+
+    * 调试测试用例接口
+
+      ![RocketMQ_Demo_Test.png](https://i.loli.net/2020/11/29/JC2xHGSBufgIXET.png)
+
+  * 常见问题
+    * 启动NameServer或者启动Broker失败，日志信息显示"Please set the JAVA_HOME variable in your environment, We need java(x64)!"。此时我们需要编辑其对应的.sh脚本文件（runserver.sh或runbroker.sh）,注释已存在的JDK环境配置，添加指定JDK环境配置，如下：
+      ```
+      #[ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=$HOME/jdk/java
+      #[ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=/usr/java
+      #[ ! -e "$JAVA_HOME/bin/java" ] && error_exit "Please set the JAVA_HOME variable in your environment, We need java(x64)!"
+      [ ! -e "$JAVA_HOME/bin/java" ] && JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_261.jdk/Contents/Home
+      ```
 
 > 参考文献
  * [《SpringBoot 实践系列-集成 RocketMQ》 by glmapper](https://juejin.cn/post/6844904116020314125)
