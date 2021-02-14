@@ -97,7 +97,254 @@
       * getType：与getInstance类似，但在公共静态工厂方法处于不同类时使用，如 FileStore fileStore = Files.getFileStore(path);
       * newType：与newInstance类似，但在公共静态工厂方法处于不同类时使用，如 BufferedReader bufferedReader = Files.getBufferedReader(path);
 
-> 当构造方法参数过多时使用builder模式
+> 当可选参数过多时考虑使用Builder模式
+  * 构造方法与静态工厂方法都有不能友好扩展可选参数的限制，常见扩展可选参数的模式有可伸缩构造方法模式，JavaBeans模式以及Builder模式。
+  * 可伸缩构造方法模式
+    ```
+    // 类设计
+    public class Hamburger {
+      // required
+      private final int bread;
+      private final int vegetables;
+      private final int egg;
+      // optional
+      private final int chicken;
+      private final int beef;
+      private final int shrimp;
+
+      public Hamburger(int bread, int vegetables, int egg) {
+        this(bread,vegetables,egg,0);
+      }
+
+      public Hamburger(int bread, int vegetables, int egg, int chicken) {
+        this(bread,vegetables,egg,chicken,0);
+      }
+
+      public Hamburger(int bread, int vegetables, int egg, int chicken, int beef) {
+        this(bread,vegetables,egg,chicken,beef,0);
+      }
+
+      public Hamburger(int bread, int vegetables, int egg, int chicken, int beef, int shrimp) {
+        this.bread = bread;
+        this.vegetables = vegetables;
+        this.egg = egg;
+        this.chicken = chicken;
+        this.beef = beef;
+        this.shrimp = shrimp;
+      }
+    }
+    // 客户端调用
+    // 双层鸡肉堡
+    Hamburger doubleChickenHamburger = new Hamburger(2,2,2,2);
+    // 单层鸡肉牛肉虾堡
+    Hamburger singleChickenBeefShrimpHamburger = new Hamburger(2,1,1,1,1,1);
+    ```
+  * JavaBeans模式
+    ```
+    // 类设计
+    public class Hamburger {
+      // required
+      private int bread;
+      private int vegetables;
+      private int egg;
+      // optional
+      private int chicken;
+      private int beef;
+      private int shrimp;
+
+      public Hamburger() {
+
+      }
+
+      public void setBread(int bread) {
+        this.bread = bread;
+      }
+      public void setVegetables(int vegetables) {
+        this.vegetables = vegetables;
+      }
+      public void setEgg(int egg) {
+        this.egg = egg;
+      }
+      public void setChicken(int chicken) {
+        this.chicken = chicken;
+      }
+      public void setBeef(int beef) {
+        this.beef = beef;
+      }
+      public void setShrimp(int shrimp) {
+        this.shrimp = shrimp;
+      }
+    }
+    // 客户端调用
+    // 双层鸡肉堡
+    Hamburger doubleChickenHamburger = new Hamburger();
+    doubleChickenHamburger.setBread(2);
+    doubleChickenHamburger.setVegetables(2);
+    doubleChickenHamburger.setEgg(2);
+    doubleChickenHamburger.setChicken(2);
+    // 单层鸡肉牛肉虾堡
+    Hamburger singleChickenBeefShrimpHamburger = new Hamburger();
+    singleChickenBeefShrimpHamburger.setBread(2);
+    singleChickenBeefShrimpHamburger.setVegetables(1);
+    singleChickenBeefShrimpHamburger.setEgg(1);
+    singleChickenBeefShrimpHamburger.setChicken(1);
+    singleChickenBeefShrimpHamburger.setBeef(1);
+    singleChickenBeefShrimpHamburger.setShrimp(1);
+    ```
+  * Builder模式
+    ```
+    // 具体类的具体Builder
+    // 类设计
+    public class Hamburger {
+      // required
+      private final int bread;
+      private final int vegetables;
+      private final int egg;
+      // optional
+      private final int chicken;
+      private final int beef;
+      private final int shrimp;
+
+      public static class Builder {
+        // required
+        private final int bread;
+        private final int vegetables;
+        private final int egg;
+        // optional
+        private int chicken = 0;
+        private int beef = 0;
+        private int shrimp = 0;
+
+        public Builder(int bread, int vegetables, int egg) {
+          this.bread = bread;
+          this.vegetables = vegetables;
+          this.egg = egg;
+        }
+
+        public Builder chicken(int chicken) {
+          this.chicken = chicken;
+          return this;
+        }
+        public Builder beef(int beef) {
+          this.beef = beef;
+          return this;
+        }
+        public Builder shrimp(int shrimp) {
+          this.shrimp = shrimp;
+          return this;
+        }
+
+        public Hamburger build() {
+          return new Hamburger(this);
+        }
+      }
+
+      public Hamburger(Builder builder) {
+        this.bread = builder.bread;
+        this.vegetables = builder.vegetables;
+        this.egg = builder.egg;
+        this.chicken = builder.chicken;
+        this.beef = builder.beef;
+        this.shrimp = builder.shrimp;
+      }
+    }
+    // 客户端调用
+    // 双层鸡肉堡
+    Hamburger doubleChickenHamburger = new Hamburger.Builder(2,2,2).chicken(2).build();
+    // 单层鸡肉牛肉虾堡
+    Hamburger singleChickenBeefShrimpHamburger = new Hamburger.Builder(2,1,1).chicken(1).beef(1).shrimp(1).build();
+    ```
+    ```
+    // 抽象类的抽象Builder
+    // 类设计
+    public abstract class Hamburger {
+      // required
+      private final int bread;
+      private final int vegetables;
+      private final int egg;
+      
+      public abstract static class Builder<T extends Builder<T>> {
+        private int bread;
+        private int vegetables;
+        private int egg;
+        
+        public T baseHamburger(int bread, int vegetables, int egg) {
+          this.bread = bread;
+          this.vegetables = vegetables;
+          this.egg = egg;
+          return self();
+        }
+        public abstract Hamburger build();
+        protected abstract T self();
+      }
+
+      public Hamburger(Builder<?> builder){
+        this.bread = builder.bread;
+        this.vegetables = builder.vegetables;
+        this.egg = builder.egg;
+      }
+    }
+    public class KFCHamburger extends Hamburger {
+      private final int chicken;
+
+      public static class Builder extends Hamburger.Builder<Builder> {
+        private int chicken;
+
+        public Builder chicken(int chicken) {
+          this.chicken = chicken;
+          return this;
+        }
+        @Override
+        public KFCHamburger build() {
+          return new KFCHamburger(this);
+        }
+        @Override
+        public Builder self() {
+          return this;
+        }
+      }
+      private KFCHamburger(Builder builder) {
+        super(builder);
+        this.chicken = builder.chicken;
+      }
+    }
+    public class MCHamburger extends Hamburger {
+      private final int beef;
+
+      public static class Builder extends Hamburger.Builder<Builder> {
+        private int beef;
+
+        public Builder beef(int beef) {
+          this.beef = beef;
+          return this;
+        }
+        @Override
+        public MCHamburger build() {
+          return new MCHamburger(this);
+        }
+        @Override
+        public Builder self() {
+          return this;
+        }
+      }
+      private MCHamburger(Builder builder) {
+        super(builder);
+        this.beef = builder.beef;
+      }
+    }
+    // 客户端调用
+    // 单层KFC鸡肉堡
+    KFCHamburger singleKFCChickenHamburger = new KFCHamburger.Builder().baseHamburger(1,1,1).chicken(1).build();
+    // 单层MC牛肉堡
+    MCHamburger singleMCBeefHamburger = new MCHamburger.Builder().baseHamburger(1,1,1).beef(1).build();
+    ```
+  * 可读性与安全性
+
+    | 性质\模式 | 可伸缩构造方法模式 | JavaBeans模式 | Builder模式 |
+    | :-----| :----: | :----: | :----: |
+    | 可读性 | ❎ | ✅ | ✅ |
+    | 安全性 | ✅ | ❎ | ✅ |
+
 
 > 使用私有构造方法或枚举类实Singleton属性
 
