@@ -480,6 +480,29 @@
     ```
 
 > 消除过期的对象引用
+  * 过期的对象引用，容易导致内存泄漏。清空对象引用是例外而不是规范，消除过期引用的最好方法是让包含引用的变量超出范围。
+    ```
+    // 优化前
+    public class Stack {
+      ...
+      public Object pop() { 
+        if (size == 0) 
+            throw new EmptyStackException(); 
+        return elements[--size]; 
+      }
+    }
+    // 优化后
+    public Object pop() { 
+        if (size == 0) 
+            throw new EmptyStackException();
+        Object object = elements[--size];
+        elements[size] = null;
+        return object; 
+      }
+    }
+    ```
+  * 当一个类自己管理内存时，应该警惕内存泄漏问题，每当一个元素被释放时，元素中包含的任何对象引用都应该被清除。
+  * 
 
 > 避免使用Finalizer和Cleaner机制
 
