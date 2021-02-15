@@ -374,13 +374,13 @@
     }
     ```
   * 说明
-    * 特权客户端可使用AccessibleObject.setAccessible方法以反射方式调用私有构造方法，如需防御此攻击，可在构造函数添加请求创建第二个实例时抛出异常。
+    * 特权客户端可使用```AccessibleObject.setAccessible```方法以反射方式调用私有构造方法，如需防御此攻击，可在构造函数添加请求创建第二个实例时抛出异常。
       ```
       public class Singleton {
         public static final Singleton instance = new Singleton();
         private Singleton() {
           if (null != instance) {
-            throw new RuntimeException();
+            throw new Error();
           }
         }
       }
@@ -402,7 +402,16 @@
     * 单一元素枚举的不足，单例不能继承Enum以外的父类。
 
 
-> 使用私有构造方法执行非实例化
+> 使用私有构造方法实现非实例化
+  * 对于只包含静态成员的类如```java.util.Collections```等工具类不是设计用来被实例化的，实例化对它没有任何意义，但在没有任何显示构造方法的情况下，编译器会提供一个公共无参数的构造方法，默认情况下，这种类型工具类会被无意识实例化，实现非实例化的方式是构造显示私有构造方法且在方法抛出实例化异常。
+    ```
+    public class UtilityClass {
+      private UtilityClass() {
+        throw new AssertionError();
+      }
+    }
+    ```
+  * 进行非实例化的类不能被子类化，因为子类的构造器都必须显式或隐式地调用父类构造器。
 
 > 依赖注入优于硬连接资源
 
