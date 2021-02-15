@@ -346,7 +346,61 @@
     | 安全性 | ✅ | ❎ | ✅ |
 
 
-> 使用私有构造方法或枚举类实Singleton属性
+> 使用私有构造方法或枚举类实现Singleton
+  * Singleton单例是一个仅实例化一次的类，单例对象通常为无状态，如函数或本质上唯一的系统组件。实现单例的常见方法有，私有构造方法与公共静态属性、私有构造方法与公共静态工厂方法、单一元素枚举类。
+  * 私有构造方法与公共静态属性
+    ```
+    public class Singleton {
+      public static final Singleton instance = new Singleton();
+      private Singleton() {
+      }
+    }
+    ```
+  * 私有构造方法与公共静态工厂方法
+    ```
+    public class Singleton {
+      private static final Singleton instance = new Singleton();
+      private Singleton() {
+      }
+      public static Singleton getInstance() {
+        return instance;
+      }
+    }
+    ```
+  * 单一元素枚举类
+    ```
+    public enum Singleton {
+      INSTANCE;
+    }
+    ```
+  * 说明
+    * 特权客户端可使用AccessibleObject.setAccessible方法以反射方式调用私有构造方法，如需防御此攻击，可在构造函数添加请求创建第二个实例时抛出异常。
+      ```
+      public class Singleton {
+        public static final Singleton instance = new Singleton();
+        private Singleton() {
+          if (null != instance) {
+            throw new RuntimeException();
+          }
+        }
+      }
+      ```
+    * 私有构造方法模式的序列化
+      * 添加```implements Serializable```声明。
+      * 必须声明所有的实例字段为```transient```。
+      * 防止每当序列化的实例被反序列化时，就会创建一个新的实例的问题
+        ```
+        private Object readResolve() {
+          return instance;
+        }
+        ```
+    * 静态工厂方法的优势
+      * 提供了灵活性，在不改API的前提下，可修改该类是否应该为单例的做法。
+      * 可编写泛型单例工厂。
+      * 可通过方法引用作为提供者，```Singleton::getInstance``` 等同于 ```Supplier<Singleton>```。
+    * 单一元素枚举的优势，更简洁，无偿提供序列化机制，通常是实现单例的最佳方式。
+    * 单一元素枚举的不足，单例不能继承Enum以外的父类。
+
 
 > 使用私有构造方法执行非实例化
 
