@@ -413,7 +413,30 @@
     ```
   * 进行非实例化的类不能被子类化，因为子类的构造器都必须显式或隐式地调用父类构造器。
 
-> 依赖注入优于硬连接资源
+> 使用公有构造方法实现依赖注入
+  * 静态工具类与单例类不适合与需要引用底层资源的类，一般使用依赖注入的方式代替。
+    ```
+    public class SpellChecker { 
+      private final Lexicon dictionary; 
+      public SpellChecker(Lexicon dictionary) { 
+        this.dictionary = Objects.requireNonNull(dictionary); 
+      }
+      public boolean isValid(String word) { ... } 
+      public List<String> suggestions(String typo) { ... } 
+    }
+    ```
+  * 使用公有构造方法依赖注入的参数一般为生成依赖的工厂，这样极大地提升了类的灵活性、可重用性和可测试性。
+    ```
+    public class SpellChecker { 
+      private final Lexicon dictionary; 
+      public SpellChecker(LexiconFactory dictionaryFactory) { 
+        if (null != dictionaryFactory) {
+          this.dictionary = dictionaryFactory.create();
+        }
+      }
+      ...
+    }
+    ```
 
 > 避免创建不必要的对象
 
