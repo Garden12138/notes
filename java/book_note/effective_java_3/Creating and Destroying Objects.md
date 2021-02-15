@@ -439,6 +439,45 @@
     ```
 
 > 避免创建不必要的对象
+  * 需重用不可变对象或不被修改的可变对象时，避免创建不必要对象。如单个String实例，不是每次执行时创建一个新实例，它保证对象运行在同一台虚拟机上的任何代码重用，而这些代码包含相同的字符串字面量[JLS-3.10.5](https://docs.oracle.com/javase/specs/jls/se12/html/jls-3.html#jls-3.10.5)。
+    ```
+    // 优化前
+    String str = new String("str");
+    // 优化后
+    String str = "str";
+    ```
+  * 自动装箱运算，避免创建不必要对象。
+    ```
+    // 优化前
+    private static long sum() { 
+      Long sum = 0L;
+      for (long i = 0; i <= Integer.MAX_VALUE; i++) 
+          sum += i; 
+      return sum; 
+    }
+    // 优化后
+    private static long sum() { 
+      long sum = 0;
+      for (long i = 0; i <= Integer.MAX_VALUE; i++) 
+          sum += i; 
+      return sum; 
+    }
+    ```
+  * 通过创建静态工厂方法可避免创建不必要对象。
+    ```
+    // 优化前
+    static boolean isRomanNumeral(String s) { 
+      return s.matches("^(?=.)M*(C[MD]|D?C{0,3})" 
+      + "(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$"); 
+    }
+    // 优化后
+    public class RomanNumerals { 
+      private static final Pattern ROMAN = Pattern.compile( "^(?=.)M*(C[MD]|D?C{0,3})" + "(X[CL]|L?X{0,3})(I[XV]|V?I{0,3})$"); 
+      static boolean isRomanNumeral(String s) { 
+        return ROMAN.matcher(s).matches(); 
+        } 
+    }
+    ```
 
 > 消除过期的对象引用
 
