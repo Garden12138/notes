@@ -505,6 +505,11 @@
   * 常见的内存泄漏可能来源缓存或监听器和其他回调。
 
 > 避免使用Finalizer和Cleaner机制
+  * Java规范不能保证Finalizer和Cleaner机制能及时运行。
+  * 在执行Finalizer机制过程中，未捕获的异常会被忽略，并且该对象的Finalizer机制也会终止。
+  * 使用Finalizer和Cleaner机制会导致严重的性能损失。
+  * Finalizer使用容易造成打开类进行Finalizer机制攻击严重安全问题。
+  * Finalizer和Cleaner可用于安全网或者终止非关键的本地资源，当由于不确定性以及性能安全问题，应尽量避免使用。
 
 > 使用try-with-resources语句替代try-finally语句
   * Java类库中包含许多必须通过调用close方法手动关闭的资源。如InputStream、OutputStream、java.sql.Connection等，传统是使用try-finally的方式：
