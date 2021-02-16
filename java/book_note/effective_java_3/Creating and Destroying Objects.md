@@ -502,8 +502,44 @@
     }
     ```
   * 当一个类自己管理内存时，应该警惕内存泄漏问题，每当一个元素被释放时，元素中包含的任何对象引用都应该被清除。
-  * 
+  * 常见的内存泄漏可能来源缓存或监听器和其他回调。
 
 > 避免使用Finalizer和Cleaner机制
 
 > 使用try-with-resources语句替代try-finally语句
+  * Java类库中包含许多必须通过调用close方法手动关闭的资源。如InputStream、OutputStream、java.sql.Connection等，传统是使用try-finally的方式：
+    ```
+    static void copy(String src, String dst) throws IOException { 
+      InputStream in = new FileInputStream(src); 
+      try {
+        OutputStream out = new FileOutputStream(dst); 
+        try {
+          byte[] buf = new byte[BUFFER_SIZE]; 
+          int n; 
+          while ((n = in.read(buf)) >= 0) 
+              out.write(buf, 0, n); 
+        } finally { 
+          out.close(); 
+          } 
+      } finally { 
+        in.close(); 
+        } 
+    }
+    ```
+    由于底层物理设备发生故障，read方法的调用可能会引发异常，close方法也由于相同的原因引发异常，在这种情况下，第二个异常完全冲掉第一个异常，在异常堆栈跟踪中有没有第一个异常的记录，使系统调试困难。故使用try-with-resources方式替代try-finally方式：
+    ```
+    static void copy(String src, String dst) throws IOException { 
+      try (InputStream in = new FileInputStream(src); OutputStream out = new FileOutputStream(dst)) { 
+        byte[] buf = new byte[BUFFER_SIZE]; 
+        int n; 
+        while ((n = in.read(buf)) >= 0) 
+            out.write(buf, 0, n); 
+      } 
+    }
+    ```
+    使用try-with-resources语句，资源必须实现AutoCloseable接口，该接口由一个返回为void的close组成。
+    ```
+    public interface AutoCloseable {
+      void close() throws Exception;
+    }
+    ```
