@@ -34,7 +34,7 @@
                 return false;
             }
             OverrideEqualsClass oec = (OverrideEqualsClass)o;
-            return oec.field = field;
+            return oec.field == field;
         }
         ...
     }
@@ -63,7 +63,47 @@
       }
       ```
 
-> 重写equals方法时同时重写hashcode方法
+> 重写equals方法同时重写hashCode方法时遵守通用约定
+  * 在每个类中重写```equals```方法同时需要重写```hashCode```方法，否则违反了```hashCode```的通用约定，阻止了在```HashMap```和```HashSet```这样的集合正常工作，通用约定如下：
+    * 若未修改```equals```方法用以比较的信息，在应用程序的一次执行过程中对一个对象重复调用```hashCode```方法，必须始终保持返回相同的值；在应用程序的多次执行过程中，每个执行过程在该对象获取的结果值可以不同。
+    * 若两个对象根据```equals```方法比较是相等的，那么两个对象调用```hashCode```方法获取结果值是相同的。
+    * 若两个对象根据```equals```方法比较是不相等的，那么两个对象调用```hashCode```方法获取结果值可以是不同的（建议保持不同，不相等对象生成不同的结果可提高散列表的性能）。
+  * 重写```hashCode```方法步骤
+    * 声明一个```int```类型的变量```result```，并将其初始化为对象中第一个重要属性```c```（重要属性为重写equals方法中比较的属性）的哈希码。
+    * 对于对象中剩余的重要属性```f```：
+      * 判断属性```f```类型，若为基本类型，使用```Type.hashCode(f)```方法计算（```Type```为属性```f```的包装类）；若为对象引用，并且该类的```equals```方法通过递归调用```equals```来比较属性，递归调用```hashCode```方法，如果需要更复杂的比较，则计算此字段的范式，并在范式上调用```hashCode```，如果该字段的值为空，则使用0（通常使用0表示）；若为数组，将它看作每个重要元素都是一个独立属性，递归计算每个重要元素的哈希码，如果数组没有重要元素，则使用一个常量表示（通常不用0表示），如果所有元素都重要，则使用```Arrays.hashCode方法```。
+      * 将当前计算结果与上述哈希计算结果合并，```result = 31 * result + hashCode(f)```
+    * 返回```result```
+    ```
+    @Override
+    public int hashCode() {
+      int result = Short.hashCode(areaCode);
+      result = 31 * result + Short.hashCode(prefix);
+      result = 31 * result + Short.hashCode(lineNum);
+      return result;
+      // 性能不重要的情况可以使用以下
+      // return Objects.hash(lineNum,prefix,areaCode);
+    }
+    ```
+  * 注意事项
+    * 对于一个不可变类，重复计算哈希码代价很大，可考虑在对象中缓存哈希码。
+      ```
+      // 初始化值默认为0
+      private int hashCode;
+      @Override
+      public int hashCode() {
+        int result = hashCode;
+        if (0 ==  result) {
+          result = Short.hashCode(areaCode);
+          result = 31 * result + Short.hashCode(prefix);
+          result = 31 * result + Short.hashCode(lineNum);
+          hashCode = result;
+        }
+        return result;
+      }
+      ```
+    * 不要试图从哈希码计算中排除重要的属性来提高性能。
+    * 不要为```hashCode```返回的值提供详细规范，以便可以灵活改变哈希函数提供性能。
 
 > 始终重写 toString 方法
 
