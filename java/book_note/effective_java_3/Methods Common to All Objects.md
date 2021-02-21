@@ -106,6 +106,17 @@
     * 不要为```hashCode```返回的值提供详细规范，以便可以灵活改变哈希函数提供性能。
 
 > 始终重写 toString 方法
+  * Object类提供了```toString```方法的实现，返回的字符串由类名跟符号和哈希码的无符号十六位进制表示组成（如 ```DemoClass@163b91```），返回内容对于用户不友好，因此```toString```通用约定建议所有子类重写这个方法。重写这个方法推荐输出该类所有属性信息。
+    ```
+    public class BookCase {
+      private String name;
+      private List<String> books;
+      @Override
+      public String toString() {
+        return "BookCase{" + "name='" + name + '\'' +", books=" + books +'}';
+      }
+    }
+    ```
 
 > 谨慎地重写 clone 方法
 
