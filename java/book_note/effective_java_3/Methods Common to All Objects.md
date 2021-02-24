@@ -119,5 +119,99 @@
     ```
 
 > 谨慎地重写 clone 方法
+  * ```clone```方法机制存在缺陷，需在合理的范围内使用。实现克隆的一个方式是类实现```Cloneable```接口，重写```Object```类的```clone```方法，将返回该对象的逐个属性拷贝，该接口不包含任何方法，但决定了```Object```的受保护```clone```方法实现的行为，遵循了一个复杂不可执行的文档协议，由此产生的机制是危险和不受语言影响的。
+  * ```clone```方法机制存在薄弱的通用约定
+    * 创建并返回此对象的副本，对于任何对象```x```，表达式```x.clone().getClass() == x.getClass()```为```true```，表达式```x.clone() != x```为```true```，表达式```x.clone().equals.(x)```为```true```，但它们不是绝对要求。
+    * 根据约定，这个方法返回的对象应该通过调用```super.clone()```方法获得。如果一个类和它所有的父类（```Object```类除外）都遵守这个约定，那么```x.clone().getClass() == x.getClass()```一定为```true```。
+    * 根据约定，返回的对象应该独立于被克隆对象。为实现这种独立性，可能需修改由```super.clone()```返回的对象的一个或多个属性。
+  * 谨慎重写```clone```方法
+    * 对象每个属性包含原始值或不可变对象引用
+      ```
+      public class ChildrenClass implements Cloneable {
+        private int field1;
+        private String field2;
+        @Override
+        public ChildrenClass clone() {
+          try {
+            return (ChildrenClass)super.clone();
+          } catch(CloneNotSupportedException e) {
+            throw new AssertionError();
+          }
+        }
+      }
+      ```
+    * 对象包含可变对象引用
+      ```
+      public class ChildrenClass implements Cloneable {
+        private int field1;
+        private String field2;
+        private Object[] field3;
+        private int size;
+        private void ensureCapacity() {
+          if (field3.length == size) {
+            field3.length = Arrays.copyOf(field3, 2 * size + 1);
+          }
+        }
+        @Override
+        public ChildrenClass clone() {
+          try {
+            ChildrenClass res = (ChildrenClass)super.clone();
+            res.field3 = field3.clone();
+            return res;
+          } catch(CloneNotSupportedException e) {
+            throw new AssertionError();
+          }
+        }
+      }
+      ```
+    * 对象包含深度可变对象引用
+      ```
+      public class HashTable implements Cloneable { 
+        private Entry[] buckets = ...; 
+        private static class Entry {
+          final Object key; 
+          Object value; 
+          Entry next; 
+          Entry(Object key, Object value, Entry next) { 
+            this.key = key; 
+            this.value = value; 
+            this.next = next; 
+          }
+          Entry deepCopy() { 
+            Entry result = new Entry(key, value, next);
+            for (Entry p = result; p.next != null; p = p.next) 
+                p.next = new Entry(p.next.key, p.next.value, p.next.next); 
+            return result; 
+          }
+        }
+        
+        @Override 
+        public HashTable clone() { 
+          try {
+            HashTable result = (HashTable) super.clone(); 
+            result.buckets = new Entry[buckets.length];
+          for (int i = 0; i < buckets.length; i++) 
+              if (buckets[i] != null) 
+                  result.buckets[i] = buckets[i].deepCopy(); 
+          return result; 
+          } catch (CloneNotSupportedException e) { 
+            throw new AssertionError(); 
+          } 
+        }
+      }
+      ```
+  * 使用更良好的复制方式代替重写```clone```方法
+    * 复制构造方法
+      ```
+      public ChildrenClass(ChildrenClass childrenClass) {
+        ...
+      }
+      ```
+    * 复制静态工厂方法
+      ```
+      public static ChildrenClass newInstance(ChildrenClass childrenClass) {
+        ...
+      }
+      ```
 
 > 考虑实现Comparable接口
