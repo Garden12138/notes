@@ -215,3 +215,46 @@
       ```
 
 > 考虑实现Comparable接口
+  * ```Comparable```接口声明的```compareTo```方法与```Object```类的```equals```方法在性质上相似，通过实现```Comparable```接口，表示该类的实例有一个自然顺序，通常应用于数组排序。```Comparable```接口如下：
+    ```
+    public interface Comparable<T> {
+      int compareTo(T o);
+    }
+    ```
+  * ```compareTo```方法的通用约定，下面的描述中，符号```sgn(exp)```表示数学中的```signum```函数，它根据表达式的值为负数、零、正数，对应返回-1、0、1。
+    * 实现类必须确保所有x和y，都满足```sgn(x.compareTo(y)) == -sgn(y.compareTo(x))```。如果第一个对象小于第二个对象，那么第二个对象必须大于第一个对象。
+    * 实现类必须确保可传递性，满足```(x.compareTo(y) > 0 && y.compareTo(z) > 0) == (x.compareTo(z) > 0)```。如果第一个对象大于第二个对象，第二个对象大于第三个对象，那么第一个对象必须大于第三个对象。
+    * 实现类对于所有的z，满足```x.compareTo(y)```时，```sgn(x.compareTo(z)) == sgn(y.compareTo(z))```。 比较相等的对象与任何其他对象相比，都必须得到相同的结果。
+    * 强烈推荐```((x.compareTo(y) == 0) == (x.equals(y)))```，但不是必需的。如果遵守这一约定，则```compareTo```方法的顺序结果与```equals```方法一致，否则，值得注意在相应集合的应用中可能产生不同的结果，如```BigDecimal```：
+      ```
+      public static void main(String[] args) {
+        BigDecimal bd1 = new BigDecimal("1.0");
+        BigDecimal bd2 = new BigDecimal("1.00");
+        Set hashSet = new HashSet();
+        hashSet.add(bd1);
+        hashSet.add(bd2);
+        Set treeSet = new TreeSet();
+        treeSet.add(bd1);
+        treeSet.add(bd2);
+        System.err.println(hashSet.toString());
+        System.err.println(treeSet.toString());
+      }
+
+      [1.O,1.00]
+      [1.O]
+      ```
+  * 实现```Comparable```接口
+    * 实现```compareTo```方法内使用基本类型包装类的静态```compare```方法的静态比较构造器
+      ```
+      // 静态比较构造器
+      static Comparetor<Object> comparetor = new Comparetor<>() {
+        public int compare(Object o1, Object o2) {
+          return Integer.compare(o1.hashCode(),o2.hashCode());
+        }
+      }
+      ```
+    * 实现```compareTo```方法内使用```Comparator```的构造方法的静态比较构造器
+      ```
+      // 静态比较构造器
+      static Comparetor<Object> comparetor = Comparetor.comparingInt(o -> o.hashCode());
+      ```
