@@ -3,6 +3,48 @@
 #### 类与接口
 
 > 使类和成员的可访问性最小化
+  * 设计良好的组件隐藏所有内部实现细节，将它的API与它的实现分离开，其他组件通过API进行通信。这种信息隐藏与封装的方式是软件设计的基本原则。
+  * 信息隐藏与封装的重要原因
+    * 解耦，将组成系统的组件分离出来，允许它们被独立地开发，测试，使用以及优化，加速系统并行开发，减轻维护负担，可以更快速调试或更换组件。
+    * 重用，增加软件重用，松耦合的组件可在其他环境中使用。
+    * 健壮，降低了构建大型系统的风险，即使系统不能运行，各个独立的组件也是可以的。
+  * 使用访问控制机制进行信息隐藏，访问控制机制指定了类，接口和成员的可访问性，实体的可访问性取决于其声明的位置以及使用的访问修饰符。对于成员（字段、方法、嵌套类和嵌套接口），按照可访问性从小到大：
+    * private -- 该成员只能在声明它的顶级类内访问。
+    * package-private -- 该成员可以在声明它的包中的任何类访问。如果没有指定修饰符，这是默认访问级别（接口成员除外，它默认是公共的）。
+    * protected -- 该成员可以在声明它的包中的任何类访问以及声明它的类的子类中访问。
+    * public -- 该成员可以从任何地方被访问。
+  * 使类和成员的可访问性最小化实践
+    * 公共类的实例字段很少情况下使用public修饰，带有公共可变实例字段的类通常是线程不安全的。
+      ```
+      public String field; 
+
+      |
+      V
+
+      private String field;
+      ```
+    * 公共类的静态字段经常结合final用于暴露常量，这种情况下使用public修饰。
+      ```
+      public static final String CONSTANT_YES = "1";
+      public static final String CONSTANT_NO = "0";
+      ```
+    * 公共类的公共静态final数组（非零长度）字段总是可变的，客户端能够修改数组内容，会造成安全问题。
+      ```
+      public static final Thing[] VALUES = {...};
+
+      |
+      V
+      
+      private static final Thing[] PRIVATE_VALUES = {...};
+      public static final List<Thing> VALUES = Colletions.unmodifiableList(Arrays.asList(PRIVATE_VALUES));
+
+      //或
+
+      private static final Thing[] PRIVATE_VALUES = {...};
+      public static final Thing[] values() {
+          return PRIVATE_VALUES.clone();
+      }
+      ```
 
 > 在公共类中使用访问方法而不是公共属性
 
