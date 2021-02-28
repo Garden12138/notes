@@ -9,12 +9,12 @@
     * 重用，增加软件重用，松耦合的组件可在其他环境中使用。
     * 健壮，降低了构建大型系统的风险，即使系统不能运行，各个独立的组件也是可以的。
   * 使用访问控制机制进行信息隐藏，访问控制机制指定了类，接口和成员的可访问性，实体的可访问性取决于其声明的位置以及使用的访问修饰符。对于成员（字段、方法、嵌套类和嵌套接口），按照可访问性从小到大：
-    * private -- 该成员只能在声明它的顶级类内访问。
-    * package-private -- 该成员可以在声明它的包中的任何类访问。如果没有指定修饰符，这是默认访问级别（接口成员除外，它默认是公共的）。
-    * protected -- 该成员可以在声明它的包中的任何类访问以及声明它的类的子类中访问。
-    * public -- 该成员可以从任何地方被访问。
+    * ```private``` -- 该成员只能在声明它的顶级类内访问。
+    * ```package-private``` -- 该成员可以在声明它的包中的任何类访问。如果没有指定修饰符，这是默认访问级别（接口成员除外，它默认是公共的）。
+    * ```protected``` -- 该成员可以在声明它的包中的任何类访问以及声明它的类的子类中访问。
+    * ```public``` -- 该成员可以从任何地方被访问。
   * 使类和成员的可访问性最小化实践
-    * 公共类的实例字段很少情况下使用public修饰，带有公共可变实例字段的类通常是线程不安全的。
+    * 公共类的实例字段很少情况下使用```public```修饰，带有公共可变实例字段的类通常是线程不安全的。
       ```
       public String field; 
 
@@ -23,12 +23,12 @@
 
       private String field;
       ```
-    * 公共类的静态字段经常结合final用于暴露常量，这种情况下使用public修饰。
+    * 公共类的静态字段经常结合```final```用于暴露常量，这种情况下使用```public```修饰。
       ```
       public static final String CONSTANT_YES = "1";
       public static final String CONSTANT_NO = "0";
       ```
-    * 公共类的公共静态final数组（非零长度）字段总是可变的，客户端能够修改数组内容，会造成安全问题。
+    * 公共类的公共静态```final```数组（非零长度）字段总是可变的，客户端能够修改数组内容，会造成安全问题。
       ```
       public static final Thing[] VALUES = {...};
 
@@ -47,6 +47,48 @@
       ```
 
 > 在公共类中使用访问方法而不是公共属性
+  * 如果一个类在其包外是可访问的且可变属性，则提供方法保留更改类内部表示的灵活性而不是直接暴露。
+    ```
+    public class Point {
+        public double x;
+        public double y;
+    }
+
+    |
+    V
+
+    public class Point {
+        private double x;
+        private double y;
+
+        public Point(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        public double getX() {
+            return x;
+        }
+        public double getY() {
+            return y;
+        }
+
+        public void setX(double x) {
+            this.x = x;
+        }
+        public void setY(double y) {
+            this.y = y;
+        }
+    }
+    ```
+  * 如果一个类在其包外是可访问的且不可变属性，可暴露属性，虽然存在问题，但其危害较小。
+    ```
+    public final class Point {
+        public final double x;
+        public final double y;
+    }
+    ```
+  * 如果一个类是包级私有或者是一个私有的内部类，可暴露属性，虽然客户端代码可绑定到类的内部表示，但是这些代码仅限于包含该类的包或者在该类内部。
 
 > 最小化可变性
 
