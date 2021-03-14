@@ -91,6 +91,85 @@
   * 如果一个类是包级私有或者是一个私有的内部类，可暴露属性，虽然客户端代码可绑定到类的内部表示，但是这些代码仅限于包含该类的包或者在该类内部。
 
 > 最小化可变性
+  * 设计不可变类是类最小化可变性的方式。不可变类是其实例不能被修改的类，每个实例的所有信息在对象的生命周期中是固定的。```Java```平台类库包含许多不可变类，包括```String```类、```Integer```等基本类型包装类以及```BigInteger```类和```BigDecimal```类。不可变类比可变类更易于设计、实现和使用，不易出错且安全。
+  * 设计不可变类，遵循以下规则：
+    * 所有字段设置为```private```。防止客户端获取字段引用的可变对象的访问权限并直接修改这些对象状态。
+    * 所有字段设置为```final```。通过系统强制执行的方式，表明不可变。
+    * 不提供修改对象状态的方法。
+    * 确保这个类不能被继承。防止恶意子类假装对象的状态修改，从而破坏类的不可变行为，通常是通过```final```修饰符修饰类或私有构造方法提供公有静态工厂方法构造。
+    * 确保对任何可变组件都是互斥访问。若不可变类有任何引用可变对象的字段，请确保不可变类的客户端无法获取这些对象引用，切勿将可变属性初始化为客户端提供对象引用，或从访问方法返回属性，在构造方法、访问方法和```readObject```方法进行防御性拷贝。
+    ```
+    // 遵循不可变类规则构造的复数类
+    public final class Complex{
+      private final double re;
+      private final double im;
+
+      public Complex(double re, double im) {
+        this.re = re;
+        this.im = im;
+      }
+
+      public double realPart() {
+        return re;
+      }
+      public double imaginaryPart() {
+        return im;
+      }
+      // 函数式方法，方法返回将操作数应用于函数的结果，结果将以新实例返回，该实例状态未改变
+      public Complex plus(Complex c) {
+        return new Complex(re + c.re, im + c.im);
+      }
+    }
+    ```
+  * 不可变类的优点
+    * 不可变类对象始终保持创建时初始状态，状态永远不变，提供了原子失败机制。
+    * 不可变类对象线程安全。线程之间不需要同步，多个线程访问时不会遭到破坏，故不可变对象可以被自由共享，比如常用的值可提供公共的静态```final```常量：
+      ```
+      public static fianl Complex ZERO = new Complex(0,0);
+      public static fianl Complex ONE = new Complex(1,0);
+      ```
+    * 
+    * 不可变类对象为其他对象提供了很好的构件，如```Map```的键和```Set```的元素。
+  * 不可变类的缺点
+    * 不可变类的主要缺点时对于每个不同的值都需要一个单独的对象，创建这些对象代价可能很高，比如大型对象的场景下，改变百万位的BigInteger的低位：
+      ```
+      BigInteger moby = ...;
+      moby = moby.flipBit(0);
+      ```
+      ```flipBit```方法创建了一个新的百万位BigInteger实例，时间与空间上将付出很大代价。像这种执行一个多步操作，每个操作生成一个新对象且除了最终结果之外丢弃所有对象，将会产生性能问题，这类的工作可交由包级私有的可变伙伴类负责，如String类的可变伙伴类```StringBuilder/StringBuffer```。
+  * 使用私有构造方法与公共静态工厂方法代替```final```修饰类
+    ```
+    public final class Complex{
+      private final double re;
+      private final double im;
+
+      private Complex(double re, double im) {
+        this.re = re;
+        this.im = im;
+      }
+
+      public static Complex valueOf(double re, double im) {
+        return new Complex(re,im);
+      }
+
+      public double realPart() {
+        return re;
+      }
+      public double imaginaryPart() {
+        return im;
+      }
+      // 函数式方法，方法返回将操作数应用于函数的结果，结果将以新实例返回，该实例状态未改变
+      public Complex plus(Complex c) {
+        return new Complex(re + c.re, im + c.im);
+      }
+    }
+    ```
+  * 假设不可变类可能出现改变情况使用保护性拷贝避免状态被改变后丢失
+    ```
+    public static Complex safeInstance(Complex val) {
+      return val.getClass() == Complex.class ? val : new Complex(val.toByteArray());
+    }
+    ```
 
 > 组合优于继承
 
