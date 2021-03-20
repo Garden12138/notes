@@ -172,6 +172,79 @@
     ```
 
 > 组合优于继承
+  * 继承是实现代码重用的一种方式，但使用不当易造成程序脆弱。继承违反封装，子类依赖于其父类的实现细节来保证其正确的功能，父类的实现细节可能从发布版本不断变化，如果是这样，子类可能会被破坏，因此子类必须与其父类一起根据发布版本变化，故子类与父类确实存在子父类关系时才考虑使用继承，但如果子类与父类不在同一个包且父类不是为继承而设计的，考虑使用组合的方式代替继承。
+  * 使用继承方式编写可以查询历史添加元素总数的Set
+    ```
+    public class InstrumentedHashSet<E> extends HashSet<E> {
+      private int addCount = 0;
+
+      public InstrumentedHashSet() {
+      }
+
+      public InstrumentedHashSet(int initCap, float loadFactor) {
+        super(initCap, loadFactor);
+      }
+
+      @Override
+      public boolean add(E e) {
+        addCount++;
+        return super.add(e);
+      }
+
+      // supper.addAll()方法会调用重写的add()方法，会造成添加元素总数累加计算多一倍，故不需要重写该方法
+      //@Override
+      //public boolean addAll(Collection<? extends E> c) {
+        //addCount += c.size();
+        //return super.addAll(c);
+      //}
+
+      public int getAddCount(){
+        return addCount;
+      }
+    }
+    ```
+  * 使用组合方式编写可以查询历史添加元素总数的Set
+    ```
+    public class ForwardingSet<E> implements Set<E> {
+      private final Set<E> s;
+
+      public ForwardingSet(Set<E> s) {
+        this.s = s;
+      }
+
+      public boolean add(E e) {
+        retunr s.add(e);
+      }
+
+      public boolean addAll(Collection<?> c) {
+        return c.addAll(c);
+      }
+      ...
+    }
+    public class InstrumentedHashSet<E> extends ForwardingSet<E> {
+      private int addCount = 0;
+
+      public InstrumentedHashSet(Set<E> s) {
+        super(s);
+      }
+
+      @Override
+      public boolean add(E e) {
+        addCount++;
+        return super.add(e);
+      }
+
+      @Override
+      public boolean addAll(Collection<? extends E> c) {
+        addCount += c.size();
+        return super.addAll(c);
+      }
+
+      public int getAddCount(){
+        return addCount;
+      }
+    }
+    ```
 
 > 要么设计继承并提供文档说明，要么禁用继承
 
