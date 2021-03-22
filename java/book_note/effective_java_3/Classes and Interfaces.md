@@ -247,6 +247,43 @@
     ```
 
 > 要么设计继承并提供文档说明，要么禁用继承
+  * 为继承设计的类需要提供文档说明，文档说明可重写方法的自用性，即必须指明方法调用了哪些可重写方法，调用可重写方法顺序以及每次调用的结果，如```java.util.AbstractCollection```
+    ```
+    /**
+     * Removes from this list all of the elements whose index is between
+     * {@code fromIndex}, inclusive, and {@code toIndex}, exclusive.
+     * Shifts any succeeding elements to the left (reduces their index).
+     * This call shortens the list by {@code (toIndex - fromIndex)} elements.
+     * (If {@code toIndex==fromIndex}, this operation has no effect.)
+     *
+     * <p>This method is called by the {@code clear} operation on this list
+     * and its subLists.  Overriding this method to take advantage of
+     * the internals of the list implementation can <i>substantially</i>
+     * improve the performance of the {@code clear} operation on this list
+     * and its subLists.
+     *
+     * <p>This implementation gets a list iterator positioned before
+     * {@code fromIndex}, and repeatedly calls {@code ListIterator.next}
+     * followed by {@code ListIterator.remove} until the entire range has
+     * been removed.  <b>Note: if {@code ListIterator.remove} requires linear
+     * time, this implementation requires quadratic time.</b>
+     *
+     * @param fromIndex index of first element to be removed
+     * @param toIndex index after last element to be removed
+     */
+    protected void removeRange(int fromIndex, int toIndex) {
+        ListIterator<E> it = listIterator(fromIndex);
+        for (int i=0, n=toIndex-fromIndex; i<n; i++) {
+            it.next();
+            it.remove();
+        }
+    }
+    ```
+  * 为继承设计的类构造方法绝不能直接或间接调用可重写方法
+  * 测试为继承设计的类的方法是编写子类
+  * 限制不安全的子类化的方式可选择禁用继承，禁用继承的方式有：
+    * 声明类为final
+    * 所有构造方法都私有或包级私有且添加公共静态工厂方法代替公共构造
 
 > 接口优于抽象类
 
