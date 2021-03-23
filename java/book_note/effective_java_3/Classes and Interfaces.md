@@ -131,12 +131,12 @@
     * 
     * 不可变类对象为其他对象提供了很好的构件，如```Map```的键和```Set```的元素。
   * 不可变类的缺点
-    * 不可变类的主要缺点时对于每个不同的值都需要一个单独的对象，创建这些对象代价可能很高，比如大型对象的场景下，改变百万位的BigInteger的低位：
+    * 不可变类的主要缺点时对于每个不同的值都需要一个单独的对象，创建这些对象代价可能很高，比如大型对象的场景下，改变百万位的```BigInteger```的低位：
       ```
       BigInteger moby = ...;
       moby = moby.flipBit(0);
       ```
-      ```flipBit```方法创建了一个新的百万位BigInteger实例，时间与空间上将付出很大代价。像这种执行一个多步操作，每个操作生成一个新对象且除了最终结果之外丢弃所有对象，将会产生性能问题，这类的工作可交由包级私有的可变伙伴类负责，如String类的可变伙伴类```StringBuilder/StringBuffer```。
+      ```flipBit```方法创建了一个新的百万位```BigInteger```实例，时间与空间上将付出很大代价。像这种执行一个多步操作，每个操作生成一个新对象且除了最终结果之外丢弃所有对象，将会产生性能问题，这类的工作可交由包级私有的可变伙伴类负责，如```String```类的可变伙伴类```StringBuilder/StringBuffer```。
   * 使用私有构造方法与公共静态工厂方法代替```final```修饰类
     ```
     public final class Complex{
@@ -173,7 +173,7 @@
 
 > 组合优于继承
   * 继承是实现代码重用的一种方式，但使用不当易造成程序脆弱。继承违反封装，子类依赖于其父类的实现细节来保证其正确的功能，父类的实现细节可能从发布版本不断变化，如果是这样，子类可能会被破坏，因此子类必须与其父类一起根据发布版本变化，故子类与父类确实存在子父类关系时才考虑使用继承，但如果子类与父类不在同一个包且父类不是为继承而设计的，考虑使用组合的方式代替继承。
-  * 使用继承方式编写可以查询历史添加元素总数的Set
+  * 使用继承方式编写可以查询历史添加元素总数的```Set```
     ```
     public class InstrumentedHashSet<E> extends HashSet<E> {
       private int addCount = 0;
@@ -203,7 +203,7 @@
       }
     }
     ```
-  * 使用组合方式编写可以查询历史添加元素总数的Set
+  * 使用组合方式编写可以查询历史添加元素总数的```Set```
     ```
     public class ForwardingSet<E> implements Set<E> {
       private final Set<E> s;
@@ -282,10 +282,44 @@
   * 为继承设计的类构造方法绝不能直接或间接调用可重写方法
   * 测试为继承设计的类的方法是编写子类
   * 限制不安全的子类化的方式可选择禁用继承，禁用继承的方式有：
-    * 声明类为final
+    * 声明类为```final```
     * 所有构造方法都私有或包级私有且添加公共静态工厂方法代替公共构造
 
 > 接口优于抽象类
+  * 接口与抽象类，允许多个实现的类，两者都包含抽象方法与实现方法（```Java```8中引入接口的默认方法，```default methods```）,一个主要的区别是抽象类的实现通过继承（```extends```）完成，接口则直接实现（```implements```）完成；抽象类允许构建层级类型的框架，而接口允许构建非层级类型的框架。
+     ```
+     // 抽象类
+     public abstract class AbstractCollection<E> implements Collection<E> {
+       
+       protected AbstractCollection() {}
+       
+       public abstract Iterator<E> iterator();
+      
+       public abstract int size();
+      
+       public boolean isEmpty() {
+         return size() == 0;
+       }
+       ...
+     }
+     ```
+     ```
+     // 接口
+     public interface Iterable<T> {
+
+       Iterator<T> iterator();
+
+       default void forEach(Consumer<? super T> action) {
+         Objects.requireNonNull(action);
+         for (T t : this) {
+           action.accept(t);
+         }
+       }
+       ...
+     }
+     ```
+  * 接口优于抽象类，一个类不能继承多个抽象父类，只能层级继承，此过程中可能其中一个抽象父类没有在层级结构中找到合适的插入位置，层级继承后，无论后代是否合适，所有后代都进行子类化，而类可以实现多个接口，实现多个接口的声明方法。相比抽象类，接口更加安全，灵活且易拓展。
+  * 接口与抽象类组合使用构建骨架实现类（```AbstractInterface```）,接口定义类型，提供默认方法，而骨架实现类在原始接口方法的顶层实现剩余的非原始接口方法，如[```AbstractList```](https://docs.oracle.com/javase/8/docs/api/)
 
 > 为后代设计接口
 
