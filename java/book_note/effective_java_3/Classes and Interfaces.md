@@ -321,7 +321,23 @@
   * 接口优于抽象类，一个类不能继承多个抽象父类，只能层级继承，此过程中可能其中一个抽象父类没有在层级结构中找到合适的插入位置，层级继承后，无论后代是否合适，所有后代都进行子类化，而类可以实现多个接口，实现多个接口的声明方法。相比抽象类，接口更加安全，灵活且易拓展。
   * 接口与抽象类组合使用构建骨架实现类（```AbstractInterface```）,接口定义类型，提供默认方法，而骨架实现类在原始接口方法的顶层实现剩余的非原始接口方法，如[```AbstractList```](https://docs.oracle.com/javase/8/docs/api/)
 
-> 为后代设计接口
+> 为接口添加新方法
+  * ```Java```8之前在现有实现类的情况下为接口添加方法，现有实现类也必须添加方法实现，否则将导致编译时错误；```Java```8中，在接口中允许添加默认方法，该方法允许在实现接口的类直接使用，不必实现默认方法，但这种为接口添加方法的方式存在风险，编写默认方法需要保留每个可能的实现的所有不变量，如```Collection```的```removeIf```默认方法在```Apache```的```SynchronizedCollection```实现中失败，```SynchronizedCollection```类的基本承诺是它的所有方法在委托给包装类集合类之前在一个锁定对象上进行同步，而```SynchronizedCollection```未重写```removeIf```方法，它将继承```removeIf```的默认实现，这样子无法保证它的承诺，可能出现在客户端的另一个线程同时修改包装类集合的情况下调用```SynchronizedCollection```的```removeIf```方法，会导致```ConcurrentModificationException```等异常。
+    ```
+    default boolean removeIf(Predicate<? super E> filter) {
+      Objects.requireNonNull(filter);
+      boolean removed = false;
+      final Iterator<E> each = iterator();
+      while (each.hasNext()) {
+        if (filter.test(each.next())) {
+          each.remove();
+          removed = true;
+        }
+      }
+      return removed;
+    }
+    ```
+  * 如果现有接口的实现不会受到接口默认方法实现的破坏，可以选择在接口中添加默认方法，其他情况下应该尽量避免使用这种方式。
 
 > 接口仅用来定义类型
 
