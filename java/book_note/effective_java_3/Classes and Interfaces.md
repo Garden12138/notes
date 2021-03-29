@@ -368,6 +368,82 @@
       * 使用不可实例化的工具类维护常量。
 
 > 类层次结构优于标签类
+  * 标签类，它的实例有多个风格，使用标签字段代表实例的风格。例如形状标签类，它可以表示一个圆形或矩形。
+    ```
+    public class Figure {
+      enum Shape {
+        RECTANGLE, CIRCLE
+      };
+      // 标签字段
+      private final Shape shape;
+      // 矩形实例字段
+      private double length;
+      private double width;
+      // 圆形实例字段
+      private double radius;
+      // 矩形实例
+      public Figure(double length,double width){
+        this.Shape = Shape.RECTANGLE;
+        this.length = length;
+        this.width = width;
+      }
+      // 圆形实例
+      public Figure(double radius){
+        this.Shape = Shape.CIRCLE;
+        this.radius = radius;
+      }
+      // 形状面积实例方法
+      public double area() {
+        switch(shape) { 
+          case RECTANGLE: 
+            return length * width; 
+          case CIRCLE: 
+            return Math.PI * (radius * radius); 
+          default: 
+            throw new AssertionError(shape); 
+        }
+      }
+    }
+    ```
+    标签类的缺点：
+      * 每种风格标签都需要枚举声明区分，实例字段声明区分和实例方法switch区分，可读性差，冗余且增加内存负担。
+      * 实例字段不能final，除非构造方法不初始化，导致更多的模版代码。
+      * 构造方法必须正确初始化，否则将导致运行时错误。
+
+    标签类的替代方式，使用类层次结果，即子类化。
+    ```
+    public abstract class Figure { 
+      abstract double area(); 
+    }
+    public class Circle extends Figure {
+      pirvate final double radius; 
+      public Circle(double radius) { 
+        this.radius = radius; 
+      } 
+      @Override 
+      public double area() { 
+        return Math.PI * (radius * radius); 
+      } 
+    }
+    public class Rectangle extends Figure {
+      private final double length;
+      private final double width; 
+      public Rectangle(double length, double width) { 
+        this.length = length; 
+        this.width = width;
+      }
+      @Override 
+      public double area() { 
+        return length * width; 
+      } 
+      // 矩形类
+      public class Square extends Rectangle { 
+        public Square(double side) { 
+          super(side, side); 
+        } 
+      }
+    }
+    ```
 
 > 支持使用静态成员类而不是非静态类
 
