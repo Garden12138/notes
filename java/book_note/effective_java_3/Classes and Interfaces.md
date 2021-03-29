@@ -340,6 +340,32 @@
   * 如果现有接口的实现不会受到接口默认方法实现的破坏，可以选择在接口中添加默认方法，其他情况下应该尽量避免使用这种方式。
 
 > 接口仅用来定义类型
+  * 当类实现接口时，该接口当作一种类型可以用来引用类的实例。
+    ```
+    private UserService userService;
+    ...
+    userService.getUserInfo();
+    ...
+    ```
+  * 接口不能用来仅定义常量，常量接口不包含任何方法，只包含静态final属性，输出常量，这种方式的目的在于使用这些常量的类实现接口以避免需要用类名限定常量名。
+    ```
+    public interface PhysicalConstants { 
+      // Avogadro's number (1/mol) 
+      static final double AVOGADROS_NUMBER = 6.022_140_857e23; 
+      // Boltzmann constant (J/K) 
+      static final double BOLTZMANN_CONSTANT = 1.380_648_52e-23; 
+      // Mass of the electron (kg) 
+      static final double ELECTRON_MASS = 9.109_383_56e-31; 
+    }
+    ```
+    使用常量接口的缺点：
+      * 类内部使用常量属于实现细节，实现常量接口会导致这个实现细节暴露于类导出的API中。
+      * 若在未来版本中修改类使其不使用常量，为了保持二进制兼容性，仍然需要实现接口。
+      * 若一个非final类实现常量接口，其所有子类的命名空间都会受到常量污染。
+    常量接口的代替方式：
+      * 若常量与现有类关系紧密，常量可直接在现有类维护。
+      * 使用枚举类型维护常量。
+      * 使用不可实例化的工具类维护常量。
 
 > 类层次结构优于标签类
 
