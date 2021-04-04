@@ -445,6 +445,115 @@
     }
     ```
 
-> 支持使用静态成员类而不是非静态类
+> 支持使用静态成员类而不是非静态成员类
+  * 嵌套类，是在另一个类中定义的类，它只存在于其宿主类中。嵌套类分为静态成员类，非静态成员类，匿名类以及局部类，后三种又可称为内部类。
+  * 静态成员类是最简单的嵌套类，本质上是宿主类的静态成员故与其他静态成员相同的可访问性。若其被声明为```private```，则只能在宿主类中访问。常应用于Builder模式构造类以及内部枚举类。
+    ```
+    // 具体类的具体Builder
+    // 类设计
+    public class Hamburger {
+      // required
+      private final int bread;
+      private final int vegetables;
+      private final int egg;
+      // optional
+      private final int chicken;
+      private final int beef;
+      private final int shrimp;
+
+      public static class Builder {
+        // required
+        private final int bread;
+        private final int vegetables;
+        private final int egg;
+        // optional
+        private int chicken = 0;
+        private int beef = 0;
+        private int shrimp = 0;
+
+        public Builder(int bread, int vegetables, int egg) {
+          this.bread = bread;
+          this.vegetables = vegetables;
+          this.egg = egg;
+        }
+
+        public Builder chicken(int chicken) {
+          this.chicken = chicken;
+          return this;
+        }
+        public Builder beef(int beef) {
+          this.beef = beef;
+          return this;
+        }
+        public Builder shrimp(int shrimp) {
+          this.shrimp = shrimp;
+          return this;
+        }
+
+        public Hamburger build() {
+          return new Hamburger(this);
+        }
+      }
+
+      public Hamburger(Builder builder) {
+        this.bread = builder.bread;
+        this.vegetables = builder.vegetables;
+        this.egg = builder.egg;
+        this.chicken = builder.chicken;
+        this.beef = builder.beef;
+        this.shrimp = builder.shrimp;
+      }
+    }
+    ```
+    ```
+    public class HostClass {
+      
+      public static enum Season {
+        //定义枚举成员并实例化
+        SPRING(1),SUMMER(2),AUTUMN(3),WINTER(4);
+        //定义新变量
+        private int code;
+        //定义新构造方法
+        private Season(int code) {
+            this.code = code;
+        }
+        //定义新方法
+        public int getCode() {
+            return this.code;
+        }
+      }
+    }
+
+    HostClass.Season.SPRING.getCode();
+    ```
+  * 非静态成员类与静态成员类的唯一区别在于是否使用```static```修饰，非静态成员类的每个实例都与其包含的类的宿主实例相关联，在非静态成员类的实例方法中，可以调用宿主实例上的方法，非静态成员类实例与其宿主类实例之间的关联通常是在创建成员类实例时建立的，一般通过在宿主类的实例方法中调用非静态成员类的构造方法来建立关联。
+    ```
+    public class HostClass {
+      
+      public String publicField;
+      private String privateField;
+      
+      public String getPublicField(){
+        return publicField;
+      }
+      public String getPrivateField(){
+        return privateField;
+      }
+      public MemberClass memberClass(){
+        return new MemberClass();
+      }
+      
+      public class MemberClass {
+        
+        public String getHostPublicField(){
+            return publicField;
+        }
+        public String getHostPrivateField(){
+            return getPrivateField();
+        }
+      }
+    }
+    ```
+  * 若声明一个不需要访问宿舍类实例的成员类，总是使用static声明，使其成为静态成员类而不是非静态成员类。
 
 > 将源文件限制为单个顶级类
