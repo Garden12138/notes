@@ -1,6 +1,6 @@
 ## EffectiveJava3
 
-#### 通用
+#### 泛型
 
 > 不要使用原始类型
   * 一个类或接口声明时有一个或多个类型参数，称为泛型类或泛型接口，泛型类和泛型接口统称为泛型类型，如接口```List<E>```。
@@ -19,6 +19,68 @@
     }
     ```
     编辑时出现警告但仍可编译，运行时抛出异常。若使用泛型类型，添加不同的实例对象在编译时产生错误信息，调整完正确类型实例对象后，编译器在编译时插入不可见的强制类型转换以保证运行时检索元素不会出现```ClassCastException```异常情况。
+    ```
+    private final Collection<Stamp> stamps = ...;
+    ```
+  * 原始类型不应该作为形式参数，如果作为形参，泛型类型可作为实参传递给原始类型，丢失类型安全性，如集合允许插入任意对象的设计：
+    ```
+  
+    private static void unsafeAdd(List list, Object o) { 
+        list.add(o); 
+    }
+    public static void main(String[] args) { 
+        List<String> strings = new ArrayList<>(); 
+        unsafeAdd(strings, Integer.valueOf(42)); 
+        String s = strings.get(0); // Has compiler-generated cast 
+    }
+    ```
+    可以使用参数化类型：
+    ```
+    private static void safeAdd(List<Object> list, Object o) { 
+        list.add(o); 
+    }
+    public static void main(String[] args) { 
+        List<Object> objects = new ArrayList<>(); 
+        safeAdd(objects, Integer.valueOf(42)); 
+        Integer i = (Integer) objects.get(0); 
+    }
+    ```
+  * 处理未知元素类型且无关紧要的集合，不应该使用原始类型，安全替代方式是使用无限制通配符类型，它是一种泛型类型，代表不需要关心实际类型参数，用问号代替，如```Set<E>```的无限制通配符类型```Set<?>```。将任意元素放入原始类型集合中，会破坏集合的类型不变性，而将任意元素放入无限制通配符中，会编译错误，避免运行时类型错误问题。
+    ```
+    static int numElementsInCommon(Set<?> s1, Set<?> s2) { 
+        int result = 0;
+        for (Object o1 : s1) { 
+          if (s2.contains(o1)) { 
+            result++; 
+          }
+        }
+        return result; 
+    }
+    ```
+  * 字面值中可以使用原始类型，如```List.class```，```String[].class```，```int.class```都是合法的，参数化类型```List<String>.class```是非法的。
+  * 与运算符```instanceof```时使用原始类型，因为泛型类型信息在运行时进行擦除，在无限制通配符类型以外的参数化类型是非法的，且无限制通配符类型不会对运算符产生影响，使用```instanceof```的首选方法：
+    ```
+    if (o instanceof Set) {
+      Set<?> set = (Set<?>) o;
+      ...
+    }
+    ```
+  * 术语参考
+    | 术语 | 中文含义 | 例子 |
+    | :----: | :----: | :----: |
+    | Parameterized type | 参数化类型 | ```List<String>``` |
+    | Actual type parameter | 实际类型参数 | ```String``` |
+    | Generic type | 泛型类型 | ```List<E>``` |
+    | Formal type parameter | 形式类型参数 | ```E``` |
+    | Unbounded wildcard type | 无限制通配符类型 | ```List<?>``` |
+    | Raw type | 原始类型 | ```List``` |
+    | Bounded type parameter | 限制通配符参数 | ```<E extends Number>``` |
+    | Recursive type bound | 递归类型限制 | ```<T extends Comparable<T>>``` |
+    | Bounded wildcard type | 限制通配符类型 | ```List<? extends Number>``` |
+    | Generic method | 泛型方法 | ```static <E> List<E> asList(E[] a)``` |
+    | Type token | 类型令牌 | ```List.class``` |
+
+    
 
 > 消除非检查警告
 
