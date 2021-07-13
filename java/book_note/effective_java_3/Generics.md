@@ -80,9 +80,31 @@
     | Generic method | 泛型方法 | ```static <E> List<E> asList(E[] a)``` |
     | Type token | 类型令牌 | ```List.class``` |
 
-    
-
 > 消除非检查警告
+  * 使用泛型编程，容易造成编译器发出非检查警告，如未经检查的强制转换警告、未经检查的方法调用警告、未经检查的参数化可变长度类型警告以及未经检查的转换警告。
+  * 消除非检查警告的方式：
+    * 对警告代码进行订正，确保警告消失。
+      ```
+      // warning: [unchecked] unchecked conversion
+      Set<Object> set = new HashSet();
+      // 订正
+      Set<Object> set = new HashSet<>();
+      ```
+    * 如果不能消除警告，在证明引发警告的代码是安全类型的前提下，可以使用注解@SuppressWarnings("unchecked")抑制警告。注解@SuppressWarnings("unchecked")可用于任何声明，作用域从单个局部变量到整个类，使用该注解抑制警告的正确方式是作用于局部变量、短方法或构造方法上，作用范围尽可能小，避免其他警告被抑制。
+      ```
+      public <T> T[] toArray(T[] a) { 
+        if (a.length < size) { 
+          // This cast is correct because the array we're creating 
+          // is of the same type as the one passed in, which is T[]. @SuppressWarnings("unchecked") 
+          T[] result = (T[]) Arrays.copyOf(elements, size, a.getClass()); 
+          return result; 
+        }
+        System.arraycopy(elements, 0, a, 0, size); 
+        if (a.length > size) 
+            a[size] = null; 
+        return a; 
+      }
+      ```
 
 > 列表优于数组
 
