@@ -107,6 +107,54 @@
       ```
 
 > 列表优于数组
+  * 列表与数组的不同：
+    * 数组是协变的，如类```SubClass```是类```SuperClass```的子类，则数组类型```SubClass[]```是数组类型```SuperClass[]```的子类；泛型列表是不变的，```List<SubClass>```与```List<SuperClass>```是不同的类型。
+      ```
+      // 协变的数组易出现运行时错误
+      Object[] obs = new Long[1];
+      obs[0] = "str";  // Runtime Fail: Throws ArrayStoreException
+      // 不变的泛型列表编译时报错
+      List<Object> obs = new ArrayList<Long>();  // Compile Fail：Incompatible types 
+      ```
+    * 数组是具体化的，运行时知道并强制执行它们的元素类型，如上诉抛出的```Throws ArrayStoreException```；泛型列表通过擦除实现（擦除是允许泛型类型与不使用泛型类型的遗留代码自由互操作），编译时执行类型约束，并在运行时擦除类型信息。
+  * 创建泛型类型数组（```new List<E>[]```）、参数化类型数组（```new List<String>[]```）、类型参数数组（```new E[]```）是非法的，列表与数组存在差异，所有将在编译时导致创建错误。
+  * 当在强制转换为数组类型时，得到泛型数组创建错误，或是未经检查的强制转换警告时，最佳解决方案通常是使用集合类型```List<E>```而不是数组类型```E[]```。
+    ```
+    // 编写一个Chooser类实现游戏骰子
+    // 没有泛型的简单实现，缺点：每次调用方法返回值都需要强制转化为所需类型，如果类型错误则强制转换失败
+    public class Chooser { 
+      private final Object[] choiceArray; 
+      public Chooser(Collection choices) { 
+        choiceArray = choices.toArray(); 
+      }
+      public Object choose() { 
+        Random rnd = ThreadLocalRandom.current(); 
+        return choiceArray[rnd.nextInt(choiceArray.length)]; 
+      } 
+    }
+    // 使用泛型数组的简单实现，缺点：存在强制转化警告， unchecked cast：required: T[], found: Object[]
+    public class Chooser<T> { 
+      private final T[] choiceArray; 
+      public Chooser(Collection<T> choices) { 
+        choiceArray = (T[])choices.toArray(); 
+      }
+      public Object choose() { 
+        Random rnd = ThreadLocalRandom.current(); 
+        return choiceArray[rnd.nextInt(choiceArray.length)]; 
+      } 
+    }
+    // 实现泛型列表的简单实现
+    public class Chooser<T> { 
+      private final List<T> choiceArray; 
+      public Chooser(Collection<T> choices) { 
+        choiceArray = new ArrayList<>(choices);
+      }
+      public Object choose() { 
+        Random rnd = ThreadLocalRandom.current(); 
+        return choiceArray.get(rnd.nextInt(choiceArray.size())));
+      } 
+    }
+    ```
 
 > 优先考虑泛型
 
