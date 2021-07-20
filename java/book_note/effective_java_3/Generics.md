@@ -157,6 +157,90 @@
     ```
 
 > 优先考虑泛型
+  * 除了参数化声明并使用JDK提供的泛型类型以及方法，项目实践中存在自定义泛型类型以及方法的情况，如简单的堆栈实现：
+    ```
+    // 元素类型为Object类型
+    public class Stack {
+      private Object[] elements; 
+      private int size = 0; 
+      private static final int DEFAULT_INITIAL_CAPACITY = 16;
+
+      public Stack() {
+        elements = new Object[DEFAULT_INITIAL_CAPACITY];
+      }
+
+      public void push(Object e) { 
+        ensureCapacity(); 
+        elements[size++] = e; 
+      }
+
+      // 客户端必须强制转换返回的对象，运行时可能发生强制转换异常
+      public Object pop() { 
+        if (size == 0) 
+            throw new EmptyStackException(); 
+        Object result = elements[--size]; 
+        elements[size] = null;
+        return result; 
+      }
+
+      ...
+    }
+    // 元素类型为泛型类型，构造方法初始化数组时使用Object类型强转泛型类型E
+    public class Stack<E> {
+      private E[] elements; 
+      private int size = 0; 
+      private static final int DEFAULT_INITIAL_CAPACITY = 16;
+      
+      // 数组元素保存在私有属性，不会返回给客户端且不作为方法传递，故是安全的，使用注解@SuppressWarnings("unchecked")抑制强制类型转换警告
+      @SuppressWarnings("unchecked")
+      public Stack() {
+        elements = (E)new Object[DEFAULT_INITIAL_CAPACITY];
+      }
+
+      public void push(E e) { 
+        ensureCapacity(); 
+        elements[size++] = e; 
+      }
+
+      public E pop() { 
+        if (size == 0) 
+            throw new EmptyStackException(); 
+        E result = elements[--size]; 
+        elements[size] = null;
+        return result; 
+      }
+
+      ...
+    }
+    // 元素类型为泛型类型，私有数组声明为Object类型
+    public class Stack<E> {
+      private Object[] elements; 
+      private int size = 0; 
+      private static final int DEFAULT_INITIAL_CAPACITY = 16;
+      
+      public Stack() {
+        elements = new Object[DEFAULT_INITIAL_CAPACITY];
+      }
+
+      public void push(E e) { 
+        ensureCapacity(); 
+        elements[size++] = e; 
+      }
+
+      public E pop() { 
+        if (size == 0) 
+            throw new EmptyStackException(); 
+        // 因E是不可具体化的，无法在运行时进行强制转换，故是安全的，使用注解@SuppressWarnings("unchecked")抑制强制类型转换警告
+        @SuppressWarnings("unchecked")
+        E result = (E)elements[--size]; 
+        elements[size] = null;
+        return result; 
+      }
+
+      ...
+    }
+    ```
+  * 泛型类型比需要在客户端代码中强制转换的类型更安全。当设计新的类型时，确保它们不需要强制转换的情况下使用，优先使用泛型类型。
 
 > 优先使用泛型方法
 
