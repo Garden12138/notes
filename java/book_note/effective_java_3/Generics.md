@@ -243,6 +243,50 @@
   * 泛型类型比需要在客户端代码中强制转换的类型更安全。当设计新的类型时，确保它们不需要强制转换的情况下使用，优先使用泛型类型。
 
 > 优先使用泛型方法
+  * 对参数化类型进行操作的静态工具方法通常是泛型，如返回两个集合的并集：
+    ```
+    // 原始类型方法，编译时出现未检查警告
+    public static Set union(Set s1, Set s2) { 
+      Set result = new HashSet(s1); // [unchecked] unchecked call to HashSet(Collection<? extends E>) as a member of raw type HashSet
+      result.addAll(s2); // [unchecked] unchecked call to addAll(Collection<? extends E>) as a member of raw type Set
+      return result; 
+    }
+    // 使用泛型方法，消除未检查警告
+    public static <E> Set<E> union(Set<E> s1, Set<E> s2) { 
+      Set<E> result = new HashSet<>(s1);
+      result.addAll(s2);
+      return result; 
+    }
+    ```
+  * 创建一个不可改变但适用于许多不同类型的对象，可以创建泛型单例工厂方法，如类库提供的```Function.identity```恒等方法分配器，由于每次请求的时候都会创建一个新的恒等方法对象是是浪费的，可自定义恒等方法分配器：
+    ```
+    // Generic singleton factory pattern 
+    private static UnaryOperator<Object> IDENTITY_FN = (t) -> t; 
+    @SuppressWarnings("unchecked") 
+    public static <T> UnaryOperator<T> identityFunction() { 
+      return (UnaryOperator<T>) IDENTITY_FN; 
+    }
+    ```
+    将```IDENTITY_FN```转换为```(UnaryFunction<T>)```会生成一个未经检查的强制转换警告，因为```UnaryOperator<Object>```对于每个```T```都不是一个```UnaryOperator<T>``` 。但是恒等方法是特殊的：它返回未修改的参数，故使用它作为一个```UnaryFunction<T>```是类型安全的，因此使用```@SuppressWarnings("unchecked")```抑制警告。
+    客户端使用：
+    ```
+    // Sample program to exercise generic singleton 
+    public static void main(String[] args) { 
+      String[] strings = { "jute", "hemp", "nylon" }; UnaryOperator<String> sameString = identityFunction();
+      for (String s : strings) 
+          System.out.println(sameString.apply(s)); 
+      
+      Number[] numbers = { 1, 2.0, 3L }; 
+      UnaryOperator<Number> sameNumber = identityFunction();
+      for (Number n : numbers) 
+          System.out.println(sameNumber.apply(n));
+    }
+    ```
+  * 限定类型的泛型方法，如：
+    ```
+    public static <E extends Comparable<E>> E max(Collection<E> c);
+    ```
+    ```<E extends Comparable<E>>```表示任何可以与自己比较的类型E
 
 > 使用限定通配符来增加API的灵活性
 
