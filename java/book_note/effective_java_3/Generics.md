@@ -288,7 +288,63 @@
     ```
     ```<E extends Comparable<E>>```表示任何可以与自己比较的类型E
 
-> 使用限定通配符来增加API的灵活性
+> 使用限定通配符来增加API的灵活
+  * 参数化类型是不可变，对于任何两个不同类型的```Type1```和```Type2```，即使```Type1```类型是```Type2```类型的子类，对于泛型类型如```List<String>```不会是```List<Object>```类型的子类，```List<String>```只能放入```String```元素，```List<Object>```只能放入```Object```元素，缺乏灵活性。如下```Stack```类的公共API：
+    ```
+    public class Stack<E> {
+      public Stack() { //... }
+      public void push(E e) { //... }
+      public E pop() { //... }
+      public boolean isEmpty() { //... }
+    }
+    ```
+    添加一个方法获取一系列元素并将它们推送至栈上：
+    ```
+    // 使用参数类型
+    public void pushAll(Iterable<E> it) {
+      for (E e : it) {
+        push(e);
+      }
+    }
+
+    // 使用限定通配符类型
+    public void pushAll(Iterable<? extends E> it) {
+      for (E e : it) {
+        push(e);
+      }
+    }
+    ```
+    对于客户端的调用，使用参数类型声明的方法在客户端调用时编译错误，而使用限定通配符类型则不会：
+    ```
+    // 客户端调用
+    Stack<Number> stack = new Stack<>();
+    Iterable<Integer> it = ...;
+    stack.pushAll(it); // error : incompatible types
+    ```
+    添加一个方法将栈中的元素弹出到指定集合中：
+    ```
+    // 使用参数类型
+    public void popAll(Collection<E> c) {
+      while(!isEmpty()) {
+        c.add(pop());
+      }
+    }
+    // 使用限定通配符类型
+    public void popAll(Collection<? Super E> c) {
+      while(!isEmpty()) {
+        c.add(pop());
+      }
+    }
+    ```
+    对于客户端的调用，使用参数类型声明的方法在客户端调用时编译错误，而使用限定通配符类型则不会：
+    ```
+    // 客户端调用
+    Stack<Number> stack = new Stack<>();
+    Collection<Object> c = ...;
+    stack.popAll(c); // error : incompatible types
+    ```
+  * 为了获得最大的灵活性，对代表生产者或者消费者的输入参数使用通配符类型，使用时遵循```PECS```原则，即```producer-extends```，```consumer-super```，如果一个参数类型代表一个```E```生产者，使用```<? extends E>```，如果一个参数类型代表一个```E```消费者，使用```<? super E>```。对于关键字```extends```和```super```，参数类型本身也适用。
+    
 
 > 合理地结合泛型和可变参数
 
