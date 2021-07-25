@@ -347,5 +347,41 @@
     
 
 > 合理地结合泛型和可变参数
+  * 可变参数，是指客户端将一个可变数量的参数传递给一个方法的声明参数。当你调用一个可变参数方法时，会创建一个数组来保存可变参数，实现细节的数组是可见的，因此，当可变参数具有泛型或参数化类型时，编译器会在声明或调用上生成警告。声明泛型可变参数是合法，创建声明泛型数组是非法的。具有泛型或参数化类型的可变参数方法在实践中可能非常有用，如安全的类库方法```Arrays.asList(T... a)```，```Collections.addAll(Collection<? super T> c, T... elements)```。
+  * 安全使用泛型可变参数
+    * 若满足泛型可变参数方法不会在泛型可变参数数组中存储任何东西且对不可信任代码不可见时，泛型可变参数方法安全，可使用注解```@SafeVarargs```消除警告。以下是非安全的泛型可变参数方法：
+      ```
+      // 泛型可变参数数组中存储任何东西
+      public static void dangerous(List<String>... stringLists) {
+        List<Integer> intList = List.of(42); 
+        Object[] objects = stringLists; 
+        objects[0] = intList; // Heap pollution 
+        String s = stringLists[0].get(0); // ClassCastException 
+      }
+      // 对不可信任代码可见
+      public static <T> T[] toArray(T... args) { 
+        return args; 
+      }
+      ```
+      正确安全地使用泛型可变参数方法：
+      ```
+      @SafeVarargs 
+      public static <T> List<T> flatten(List<? extends T>... lists) { 
+        List<T> result = new ArrayList<>();
+        for (List<? extends T> list : lists) 
+            result.addAll(list); 
+        return result; 
+      }
+      ```
+  * 非安全泛型可变参数替代方式
+    * 对于非安全泛型可变参数方法或不使用注解```@SafeVarargs```的安全泛型可变参数方法，可使用```List```方式替换：
+      ```
+      public static <T> List<T> flatten(List<List<? extends T>> lists) { 
+        List<T> result = new ArrayList<>();
+        for (List<? extends T> list : lists) 
+            result.addAll(list); 
+        return result; 
+      }
+      ```
 
 > 优先考虑类型安全的异构容器
