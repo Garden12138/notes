@@ -385,3 +385,48 @@
       ```
 
 > 优先考虑类型安全的异构容器
+  * 单个元素容器如```ThreadLocal<T>```和多个元素容器```Set<E>```、```Map<K,V>```都是参数化容器，每个容器只能有固定数量的类型参数。若当需要保存以及检索任意多种类型实例时，此类容器将不再适用，类型安全的异构容器支持这种场景。
+  * 实现```Favorites```类使其允许保存以及检索任意多种类型实例：
+    ```
+    public class Favorites {
+      private Map<Class<?>, Object> favorites = new HashMap<>();
+
+      public <T> void put(Class<T> type, T instance) {
+        favorites.put(Objects.requireNonNull(type), instance);
+      }
+
+      public <T> T get(Class<T> type) {
+        return type.cast(favorites.get(type));
+      }
+
+      // 客户端调用
+      public static void main(String[] agrs) {
+        Favorites f = new Favorites();
+
+        f.put(String.class, "Java");
+        f.put(Integer.class, 0xcafebabe);
+        f.put(Class.class, Favorites.class);
+
+        String fs = f.get(String.class);
+        Intger fi = f.get(Intger.class);
+        Class<?> fc = f.get(Class.class);
+
+        System.out.println("%s %x %s%n", fs, fi, fc.getName());
+      }
+
+      // console
+      // Java cafebabe Favorites
+    }
+    ```
+    当客户端请求一个字符串时，它永远不会返回整数，所以它是类型安全，且容器所有键都是不同类型的，故称它为安全类型的异构容器。
+  * 注意事项：
+    * ```Class```类实际上是泛型```Class<T>```，当在方法中传递时，称为类型令牌，例如客户端的```String.class```在方法中的类型为```Class<String>```。
+    * 安全类型的异构容器不适用于不可具体化类型，如```List<String>```，原因是无法获取```List<String>```的对象，```List<String>.class```是语法错误的。
+    * 使用类型令牌是无限制的，若需要限制可传递给方法的类型，可通过有限定的类型令牌来实现，如使用限定的类型参数或限定的通配符。
+      ```
+      // 使用限定的类型参数
+      public <T extends Number> T get(Class<T> type)
+      // 使用限定的通配符，检索时转换使用asSubclass
+      private Map<Class<? extends Number>, Object> favorites = new HashMap<>();
+
+      ```
