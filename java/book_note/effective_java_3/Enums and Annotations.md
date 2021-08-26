@@ -205,6 +205,39 @@
     ```
 
 > 使用实例属性替代序数
+  * 许多枚举类型与单个```int```值关联，所有枚举都有一个```ordinal```序数方法，它返回每个枚举常量类型的数值位置，这时可能会从序数中派生一个关联的```int```值：
+    ```
+    public enum Ensemble { 
+        SOLO, DUET, TRIO, 
+        QUARTET, QUINTET, SEXTET, 
+        SEPTET, OCTET, NONET, 
+        DECTET; 
+        
+        public int numberOfMusicians() { 
+            return ordinal() + 1; 
+        } 
+    }
+    ```
+    这样子将难以维护```int```值，如果重新编排位置或者从中插入新枚举类型，```int```值将发生变化。
+  * 使用将```int```值保存实例属性的方式替代序数方式：
+    ```
+    public enum Ensemble { 
+        SOLO(1), DUET(2), TRIO(3), 
+        QUARTET(4), QUINTET(5), SEXTET(6), 
+        SEPTET(7), OCTET(8), DOUBLE_QUARTET(8), 
+        NONET(9), DECTET(10), TRIPLE_QUARTET(12); 
+        
+        private final int numberOfMusicians; 
+        
+        Ensemble(int size) { 
+            this.numberOfMusicians = size; 
+        } 
+        
+        public int numberOfMusicians() { 
+            return numberOfMusicians; 
+        } 
+    }
+    ```
 
 > 使用EnumSet替代位属性
 
