@@ -239,7 +239,37 @@
     }
     ```
 
-> 使用EnumSet替代位属性
+> 使用EnumSet替代位域
+  * 如果枚举类型的元素主要用于集合中，传统上使用```int```枚举模式，如将2的不同次幂赋值给每个常量：
+    ```
+    public class Text { 
+        public static final int STYLE_BOLD = 1 << 0; // 1 
+        public static final int STYLE_ITALIC = 1 << 1; // 2 
+        public static final int STYLE_UNDERLINE = 1 << 2; // 4 
+        public static final int STYLE_STRIKETHROUGH = 1 << 3; // 8 
+
+        // Parameter is bitwise OR of zero or more STYLE_ constants 
+        public void applyStyles(int styles) { ... } 
+    }
+    ```
+    这种表示方式允许位运算将几个常量合并到一个称为位域的集合中：
+    ```
+    text.applyStyles(STYLE_BOLD | STYLE_ITALIC);
+    ```
+    位域表示还允许你使用按位算术有效地执行集合运算，如并集和交集，但是位域具有```int```枚举常量等的所有缺点。
+    使用```EnumSet```代替位域，```EnumSet```能够有效地从单个枚举类型中提取值的集合：
+    ```
+    public class Text { 
+        public enum Style { BOLD, ITALIC, UNDERLINE, STRIKETHROUGH } 
+        
+        // Any Set could be passed in, but EnumSet is clearly best 
+        public void applyStyles(Set<Style> styles) { ... } 
+    }
+    ```
+    ```EnumSet```使用静态工厂方法创建枚举类型的元素集合，```EnumSet```实现了接口```Set```：
+    ```
+    text.applyStyles(EnumSet.of(Style.BOLD, Style.ITALIC));
+    ```
 
 > 使用EnumMap替代序数索引
 
