@@ -272,6 +272,61 @@
     ```
 
 > 使用EnumMap替代序数索引
+  * 使用```ordinal```方法来索引数组或列表，设计一个植物类，植物类包含名称以及生命周期；一组植物类代表公园，设计且输出一个公园所有生命周期的植物有哪些：
+    ```
+    // 植物类
+    public class Plant { 
+        enum LifeCycle { ANNUAL, PERENNIAL, BIENNIAL }
+        final String name;
+        final LifeCycle lifeCycle; 
+        
+        Plant(String name, LifeCycle lifeCycle) { 
+            this.name = name; 
+            this.lifeCycle = lifeCycle; 
+        }
+        
+        @Override 
+        public String toString() { 
+            return name; 
+        } 
+    }
+
+    // 输出一个公园所有生命周期的植物，索引0代表ANNUAL，1代表PERENNIAL，2代表BIENNIAL
+    Set<Plant>[] plantsByLifeCycle = (Set<Plant>[]) new Set[Plant.LifeCycle.values().length];
+    
+    for (int i = 0; i < plantsByLifeCycle.length; i++) 
+        plantsByLifeCycle[i] = new HashSet<>();
+
+    for (Plant p : garden) 
+        plantsByLifeCycle[p.lifeCycle.ordinal()].add(p);
+
+    for (int i = 0; i < plantsByLifeCycle.length; i++) { 
+        System.out.printf("%s: %s%n", Plant.LifeCycle.values()[i], plantsByLifeCycle[i]); 
+    }
+    ```
+    这种方法有效当充满问题：
+      * 数组不兼容泛型，出现未检查类型的转换，不干净地编译。
+      * 不清楚数组索引具体代表哪个枚举类型，需要手动标记输出。
+      * 数组索引使用```int```值，不提供枚举的类型安全性，容易使用错误的值造成```ArrayIndexOutOfBoundsException```异常。
+    解决这些问题使用```EnumMap```：
+    ```
+    Map<Plant.LifeCycle, Set<Plant>> plantsByLifeCycle = new EnumMap<>(Plant.LifeCycle.class);
+    
+    for (Plant.LifeCycle lc : Plant.LifeCycle.values()) 
+        plantsByLifeCycle.put(lc, new HashSet<>());
+    
+    for (Plant p : garden) 
+       plantsByLifeCycle.get(p.lifeCycle).add(p); 
+    
+    System.out.println(plantsByLifeCycle);
+    ```
+    除了解决上述问题外，运行速度与原始版本相当。
+    使用```Java8 Stream```特性可修改为：
+    ```
+    System.out.println(
+        Arrays.stream(garden)
+            .collect(groupingBy(p -> p.lifeCycle, () -> new EnumMap<>(LifeCycle.class), toSet())));
+    ``` 
 
 > 使用接口模拟可扩展的枚举
 
