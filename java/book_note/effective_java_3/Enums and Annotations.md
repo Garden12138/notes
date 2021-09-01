@@ -325,10 +325,103 @@
     ```
     System.out.println(
         Arrays.stream(garden)
-            .collect(groupingBy(p -> p.lifeCycle, () -> new EnumMap<>(LifeCycle.class), toSet())));
+            .collect(groupingBy(p -> p.lifeCycle, () -> new EnumMap<>(LifeCycle.class), toSet()))
+    );
     ``` 
 
 > 使用接口模拟可扩展的枚举
+  * 枚举类型不可扩展，只当枚举类型包含抽象方法等抽象行为时，可使用接口方式代替实现，从而实现枚举类型的扩展目的：
+    ```
+    public interface Operation { 
+        double apply(double x, double y); 
+    }
+    
+    public enum BasicOperation implements Operation { 
+        PLUS("+") { 
+            public double apply(double x, double y) { 
+                return x + y; 
+            } 
+        },
+        MINUS("-") { 
+            public double apply(double x, double y) { 
+                return x - y; 
+            } 
+        },
+        TIMES("*") { 
+            public double apply(double x, double y) { 
+                return x * y; 
+            } 
+        },
+        DIVIDE("/") { 
+            public double apply(double x, double y) { 
+                return x / y; 
+            } 
+        };
+        
+        private final String symbol; 
+        
+        BasicOperation(String symbol) { 
+            this.symbol = symbol; 
+        }
+        
+        @Override 
+        public String toString() { 
+            return symbol; 
+        } 
+    }
+    ```
+    接口是可扩展的，用于表示枚举类型中抽象的行为，可以定义另外一个实现此接口的枚举类型：
+    ```    
+    public enum ExtendedOperation implements Operation { 
+        EXP("^") { 
+            public double apply(double x, double y) { 
+                return Math.pow(x, y); 
+            } 
+        },
+        REMAINDER("%") { 
+            public double apply(double x, double y) { 
+                return x % y; 
+            } 
+        };
+        
+        private final String symbol; 
+        
+        BasicOperation(String symbol) { 
+            this.symbol = symbol; 
+        }
+        
+        @Override 
+        public String toString() { 
+            return symbol; 
+        } 
+    }
+    ```
+* 扩展枚举类型可以传递给基本枚举类型：
+  ```
+  // 使用限度的类型令牌
+  private static <T extends Enum<T> & Operation> void test(Class<T> opEnumType, double x, double y) {
+      for (Operation op : opEnumType.getEnumConstants()) 
+          System.out.printf("%f %s %f = %f%n", x, op, y, op.apply(x, y)); 
+  }
+
+  public static void main(String[] args) { 
+      double x = Double.parseDouble(args[0]); 
+      double y = Double.parseDouble(args[1]); 
+      test(ExtendedOperation.class, x, y); 
+  }
+
+  // 使用限定通配符类型
+  private static void test(Collection<? extends Operation> opSet, double x, double y) {
+      for (Operation op : opSet) 
+          System.out.printf("%f %s %f = %f%n", x, op, y, op.apply(x, y)); 
+  }
+
+  public static void main(String[] args) { 
+      double x = Double.parseDouble(args[0]); 
+      double y = Double.parseDouble(args[1]); 
+      test((Arrays.asList(ExtendedOperation.values()), x, y); 
+  }
+  ```
 
 > 注解优于命名模式
 
