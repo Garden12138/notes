@@ -36,6 +36,69 @@
       ```
 
 > Tutorial: Getting started
+  * 编写简单程序代码
+    * 移动至编写代码目录
+      ```
+      cd
+      ```
+
+    * 创建存放代码文件夹
+      ```
+      mkdir helloworld
+      ```
+    * 创建```mod.file```文件【用于管理代码所使用依赖，名称为可供```Go```工具下载使用的路径名称】
+      ```
+      go mod init gitee.com/FSDGarden/helloworld
+      ```
+    * 编写```go```程序代码
+      ```
+      package main // 声明main包
+    
+      import "fmt" // 导入标准库fmt包
+    
+      func main() {
+          fmt.Println("Hello, World!") // 输入打印“Hello, World!”
+      }
+      ```
+    * 运行```go```程序代码
+      ```
+      go run .
+      ```
+    * 查询```go```命令用法
+      ```
+      go help
+      ```
+
+  * 调用第三方实现包代码
+    * [查询第三方实现包](https://pkg.go.dev/)，了解调用方式。
+    * 编写调用代码
+      ```
+      package main
+      
+      import "fmt"
+      
+      import "rsc.io/quote" // 导入rsc.io/quote包
+      
+      func main() {
+          
+          fmt.Println("Hello, World!")
+          fmt.Println(quote.Go()) //调用第三方实现
+      }
+      ```
+    * 添加第三方实现包
+      ```
+      go mod tidy
+      // 或
+      go get rsc.io/quote
+      ```
+      在添加之前，需要设置代理：
+      ```
+      go env -w GOPROXY=https://goproxy.cn,direct
+      ```
+    * 运行```go```代码程序
+      ```
+      go run .
+      ```
 
 > Tutorial: Create a module
 
