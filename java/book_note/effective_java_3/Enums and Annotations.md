@@ -424,7 +424,275 @@
   ```
 
 > 注解优于命名模式
+  * 过去通常使用命名模式来指示程序元素（方法），使用工具或框架对其进行特殊处理。如```JUnit3```测试框架要求测试方法名以```test```为前缀，使用命名模式的缺点：
+    * 拼写错误导致测试失败，没有报错提示，也不会执行测试，导致错误的安全感。
+    * 无法确保它们是仅用于适当范围的程序元素。如以类名为方法名称，希望能够测试类的所有方法，实际上不会执行测试。
+    * 没有提供将参数值与程序元素相关联的方法。
+  * 注解类型解决了以上问题，```JUnit4```使用注解类型，如注解```@Test```,用来指定自动运行的简单测试，并且抛出异常表示测试失败。```@Test```的定义如下：
+    ```
+    @Retention(RetentionPolicy.RUNTIME) 
+    @Target(ElementType.METHOD) 
+    public @interface Test { 
+
+    }
+    ```
+    注解```@Retention```与```@Target```为元注解，```@Retention(RetentionPolicy.RUNTIME) ```指示```@Test```应该在运行时保留，```@Target(ElementType.METHOD)```指示```@Test```应用作用在方法上。```@Test```仅在无参静态方法中使用，但在实例方法或有参方法上，程序依然可以正常编译，由```JUnit4```在运行时处理这个问题。
+    ```
+    public class TestDemo {
+
+        @Test
+        public static void t1() {
+
+        }
+        @Test
+        public void t2() {
+
+        }
+
+    }
+    ```
+    ```@Test```注解对```TestDemo```类的语义没有直接影响，只提供信息供测试框架等相关程序使用，如```JUnit4```，也可以自定义测试器使用：
+    ```    
+    public class RunTests { 
+        
+        public static void main(String[] args) throws
+        Exception { 
+            int tests = 0;
+            int passed = 0; 
+            // 获取命令行输入完全限定类名
+            Class<?> testClass = Class.forName(args[0]);
+            // 遍历指定类所有方法
+            for (Method m : testClass.getDeclaredMethods()) {
+                // 处理使用@Test声明的方法
+                if (m.isAnnotationPresent(Test.class)) { 
+                    tests++; 
+                    try {
+                        // 调用方法
+                        m.invoke(null); 
+                        // 记录通过数
+                        passed++; 
+                    } catch (InvocationTargetException wrappedExc) { 
+                        // 捕获调用异常，输出异常
+                        Throwable exc = wrappedExc.getCause(); 
+                        System.out.println(m + " failed: " + exc); 
+                    } catch (Exception exc) { 
+                        // 捕获除调用异常外的异常，输出异常
+                        System.out.println("Invalid @Test: " + m); 
+                    } 
+                } 
+            }
+            
+            System.out.printf("Passed: %d, Failed: %d%n", passed, tests - passed); 
+        }
+
+    }
+    ```
+    该测试器支持命令行上接受完全限定类名，输出该类测试通过数以及失败数。
+    若在抛出指定异常时才记录测试通过，需要另写一个新的注解类型```TestWithException```：
+    ```
+    @Retention(RetentionPolicy.RUNTIME) 
+    @Target(ElementType.METHOD) 
+    public @interface TestWithException { 
+
+        Class<? extends Throwable> value(); 
+
+    }
+    ```
+    以及对应客户端、测试器：
+    ```
+    public class TestWithExceptionDemo {
+
+        @TestWithException(ArithmeticException.class)
+        public static void t1() {
+            int i = 0; 
+            i = i / i;
+        }
+        @TestWithException(ArithmeticException.class)
+        public void t2() {
+            int[] a = new int[0]; 
+            int i = a[1];
+        }
+
+    }
+
+    public class RunTestWithExceptions { 
+        
+        public static void main(String[] args) throws
+        Exception { 
+            int tests = 0;
+            int passed = 0; 
+            // 获取命令行输入完全限定类名
+            Class<?> testClass = Class.forName(args[0]);
+            // 遍历指定类所有方法
+            for (Method m : testClass.getDeclaredMethods()) {
+                // 处理使用TestWithException声明的方法
+                if (m.isAnnotationPresent(TestWithException.class)) { 
+                    tests++; 
+                    try {
+                        // 调用方法
+                        m.invoke(null); 
+                        System.out.printf("Test %s failed: no exception%n", m);
+                    } catch (InvocationTargetException wrappedExc) { 
+                        // 获取调用异常
+                        Throwable exc = wrappedEx.getCause(); 
+                        // 获取声明异常类型
+                        Class<? extends Throwable> excType = m.getAnnotation(TestWithException.class).value();
+                        if (excType.isInstance(exc)) {
+                            // 若捕获异常为声明异常类型，则测试通过
+                            passed++;
+                        } else {
+                            System.out.printf( "Test %s failed: expected %s, got %s%n", m, excType.getName(), exc);
+                        }
+                    } catch (Exception exc) { 
+                        // 捕获除调用异常外的异常，输出异常
+                        System.out.println("Invalid @Test: " + m); 
+                    } 
+                } 
+            }
+            
+            System.out.printf("Passed: %d, Failed: %d%n", passed, tests - passed); 
+        }
+
+    }
+    ```
+    可以声明注解类型值为数组形式，以支持多种异常中符合其一则测试通过的场景：
+    ```
+    // 声明注解类型
+    @Retention(RetentionPolicy.RUNTIME) 
+    @Target(ElementType.METHOD) 
+    public @interface TestWithException { 
+        Class<? extends Throwable>[] value(); 
+    }
+    // 客户端调用，使用花括号将元素括起来，并用逗号分隔
+    public class TestWithExceptionDemo {
+
+        @TestWithException({ArithmeticException.class, IndexOutOfBoundsException.class})
+        public void t1() {
+            int[] a = new int[0]; 
+            int i = a[1];
+        }
+
+    }
+    // 测试器
+    public class RunTestWithExceptions { 
+        
+        public static void main(String[] args) throws
+        Exception { 
+            int tests = 0;
+            int passed = 0; 
+            // 获取命令行输入完全限定类名
+            Class<?> testClass = Class.forName(args[0]);
+            // 遍历指定类所有方法
+            for (Method m : testClass.getDeclaredMethods()) {
+                // 处理使用@TestWithException声明的方法
+                if (m.isAnnotationPresent(TestWithException.class)) { 
+                    tests++; 
+                    try {
+                        // 调用方法
+                        m.invoke(null); 
+                        System.out.printf("Test %s failed: no exception%n", m);
+                    } catch (InvocationTargetException wrappedExc) { 
+                        // 获取调用异常
+                        Throwable exc = wrappedEx.getCause(); 
+                        int oldPassed = passed;
+                        // 获取声明异常类型
+                        Class<? extends Throwable>[] excTypes = m.getAnnotation(TestWithException.class).value();
+                        for (Class<? extends Throwable>[] excType : excTypes) {
+                            if (excType.isInstance(exc)) {
+                                // 若捕获异常为声明异常类型，则测试通过
+                                passed++;
+                                break;
+                            }
+                        }
+                        if (passed == oldPassed) {
+                            System.out.printf("Test %s failed: %s %n", m, exc);
+                        }
+                    } catch (Exception exc) { 
+                        // 捕获除调用异常外的异常，输出异常
+                        System.out.println("Invalid @Test: " + m); 
+                    } 
+                } 
+            }
+            
+            System.out.printf("Passed: %d, Failed: %d%n", passed, tests - passed); 
+        }
+
+    }
+    ```
+    可以使用```@Repeatable```元注解来注解类型，代表注解类型可重复使用，以支持多种异常中符合其一则测试通过的场景：
+    ```
+    // 声明注解类型
+    @Retention(RetentionPolicy.RUNTIME) 
+    @Target(ElementType.METHOD) 
+    @Repeatable(TestWithExceptionContainer.class)
+    public @interface TestWithException { 
+        Class<? extends Throwable> value(); 
+    }
+    // 声明注解类型容器，用于存放注解类型数组
+    @Retention(RetentionPolicy.RUNTIME) 
+    @Target(ElementType.METHOD) 
+    public @interface TestWithExceptionContainer { 
+        TestWithException[] value(); 
+    }
+    // 客户端调用，使用花括号将元素括起来，并用逗号分隔
+    public class TestWithExceptionDemo {
+        
+        @TestWithException(ArithmeticException.class)
+        @TestWithException(IndexOutOfBoundsException.class)
+        public void t1() {
+            int[] a = new int[0]; 
+            int i = a[1];
+        }
+
+    }
+    // 测试器
+    public class RunTestWithExceptions { 
+        
+        public static void main(String[] args) throws
+        Exception { 
+            int tests = 0;
+            int passed = 0; 
+            // 获取命令行输入完全限定类名
+            Class<?> testClass = Class.forName(args[0]);
+            // 遍历指定类所有方法
+            for (Method m : testClass.getDeclaredMethods()) {
+                // 处理使用@TestWithException与@TestWithExceptionContainer声明的方法
+                if (m.isAnnotationPresent(TestWithException.class) || m.isAnnotationPresent(TestWithExceptionContainer.class)) { 
+                    tests++; 
+                    try {
+                        // 调用方法
+                        m.invoke(null); 
+                        System.out.printf("Test %s failed: no exception%n", m);
+                    } catch (InvocationTargetException wrappedExc) { 
+                        // 获取调用异常
+                        Throwable exc = wrappedEx.getCause(); 
+                        int oldPassed = passed;
+                        // 获取声明异常类型
+                        TestWithException[] excTypes = m.getAnnotationsByType(TestWithException.class);
+                        for (Class<? extends Throwable>[] excType : excTypes) {
+                            if (excType.isInstance(exc)) {
+                                // 若捕获异常为声明异常类型，则测试通过
+                                passed++;
+                                break;
+                            }
+                        }
+                        if (passed == oldPassed) {
+                            System.out.printf("Test %s failed: %s %n", m, exc);
+                        }
+                    } catch (Exception exc) { 
+                        // 捕获除调用异常外的异常，输出异常
+                        System.out.println("Invalid @Test: " + m); 
+                    } 
+                } 
+            }
+            
+            System.out.printf("Passed: %d, Failed: %d%n", passed, tests - passed); 
+        }
+
+    }
+    ```
+  * 若需要将信息标记源代码且不修改源代码定义，适当使用注解类型。
 
 > 始终使用Override注解
 
->  使用标记接口定义类型
+> 使用标记接口定义类型
