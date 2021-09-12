@@ -694,5 +694,59 @@
   * 若需要将信息标记源代码且不修改源代码定义，适当使用注解类型。
 
 > 始终使用Override注解
+  * ```Java```类库中包含许多注解类型，其中最常用的是```@Override```，此注解只能作用于方法上，表示该方法重写父类方法，始终使用该注解，避免出现严重```BUG```。如设计一个双字母类，在添加到不重复集合时使用双字母判断唯一：
+    ```
+    // 不使用@Override
+    public class Bigram {
+
+        private final char first;
+        private final char second;
+
+        public Bigram(char first, char second) {
+            this.first = first;
+            this.second = second;
+        }
+
+        public boolean equals(Bigram b) {
+            return b.first = first && b.second = second;
+        }
+
+        public int hashCode() {
+            return 31 * first + second;
+        }
+
+    }
+
+    // 使用@Override
+    public class Bigram {
+
+        private final char first;
+        private final char second;
+
+        public Bigram(char first, char second) {
+            this.first = first;
+            this.second = second;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Bigram)) {
+                return false;
+            }
+            Bigram b = (Bigram) o;
+            return b.first = first && b.second = second;
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * first + second;
+        }
+
+    }
+    ```
+    不使用```@Override```并没有重写父类```Object```的```equals```、```hashCode```方法，只是重载，在将其添加至不重复集合时，依旧使用父类的```Object```的```equals```、```hashCode```方法进行唯一判断，进而导致添加重复的严重问题。
+* 始终使用```Override```注解：
+  * 重写父类的方法（重写抽象父类的抽象方法时可以不使用）
+  * 实现接口的具体方法
 
 > 使用标记接口定义类型
