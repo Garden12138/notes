@@ -101,6 +101,34 @@
       ```
 
 > Tutorial: Create a module
+  * 创建一个带有函数且可供另一个模块调用的简单模块：
+    * 移动至编写代码目录
+      ```
+      cd 
+      ```
+    * 创建存放代码文件夹，一般为模块名
+      ```
+      mkdir greetings
+      ```
+    * 创建管理模块依赖文件
+      ```
+      go mod init gitee/FSDGarden/greetings
+      ```
+    * 使用编辑器（```GoLand```）编写代码，代码内容如：
+      ```
+      package greetings // 声明greetings包
+      
+      import "fmt"  // 导入标准库fmt包
+      
+      func Hello(name string) string { // 声明可调用方法，参数类型为字符串，类型为字符串
+        
+        message := fmt.Sprintf("Hi! %v. Welcome!", name) // 声明并初始化赋值变量message，声明与初始化赋值可分开编写，如下：
+        // var message string
+        // message = fmt.Sprintf("Hi, %v. Welcome!", name)
+        return message // 返回messag变量
+      
+      }
+      ```
 
 > Tutorial: Developing a RESTful API with Go and Gin
 
