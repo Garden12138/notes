@@ -129,6 +129,56 @@
       
       }
       ```
+  * 从另外一个模块调用代码
+    * 新建调用模块```hello```，步骤与上一致，代码内容如：
+      ```
+      package main // 声明main包，可作为应用启动
+      
+      import (
+          "fmt"  // 导入标准库fmt包
+
+	        "gitee/FSDGarden/greetings"  //导入另一个模块greetings包
+      )
+      
+      func main()  {
+        message := greetings.Hello("Garden") //调用另一个模块的Hello方法，将其返回值赋于初始化变量message
+        fmt.Println(message)  // 控制台输出变量message的值
+      }
+
+      ```
+    * 加载远程发布模块依赖（后续更新）
+    * 加载本地模块依赖
+      * 重定向另一个模块路径为本地模块路径
+        ```
+        go mod edit -replace gitee/FSDGarden/greetings=../greetings
+        ```
+        执行该命令后，```mod```文件记录```replace```信息：
+        ```
+        module gitee/FSDGarden/hello
+        
+        go 1.16
+        
+        replace gitee/FSDGarden/greetings => ../greetings
+        ```
+      * 加载另一个模块依赖
+        ```
+        go mod tidy
+        ```
+        执行完命令后，```mod```文件记录另一个模块的指令：
+        ```
+        module gitee/FSDGarden/hello
+        
+        go 1.16
+        
+        replace gitee/FSDGarden/greetings => ../greetings
+        
+        require gitee/FSDGarden/greetings v0.0.0-00010101000000-000000000000
+        ```
+        ```v0.0.0-00010101000000-000000000000```为伪版本号
+    * 运行Hello.go程序
+      ```
+      go run .
+      ```
 
 > Tutorial: Developing a RESTful API with Go and Gin
 
