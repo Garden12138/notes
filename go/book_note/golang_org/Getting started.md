@@ -179,6 +179,53 @@
       ```
       go run .
       ```
+  * 封装返回以及处理异常
+    * 编写健壮的代码，被调用方与调用方都应该对异常进行封装返回与处理。 
+    * 被调用方异常的封装返回，如```greetings.Hello```:
+      ```
+      package greetings
+      
+      import (
+          "errors" // 导入标准库errors包
+          "fmt"
+      )
+      
+      func Hello(name string) (string, error) { // 返回值新增error类型
+          // 断言参数，非法则返回error
+          if name == "" {
+              return "", errors.New("empty name")
+          }
+          // 合法正常返回，nil表示没有异常
+          message := fmt.Sprintf("Hi! %v. Welcome!", name)
+          return message, nil
+      }
+      ```
+    * 调用方异常的处理，如```hello.main```:
+      ```
+      package main
+      
+      import (
+          "fmt"
+          "gitee/FSDGarden/greetings"
+          "log" // 导入标准库log包
+      )
+      
+      func main()  {
+          // 设置log前置信息
+          log.SetPrefix("greetings.Hello: ")
+          log.SetFlags(0)
+          // 调用另一模块greetings Hello方法
+          message, err := greetings.Hello("Garden")
+          // 处理异常
+          if err != nil {
+            // 输出异常信息并停止程序
+            log.Fatal(err)
+          }
+          // 正常输出
+          fmt.Println(message)
+      }
+      ```
+
 
 > Tutorial: Developing a RESTful API with Go and Gin
 
