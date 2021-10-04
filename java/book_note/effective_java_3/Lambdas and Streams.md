@@ -104,6 +104,41 @@
    
 
 > 优先使用标准的函数式接口
+  * ```lambda```表达式的普遍应用让编写```API```的实践方式发生改变，以往通过编写子类重写原始方法以专门化父类的行为方式逐渐由提供一个静态工厂方法或构造方法接受函数对象参数的方式替代，如使用```LinkedHashMap```的```removeEldestEntry```方法辅助实现缓存功能：
+    ```
+    // 子类重写
+    @Override
+    protected boolean removeEldestEntry(Map.Entry<K,V> eldest) { 
+        return size() > 100; 
+    }
+    // 函数式接口编写
+    @FunctionalInterface 
+    public interface EldestEntryRemovalFunction<K,V> {
+        boolean remove(Map<K,V> map, Map.Entry<K,V> eldest); 
+    }
+    ```
+    但```Java```类库提供了标准的函数式接口```BiPredicate<Map<K,V>, Map.Entry<K,V>>```使用，所以不必要自定义编写函数式接口```
+    EldestEntryRemovalFunction```。
+  * ```java.util.Function```提供了43个标准的函数式接口，它们由六大基本函数式接口及其衍生接口组成：
+    |接口|方法|示例|
+    |:------:|:------:|:------:|
+    |UnaryOperator```<T>```|T apply(T t)|String::toLowerCase|
+    |BinaryOperator```<T>```|T apply(T t1, T t2)|BigInteger::add|
+    |Predicate```<T>```|boolean test(T t)|Collection::isEmpty|
+    |Function```<T,R>```|R apply(T t)|Arrays::asList|
+    |Supplier```<T>```|T get()|Instant::now|
+    |Consumer```<T>```|void accept(T t)|System.out::println|
+  * 自定义函数式接口的条件：
+    * 标准函数式接口不满足当前需求
+    * 它将被广泛使用且可以从描述性名称中受益
+    * 它拥有强大的契约
+    * 它受益于自定义的默认方法
+  * 声明自定义函数式接口：
+    * 使用注解```@FunctionalInterface```标注函数式接口
+    * 设计唯一一个抽象方法
+  * 注意事项：
+    * 不应该重载多个不同类型的函数式接口参数对象
+    * [Stream与Lambda实践](https://gitee.com/FSDGarden/learn-note/blob/master/java/action/Stream%20And%20Lambda%20Action.md)
 
 > 明智审慎地使用Stream
 
