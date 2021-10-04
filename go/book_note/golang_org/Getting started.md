@@ -225,6 +225,40 @@
           fmt.Println(message)
       }
       ```
+  * 编写私有方法，返回随机值
+    ```
+    package greetings
+    
+    import (
+        "errors"
+        "fmt"
+        "math/rand" // 导入标准库rand包
+        "time" // 导入标准库time包
+    )
+    
+    func Hello(name string) (string, error) {
+        if name == "" {
+            return "", errors.New("empty name")
+        }
+        message := fmt.Sprintf(randomFormat(), name)
+        return message, nil
+    }
+    // 初始化方法，初始随机Seed，随着程序启动在全局变量初始化后运行
+    func init()  {
+        rand.Seed(time.Now().UnixNano())
+    }
+    // 私有方法（方法名首小写），随机返回格式
+    func randomFormat() string {
+        // 声明并初始化格式分片
+        formats := []string {
+            "Hi, %v. Welcome!",
+		        "Great to see you, %v!",
+		        "Hail, %v! Well met!",
+        }
+        // 随机返回格式
+        return formats[rand.Intn(len(formats))]
+    }
+    ```
 
 
 > Tutorial: Developing a RESTful API with Go and Gin
