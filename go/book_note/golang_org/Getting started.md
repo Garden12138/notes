@@ -259,6 +259,35 @@
         return formats[rand.Intn(len(formats))]
     }
     ```
+  * 编写调用方法，处理多个参数以及返回多个参数关联值
+    ```
+    // greetings.go
+    ...
+    func Hellos(names []string) (map[string]string, error)  { //使用map类型返回多个入参与其关联值，声明语法为map[key-type]value-type，[map详细用法参考](https://blog.golang.org/maps)
+      messages := make(map[string]string) // 使用函数make声明并初始化map类型的messages
+      for _, name :=  range names { // 使用函数range循环遍历多个入参，返回值分别为当前遍历索引，当前索引指向元素的副本，若不需索引可使用下划线代替，[下划线用法参考](https://golang.org/doc/effective_go#blank)
+          message, err := Hello(name) // 调用本地方法Hello获取入参关联值且声明并初始化message
+          if err != nil {
+              return messages, err
+          }
+          messages[name] = message // 将入参以及关联值添加至map类型的messages
+      }
+      return messages, nil // 返回多个入参以及关联值
+    }
+    ...
+    ```
+    ```
+    // hello.go
+    ...
+    log.SetFlags(1)
+    names := []string{"Daemon", "FSDGarden", "zengjiada"} // 声明且初始化数组
+    messages, errs := greetings.Hellos(names)
+    if errs != nil{
+        log.Fatal(errs)
+    }
+    fmt.Println(messages)
+    ...
+    ```
 
 
 > Tutorial: Developing a RESTful API with Go and Gin
