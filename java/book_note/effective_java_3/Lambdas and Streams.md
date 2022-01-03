@@ -141,6 +141,94 @@
     * [Stream与Lambda实践](https://gitee.com/FSDGarden/learn-note/blob/master/java/action/Stream%20And%20Lambda%20Action.md)
 
 > 明智审慎地使用Stream
+  * ```Stream```介绍
+    * ```Java8```添加```Stream API```以简化串行或并行执行批量操作的任务。
+    * ```Stream API```提供了两个关键抽象：流（```Stream```），表示有限或者无限的数据元素序列；流管道（```Stream Pipeline```），表示对数据元素序列的多级计算。
+    * 流的数据元素可来源于任何地方，常见有集合、数组、文件等。流的数据元素类型可以为对象引用或基本类型（```int、double、long```）。
+    * ```Stream Pipeline```由源流（```Source Stream```）、零或多个中间操作（```Intermediate Operations```）和一个终结操（```Terminal Operation```）组成。每个中间操作的结果都是转换为另外一个流，其元素类型可相同或不同。终结操作是对最后一个中间操作产生的流进行最终计算，如将元素存储到集合、返回某个元素或打印所有元素。直到终结操作被调用才开始计算，故```Stream Pipeline```是惰性计算求值，没有终结操作的```Stream Pipeline```是一个无操作的指令。```Stream API```允许所有组成```Stream Pipeline```的调用链接在一个表达式上，多个管道也可以链接在一起形式一个表达式。默认情况下，流管道顺序执行，若使流管道并行执行，可在任何流上使用```parallel()```方法（不推荐）。
+
+  * 恰当使用```Stream```，实现从字典中读取单词并打印指定其最小值的所有同位词（两个单词位数相同，组成单词的字母相同且顺序不同）
+    * 使用```HashMap```集合框架```API```实现
+      ```
+      public class Anagrams {
+        
+        public static void main(String[] args) throws IOException {
+          // 获取字典路径、指定同位词的大小
+          File dict = new File(args[0]);
+          int minGroupSize = Integer.parseInt(args[1]);
+          // 使用computeIfAbsent方法，将重新排序单词后作为key，若存在，则返回key对应value值，若不存在，则初始化key-value键值对，最后添加单词至value
+          Map<String, Set<String>> groups = new Hash<>();
+          try (Scanner scan = new Scanner(dict)) {
+            while(scan.hasNext()) {
+              String word = scan.next();
+              groups.computeIfAbsent(alphabetize(word), () -> new TreeSet<>()).add(word);
+            }
+          }
+
+          // 输出结果
+          for(Set<String> group : groups.values()) {
+            if (group.size() >= minGroupSize) {
+              System.out.println(group.size() + " : " + group);
+            }
+          }
+        }
+        
+        // 重新排序单词字母
+        private static String alphabetize(String s) {
+          char[] ch = s.toCharArray();
+          Arrays.sort(ch);
+          return new String(ch);
+        }
+
+      }
+      ```
+    * 使用大量```Stream```实现
+      ```
+      public class Anagrams {
+        
+        public static void main(String[] args) throws IOException {
+          // 获取字典路径、指定同位词的大小
+          Path dict = new Paths.get(args[0]);
+          int minGroupSize = Integer.parseInt(args[1]);
+          // 将文件流进行重新排序单词后分组，分组后过滤符合最小值的分组，重新封装后返回打印
+          try (Stream<String> words = Files.lines(dict)) {
+            words.collect(Collectors.groupingBy(
+                  word -> word.chars().sorted().collect(
+                  StringBuilder::new, (sb, c) -> sb.append((char)c), StringBuilder::append).toString()))
+                .values().stream().filter(group -> group.size() >= minGroupSize).map(group -> group.size() + " : " + group).forEach(System.out.println);
+          }
+        }
+
+      }
+      ```
+    * 恰当使用```Stream```实现
+      ```
+      public class Anagrams {
+        
+        public static void main(String[] args) throws IOException {
+          // 获取字典路径、指定同位词的大小
+          Path dict = new Paths.get(args[0]);
+          int minGroupSize = Integer.parseInt(args[1]);
+          // 将文件流进行重新排序单词后分组，分组后过滤符合最小值的分组，重新封装后返回打印
+          try (Stream<String> words = Files.lines(dict)) {
+            words.collect(word -> alphabetize(word))
+                .values().stream().filter(g -> g.size() >= minGroupSize).map(g -> g.size() + " : " + g).forEach(System.out.println);
+          }
+        }
+
+        // 重新排序单词字母
+        private static String alphabetize(String s) {
+          char[] ch = s.toCharArray();
+          Arrays.sort(ch);
+          return new String(ch);
+        }
+
+      }
+      ```
+  * 谨慎使用```Stream```
+    * 在没有显式类型下，尽量简短命名```lambda```表达式参数
+    * 善使用辅助方法实现特点功能，流管道缺少显式类型信息和命名临时变量
+    * 尽量避免使用```Stream```处理```char```值
 
 > 优先考虑流中无副作用的函数
 
