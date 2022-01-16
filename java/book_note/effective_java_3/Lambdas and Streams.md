@@ -233,6 +233,27 @@
       * 代码块可以从封闭方法返回，中断或继续循环，也可以抛出声明此方法的任何已检查异常；lambda表达式不支持。
     * 尽量避免使用```Stream```处理```char```值
     * ```Stream```容易处理统一转换元素序列、过滤元素序列、使用单个操作组合元素序列（如添加、连接或计算最值）、分组元素序列等
+    
+  * 解决同时访问流管道多个阶段中相应元素
+    * 由于流管道将值映射到其他值，原始值就会消失。传统的解决方案是将每个值映射到一个包含原始值和新值的```pair```对象，但这将导致每个阶段都需要维护一个```pair```对象，易造成代码混乱冗长；一个更好的解决方案是在需要访问（```forEach```）早期阶段值时转换映射（```map```）。如设计一个打印前20个梅森素数（满足```2^p - 1```形式的数字，p是素数，```2^p - 1```是素数）的程序：
+      ```
+      // 返回所有素数的初始流
+      public static Stream<BigInteger> primes() {
+        return Stream.iterate(TWO, BigInteger::nextProbablePrime);
+      }
+      // 打印前20个梅森素数
+      public static void main(String[] agrs) {
+        primes()
+          .map(p -> TWO.pow(p.intValueExact()).subtract(ONE))
+          .filter(mersenne -> mersenne.isProbablePrime(50))
+          .limit(20)
+          .forEach(System::out::println);
+      }
+      ```
+      现需要将每个梅森素数前面打印对应指数（```p```）,这个值只出现在初始流（```primes```）中，因此在终结操作中不可访问。由于第一个中间操作中发生映射，可以通过反转计算出（指数```p```是二进制表示的位数，可以使用```bitLength()```方法表示）。
+      ```
+      .forEach(mp -> System.out.println(mp.bitLength() + " : " + mp));
+      ```
 
 > 优先考虑流中无副作用的函数
 
