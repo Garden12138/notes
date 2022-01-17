@@ -120,7 +120,7 @@
       
       import "fmt"  // 导入标准库fmt包
       
-      func Hello(name string) string { // 声明可调用方法，参数类型为字符串，类型为字符串
+      func Hello(name string) string { // 声明可调用方法，参数类型为字符串，返回类型为字符串
         
         message := fmt.Sprintf("Hi! %v. Welcome!", name) // 声明并初始化赋值变量message，声明与初始化赋值可分开编写，如下：
         // var message string
