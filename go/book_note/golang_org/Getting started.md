@@ -291,6 +291,77 @@
 
 
 > Tutorial: Developing a RESTful API with Go and Gin
+  * 设计```API```端点
+    * 在开发```API```时，通常从设计端点开始（```RESTful API```风格），如：
+      ```
+      /albums
+      GET - 获取albums列表，作为JSON返回
+      POST - 从请求发送的JSON数据添加一个新的album
+
+      /albums/:id
+      GET - 根据id获取album，作为JSON返回
+      ```
+  * 为即将编写的代码创建一个文件夹
+    * 打开命令提示符并切换到主目录
+      ```
+      // On Linux or Mac
+      $ cd
+      // On Windows
+      C:\> cd %HOMEPATH%
+      ```
+    * 使用命令提示符，创建一个```web-service-gin```目录
+      ```
+      $ mkdir web-service-gin
+      $ cd web-service-gin
+      ```
+    * 创建一个管理依赖的模块
+      ```
+      go mod init gitee/FSDGarden/web-service-gin
+      ```
+  * 创建保存在内存的数据库（服务停止时数据丢失，启动时重新创建）
+    * 创建```main.go```文件
+    * 编写```main.go```声明```package main```（能够独立运行的程序始终位于```main```包中）
+    * 编写```main.go```声明数据结构，标签`json:"artist"`声明```Artist```字段在序列化为```JSON```时映射为```artist```，若不声明则序列化为```JSON```时映射原有字段```Artist```
+      ```
+      type album struct {
+        ID     string  `json:"id"`
+        Title  string  `json:"title"`
+        Artist string  `json:"artist"`
+        Price  float64 `json:"price"`
+      }
+      ```
+    * 编写```main.go```声明并初始化数据
+      ```
+      var albums = [] album {
+        {ID: "1", Title: "Blue Train", Artist: "John Coltrane", Price: 56.99},
+        {ID: "2", Title: "Jeru", Artist: "Gerry Mulligan", Price: 17.99},
+        {ID: "3", Title: "Sarah Vaughan and Clifford Brown", Artist: "Sarah Vaughan", Price: 39.99},
+      }
+      ```
+  * 编写返回所有项目的处理程序
+    * 编写响应逻辑方法
+      ```
+      func getAlbums(context *gin.Context)  {
+        context.IndentedJSON(http.StatusOK, albums)
+      }
+      ```
+      使用结构体```gin.Context```作为处理请求参数，调用```IndentedJSON```方法（可使用```JSON```方法替代，返回压缩```JSON```数据）序列化数据为```JSON```且添加响应状态码200。
+    * 映射请求响应逻辑方法
+      ```
+      func main()  {
+        router := gin.Default()
+        router.GET("/albums", getAlbums)
+        router.Run("localhost:8080")
+      }
+      ```
+      初始化```gin```路由，使用```GET```方法将```API```与响应逻辑方法```getAlbums```联系起来，使用```RUN```方法将路由添加到```http.Server```并启动它。
+  * 编写添加新项目的处理程序
+    * 编写响应逻辑方法
+    * 映射请求与响应逻辑方法
+  * 编写返回指定项目的处理程序
+    * 编写响应逻辑方法
+    * 映射请求与响应逻辑方法
+
 
 > Writing Web Applications
 
