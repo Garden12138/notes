@@ -345,7 +345,7 @@
         context.IndentedJSON(http.StatusOK, albums)
       }
       ```
-      使用结构体```gin.Context```作为处理请求参数，调用```IndentedJSON```方法（可使用```JSON```方法替代，返回压缩```JSON```数据）序列化数据为```JSON```且添加响应状态码200。
+      使用结构体```gin.Context```作为处理请求参数，调用```IndentedJSON```方法（可使用```JSON```方法替代，返回压缩```JSON```数据）序列化所有数据为```JSON```且添加响应状态码200。
     * 映射请求响应逻辑方法
       ```
       func main()  {
@@ -355,13 +355,99 @@
       }
       ```
       初始化```gin```路由，使用```GET```方法将```API```与响应逻辑方法```getAlbums```联系起来，使用```RUN```方法将路由添加到```http.Server```并启动它。
+    * 导入使用包
+      ```
+      import (
+          "github.com/gin-gonic/gin"
+          "net/http"
+      )
+      ``` 
+    * 运行程序
+      * 开启追踪```gin```模块作为依赖项
+        ```
+        $ go get .
+        ```
+      * 运行代码
+        ```
+        $ go run .
+        ```
+      * 发出请求
+        ```
+        $ curl http://localhost:8080/albums \
+            --header "Content-Type: application/json" \
+            --request "GET"
+        ```
   * 编写添加新项目的处理程序
     * 编写响应逻辑方法
+      ```
+      func postAlbum(context *gin.Context)  {
+        var newAlbum album
+        if err := context.BindJSON(&newAlbum); err != nil {
+          return
+        }
+        
+        albums = append(albums, newAlbum)
+        context.IndentedJSON(http.StatusCreated, newAlbum)
+      }
+      ```
+      调用```BindJSON```方法绑定请求体至变量```newAlbum```；调用```append```方法将变量```newAlbum```添加至数组```albums```。调用```IndentedJSON```方法（可使用```JSON```方法替代，返回压缩```JSON```数据）序列化新增数据为```JSON```且添加响应状态码201。
     * 映射请求与响应逻辑方法
+      ```
+      func main()  {
+        router := gin.Default()
+        router.POST("/albums", postAlbum)
+        router.Run("localhost:8080")
+      }
+      ```
+      初始化```gin```路由，使用```POST```方法将```API```与响应逻辑方法```postAlbum```联系起来，使用```RUN```方法将路由添加到```http.Server```并启动它。
+    * 运行程序
+      * 运行代码
+        ```
+        $ go run .
+        ```
+      * 发出请求
+        ```
+        $ curl http://localhost:8080/albums \
+            --include \
+            --header "Content-Type: application/json" \
+            --request "POST" \
+            --data '{"id": "4","title": "The Modern Sound of Betty Carter","artist": "Betty Carter","price": 49.99}'
+        ```
   * 编写返回指定项目的处理程序
     * 编写响应逻辑方法
+      ```
+      func getAlbumById(context *gin.Context)  {
+        id := context.Param("id")
+        for _, album := range albums {
+          if album.ID == id {
+            context.IndentedJSON(http.StatusOK, album)
+            return
+          }
+        }
+        context.IndentedJSON(http.StatusNotFound, gin.H{"message" : "album not found"})
+      }
+      ```
+      调用```Param```方法从```URL```上获取```id```路径参数值；使用```for-range```遍历数组```albums```，匹配```ID```字段值等于```id```路径参数值，符合则调用```IndentedJSON```方法（可使用```JSON```方法替代，返回压缩```JSON```数据）序列化指定数据为```JSON```且添加响应状态码200，不符合则序列化异常信息，添加响应状态码404。
     * 映射请求与响应逻辑方法
-
+      ```
+      func main()  {
+        router := gin.Default()
+        router.GET("/albums/:id", getAlbumById)
+        router.Run("localhost:8080")
+      }
+      ```
+      初始化```gin```路由，使用```GET```方法将```API```与响应逻辑方法```getAlbumById```联系起来，使用```RUN```方法将路由添加到```http.Server```并启动它。
+    * 运行程序
+      * 运行代码
+        ```
+        $ go run .
+        ```
+      * 发出请求
+        ```
+        $ curl http://localhost:8080/albums/2 \
+            --header "Content-Type: application/json" \
+            --request "GET" \
+        ```
 
 > Writing Web Applications
 
