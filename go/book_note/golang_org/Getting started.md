@@ -450,6 +450,100 @@
         ```
 
 > Writing Web Applications
+  * 入门
+    * 在```GOPATH```路径新建目录，进入新建目录
+      ```
+      $ mkdir gowiki
+      $ cd gowiki
+      ```
+    * 创建名为```wiki.go```的文件，使用合适的编辑器打开文件，添加以下内容：
+      ```
+      package main
+
+      import {
+        "fmt"
+        "os"
+      }
+      ```
+    * 创建管理模块依赖文件
+      ```
+      go mod init gitee/FSDGarden/wiki
+      ```
+  * 数据结构
+    * 将```Page```定义为一个结构体，其中包含两个字段，分别代表标题（```title```）和主体（```body```）。
+      ```
+      type Page struct {
+        Title string
+        Body []byte
+      }
+      ```
+    * 保存```Page```
+      ```
+      func (p *Page) save() error {
+        filename := p.Title + ".txt"
+        return os.WriteFile(filename, p.Body, 0600)
+      }
+      ```
+      这是一个名为```save```的方法，它的接收器```p```是指向```Page```的指针，且没有参数以及返回类型为```error```的值。该方法保存```Page```主体至文本文件，使用标题作为文件名称。该方法还返回```error```值，当写文件时出现错误时，调用程序可以拦截处理，若程序正常运行，```Page.save()```将会返回```nil```。八进制整型字面量0600表示创建文件赋予当前用户仅有读写权限。
+    * 加载```Page```
+      ```
+      func loadPage(title string) (*Page, error) {
+        filename := title + ".txt"
+        body, err = os.ReadFile(filename)
+        if err != nil {
+          return nil, err
+        }
+        return &Page{Title: title, Body: body}
+      }
+      ```
+      函数```loadPage```从```title```参数构造文件名，读取文件内容至新变量```body```，返回一个指向```Page```带有恰当标题和整体值字面量的指针。标准库函数```os.ReadFile```返回```[]byte```和```error```类型。如果```error```类型返回```nil```类型则加载```Page```成功，否则异常将被调用者处理。
+    * 测试```main```函数
+      ```
+      func main() {
+        p1 := &Page{Title: "TestPage", Body: []byte("This is a sample Page.")}
+        p1.save()
+        p2, _ := loadPage("TestPage")
+        fmt.Println(string(p2.Body))
+      }
+      ```
+    * 编译以及运行代码
+      ```
+      $ go build wiki.go
+
+      $ ./wiki
+      ```
+  * 介绍```net/http```包
+    * 简单```Web```服务器的完整工作示例
+      ```
+      package main
+
+      import (
+        "fmt"
+        "log"
+        "net/http"
+      )
+
+      func handler(rw http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(rw, "Hi there, I love %s!", r.URL.PATH[1:])
+      }
+
+      func main() {
+        http.HandlerFunc("/", handler)
+        log.Fatal(http.ListenAndServe(":8080", nil))
+      }
+      ```
+      主函数以调用```http.HandleFunc```开始，```http package```使用```handler```处理对于```web```根路径（"/"）所有请求。调用```http.ListenAndServe```指定对于所有接口都监听端口8080。当发生意外错误时，```http.ListenAndServe```总是返回```error```，为了记录错误日志，使用```log.Fatal```包装函数调用。
+      函数```handler```是```http.HandlerFunc```类型，需要```http.ResponseWriter```和```http.Request```作为参数。```http.ResponseWriter```值组装```HTTP```服务器响应，通过写入，发送数据至```HTTP```客户端。```http.Request```是```HTTP```客户端请求数据结构体
+      ，```r.URL.Path```是请求```URL```路径组件，其后的[1:]意味着创建从第一个字符到结尾```Path```的子切片，这将从路径名称中删除前导"/"。
+  * 使用```net/http```服务```wiki pages```
+  * 编辑```pages```
+  * ```html/template```包
+  * 处理不存在的```pages```
+  * 保存```pages```
+  * 异常处理
+  * 模版缓存
+  * 校验
+  * 介绍方法字面量和闭包
 
 > How to write Go code
 
