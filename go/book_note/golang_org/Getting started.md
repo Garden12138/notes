@@ -523,8 +523,8 @@
         "net/http"
       )
 
-      func handler(rw http.ResponseWriter, r *http.Request) {
-        fmt.Fprintf(rw, "Hi there, I love %s!", r.URL.PATH[1:])
+      func handler(w http.ResponseWriter, r *http.Request) {
+        fmt.Fprintf(w, "Hi there, I love %s!", r.URL.PATH[1:])
       }
 
       func main() {
@@ -536,6 +536,30 @@
       函数```handler```是```http.HandlerFunc```类型，需要```http.ResponseWriter```和```http.Request```作为参数。```http.ResponseWriter```值组装```HTTP```服务器响应，通过写入，发送数据至```HTTP```客户端。```http.Request```是```HTTP```客户端请求数据结构体
       ，```r.URL.Path```是请求```URL```路径组件，其后的[1:]意味着创建从第一个字符到结尾```Path```的子切片，这将从路径名称中删除前导"/"。
   * 使用```net/http```服务```wiki pages```
+    * 创建允许用户查看```wiki```页面的处理程序```viewHandler```，它将处理以"/```view```/"为前缀的```URL```。
+      ```
+      func viewHandler(w http.ResponseWriter, r *http.Request) {
+        title := r.URL.Path[len("/view/"):]
+        p, _ := loadPage(title)
+        fmt.Fprintf(w, "<h1>%s</h1><div>%s</div>", p.Title, p.Body)
+      }
+      ```
+      该方法从请求```URL```路径组件```r.URL.Path```获取页面标题，使用```[len("/view/"):]```重新切片以删除请求路径的前导```"/view/"```组件。该方法加载页面数据，使用简易```HTML```的字符串布局页面，并写入```http.ResponseWriter```。
+    * 测试```main```函数
+      ```
+      func main() {
+        http.HandleFunc("/view/", viewHandler)
+        log.Fatal(http.ListenAndServe(":8080", nil))
+      }
+      ```
+    * 编译以及运行代码，测试
+      ```
+      $ go build wiki.go
+
+      $ ./wiki
+
+      http://localhost:8080/view/TestPage
+      ```
   * 编辑```pages```
   * ```html/template```包
   * 处理不存在的```pages```
