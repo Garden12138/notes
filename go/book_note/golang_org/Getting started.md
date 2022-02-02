@@ -561,6 +561,30 @@
       http://localhost:8080/view/TestPage
       ```
   * 编辑```pages```
+    * 创建加载页面以及展示```HTML```表单的处理程序```editHandler```
+      ```
+      func editHandler(w http.ResponseWriter, r *http.Request) {
+        title := r.URL.Path[len("/edit/"):]
+        p, err := loadPage(title)
+        if err != nil {
+          p = &Page{Title: title}
+        }
+        fmt.Fprintf(w, "<h1>Editing %s</h1>"+
+        "<form action=\"/save/%s\" method=\"POST\">"+
+        "<textarea name=\"body\">%s</textarea><br>"+
+        "<input type=\"submit\" value=\"Save\">"+
+        "</form>",
+        p.Title, p.Title, p.Body)
+      }
+      ```
+    * 测试```main```函数
+      ```
+      func main() {
+        ...
+        http.HandleFunc("/edit/", editHandler)
+        ...
+      }
+      ```
   * ```html/template```包
   * 处理不存在的```pages```
   * 保存```pages```
