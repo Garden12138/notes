@@ -781,7 +781,36 @@
       }
       ```
   * 介绍方法字面量和闭包
-
+    * 在每个处理程序（```handler```）中捕获错误条件会引入大量重复代码。我们可以将每个处理程序（```handler```）包装在一个执行此验证和错误检查的函数中。```GO```的函数字面量提供了一种抽象功能的方法可以提供帮助。
+      ```
+      func viewHandler(w http.ResponseWriter, r *http.Request, title string)
+      func editHandler(w http.ResponseWriter, r *http.Request, title string)
+      func saveHandler(w http.ResponseWriter, r *http.Request, title string)
+      ```
+      重写每个```handler```使其接受```title```字符串参数。
+      ```
+      func makeHandler(fn func(http.ResponseWriter, *http.Request, string)) http.HandlerFunc {
+        return func(w http.ResponseWriter, r *http.Request) {
+          m := validPath.FindStringSubmatch(r.URL.Path)
+          if m == nil {
+            http.NotFound(w, r)
+            return
+          }
+          fn(w, r, m[2])
+        }
+      }
+      ```
+      定义包装函数```makeHandler```，其接受上述类型函数参数，并返回```http.HandlerFunc```类型。返回类型的函数称为闭包。闭包从请求路径中提取标题，并使用```validPath```正则表达式对其进行验证，若标题非法则使用```http.NotFound```函数向```http.ResponseWriter```写入错误，若标题合法则使用```http.ResponseWriter```、```*http.Request```和标题作为参数调用包含的处理函数```fn```。
+      测试```main```函数修改：
+      ```
+      func main() {
+        ...
+        http.HandleFunc("/view/", makeHandler(viewHandler))
+        http.HandleFunc("/edit/", makeHandler(editHandler))
+        http.HandleFunc("/save/", makeHandler(saveHandler))
+        ...
+      }
+      ```
 > How to write Go code
 
 > A Tour of Go
