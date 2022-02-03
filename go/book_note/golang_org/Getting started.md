@@ -662,6 +662,19 @@
       }
       ```
   * 处理不存在的```pages```
+    * 若请求页面不存在，则重定向客户端至编辑页，从而可以新增内容
+      ```
+      func viewHandler(w http.ResponseWriter, r *http.Request) {
+        title := r.URL.Path[len("/view/"):]
+        p, err := loadPage(title)
+        if err != nil {
+          http.Redirect(w, r, "/edit/"+title, http.StatusFound)
+          return
+        }
+        renderTemplate(w, "view", p)
+      }
+      ```
+      ```http.Redirect```函数添加```http.StatusFound```（302）状态码和```Location```标头至```HTTP```响应
   * 保存```pages```
   * 异常处理
   * 模版缓存
