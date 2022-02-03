@@ -586,6 +586,81 @@
       }
       ```
   * ```html/template```包
+    * 可以使用```html/template```将```HTML```保存在单独的文件，允许修改```edit page```布局，不用修改潜在的```GO```编码。
+    * 添加```html/template```至导入列表
+      ```
+      import (
+        ...
+        ...
+        html/template
+      )
+      ```
+    * 创建包含```HTML```表单模版文件，打开名为```edit.html```新文件，添加表单模版代码
+      ```
+      <html xmlns="http://www.w3.org/1999/html">
+        <head>
+          <meta charset="utf-8"/>
+        </head>
+        <body>
+          <h1>Editing {{.Title}}</h1>
+          <form action="/save/{{.Title}}" method="post">
+            <div><textarea name="body" rows="20" cols="80">{{printf "%s"  .Body}}</textarea></div>
+            <div><input type="submit" value="Save"></div>
+          </form>
+        </body>
+      </html>
+      ```
+      模版指令用双括号括起来。```printf "%s" .Body```指令是一个函数调用，它将```.Body```作为字符串而不是字节流输出（与调用```fmt.Printf```相同）。
+    * 修改```editHandler```使用模版代替硬编码```HTML```
+      ```
+      func editHandler(w http.ResponseWriter, r *http.Request) {
+        title := r.URL.Path[len("/edit/"):]
+        p, err := loadPage(title)
+        if err != nil {
+          p = &Page{Title: title}
+        }
+        t, _ := template.ParseFiles("edit.html")
+        t.Execute(w, p)
+      }
+      ```
+      函数```template.ParseFiles```读取```edit.html```内容以及返回```*template.Template```。方法```t.Execute```执行模版，将生成的```HTML```写进```http.ResponseWriter```。
+    * ```viewHandler```使用```html/template```
+      ```
+      <html>
+        <head>
+          <meta charset="utf-8"/>
+        </head>
+        <body>
+          <h1>{{.Title}}</h1>
+          <div>{{printf "%s"  .Body}}</div>
+          <span>[<a href="/edit/{{.Title}}">edit</a>]</span>
+        </body>
+      </html>
+
+      func viewHandler(w http.ResponseWriter, r *http.Request) {
+        title := r.URL.Path[len("/view/"):]
+        p, _ := loadPage(title)
+        t, _ := template.ParseFiles("view.html")
+        t.Execute(w, p)
+      }
+      ```
+    * 使用模版代码，移除相同代码
+      ```
+      func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
+        t, _ := template.ParseFiles(tmpl + ".html")
+        t.Execute(w, p)
+      }
+
+      func viewHandler(w http.ResponseWriter, r *http.Request) {
+        ...
+        renderTemplate(w, "view", p)
+      }
+
+      func editHandler(w http.ResponseWriter, r *http.Request) {
+        ...
+        renderTemplate(w, "edit", p)
+      }
+      ```
   * 处理不存在的```pages```
   * 保存```pages```
   * 异常处理
