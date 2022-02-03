@@ -688,6 +688,35 @@
       ```
       页面标题（```URL```中提供）和表单唯一字段```Body```存储在新页面。调用```save()```方法将数据写入文件，并将客户端重定向至/```view```/页面。```FormValue```返回值为```string```类型，使用```[]byte(body)```完成转化为```[]byte```。
   * 异常处理
+    * 程序中忽略错误，这是不好的实践，尤其因为确实发生错误时，程序会出现意外行为。更好的解决方案时处理错误并将错误信息返回给用户。若出现问题，服务器将按照预想的方式运行，且可以通知用户。如```renderTemplate```：
+      ```
+      func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
+        t, err := template.ParseFiles(tmpl + ".html")
+        if err != nil {
+          http.Error(w, err.Error(), http.StatusInternalServerError)
+          return
+        }
+        err = t.Execute(w, p)
+        if err != nil {
+          http.Error(w, err.Error(), http.StatusInternalServerError)
+        }
+      }
+      ```
+      ```http.Error```函数发送指定```HTTP``响应码以及错误信息。
+      ```saveHandler```：
+      ```
+      func saveHandler(w http.ResponseWriter, r *http.Request) {
+        title := r.URL.Path[len("/save/"):]
+        body := r.FormValue("body")
+        p := &Page{Title: title, Body: []byte(body)}
+        err := p.save()
+        if err != nil {
+          http.Error(w, err.Error(), http.StatusInternalServerError)
+          return
+        }
+        http.Redirect(w, r, "/view/"+title, http.StatusFound)
+      }
+      ```
   * 模版缓存
   * 校验
   * 介绍方法字面量和闭包
