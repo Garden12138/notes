@@ -734,6 +734,52 @@
       }
       ```
   * 校验
+    * 该程序有一个严重的安全漏洞：用户可以提供任意路径从而在服务器上读取/写入。为了缓解这种情况，可以编写一个函数使用正则表达式验证标题。
+      ```
+      import (
+        ...
+        "regexp"
+      )
+
+      var validPath = regexp.MustCompile("^/(edit|save|view)/([a-zA-Z0-9]+)$")
+      ```
+      添加```regexp```包至导入列表，创建全局变量保存校验表达式。函数```regexp.MustCompile```将解析以及编译规则表达式，返回```*Regexp```。```regexp.MustCompile```与```Compile```不同之处在于表达式编译失败会退出程序，而```Compile```将作为第二个参数返回```error```。
+      ```
+      func getTitle(w http.ResponseWriter, r *http.Request) (string, error) {
+        m := validPath.FindStringSubmatch(r.URL.Path)
+        if m == nil {
+          http.NotFound(w, r)
+          return "", errors.New("invalid Page Title")
+        }
+        return m[2], nil // The title is the second subexpression.
+      }
+      ```
+      若返回```nil```，标题非法，将写入404```Not Found```错误至```HTTP```连接，返回错误至处理程序```handler```。处理程序```handler```修改如：
+      ```
+      func viewHandler(w http.ResponseWriter, r *http.Request) {
+        title, err := getTitle(w, r)
+        if err != nil {
+          return
+        }
+        ...
+      }
+
+      func editHandler(w http.ResponseWriter, r *http.Request) {
+        title, err := getTitle(w, r)
+        if err != nil {
+          return
+        }
+        ...
+      }
+
+      func saveHandler(w http.ResponseWriter, r *http.Request) {
+        title, err := getTitle(w, r)
+        if err != nil {
+          return
+        }
+        ...
+      }
+      ```
   * 介绍方法字面量和闭包
 
 > How to write Go code
