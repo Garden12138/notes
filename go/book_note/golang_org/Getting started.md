@@ -676,6 +676,17 @@
       ```
       ```http.Redirect```函数添加```http.StatusFound```（302）状态码和```Location```标头至```HTTP```响应
   * 保存```pages```
+    * 函数```saveHandler```将处理位于编辑页上的表单提交。
+      ```
+      func saveHandler(w http.ResponseWriter, r *http.Request) {
+        title := r.URL.Path[len("/save/"):]
+        body := r.FormValue("body")
+        p := &Page{Title: title, Body: []byte(body)}
+        p.save()
+        http.Redirect(w, r, "/view/"+title, http.StatusFound)
+      }
+      ```
+      页面标题（```URL```中提供）和表单唯一字段```Body```存储在新页面。调用```save()```方法将数据写入文件，并将客户端重定向至/```view```/页面。```FormValue```返回值为```string```类型，使用```[]byte(body)```完成转化为```[]byte```。
   * 异常处理
   * 模版缓存
   * 校验
