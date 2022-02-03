@@ -718,6 +718,21 @@
       }
       ```
   * 模版缓存
+    * 每次渲染页面时，```renderTemplate```都会调用```ParseFiles```，效率低下。更好的方法是在程序初始化时调用```ParseFiles```，将所有模版解析为单个```*Template```，可以使用```ExecuteTemplate```方法来渲染特定模版。
+    * 创建全局变量```templates```以及使用```ParseFiles```初始化
+      ```
+      var templates = template.Must(template.ParseFiles("edit.html", "view.html"))
+      ```
+      函数```template.Must```是一个方便的包装器，当传递非```nil```值时会退出程序，否则返回```*Template```。```ParseFiles```函数采用任意数量的字符串参数来标识模版文件，并将这些文件解析为以基本文件名命名的模版。若需要添加更多模版，将它们添加```ParseFiles```的调用参数。
+    * 修改```renderTemplate```实现，使用```templates.ExecuteTemplate```函数
+      ```
+      func renderTemplate(w http.ResponseWriter, tmpl string, p *Page) {
+        err := templates.ExecuteTemplate(w, tmpl+".html", p)
+        if err != nil {
+          http.Error(w, err.Error(), http.StatusInternalServerError)
+        }
+      }
+      ```
   * 校验
   * 介绍方法字面量和闭包
 
