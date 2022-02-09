@@ -177,6 +177,58 @@
       ```
 
 > 流程控制（if、for、switch）
+  * ```if-else```
+    ```
+    if age := 18; age < 18 {
+		fmt.Println("Kid")
+	} else {
+		fmt.Println("Adult")
+	}
+    ```
+    声明初始化变量可嵌套至```if```条件
+  * ```for```
+    ```
+    // for-i
+	sum := 0
+	for i := 0; i < 10; i++ {
+		if sum > 10 {
+			break
+		}
+		sum += i
+	}
+	fmt.Println(sum)
+	// for-r
+	for i, e := range arr3 {
+		fmt.Println(i, e)
+	}
+	for i, e := range slice2 {
+		fmt.Println(i, e)
+	}
+	for k, v := range m2 {
+		fmt.Println(k, v)
+	}
+    ```
+    一般循环如累加使用```for-i```循环结构，数组（```array```）、切片（```slice```）、字典（```map```）一般使用```for-r```循环结构，第一个参数为索引，第二个参数为集合中的元素。
+  * ```switch```
+    ```
+    type Gender int8
+	const (
+		MALE Gender = 1
+		FEMALE Gender = 2
+	)
+	gender := MALE
+	switch gender {
+	case MALE:
+		fmt.Println("male")
+		fallthrough
+	case FEMALE:
+		fmt.Println("female")
+		fallthrough
+	default:
+		fmt.Println("unknown")
+	}
+    ```
+    使用关键字```type```声明新类型```Gender```，数据类型为```int8```。使用关键字```const```定义两个类型为```Gender```的常量```MALE```和```FEMALE```，```Go```语言没有枚举概念，一般使用常量模拟枚举。与其他语言不同，```Go```语言的```switch```不需要```break```中止```case```，```case```执行完定义的行为后，默认不会继续往下执行，若需要继续往下执行，使用关键字```fallthrough```。
 
 > 函数（functions）
 
