@@ -231,6 +231,77 @@
     使用关键字```type```声明新类型```Gender```，数据类型为```int8```。使用关键字```const```定义两个类型为```Gender```的常量```MALE```和```FEMALE```，```Go```语言没有枚举概念，一般使用常量模拟枚举。与其他语言不同，```Go```语言的```switch```不需要```break```中止```case```，```case```执行完定义的行为后，默认不会继续往下执行，若需要继续往下执行，使用关键字```fallthrough```。
 
 > 函数（functions）
+  * 参数与返回值
+    * 典型函数定义如下，使用关键字```func```，参数可以多个，返回值也支持多个。特别地，```package main```中的```func main()```约定为可执行程序的入口。
+      ```
+      func funcName(param1 Type1, param2 Type2) (Type1, Type2) {
+          //
+      }
+      ```
+      也可以为返回值命名：
+      ```
+      func funcName(param1 Type1, param2 Type2) (result1 Type1, result2 Type2) {
+          //
+      }
+      ```
+      例如，实现两个数加法（一个返回值）和除法的函数（两个返回值）：
+      ```
+      func intAdd(num1 int, num2 int) (ans int) {
+          //return num1 + num2
+          ans = num1 + num2
+          return
+      }
+      ```
+      ```
+      func intDiv(num1 int, num2 int) (int, int) {
+          return num1 / num2, num1 % num2
+      }
+      ```
+  * 错误处理（```error handling```）
+    * 可预知错误。函数实现过程中若出现不能处理的错误，可以返回调用者处理。
+      ```
+      func hello(name string) error {
+          if len(name) == 0 {
+              return errors.New("error：name is null")
+          }
+          fmt.Println("Hello!", name)
+        return nil
+      }
+      ```
+      ```
+      // 可预知错误
+      if err := hello(""); err != nil {
+          fmt.Println("可预知错误：", err)
+      }
+      ```
+      ```
+      可预知错误： error：name is null
+      ```
+      函数返回值定义```errorr```类型。错误处使用```errors.New()```返回特定错误信息，程序正常执行则返回```nil```。调用者使用函数返回值是否为```nil```的逻辑处理错误。
+    * 不可预知错误。如数组越界，这类错误可能导致程序非正常退出，这种错误在```Go```语言中成称为```panic```。
+      ```
+      func getIntNum(index int) (ret int) {
+          defer func() {
+              if r := recover(); r != nil {
+                  fmt.Println(r)
+                  ret = -1
+              }
+          }()
+          arr := [4]int{1, 2, 3, 4}
+	      return arr[index]
+      }
+      ```
+      ```
+      // 不可预知错误
+	  fmt.Println(getIntNum(5))
+	  fmt.Println("不可预知错误结束")
+      ```
+      ```
+      runtime error: index out of range [5] with length 4
+      -1
+      不可预知错误结束
+      ```
+      ```Go```语言使用类似```try-catch```机制的```defer```和```recover```处理不可预知错误。在函数```getIntNum```中，使用```defer```定义异常处理的函数，在协程退出前，会执行完```defer```挂载的任务。因此如果触发了```panic```，控制权交给```defer```。在```defer```处理逻辑中，使用```recover```函数，使程序恢复正常，并且返回错误值-1，若不设置错误返回值则默认返回值0。
 
 > 结构体、方法和接口
 
