@@ -304,6 +304,89 @@
       ```Go```语言使用类似```try-catch```机制的```defer```和```recover```处理不可预知错误。在函数```getIntNum```中，使用```defer```定义异常处理的函数，在协程退出前，会执行完```defer```挂载的任务。因此如果触发了```panic```，控制权交给```defer```。在```defer```处理逻辑中，使用```recover```函数，使程序恢复正常，并且返回错误值-1，若不设置错误返回值则默认返回值0。
 
 > 结构体、方法和接口
+  * 结构体（```struct```） 和方法（```methods```)
+    * 结构体类似其他语言的```class```，可在结构体中定义多个字段，为结构体实现方法，实例化等。
+      ```
+      // 定义学生结构体
+      type Student struct {
+          name string
+          age int
+      }
+      ```
+      使用```type```、```struct```关键字声明定义结构体。定义字段```name```类型```string```、```age```类型```int```。
+      ```
+      // 实现学生结构体hello方法
+      func (stu *Student) hello(name string) error {
+          if len(name) == 0 {
+              return errors.New("error：param name is null")
+          }
+          fmt.Printf("Hello! %s, I am %s, %d age\n", name, stu.name, stu.age)
+          return nil
+      }
+      ```
+      实现方法与实现函数区别在于```func```关键字与函数名```hello```之间，加上该方法对应的实例名```stu```及其类型```*Student```，可通过实例名访问该实例的字段和其他方法。
+      ```
+      // 实例化学生结构体
+      name := "Garden"
+      age := 18
+      stu := &Student{name, age}
+      err := stu.hello("Daemon")
+      if err != nil {
+          fmt.Println(err)
+      }
+      stu2 := new(Student)
+	  stu2.name = name
+	  stu2.age = age
+	  err2 := stu2.hello("Daemon")
+	  if err2 != nil {
+          fmt.Println(err2)
+      }
+      ```
+      使用```&Student{field: value, ...}```或```new(Student)```的形式创建```Student```实例，字段不需每个都赋值，没有显性赋值的变量将被赋予默认值。调用方法通过实例名.方法名(参数)的方式。
+      ```
+      Hello! Daemon, I am Garden, 18 age
+      ```
+
+  * 接口（```interfaces```）
+    * 接口定义了一组方法的集合，接口不可被实例化，一个类型可以实现多个接口。如定义接口```Person```以及方法```getName()```，使用关键字```type```、```interface```定义：
+      ```
+      type Person interface {
+          getName() string
+      }
+      ```
+      实现该接口的方法：
+      ```
+      func (stu *Student) getName() string {
+          return stu.name
+      }
+      ```
+      实例化```Student```，强制转换为```Person```接口类型：
+      ```
+      var person Person = &Student{name, age}
+	  fmt.Println(person.getName())
+      ```
+      若将上述实现该接口的方法```(stu *Student) getName()```注释，编译时会出现以下报错：
+      ```
+      *Student does not implement Person (missing getName method)
+      ```
+      验证某个类型实现某个接口的所有方法，若未实现，编译期间将会报错。将空值```nil```转换为```*Student```类型，再转换为```Person```接口，若转换失败说明```Student```并没有实现```Person```接口所有方法：
+      ```
+      var _ Person = (*Student)(nil)
+      ```
+      实例可以强制类型转换为接口，接口也可强制类型转换为实例：
+      ```
+      stu3 := person.(*Student)
+	  fmt.Println(stu3.getName())
+	  stu3.hello("Daemon")
+      ```
+  * 空接口
+    * 若定义一个没有任何方法的空接口（```interface{}```），这个接口可表示任意类型：
+      ```
+      m3 := make(map[string]interface{})
+      m3["name"] = "Garden"
+	  m3["age"] = 18
+	  fmt.Println(m3) // map[age:18 name:Garden]
+      ```
 
 > 并发编程（goroutine）
 
