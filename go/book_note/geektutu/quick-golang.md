@@ -389,6 +389,93 @@
       ```
 
 > 并发编程（goroutine）
+  * ```Go```语言提供了```sync```和```channel```两种方式支持协程（```goroutine```）的并发。例如希望并发下载```N```个资源，若多个并发协程之间不需通信，使用```sync.WaitGroup```，等待所有并发协程执行结束。若多个并发协程之间需要通信，使用```channel```。
+  * ```sync```
+    ```
+    import (
+        "fmt"
+	    "sync"
+	    "time"
+    )
+    ```
+    声明```sync.WaitGroup```全局变量：
+    ```
+    var wg sync.WaitGroup
+    ```
+    编写并发任务函数：
+    ```
+    func syncDownload(url string)  {
+        fmt.Println("start to sync download：", url)
+	    time.Sleep(time.Second) // 模拟下载操作耗时1s
+	    wg.Done() // 为wg计数器计数减一
+    }
+    ```
+    调用并发任务函数：
+    ```
+    for i := 0; i < 3; i++ {
+        wg.Add(1) // 为wg计数器计数加一
+		go syncDownload("www.garden.com/video/" + string(i + '0')) // 启动新的协程并发执行syncDownload函数
+	}
+	wg.Wait() // 等待所有的协程执行结束
+	fmt.Println("syncDownload finished")
+	fmt.Println("done!")
+    ```
+    运行程序：
+    ```
+    $ time go run .
+    ```
+    ```
+    start to sync download： www.garden.com/video/2
+    start to sync download： www.garden.com/video/1
+    start to sync download： www.garden.com/video/0
+    syncDownload finished
+    done!
+    go run .  0.25s user 0.26s system 16% cpu 3.077 total
+    ```
+  * ```channel```
+    ```
+    import (
+        "fmt"
+	    "time"
+    )
+    ```
+    创建大小为10的缓冲信道：
+    ```
+    var ch = make(chan string, 10)
+    ```
+    编写并发任务函数：
+    ```
+    func channelDownload(url string)  {
+        fmt.Println("start to channel download：", url)
+        time.Sleep(time.Second) // 模拟下载操作耗时1s
+        ch <- url // 将url信息发送给信道
+    }
+    ```
+    调用并发任务函数：
+    ```
+    for i := 0; i < 3; i++ {
+		go channelDownload("www.garden.com/video/" + string(i + '0')) // // 启动新的协程并发执行channelDownload函数
+	}
+	for i := 0; i < 3; i++ {
+		msg := <- ch // 等待信道返回消息
+		fmt.Println(msg, "channelDownload finished")
+	}
+	fmt.Println("done!")
+    ```
+    运行程序：
+    ```
+    $ time go run .
+    ```
+    ```
+    start to channel download： www.garden.com/video/1
+    start to channel download： www.garden.com/video/2
+    start to channel download： www.garden.com/video/0
+    www.garden.com/video/0 channelDownload finished
+    www.garden.com/video/1 channelDownload finished
+    www.garden.com/video/2 channelDownload finished
+    done!
+    go run .  0.25s user 0.26s system 16% cpu 3.077 total
+    ```
 
 > 单元测试（unit test）
 
