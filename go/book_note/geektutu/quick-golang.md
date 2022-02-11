@@ -478,6 +478,34 @@
     ```
 
 > 单元测试（unit test）
+  * 创建```xxx_test.go```文件
+  * 导入```testing```包：
+    ```
+    import "testing"
+    ```
+  * 定义测试方法```Testxxx```：
+    ```
+    func TestAdd(t *testing.T)  {
+        // 测试断言逻辑
+    }
+    ```
+  * 编写测试断言逻辑：
+    ```
+    if ans := add(1, 2); ans != 3 {
+		t.Error("add(1, 2) should be equal to 3")
+	}
+    ```
+  * 运行测试用例：
+    ```
+    $ go test .
+    ```
+    将自动运行当前```package```下所有测试用例，若需要查看详细信息，可添加```-v```参数：
+    ```
+    === RUN   TestAdd
+    --- PASS: TestAdd (0.00s)
+    PASS 
+    ok      gitee/FSDGarden/geektutu/quick-golang   0.115s
+    ```
 
 > 包（Package）和模块（Modules）
 
