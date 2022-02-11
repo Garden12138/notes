@@ -508,5 +508,100 @@
     ```
 
 > 包（Package）和模块（Modules）
-
+  * Package
+    * 一般来说，一个文件夹可作为```package```，同一个```package```内部变量、类型、方法、函数等可互相访问。如：
+      ```
+      // calc.go
+      package main
+    
+      func add(num1 int, num2 int) int {
+          return num1 + num2
+      }
+      ```
+      ```
+      // main.go
+      package main
+      
+      import "fmt"
+      
+      func main() {
+          fmt.Println(add(3, 5)) // 8
+      }
+      ```
+      运行```go run main.go```会报错，```add```函数未定义：
+      ```
+      ./main.go:6:14: undefined: add
+      ```
+      因```go run main.go```仅编译一个```main.go```文件，需要：
+      ```
+      $ go run main.go cal.go
+      ```
+      或
+      ```
+      $ go run .
+      ```
+      ```Go```语言中，同个```package```文件一般同时编译。其也有```Public```和```Private```概念，粒度时包。若接口、类型、方法、函数、字段为大写则为```Public```；若首写字母是小写，则为```Private```，对其他```package```不可见。
+  * Modules
+    * ```Go Modules```是```Go```1.11版本之后引入的，```Go```1.11之前使用```$GOPATH```机制。```Go Modules```可作为较为完善的包管理工具。同时支持代理，国内也享有高速的第三方镜像服务。```go mod```的使用，```Go```1.13版本仍为可选，环境变量```GO111MODULE```的值默认为```AUTO```，强制使用```Go Modules```进行依赖管理，可将```GO111MODULE```设置为```ON```。
+    * 初始化一个```Module```：
+      ```
+      $ go mod init example
+      go: creating new go.mod: module example
+      ```
+      此时，在当前文件夹下生成```go.mod```，该文件记录当前模块的模块名以及所有依赖包的版本。当前目录下新建文件```main.go```：
+      ```
+      package main
+      
+      import (
+          
+          "fmt"
+          
+          "rsc.io/quote"
+      )
+      
+      func main() {
+          fmt.Println(quote.Hello())  // Ahoy, world!
+      }
+      ```
+      运行```go run .```，将会自动触发第三方包```rsc.io/quote```的下载，具体版本信息记录在```go.mod```：
+      ```
+      module example
+      
+      go 1.16
+      
+      require rsc.io/quote v3.1.0+incompatible
+      ```
+      在当前目录创建子目录：
+      ```
+      $ mkdir cal
+      $ cd cal
+      ```
+      创建文件```cal.go```：
+      ```
+      package cal
+      
+      func Add(num1 int, num2 int) int {
+          return num1 + num2
+      }
+      ```
+      ```package main```中使用```package cal```的```Add```函数，```import```模块名/包名即可：
+      ```
+      package main
+      
+      import (
+          "fmt"
+	      "example/cal"
+          "rsc.io/quote"
+      )
+      
+      func main() {
+          fmt.Println(quote.Hello())
+          fmt.Println(calc.Add(10, 3))
+      }
+      ```
+      ```
+      $ go run .
+      Ahoy, world!
+      13
+      ```
 > 附 参考
