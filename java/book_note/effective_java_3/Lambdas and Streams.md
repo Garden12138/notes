@@ -256,7 +256,42 @@
       ```
 
 > 优先考虑流中无副作用的函数
-
+  * 流不仅是```API```，更是基于函数式编程的范式。为了获得流提供的可表达性、高效性以及某些情况下的并行性，必须采用范式和```API```。
+  * 流范式中最重要的部分是将计算结果进行一系列转换，其中每个阶段的结果都应尽可能为前一阶段结果的纯函数。纯函数的结果仅取决于输入，不依赖于任何可变状态，也不更新任何状态。为了实现这一点，传递给流操作的任何函数对象（中间操作和终结操作）都没有副作用。使用函数范式实现构建文本文件中单词的频率表：
+    ```
+    // Uses the streams API but not the paradigm
+    Map<String, Long> freq = new HashMap<>(); 
+    try (Stream<String> words = new Scanner(file).tokens()) { 
+      words.forEach(word -> {
+        freq.merge(word.toLowerCase(), 1L, Long::sum); 
+      }); 
+    }
+    ```
+    使用终结操作```foreach```完成改变外部状态```freq```，伪装成流代码的迭代代码，代码更冗长，难以阅读且更难维护。```foreach```操作应仅用于输出计算结果，而不是用于执行计算。正确的做法是使用流```API```：
+    ```
+    // Proper use of streams to initialize a frequency table
+    Map<String, Long> freq; 
+    try (Stream<String> words = new Scanner(file).tokens()) {
+      freq = words.collect(groupingBy(String::toLowerCase, counting())); 
+    }
+    ```
+    改进后的代码使用了收集器（```Collectors```）。```Collectors```复杂多样，但可忽略收集器接口实现，将收集器视为封装缩减策略的不透明对象，收集器生成的对象通常是集合。使用```Scanner```的```stream```方法在```scanner```实例上获取流实在```Java9```中添加的。若是使用较早版本```JDK```，可使用```streamOf(Iterable<E>)```的适配器实现```Iterator```的```scanner```序列转换为流。
+  * 流的收集器（```Collectors```）
+    * 将流元素收集至集合中的收集器：```toList()```、```toSet()```以及```toCollection(collectionFactory)```，分别返回列表、集合和指定集合类型。使用收集器实现从单词频率表中获取出现频率前10的单词列表：
+      ```
+      List<String> topTen = freq.keySet().stream()
+      .sorted(comparing(freq::get).reversed()) 
+      .limit(10) 
+      .collect(toList());
+      ```
+      ```comparing```为比较构造方法，绑定方法引用```freq::get```，从单词表```frequency```中查找单词并返回单词频率次数。在比较器上调用```reverse```方法，将单词频率次数从大到小排序。使用```limit```将流限制10个单词元素并使用收集器收集至列表中。其中没有对```toList()```方法的类收集器进行限定，静态导入收集器的所有成员使流管道更容易阅读。
+    * 最简单的收集器```toMap(keyMapper、valueMapper)```，接受两个函数，第一个函数将流元素映射到键，第二个函数将流元素映射到值，如使用该收集器从```enum```的字符串形式映射到```enum```本身：
+      ```
+      private static final Map<String, Operation> stringToEnum = Stream.of(values()).collect(toMap(Object::toString, e -> e));
+      ```
+      若多个流元素映射到同一键，流管道将以```IllegalStateException```终止。
+    * ```toMap```复杂形式以及```groupingBy```提供了处理映射同一键值冲突机制：
+      
 > 优先使用Collection而不是Stream来作为方法的返回类型
 
 > 谨慎使用流并行
