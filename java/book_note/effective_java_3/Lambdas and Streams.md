@@ -291,6 +291,18 @@
       ```
       若多个流元素映射到同一键，流管道将以```IllegalStateException```终止。
     * ```toMap```复杂形式以及```groupingBy```提供了处理映射同一键值冲突机制：
+      * ```toMap```支持除键和值映射器之外的```merge```方法，```merge```方法是```BinaryOperator<V>```,```V```是```map```的值类型，与键关联的任何附加值都使用```merge```方法与现有值相结合。如实现从不同艺术家（```artists```）的专辑（```ablums```）获取从唱片艺术家到最畅销专辑的```map```：
+        ```
+        Map<Artist, Album> topHits = albums.collect(toMap(Album::artist, a->a, maxBy(comparing(Album::sales))));
+        ```
+        ```toMap```的第三个形式参数另一个用途是产生一个收集器，当发生冲突时强制执行```last-write-wins```策略。
+        ```
+        toMap(keyMapper, valueMapper, (oldVal, newVal) ->newVal)
+        ```
+      * ```Collectors API```还提供了```groupingBy```方法，该方法返回收集器以生成基于分类器函数将元素分组到类别的```map```。分类器函数接受一个元素并返回它所属的类别，此类别为```map```的键，其值为每个类别中所有元素的列表。
+  * ```Collectors```中的```join```方法
+    * 该方法仅对```CharSequence```实例（如字符串）的流进行操作，在其无形式参数中，返回一个简单连接元素的收集器；在其形式参数为```delimiter```的单个```CharSequence```参数，表示在相邻元素之间插入分割符，并返回连接元素的收集器。除分割符外，还支持前缀、后缀拼接方式的形式参数。
+  * 编程流管道的实质是使用无副作用的函数对象解决问题，终结操作```forEach```仅用于输出计算结果而不是执行计算。正确使用流，需要充分了解收集器（```toList```、```toSet```、```toMap```、```groupingBy```以及```join```）。
       
 > 优先使用Collection而不是Stream来作为方法的返回类型
 
