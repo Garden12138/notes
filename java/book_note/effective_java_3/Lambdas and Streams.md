@@ -305,5 +305,83 @@
   * 编程流管道的实质是使用无副作用的函数对象解决问题，终结操作```forEach```仅用于输出计算结果而不是执行计算。正确使用流，需要充分了解收集器（```toList```、```toSet```、```toMap```、```groupingBy```以及```join```）。
       
 > 优先使用Collection而不是Stream来作为方法的返回类型
+  * 方法返回元素序列，通常返回类型为```Collection```、```Set```以及```List```等集合接口类型，还可返回```Iterable```、数组类型和```Java8```支持的```Stream```。
+    * 若返回序列需要实现```Collection```方法，选择```Collection```等集合接口类型。
+    * 若返回序列只需```for-each```循环，选择```Iterable```。
+    * 若返回序列为基本数据类型或严格的性能要求，选择数组类型。
+    * 若返回序列需要使用流```API```进行计算，选择```Stream```。
+  * 返回元素序列需要结合迭代和流，若```API```只返回流，需要提供迭代的适配器，相反```API```只返回迭代，则需提供流的适配器：
+    ```
+    public static <E> Iterable<E> iterableOf(Stream<E> stream) { 
+      return stream::iterator; 
+    }
+    ```
+    ```
+    public static <E> Stream<E> streamOf(Iterable<E> iterable) { 
+      return StreamSupport.stream(iterable.spliterator(), false); 
+    }
+    ```
+  * ```Collection```或适当的子类型通常是公共序列返回的最佳类型。```Collection```接口是```Iterable```的子类型且包含```stream```方法，故其提供了迭代和流访问。
+    * 若返回较小的序列，可放至内存时选择标准集合实现，如```ArrayList```和```HashSet```。
+    * 若返回大序列，不可放至内存时，需设计专用集合，用于返回大序列。如返回指定集合的所有幂集（原集合中所有的子集（包括全集和空集）构成的集族，```{a，b，c}```的幂集为```{{}，{a}，{b}，{c}，{a，b}，{a，c}，{b，c}，{a，b, c}}```），借助```AbstractList```抽象类型，实现```size```以及```get```抽象方法：
+      ```
+      public class PowerSet {
+        
+        public static final <E> Collection<Set<E>> of(Set<E> s) {
+          
+          List<E> src = new ArrayList<>(s);
+
+          if (src.size() > 30) throw new IllegalArgumentException("Set too big " + s);
+        
+          return new AbstractList<Set<E>>() {
+            @Override
+            public int size() {
+                return 1 << src.size();
+            }
+
+            @Override
+            public boolean contains(Object o) {
+                return o instanceof Set && src.containsAll((Set)o);
+            }
+
+            @Override
+            public Set<E> get(int index) {
+                Set<E> result = new HashSet<>();
+                for (int i = 0; index != 0; i++, index >>= 1) {
+                    if ((index & 1) == 1) {
+                        result.add(src.get(i));
+                    }
+                }
+                return result;
+            }
+          };
+        }
+      
+        public static void main(String[] args) {
+          Set<String> hs = new HashSet<>();
+          hs.add("a");
+          hs.add("b");
+          hs.add("c");
+          Collection<Set<String>> sub = PowerSet.of(hs);
+          sub.forEach(System.out::println);
+          System.out.println("-----------");
+          System.out.println(((List<Set<String>>)sub).get(7));
+        }
+      }
+      ```
+      ```
+      []
+      [a]
+      [b]
+      [a, b]
+      [c]
+      [a, c]
+      [b, c]
+      [a, b, c]
+      -----------
+      [a, b, c]
+      ```
+      序列迭代使用内部自定义实现的```size```和```get```方法，在方法中，通过从0到```2n-1```的二进制数和```n```个元素集和的幂集之间存在自然映射关系，迭代时构建所需的大序列。
+  *  数组可使用```Arrays.asList```和```Stream.of```方法提供简单的迭代和流访问。
 
 > 谨慎使用流并行
