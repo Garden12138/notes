@@ -385,3 +385,32 @@
   *  数组可使用```Arrays.asList```和```Stream.of```方法提供简单的迭代和流访问。
 
 > 谨慎使用流并行
+  * ```Java```一直处于提供简化并发编程工具的最前沿：
+    * 于发布时内置对线程的支持，提供```wait/notify```机制。
+    * ```Java5```引入```java.util.concurrent```类库，包含并发集合以及执行器框架。
+    * ```Java7```引入```fork-join```包，用于并行分解的高性能框架。
+    * ```Java8```引入流，可通过```parallel```方法的单个调用实现并行化。
+  * ```Java```对并发的支持使编程并发程序更加容易，但由于安全和活跃度违规使正确快速编写并发程序变得困难。流并行也是如此，故需谨慎使用流并行：
+    * 若流源来自```Stream.iterate```方法或使用中间操作```limit```方法，因流类库不知如何并行化此管道导致启发式失败，不能提高并行化管道的性能，故不使用流并行```parallell```。
+    * 流并行性的性能收益在```ArrayList```、```HashMap```、```HashSet```和```ConcurrentHashMap```实例、数组、```int```以及```long```范围类型的流上。这些数据结构的共同之处在于他们可以低成本的分割任意大小的子程序，使并行线程之间分工合作更加容易。用于执行此任务的流类库使用的抽象```spliterator```。另一个共同之处在于顺序处理元素时提供了良好的引用位置，顺序元素引用位置在存储器中为连续的，引用对象在存储器中可能不连续，降低引用局部性。对于并行化批量操作，没有引用位置，线程大部分时间处于空闲状态，等待数据从内存传输到处理器的缓存中。具有最佳引用位置的数据结构为基本数据类型的数组，因数据本身连续存储在存储器中。
+    * 流管道终结操作的性质影响并行执行的有效性。若与流管道的整体工作量相比，在终结操作中完成大量工作且操作本质上是连续的，那么并行化管道的有效性是有限的。并行性最佳终结操作为缩减，即使用流的```reduce```方法组合管道中出现的所有元素或预先打包```reduce```；短操作如```anyMatch```、```allMatch```和```noneMatch```也可支持并发性。但由```Stream```的```collect```方法执行的操作，称为可变缩减，不适合并行性，因为组合集合的开销很大。
+* 错误并行化流可能导致糟糕的性能，包括活性失败，它会导致不正确的结果以及不可预知的行为（安全故障）。并行化流是严格的性能优化，需要在更改前后测试性能，以确保优化性能的目的，理想情况下应在实际场景下执行测试。如正确使用流管道实现处理器内核数量近似线性加速：
+  ```
+  // 作为并行性有效的流管道的简单示例，请考虑此函数来计算π(n)，素数小于或等于 n： 
+  // Prime-counting stream pipeline - benefits from parallelization 
+  public static long pi(long n) { 
+    return LongStream.rangeClosed(2, n)
+        .mapToObj(BigInteger::valueOf)
+        .filter(i -> i.isProbablePrime(50))
+        .count(); 
+  }
+
+  // Prime-counting stream pipeline - parallel version
+    public static long pi(long n) { 
+    return LongStream.rangeClosed(2, n)
+        .parallel()
+        .mapToObj(BigInteger::valueOf)
+        .filter(i -> i.isProbablePrime(50))
+        .count(); 
+  }
+  ```
