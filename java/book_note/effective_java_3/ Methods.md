@@ -115,6 +115,84 @@
     ```Thermometer.newInstance(TemperatureScale.CELSIUS)```不仅比```Thermometer.newInstance(true)```更有意义，而且在新版本中将``` KELVIN```添加到```TemperatureScale```中，无需向```Thermometer```添加新的静态工厂。此外还可将温度刻度```（temperature-scale）```依赖关系重构为枚举常量的方法，如每个刻度常量可以有一个采用```double```值并将其转换为```Celsius```的方法。
 
 > 明智审慎地使用重载
+  * 重载方法之间的选择是静态的，在编译时选择；重写方法之间的选择是动态的，在运行时选择。如：
+    ```
+    public class CollectionClassifier {
+      public static String classify(Set<?> set) {
+        return "Set";
+      }
+      public static String classify(List<?> list) {
+        return "List";
+      }
+      public static String classify(Collection collection) {
+        return "Unknow Collection";
+      }
+
+      public static void main() {
+        Collection<?>[] collections = {
+          new HashSet<String>(),
+          new ArrayList<BigInteger>(),
+          new HashMap<String, String>().values()
+        };
+        for(Collection<?> c : collections) {
+          System.out.println(classify(cP));
+        }
+      }
+    }
+    ```
+    ```
+    Unknow Collection
+    Unknow Collection
+    Unknow Collection
+    ```
+    对于所有的迭代，参数在编译时类型是相同的，所以选择参数类型为```Collection<?>```。
+    ```
+    public class Wine {
+      public String name() {
+        return "Wine";
+      }
+    }
+
+    public class SparkingWine extends Wine {
+      @Override
+      public String name() {
+        return "sparking wine";
+      }
+    }
+
+    public class Champagne extends SparkingWine {
+      @Override
+      public String name() {
+        return "champagne";
+      }
+    }
+
+    public class Overriding {
+      public static void main(String[] args) {
+        List<Wine> wineList = List.of(new Wine(), new SparklingWine(), new Champagne());
+
+        for(Wine wine : wineList) {
+          System.out.println(wine.name());
+        }
+      }
+    }
+    ```
+    ```
+    Wine
+    sparking wine
+    champagne
+    ```
+    对于所有的迭代，实例在执行各自的重写方法。
+  * 应该避免混淆使用重载。重载容易混淆对方法调用行为的期望，不知为给定的参数集调用多个方法重载方法中的具体一个，使用```API```容易导致错误。
+  * 谨慎使用方法重载。一个安全且保守的策略是不要导出两个具有相同参数数量的重载。若清楚各个重载方法将应用于任何给定的实际参数集，那么可导出相同数量的多个重载方法，在这种情况下，重载中至少有一个对应的形式参数具有完全不用的类型（不可能将任何非空表达式强制转换为这对类型）。```Java8```中不要在相同参数位置重载采用不同函数式结构的方法。
+  * 可以为方法赋予不同名称的方式替代方法重载。如```ObjectOutputStream```类的```writeBoolean(boolean)```、```writeInt(int)```和```writeLong(long)```。但对于构造方法，无法使用不同方法名称，类的多个构造方法总是被重载。
+  * 允许同一个对象引用调用完全相同行为的重载方法，确保这种行为的标准方法是将更具体的重载方法调用转发给更一般的重载方法，如：
+    ```
+    public boolean contentEquals(StringBuffer sb) {
+      return contentEquals((CharSequence) sb);
+    }
+    ```
+  * 总结：最好避免重载具有相同数量参数的多个签名的方法。在某些情况下，如涉及构造方法的情况下，可能无法遵循此建议。在这些情况下，至少应避免通过添加强制转换将相同的参数集传递给不同的重载。如果这是无法避免的，如对现有类进行改造以实现新接口，那么应该确保在传递相同参数时所有重载行为都是相同的（```contentEquals(StringBuffer sb)```、```contentEquals((CharSequence) sb)```）。若无法遵循此要求，将不考虑使用重载方法或构造方法。
 
 > 明智审慎地使用可变参数
 
