@@ -195,6 +195,84 @@
   * 总结：最好避免重载具有相同数量参数的多个签名的方法。在某些情况下，如涉及构造方法的情况下，可能无法遵循此建议。在这些情况下，至少应避免通过添加强制转换将相同的参数集传递给不同的重载。如果这是无法避免的，如对现有类进行改造以实现新接口，那么应该确保在传递相同参数时所有重载行为都是相同的（```contentEquals(StringBuffer sb)```、```contentEquals((CharSequence) sb)```）。若无法遵循此要求，将不考虑使用重载方法或构造方法。
 
 > 明智审慎地使用可变参数
+  * 可变参数方法，即可变的参数数量方法，接受零个或多个指定类型的参数。可变参数的机制是首先创建一个数组，其大小由调用时参数数量决定，然后将参数值放入数组，最后将数组传递给方法。如设计一个接受一系列```int```类型的参数并返回它们的总和：
+    ```
+    public static int sum(int ...args) {
+      int sum = 0;
+      for (int arg : args) {
+        sum += arg;
+      }
+      return sun;
+    }
+    ```
+  * 若客户端不传递任何参数，单纯使用可变参数，容易导致异常，如：
+    ```
+    public static int min(int ..args) {
+      int min = args[0];
+      for (int i = 1; i < args.length; i++) {
+        if(args[i] < min) {
+          min = args[i]
+        }
+      }
+      return min;
+    }
+    ```
+    参数```args```客户端传空时，程序发生异常。可使用参数的有效性检查或将最小值```min```初始化为```Integer.MAX_VALUE```：
+    ```
+    public static int min(int ..args) {
+      if(args.length == 0) {
+        throw new IllegalArgumentException("too few arguments");
+      }
+      int min = args[0];
+      for (int i = 1; i < args.length; i++) {
+        if(args[i] < min) {
+          min = args[i]
+        }
+      }
+      return min;
+    }
+    ```
+    ```
+    public static int min(int ..args) {
+      int min = Integer.MAX_VALUE;
+      for (int i = 0; i < args.length; i++) {
+        if(args[i] < min) {
+          min = args[i]
+        }
+      }
+      return min;
+    }
+    ```
+    更好的解决是声明两个参数，第一个为指定类型的普通参数，第二个为此类型的可变参数：
+    ```
+    public static int min(int firstArg, int ...args) {
+      int min = firstArg;
+      for(int arg : args) {
+        if(arg < min) {
+          min = arg
+        }
+      }
+      return min;
+    }
+    ```
+  * 关键性能下谨慎使用可变参数，每次调用可变参数都会导致数组分配和初始化。若是关心性能成本，但又需要可变参数的灵活性，可结合重载的方式设计可变参数方法，如方法大多数情况下至多接受两个参数，少数情况下接受两个以上的参数：
+    ```
+    public void foo() {
+
+    }
+
+    public void foo(int a1) {
+      
+    }
+
+    public void foo(int a1, int a2) {
+      
+    }
+
+    public void foo(int a1, int a2, int ...args) {
+      
+    }
+    ```
 
 > 返回空的数组或集合，不要返回 null
 
