@@ -275,6 +275,48 @@
     ```
 
 > 返回空的数组或集合，不要返回 null
+  * 若内部集合可能为空，返回空数组：
+    ```
+    // 内部集合
+    private final List<Cheese> cheeseList = ...;
+
+    // 返回数组，数组可能为空
+    public Cheese[] getCheeses() {
+      return cheeseList.toArray(new Cheese[0]);
+    }
+    ```
+    ```
+    // 内部集合
+    private final List<Cheese> cheeseList = ...;
+
+    // 不可变零长度数组
+    public static final Cheese[] EMPTY_CHEESE_ARRAY = new Cheese[0];
+    // 返回数组，数组可能为空
+    public Cheese[] getCheeses() {
+      return cheeseList.toArray(EMPTY_CHEESE_ARRAY);
+    }
+    ```
+  * 若内部集合可能为空，返回空集合：
+    ```
+    // 内部集合
+    private final List<Cheese> cheeseList = ...;
+
+    // 返回集合，集合可能为空
+    public List<Cheese> getCheeses() {
+      return new ArrayList<>(cheeseList);
+    }
+    ```
+    ```
+    // 内部集合
+    private final List<Cheese> cheeseList = ...;
+
+    // 返回集合，集合可能为空
+    public List<Cheese> getCheeses() {
+      return cheeseList.isEmpty() ? Collections.emptyList() : new ArrayList<>(cheeseList);
+    }
+    ```
+    若想返回```Set```，则使用```Collections.emptySet()```；若想返回```Map```，则使用```Collections.emptyMap()```。
+  * 不返回```null```代替空数组或集合，避免造成客户端调用容易出错。
 
 > 明智审慎地返回 Optional
 
