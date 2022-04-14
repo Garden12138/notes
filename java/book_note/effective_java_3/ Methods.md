@@ -319,5 +319,77 @@
   * 不返回```null```代替空数组或集合，避免造成客户端调用容易出错。
 
 > 明智审慎地返回 Optional
+  * 在```Java8```之前，方法在特定情况下无法返回任何值时，通常使用抛出异常或返回```null```（假如返回类型为对象引用类型）两种方式。抛出异常方式因为在创建异常时捕获整个堆栈跟踪，所以成本代价较高；返回```null```方式要求客户端需要检查```null```，否则可能导致```null```返回值存储在数据结构中或应用其造成```NullPointerException```异常的可能性。
+  * ```Java8```中使用```Optional```处理方法在特定情况下无法返回任何值的问题。```Optional<T>```类表示一个不可变的容器，它可以包含一个非空的```T```引用，也可以不包含，包含称为存在（```present```），不包含称为空（```empty```）。```Optional```本质上是一个不可变的最多容纳一个元素的集合，但是其没有实现```Collection<T>```接口。如设计一个根据集合中元素的自然顺序计算集合的最大值的方法：
+    ```
+    // 使用抛出异常或返回null的方式
+    public static <E extends Comparable<E>> E max(Collection<E> c) {
+      if(c.isEmpty()) {
+        throw new IllegalArgumentException("Empty collection");
+        // return null;
+      }
+
+      E result = null;
+      for(E e : c) {
+        if(result == null || e.compareTo(result) > 0) {
+          result = Objects.requireNonNull(e);
+        }
+      }
+      return result;
+    }
+    ```
+    ```
+    // 使用Optional方法
+    public static <E extends Comparable<E>> Optional<E> max(Collection<E> c) {
+      if(c.isEmpty()) {
+        return Optional.empty();
+      }
+
+      E result = null;
+      for(E e : c) {
+        if(result == null || e.compareTo(result) > 0) {
+          result = Objects.requireNonNull(e);
+        }
+      }
+      return Optional.of(result);
+    }
+    ```
+    使用合适的静态工厂创建```Optional```。```Optional.empty()```返回一个空的```Optional```，```Optional.of(value)```返回一个包含给定非```null```值的```Optional```，但该方法接受可能为```null```的值，若传入```null```则返回一个空的```Optional```。
+  * ```Stream```上许多终止操作返回```Optional```，使用```Stream```重写```max```方法：
+    ```
+    public static <E extends Comparable<E>> Optional<E> max(Collection<E> c) {
+      return c.stream().max(Comparator.naturalOrder());
+    }
+    ```
+  * ```Optional```普遍使用方式：
+    * 指定默认值，返回空值时指定。
+      ```
+      .orElse("No words...");
+      ```
+    * 抛出任何适当异常，返回空值时抛出。参数传递的是异常工厂。
+      ```
+      .orElseThrow(TemperTantrumException::new);
+      ```
+    * 判断是否为空值。
+      ```
+      .isPresent();
+      ```
+    * 获取值。若为空则抛出```NoSuchElementException```异常
+      ```
+      .get();
+      ```
+    * 与```Stream```相结合。
+      ```
+      streamOfOptionals
+          .filter(Optional::isPresent)
+          .map(Optional::get);
+      ```
+  * 明智审慎地返回```Optional```：
+    * 并非所有返回类型都能从```Optional```中受益，容器类型包括集合、映射、```Stream```、数组以及```Optional```本身，不应该封装在```Optional```中。
+    * 在某些性能关键的情况下不使用```Optional```，```Optional```是必须分配和初始化的对象，从```Optional```中读取值需要额外的迂回。
+    * 除了```Int```、```Long```、```Double```等对应的```Optinonal```类型```OptinonalInt```、```OptinonalLong```、```OptinonalDouble```），不应该返回装箱的基本类型的```Optional```。
+    * 在集合或数组中使用```Optional```的键和值都不合适。
+    * 除了作为返回值外，不应该在任何地方使用```Optional```。
+    * 若可能无法返回结果且没有返回结果客户端还必须执行特殊处理的情况下，则应声明返回```Optional<T>```的方法。但对于性能关键的方法，最好抛出异常或返回```null```。
 
 > 为所有已公开的 API 元素编写文档注释
