@@ -393,3 +393,86 @@
     * 若可能无法返回结果且没有返回结果客户端还必须执行特殊处理的情况下，则应声明返回```Optional<T>```的方法。但对于性能关键的方法，最好抛出异常或返回```null```。
 
 > 为所有已公开的 API 元素编写文档注释
+  * 可用的```API```必须进行文档化。传统上```API```文档由手工生成，但难以保持文档与代码同步，使用```Javadoc```可以简化这一任务。```Javadoc```使用特殊格式的文档注释（```doc```注释）将源代码自动生成```API```文档。```Java5```中常使用```{@literal}```和```{@code}```、```Java8```中常使用```{@implSpec}```、```Java9```中添加一个重要的文档标签```{@index}```。
+  * 正确记录```API```，必须在每个导出的类、接口、属性、构造方法和方法之前加上文档注释，若一个类是可序列化的，应该记录其序列化形式。公共类不应该使用默认构造方法，因为无法为其提供文档注释，故为编写可维护的代码，还应该为大多数未导出的类、接口、属性、构造方法和方法编写文档注释。
+  * 方法的文档注释应该简洁描述方法与客户端之间的约定，约定表明方法的职责。文档注释应该列举方法的所有前置条件、后置条件以及副作用。对于未检查的异常，前置条件由```@throw```标签隐式描述，每个未检查异常对应一个先决条件违反；还可在受影响的参数的```@param```标签中指定前置条件；副作用是系统状态可观察的变化，如方法启动线程，则应该记录。
+  * 完整地描述方法的约定，文档注释应该包含概要描述，对每个参数设置```@param```标签，对于返回值设置```@return```标签（```void```返回类型除外）以及一个```@throw```标签（无论是检查异常还是非检查异常）。
+    * 方法概要描述是一个动词短语（包含任何对象），描述该方法执行的操作。类、接口和属性的概要描述是描述由类或接口的实例或属性本身表示的事物的名词短语。
+    * ```@param```或```@return```标签应该是一个名词短语，描述参数或返回值所表示的值含义。```throw```标签后面的文本应该包含单词```if```描述抛出异常的条件的子句，如```Biginteger```：
+      ```
+      /**
+      * Returns the element at the specified position in this list. 
+      *
+      * <p>This method is <i>not</i> guaranteed to run in constant * time. In some implementations it may run in time proportional 
+      * to the element position. 
+      *
+      * @param index index of element to return; must be 
+      * non-negative and less than the size of this list 
+      * @return the element at the specified position in this list 
+      * @throws IndexOutOfBoundsException if the index is out of range 
+      * ({@code index < 0 || index >= this.size()}) 
+      */ 
+      E get(int index);
+      ```
+      此文档注释中```<p>```和```<i>```使用```HTML```标记，```Javadoc```实用工具在将文档注释转换为```HTML```时，文档注释中的任意```HTML```元素最终生成对应的```HTML```。```{@code}```标签使代码块以代码字体的形式表现，且抑制了```HTML```标记和```Javadoc```标记的处理，若需在文档注释中包含多行代码示例，可使用```<pre>```包装，如```<pre>{@code index < 0 || index >= this.size()}</pre>```。文档注释中使用的单词```this```，表示实例方法的文档注释中指向方法调用所在的对象。
+  * 当为继承设计一个类时，必须记录其的自用模式，使用```implSpec```标签记录，该标签描述了方法与其子类之间的约定，若它继承方法或通过```super```调用方法，则允许子类依赖于实现行为，如：
+    ```
+    /** 
+    * Returns true if this collection is empty. 
+    *
+    * @implSpec 
+    * This implementation returns {@code this.size() == 0}. 
+    *
+    * @return true if this collection is empty 
+    */ 
+    public boolean isEmpty() { ... }
+    ```
+  * 若需生成包含```HTML```元字符的文档，如小于号（```<```），（```>```）和```and```符号（```&```）,将这些字符放入文档的最佳方法是使用```{@literal}```标签封装，该标签禁止处理```HTML```标记和嵌套的```Javadoc```标记，作用于```{@code}```标签相似，但不会以代码字体呈现。
+  * ```Java9```中使用```{@index}```标签将客户端索引添加到```Javadoc```生成的```HTML```中，这个索引以页面右上角的搜索框的形式出现，简化导航大型```API```文档集的任务。
+  * 泛型，枚举和注解需要特别注意文档注释：
+    * 记录泛型类型或方法时，务必记录所有类型参数：
+      ```
+      /**
+      * An object that maps keys to values. A map cannot contain 
+      * duplicate keys; each key can map to at most one value. 
+      *
+      * (Remainder omitted) 
+      *
+      * @param <K> the type of keys maintained by this map 
+      * @param <V> the type of mapped values 
+      */ 
+      public interface Map<K, V> { ... }
+      ```
+    * 记录枚举类型时，务必记录常量，以及类型和任何公共方法：
+      ```
+      /**
+      * An instrument section of a symphony orchestra. 
+      */ 
+      public enum OrchestraSection { 
+        /** Woodwinds, such as flute, clarinet, and oboe. */ 
+        WOODWIND, 
+        /** Brass instruments, such as french horn and trumpet. */ 
+        BRASS, 
+        /** Percussion instruments, such as timpani and cymbals. */ PERCUSSION, 
+        /** Stringed instruments, such as violin and cello. */ 
+        STRING; 
+      }
+      ```
+    * 记录注解类型时，务必记录任何成员以及类型本身。用名词短语表示的文档成员，对于类型的概要描述，使用动词短语，表示程序元素具有此类型注解所表示的含义：
+      ```
+      /**
+      * Indicates that the annotated method is a test method that 
+      * must throw the designated exception to pass. 
+      */ 
+      @Retention(RetentionPolicy.RUNTIME) 
+      @Target(ElementType.METHOD) public @interface ExceptionTest { 
+        /**
+        * The exception that the annotated test method must throw 
+        * in order to pass. (The test is permitted to throw any 
+        * subtype of the type described by this class object.) 
+        */
+        
+        Class<? extends Throwable> value(); 
+      }
+      ```
+  * 包级别文档注释应放在名为```package-info.java```文件中，除该注释外，```package-info.java```还必须包含一个包声明。若使用模块化，则应将模块级别注释放在```module-info.java```文件中。
