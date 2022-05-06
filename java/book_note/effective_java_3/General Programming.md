@@ -116,6 +116,48 @@
   * 若基本类库无法满足需求时，可以选择高质量第三方库，如谷歌开源的```Guava```库。如果无法在任何适当的库中找到支持所需的功能时，只能自身独立去实现。
 
 > 若需要精确答案就应避免使用 float 和 double 类型
+  * ```float```和```double```主要用于工程计算和科学计算，执行二进制浮点运算，能够在很大范围内快速提供精确的近似值，但不能提供准确的结果，也不应该在需要精确结果地方使用。```float```和```double```类型不适合进行货币计算。使用```float```或```double```进行货币计算会造成精度丢失问题，如假设口袋有一美元，零食店里有一个架子上有一排糖果，它们的价格从10美分、20美分依次递增直至1美元，现在我们从10美分的糖开始买起，直至剩余钱不足买下一颗糖，此时计算得出已买糖果数量以及剩余零钱：
+    ```
+    // 使用double计算
+    public static void main(String[] args) { 
+        double funds = 1.00; 
+        int itemsBought = 0;
+        for (double price = 0.10; funds >= price; price += 0.10) {
+            funds -= price; 
+            itemsBought++; 
+        }
+        System.out.println(itemsBought +"items bought."); // 3
+        System.out.println("Change: $" + funds);   // 0.399999999999999999
+    }
+    ```
+    ```
+    // 使用Bigdecimal计算
+    public static void main(String[] args) {
+        final BigDecimal TEN_CENTS = new BigDecimal(".10"); 
+        int itemsBought = 0; 
+        BigDecimal funds = new BigDecimal("1.00");
+        for (BigDecimal price = TEN_CENTS; funds.compareTo(price) >= 0; price = price.add(TEN_CENTS)) {
+            funds = funds.subtract(price); 
+            itemsBought++; 
+        }
+        System.out.println(itemsBought +"items bought.");  // 4
+        System.out.println("Money left over: $" + funds);  // 0
+    }
+    ```
+    ```
+    // 使用int类型计算，将整型换算成最小单位后再进行计算
+    public static void main(String[] args) { 
+        int itemsBought = 0; 
+        int funds = 100; // 1美元换算100美分
+        for (int price = 10; funds >= price; price += 10) {
+            funds -= price; 
+            itemsBought++; 
+        }
+        System.out.println(itemsBought +"items bought."); // 4
+        System.out.println("Cash left over: " + funds + " cents"); // 0
+    }
+    ```
+  * 对于需要精确答案的计算，不考虑性能成本和方便性的情况下使用```Bigdecimal```类型。若性能成本重要，进行十进制小数点的处理后，数值不超过9位时使用```int```类型，数值不超过18位时使用```long```类型。不考虑使用```float```和```double```类型。
 
 > 基本数据类型优于包装类
 
