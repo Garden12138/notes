@@ -171,12 +171,48 @@
     * 在参数化类型和方法中，必须使用包装类型作为类型参数，如```ThreadLocal<Intger>```。
 
 > 当使用其他类型更合适时应避免使用字符串
+  * 字符串被设计用来表示文本，以下是不适合使用字符串的场景：
+    * 当数据是其他值类型时，不应该使用字符串，应该使用对应值类型。若是数值类型，则使用```int```、```double```或```float```等；若是是或否的形式则使用枚举类型或布尔值。
+    * 当枚举常量时，不应该使用字符串，应该使用枚举类型。
+    * 聚合类型不应该使用字符串代替。若一个实体有多个组件，将其表示为单个字符串容易导致混乱，甚至出错。
+    * 字符串不能很好的代替```capabilities```。字符串常用于授予某些功能的访问权，如线程本地变量的机制，该机制提供每个线程拥有自己的独立变量。```Java1.2```后的库提供了线程本地变量机制，在这之前，出现由客户端提供字符串键用于标识每个线程本地变量的设计：
+      ```
+      // Broken - inappropriate use of string as capability! 
+      public class ThreadLocal { 
+          private ThreadLocal() { } // Noninstantiable 
+          
+          // Sets the current thread's value for the named variable.
+          public static void set(String key, Object value); 
+          
+          // Returns the current thread's value for the named variable. public static Object get(String key); 
+      }
+      ```
+      该设计的问题在于字符串键表示线程本地变量的共享全局名称空间。为了使该设计能够正常使用，客户端提供的字符串键必须是唯一的，否则两个客户端将会共享一个变量，导致两个端都失败。该设计安全性差，恶意客户端可故意使用与另一个客户端相同的字符串密钥来非法访问另一个客户端的数据。这个设计可通过用一个不可伪造的键（```capability```）替换字符串来修复：
+      ```
+      public class ThreadLocal { 
+          
+          private ThreadLocal() { } // Noninstantiable
+          
+          public static class Key {  // (Capability) 
+              Key() { } 
+          }
+          
+          // Generates a unique, unforgeable key 
+          public static Key getKey() { 
+              return new Key(); 
+          }
+          
+          public static void set(Key key, Object value);
+          public static Object get(Key key); 
+      }
+      ```
+  * 当存在或可编写更好的数据类型是，应避免将字符串用来表示对象。如果使用不当，字符串比其他类型更麻烦、灵活性更差、速度更慢、更容易出错。
 
 > 当心字符串连接引起的性能问题
 
 > 通过接口引用对象
 
-> 接口优于反射
+> 接口优于反射eng
 
 > 明智审慎地本地方法
 
