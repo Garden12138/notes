@@ -230,7 +230,58 @@
     * 声明框架的对象，框架的基本类型是类而不是接口，如果一个对象属于一个基于类的框架，则使用基类来声明它，一般基类是抽象的，如```java.io```中的```OutputStream```。
     * 实现接口但同时提供接口不存在额外方法的类，如```PriorityQueue```有一个在```Queue```接口中不存在的比较器方法。
 
-> 接口优于反射eng
+> 接口优于反射
+  * 核心放射机制```java.lang.reflect```提供对任意类的访问。给定一个```Class```对象，可获得```Constructor```、```Method```和```Field```实例，分别代表该```Class```实例所表示的类的构造器、方法和字段，这些实例提供对类的成员名、字段类型、方法签名等访问，通过调用这些实例的方法，可以构造底层类的实例且调用底层类的方法并访问底层类中的字段，如```Method.invoke```允许在任何类的任何对象上调用任何方法（受默认的安全约束）。
+  * 反射允许一个类使用另一个类，即使在编译前者时后者不存在，但存在缺点：
+    * 失去编译时的类型检查。若程序试图通过反射调用一个不存在或不可访问的方法时将在运行时失败，除非采取特殊的预防措施。
+    * 执行反射访问所需的代码冗长。
+    * 性能降低。
+  * 通过非常有限的形式使用反射，可以从反射中受益。对于许多程序，它们必须用到在编译时无法获取的类，在编译时存在一个合适的接口或超类来引用该类，可以用反射的方式创建实例，并通过它们的接口或超类正常访问它们，如设计一个创建```Set<String>```实例的程序，类由第一个命令行参数指定，剩余的命令行参数插入到集合并打印出来：
+    ```
+    // Reflective instantiation with interface access 
+    public static void main(String[] args) {
+        // Translate the class name into a Class object 
+        Class<? extends Set<String>> cl = null; 
+        try {
+            cl = (Class<? extends Set<String>>) // Unchecked cast! 
+            Class.forName(args[0]); 
+        } catch (ClassNotFoundException e) {
+            fatalError("Class not found."); 
+        }
+        
+        // Get the constructor 
+        Constructor<? extends Set<String>> cons = null; 
+        try {
+            cons = cl.getDeclaredConstructor(); 
+        } catch (NoSuchMethodException e) {
+            fatalError("No parameterless constructor"); 
+        }
+        
+        // Instantiate the set 
+        Set<String> s = null; 
+        try {
+            s = cons.newInstance(); 
+        } catch (IllegalAccessException e) {
+            fatalError("Constructor not accessible"); 
+        } catch (InstantiationException e) {
+            fatalError("Class not instantiable."); 
+        } catch (InvocationTargetException e) {
+            fatalError("Constructor threw " + e.getCause()); 
+        } catch (ClassCastException e) {
+            fatalError("Class doesn't implement Set"); 
+        }
+        
+        // Exercise the set 
+        s.addAll(Arrays.asList(args).subList(1, args.length)); 
+        System.out.println(s); 
+    }
+    
+    private static void fatalError(String msg) { 
+        System.err.println(msg); 
+        System.exit(1); 
+    }
+    ```
+  * 反射是一种功能强大的工具，对于某些复杂的系统编程任务（代码分析工具、依赖注入框架等）是必需的。若编写的程序必须在编译时处理未知的类，则应尽可能使用反射实例化对象，并使用在编译时已知的接口或超类访问对象。
 
 > 明智审慎地本地方法
 
