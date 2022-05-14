@@ -81,6 +81,30 @@
     ```IllegalStateException```，否则抛出```IllegalArgumentException```。
 
 > 抛出与抽象对应的异常
+  * 当方法传递由底层抽象抛出的异常时，高层的实现容易受到破坏，如果高层的实现在后续的发行版本中发生变化，它所抛出的异常也可能发生变化，从而潜在地破坏现有客户端程序。为了避免该问题，更高层的实现应该捕获底层抽象的异常，同时抛出可按高层进行解释的异常，这种做法称为异常转译：
+    ```
+    try {
+        ...
+    } catch (LowerLevelException e) {
+        throw new HigherLevelException(...);
+    }
+    ```
+  * 一种特殊的异常转译称为异常链，如果底层的异常可对于高层异常的调试提供帮助，适合使用异常链，底层的异常传递至高层的异常，高层的异常提供访问方法（```Throwable```的```getCause```方法）来获取底层的异常：
+    ```
+    try {
+        ...
+    } catch (LowerLevelException cause) {
+        throw new HigherLevelException(cause);
+    }
+    ```
+    ```
+    public class HigherLevelException extends Exception {
+        public HigherLevelException(Throwable cause) {
+            super(cause);
+        }
+    }
+    ```
+  * 谨慎使用异常转译。如果可能，处理来自底层异常的最好做法是在调用底层方法之前确保它们成功执行，从而避免它们抛出异常。如果无法阻止来自底层的异常，则在高层处理这些异常，如记录机制（```log```）或在传递给底层参数之前，在高层实现处进行参数的有效性校验等。
 
 > 每个方法抛出的异常都需要创建文档
 
