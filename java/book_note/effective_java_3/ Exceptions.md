@@ -62,6 +62,23 @@
       ```
 
 > 优先使用标准的异常
+  * ```Java```平台类库提供了一组基本的未受检异常，它们满足大多数```API```的异常抛出需求且可以被重用。重用标准异常的好处：
+    * 它使```API```更容易学习和使用。
+    * 对于使用这些```API```的程序而言，它们的可读性更好。
+    * 异常类越少，意味着内存占用越小，装载这些类的时间开销也越少。
+  * 常见的可重用异常：
+
+    |异常|使用场合|
+    |:------:|:------:|
+    |IllegalArgumentException|非null的参数值不正确|
+    |IllegalStateException|不适合方法调用的对象状态|
+    |NullPointerException|在禁止使用null的情况下参数值为null|
+    |IndexOutOfBoundsExecption|下标参数值越界|
+    |ConcurrentModificationException|在禁止并发修改的情况下，检测到对象的并发修改|
+    |UnsupportedOperationException|对象不支持用户请求的方法|
+
+    选择重用异常并非总是精确的，如以一副牌的对线为例，假设有一个处理发牌操作的方法，它的参数是发一手牌的纸牌张数，假设调用者在这个参数传递的值大于整副纸牌的剩余张数，该情况既适用于```IllegalArgumentException```（```handSize```参数的值太大），也适用于```IllegalStateException```（纸牌对象包含的纸牌太少）。此时，若没有可用参数，则抛出
+    ```IllegalStateException```，否则抛出```IllegalArgumentException```。
 
 > 抛出与抽象对应的异常
 
