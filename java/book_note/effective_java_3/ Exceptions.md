@@ -114,6 +114,18 @@
   * 如果一个类的许多方法由于同样的原因抛出同一个异常，可在该类上对这个异常建立文档，如```NullPointerException```。
 
 > 在细节消息中包含失败一捕获信息
+  * 当程序由于未被捕获的异常而失败时，系统会自动打印出该异常的堆栈轨迹。轨迹中包含该异常的字符串表示法（异常的```toString```方法的调用结果），通常包含异常的类名，以及随后的细节信息。为了尽可能返回相关的失败信息，帮助问题排查，异常的细节信息应该包含对该异常有贡献的参数和参数值，如```IndexOutOfBoundException```异常的细节信息应该包括下界，上界以及当前下标值，基于该错误信息可以极大地加速诊断过程。对于安全信息敏感的，如密码、密钥等不可以包含在细节信息中。但过于冗长的描述信息是不必要的，这些信息可以通过阅读源代码获得。
+  * 为了确保在异常的细节信息中包含足够的失败捕捉信息，通常在异常的构造器而不是字符串细节信息中引入这信息信息：
+    ```
+    public IndexOutOfBoundsException( int lowerBound, int upperBound, int index ) { 
+        // Generate a detail message that captures the failure 
+        super(String.format( "Lower bound: %d, Upper bound: %d, Index: %d", lowerBound, upperBound, index ) ); 
+        // Save failure information for programmatic access 
+        this.lowerBound = lowerBound; 
+        this.upperBound = upperBound; 
+        this.index = index; 
+    }
+    ```
 
 > 保持失败原子性
 
