@@ -89,6 +89,139 @@
     * 将对象放到并发集合中。
 
 > 避免过度同步
+  * 为了避免活性失败和安全性失败，在一个被同步的区域内部（方法或代码块），不设计成可被覆盖的方法或由客户端以函数对象形式提供的方法。外来方法的作用，从同步区域中调用它会导致异常、死锁或者数据损坏。设计一个可以观察到的集合包装类，该类允许客户端将元素添加至集合中时预定通知：
+    ```
+    public class ObservableSet<E> extends ForwardingSet<E> { 
+        public ObservableSet(Set<E> set) { 
+            super(set); 
+        } 
+        
+        private final List<SetObserver<E>> observers = new ArrayList<>();
+         
+        public void addObserver(SetObserver<E> observer) { 
+            synchronized(observers) { 
+                observers.add(observer); 
+            } 
+        }
+        
+        public Boolean removeObserver(SetObserver<E> observer) { 
+            synchronized(observers) { 
+                return observers.remove(observer); 
+            } 
+        }
+        
+        private void notifyElementAdded(E element) { 
+            synchronized(observers) {
+                for (SetObserver<E> observer : observers) 
+                    observer.added(this, element); 
+            } 
+        }
+        
+        @Override 
+        public Boolean add(E element) { 
+            Boolean added = super.add(element); 
+            if (added) 
+                notifyElementAdded(element); 
+            return added; 
+        }
+        
+        @Override
+        public Boolean remove(E element) {
+            return super.remove(element);
+        }
+    } 
+    ```
+    ```
+    @FunctionalInterface 
+    public interface SetObserver<E> { 
+        void added(ObservableSet<E> set, E element); 
+    }
+    ```
+    简单的客户端调用，```ObservableSet```是正常的，如打印0～99的数字：
+    ```
+    public static void main(String[] args) {
+        ObservableSet<Integer> set = new ObservableSet<>(new HashSet<>());
+        set.addObserver((s, e) -> System.out.println(e));
+        for(int i = 0; i <100; i++) {
+            set.add(i);
+        }
+    }
+    ```
+    若传入的观察者的支持当添加到集合的值为23，将该观察者删除：
+    ```
+    public static void main(String[] args) {
+        ObservableSet<Integer> set = new ObservableSet<>(new HashSet<>());
+        set.addObserver(new SetObserver<>() { 
+            public void added(ObservableSet<Integer> s, Integer e) { 
+                System.out.println(e); 
+                if (e == 23) 
+                    s.removeObserver(this); 
+            } 
+        });
+        for(int i = 0; i <100; i++) {
+            set.add(i);
+        }
+    }
+    ```
+    该程序会打印数字0～23，然后抛出```ConcurrentModificationException```异常。由于```notifyElementAdded```调用观察者的```added```方法时正处于遍历观察者列表阶段，此时```added```方法调用移除观察者列表元素的方法```removeObserver```，造成遍历元素列表的同时删除列表元素的异常错误。
+
+    若使用另外一个线程试图取消观察者：
+    ```
+    public static void main(String[] args) {
+        ObservableSet<Integer> set = new ObservableSet<>(new HashSet<>());
+        set.addObserver(new SetObserver<>() { 
+            public void added(ObservableSet<Integer> s, Integer e) { 
+                System.out.println(e); 
+                if (e == 23) { 
+                    ExecutorService exec = Executors.newSingleThreadExecutor(); 
+                    try {
+                        exec.submit(() -> s.removeObserver(this)).get(); 
+                    } catch (ExecutionException | InterruptedException ex) {
+                        throw new AssertionError (ex); 
+                    }
+                    finally { 
+                        exec.shutdown(); 
+                    } 
+                } 
+            } 
+        });
+        for(int i = 0; i <100; i++) {
+            set.add(i);
+        }
+    }
+    ```
+    运行该程序时，没有遇到异常而出现死锁。主线程拥有锁，而后台线程等待释放锁，此时主线程等待后台线程完成对观察者的删除从而释放锁，故造成死锁。
+
+    解决上述出现的异常和死锁问题，关键将外来方法的调用移出同步的区域，同步区域生成观察者列表的快照，如：
+    ```
+    private void notifyElementAdded(E element) { 
+        List<SetObserver<E>> snapshot = null; 
+        synchronized(observers) { 
+            snapshot = new ArrayList<>(observers); 
+        }
+        for (SetObserver<E> observer : snapshot) 
+            observer.added(this, element); 
+    }
+    ```
+    还可以使用```Java```类库提供的并发集合```CopyOnWriteArrayList```，通过重新拷贝整个底层数组，实现所有的写操作，由于内部数组永远不改动，因此迭代不需要锁定：
+    ```
+    private final List<SetObserver<E>> observers = new CopyOnWriteArrayList<>(); 
+    
+    public void addObserver(SetObserver<E> observer) {
+        observers.add(observer); 
+    }
+    
+    public Boolean removeObserver(SetObserver<E> observer) { 
+        return observers.remove(observer); 
+    }
+    
+    private void notifyElementAdded(E element) {
+        for (SetObserver<E> observer : observers)
+            observer.added(this, element); 
+    }
+    ```
+  * 通常在同步区域内做尽可能少的工作，一般为获得锁，检查共享数据，根据需要转换数据，然后释放锁。若执行某个耗时的操作，则应该设法将耗时操作移出同步区域。
+  * 不过度同步，在多核的场景下，过度同步会因为等待获取锁失去并行的机会且会限制虚拟机优化代码执行的能力。
 
 > executor 、task 和 stream 优先于线程
 
