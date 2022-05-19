@@ -224,6 +224,28 @@
   * 不过度同步，在多核的场景下，过度同步会因为等待获取锁失去并行的机会且会限制虚拟机优化代码执行的能力。
 
 > executor 、task 和 stream 优先于线程
+  * 工作队列（```work queue```）实现方式不正确容易出现安全问题或导致活性失败。```Java```平台后续新增的```java.util.concurrent```包，它可以简化任务的执行，其包含一个```Executor Framework```是基于接口的任务执行工具。创建工作队列：
+    ```
+    ExecutorService exec = Executors.newSingleThreadExecutor();
+    ```
+    提交一个```runnable```方法：
+    ```
+    exec.execute(runnable);
+    ```
+    优雅终止：
+    ```
+    exec.shutdown();
+    ```
+  * ```executor service```可以完成更多的工作：
+    * 可以等待一个任务集合中的任何任务或所有任务完成（利用```invokeAny```或```invokeAll```）。
+    * 可以等待```executor service```优雅地完成终止（利用```awaitTermination```）。
+    * 可以在任务完成时逐个获取这些任务的结果（利用```ExecutorCompletionService```）。
+    * 可以调度在某个特殊的时间段定时运行或者阶段性地运行任务（利用```ScheduledThreadPoolExcutor```）。
+  * 选择合适的```executor service```：
+    * 如果编写小程序或轻量负载的服务器，使用```Executors.newCachedThreadPool```。
+    * 大负载的产品服务器，使用```Executors.newFixedThreadPool```。
+    * 如果需要包含固定线程数目的线程池或最大限度控制线程，使用```ThreadPoolExecutor```类。
+  * ```Executor```优于直接使用线程。在```Executor Framewokr```中工作单元和执行机制时分开的，工作单元称为任务，分别有```Runnable```以及```Callable```，执行任务的通用机制是```Executor Service```。从任务的角度选择一个合适的```executor service```执行任务从而解决实际问题。```Java7```中```Executor```框架扩展为支持```fork-join```任务，这些任务在```fork-join```池服务运行，该任务用```ForkJoinTask```实例表示，可以被分为更小的子任务，```ForkJoinPool```的线程不仅要处理这些任务，还会从另外线程争取执行任务，以确保所有的线程保持忙碌，从而提高```CPU```使用率、提高吞吐量并降低延迟。```Java8```的并行流在```ForkJoinPool```基础上实现的，必要时使用```Stream```优于直接使用线程。
 
 > 并发工具优于 wait 和 notify
 
