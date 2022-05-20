@@ -248,6 +248,76 @@
   * ```Executor```优于直接使用线程。在```Executor Framewokr```中工作单元和执行机制时分开的，工作单元称为任务，分别有```Runnable```以及```Callable```，执行任务的通用机制是```Executor Service```。从任务的角度选择一个合适的```executor service```执行任务从而解决实际问题。```Java7```中```Executor```框架扩展为支持```fork-join```任务，这些任务在```fork-join```池服务运行，该任务用```ForkJoinTask```实例表示，可以被分为更小的子任务，```ForkJoinPool```的线程不仅要处理这些任务，还会从另外线程争取执行任务，以确保所有的线程保持忙碌，从而提高```CPU```使用率、提高吞吐量并降低延迟。```Java8```的并行流在```ForkJoinPool```基础上实现的，必要时使用```Stream```优于直接使用线程。
 
 > 并发工具优于 wait 和 notify
+  * ```Java5```发行版本开始，更高级的并发工具逐渐代替手工编写```wait```和```notify```来完成各项并发工作。并发工具包```java.util.concurrent```中的高级工具分为三类：```Executor Framework```、并发集合（```Concurrent Collection```）以及同步器（```Synchronizer```）。
+  * 并发集合为标准集合（```List```、```Queue```和```Map```）提供了高性能的并发实现。为了提高并发性，这些实现在内部实现自我管理同步，故并发集合不可能排除并发活动，将它锁定会使程序速度变慢。一些并发集合已经通过依赖状态的修改操作进行了拓展，它将几个基本操作合并到单个原子操作中，它们通过缺省方法加入```Java8```对应的集合接口中。如使用```Map```的```putIfAbsent(key, value)```方法实现线程安全的```Map```。设计一个模拟```String.intern```的方法：
+    ```
+    private static final ConcurrentMap<String, String> map = new ConcurrentHashMap<>(); 
+    
+    public static String intern(String s) { 
+        String previousValue = map.putIfAbsent(s, s); 
+        return previousValue == null ? s : previousValue; 
+    }
+    ```
+    使用```ConcurrentMap```的获取操作```get```方法可以进行优化：
+    ```
+    public static String intern(String s) { 
+        String result = map.get(s); 
+        if (result == null) { 
+            result = map.putIfAbsent(s, s); 
+            if (result == null) 
+                result = s; 
+        }
+        return result; 
+    }
+    ```
+    并发集合优于同步集合，如应该优先使用```ConcurrentMap```而不是```Collections.synchronizedMap```。
+  * 同步器是使线程能够等待另一个线程的对象，允许它们协调动作，同步器有```CountDownLatch```、```Semaphore```、```CyclicBarrier```、```Exchanger```和```Phaser```。最常使用的倒计数锁存器（```CountDownLatch```）允许一个或多个线程等待一个或多个其他线程来完成某些任务，该同步器唯一的构造器带有一个```int```类型的参数，该参数指允许所有在等待的线程被处理之前，必须在锁存器上调用```coutDown```方法的次数。如设计一个待所有任务线程就绪后开始计时的计时方法：
+    ```
+    // Simple framework for timing concurrent execution 
+    public static long time(Executor executor, int concurrency, Runnable action) throws InterruptedException { 
+        CountDownLatch ready = new CountDownLatch(concurrency); CountDownLatch start = new CountDownLatch(1); 
+        CountDownLatch done = new CountDownLatch(concurrency);
+        
+        for (int i = 0; i < concurrency; i++) { 
+            executor.execute(() -> { 
+                ready.countDown(); 
+                // Tell timer we're ready 
+                try {
+                    start.await(); 
+                    // Wait till peers are ready 
+                    action.run();
+                } catch (InterruptedException e) { 
+                    Thread.currentThread().interrupt(); 
+                } finally {
+                    done.countDown(); 
+                    // Tell timer we're done 
+                } 
+            }); 
+        }
+        
+        ready.await(); 
+        // Wait for all workers to be ready 
+        long startNanos = System.nanoTime(); 
+        start.countDown(); 
+        // And they're off!
+        done.await(); 
+        // Wait for all workers to finish 
+        return System.nanoTime() - startNanos; 
+    }
+    ```
+  * 虽然优先使用并发工具，但可能会维护使用```wait```方法和```notify```方法的遗留方法。```wait```方法被用来使用线程等待某个条件，它必须在同步区域内部被调用，这个同步区域将对象锁定在调用```wait```方法的对象上，使用```wait```方法的标准模式：
+    ```
+    // The standard idiom for using the wait method 
+    synchronized (obj) { 
+        while (<condition does not hold>) 
+            obj.wait(); 
+            // (Releases lock, and reacquires on wakeup) 
+            ... // Perform action appropriate to condition 
+    }
+    ```
+    必须从```while```循环内部调用```wait```方法，在等待之前测试条件，当条件已经成立时就跳过等待，这对于确保活性时必要的；在等待之前测试条件，如果条件不成立时继续等待，这对于确保安全性是必要的。
+    
+    对于唤醒等待线程的方式```notify```和```notifyAll```，应该始终优先使用```notifyAll```方法，因为它可以确保将所有需要被唤醒的线程唤醒，虽然可能会唤醒其他无相关的线程，但这不影响程序的正确性，因为它们会检查正在等待的条件，如果条件不满足则会继续等待；从优化角度，如果处于等待状态的所有线程都在等待同一个条件且每次只有一个线程可以从这个条件中被唤醒，则优先使用```notify```方法。
 
 > 文档应包含线程安全属性
 
