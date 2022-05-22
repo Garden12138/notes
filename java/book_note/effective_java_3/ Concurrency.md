@@ -346,5 +346,81 @@
   * 若编写一个无条件线程安全的类，请考虑使用一个私有锁对象来代替同步方法，这将保护免受客户端或者子类的同步干扰，并为提供更大的灵活性，以便在后续的版本中才有复杂的并发控制方式。
 
 > 明智审慎的使用延迟初始化
+  * 延迟初始化是延迟字段初始化，直到需要时才初始化字段，否则不初始化字段。该技术适用于实例字段或静态字段。延迟初始化的其中一个用途是优化，如果一个字段只在类的小部分实例上访问，并且初始化该字段的代价高，这时可以使用延迟初始化进行优化，还有一种用途可以用于破坏类中的有害循环和实例初始化。
+  * 延迟初始化的最佳建议是除非需要，否则非必要使用这种技术，虽然它降低了初始化类或创建实例的成本，代价是增加访问延迟初始化字段的成本，初始化的开销以及初始化后访问每个字段的频率实际上损害性能。存在多线程的情况下，使用延迟初始化必须使用某种形式的同步，否则会导致严重的错误。
+  * 延迟初始化的使用：
+    * 在大多数情况下，常规初始化优于延迟初始化。
+    * 使用同步访问器延迟初始化实例/静态字段；
+      ```
+      // 实例字段
+      private FieldType field; 
+      
+      private synchronized FieldType getField() { 
+          if (field == null)
+              field = computeFieldValue(); 
+          return field; 
+      }
+      ```
+      ```
+      // 静态字段
+      private static FieldType field; 
+      
+      private static synchronized FieldType getField() { 
+          if (field == null)
+              field = computeFieldValue(); 
+          return field; 
+      }
+      ```
+    * 如果需要在静态字段上使用延迟初始化提高性能，使用```lazy initialization holder class```模式：
+      ```
+      private static class FieldHolder { 
+          static final FieldType field = computeFieldValue(); 
+      }
+      
+      private static FieldType getField() { 
+          return FieldHolder.field; 
+      }
+      ```
+      第一次调用```getField```时，它执行```FieldHolder.field```，导致初始化```FieldHolder```类。这个用法只执行字段访问，故延迟初始化实际上不会增加访问成本。```VM```只会对同步字段访问来初始化类并且在初始化类之后，```VM```会进行代码修补，对字段的后续访问不会设计任何测试或同步。
+    * 如果需要在实例字段上使用延迟初始化提高性能，使用双重检查模式：
+      ```
+      private volatile FieldType field;
+      
+      private FieldType getField() { 
+          FieldType result = field; 
+          if (result == null) { // First check (no locking)
+              synchronized(this) { 
+                  if (field == null) // Second check (with locking)
+                      field = result = computeFieldValue(); 
+              } 
+          }
+          return result; 
+      }
+      ```
+      若实例字段允许重复初始化，则使用单检查模式：
+      ```
+      private volatile FieldType field;
+      
+      private FieldType getField() { 
+          FieldType result = field; 
+            if (field == null)
+                field = result = computeFieldValue(); 
+            } 
+          return result; 
+      }
+      ```
+      若不关心每个线程是否重新计算字段的值，并且字段的类型是```long```或```double```之外的基本类型，可以使用原生单检查模式：
+      ```
+      private FieldType field;
+      
+      private FieldType getField() { 
+          FieldType result = field; 
+            if (field == null)
+                field = result = computeFieldValue(); 
+            } 
+          return result; 
+      }
+      ```
+      上述各模式都适用于基本类型和对象引用字段。当字段为数值基本类型字段，检查字段应该是0而不是```null```。
 
 > 不要依赖线程调度器
