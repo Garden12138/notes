@@ -29,8 +29,94 @@
     * 内部类不应该实现```Serializable```，但静态成员类可以实现。    
 
 > 考虑使用自定义的序列化形式
+  * 编写类时通常将精力集中在设计```API```上，这意味着发布一次性实现，在将来的版本中可能会替换它。如果该类还实现```Serializable```接口且使用默认的序列化形式，在将来更改替换时反序列话将会出现问题，这种情况发生在```Java```库中的几个类上，包括```BigInteger```。
+  * 考虑使用默认的序列化形式：
+    * 从正确性、性能和灵活性的角度综合看，生成的编码是合理的，如设计自定义序列化形式生成的编码与默认序列化形式生成的编码很大程度上相同时，考虑使用默认的序列化形式。
+    * 如果对象的逻辑内容与物理表示相同，默认的序列化形式是合适的。如表示人名的类：
+      ```
+      // Good candidate for default serialized form 
+      public class Name implements Serializable { 
+          /*** Last name. Must be non-null. 
+          * @serial 
+          */ 
+          private final String lastName; 
+          
+          /*** First name. Must be non-null. 
+          * @serial 
+          */ 
+          private final String firstName; 
+          
+          /*** Middle name, or null if there is none. 
+          * @serial
+           */ 
+          private final String middleName;
+          
+          ... // Remainder omitted 
+      }
+      ```
+      逻辑上该类表示姓名由姓、名、中间名组成。物理上```Name```的实例字段包含姓、名、中间名。认为默认的序列化形式是合适的，通常也必须提供```readObject```方法来确保安全性和不变性，该方法必须保证字段```lastName```和```firsttName```是非空的。```lastName```、```firstName```和```middleName```字段是私有的，因为它们定义了类的序列化形式的公共```API```，所以必须使用```@serial```文档注解进行文档化。
+  * 设计一个字符串列表：
+    ```
+    public final class StringList implements Serializable { 
+        private int size = 0; 
+        private Entry head = null; 
+        
+        private static class Entry implements Serializable { 
+            String data; 
+            Entry next; 
+            Entry previous; 
+        }
+        
+        ... // Remainder omitted 
+    }
+    ```
+    逻辑上这个类表示字符串序列，物理上则表示双向链表，如果使用默认的序列化形式，该序列化形式将镜像除链表中的所有项以及这些项的双向链接。
+    
+    当对象的逻辑内容与物理表示有很大差异时，使用默认的序列化形式有以下缺点：
+      * 它将导出的```API```永久地绑定至当前的内部实现。
+      * 它会占用过多的空间。
+      * 它会消耗过多的时间。
+      * 它可能导致堆栈溢出。
 
-> 保护性的编写 readObject 方法
+    使用列表中的字符串数量以及字符串本身，合理自定义序列化形式：
+      ```
+      public final class StringList implements Serializable {
+          private transient int size = 0; 
+          private transient Entry head = null; 
+        
+        private static class Entry { 
+            String data; 
+            Entry next; 
+            Entry previous; 
+        }
+        
+        public final void add(String s) { ... }
+
+        private synchronized void writeObject(ObjectOutputStream s) throws IOException { 
+            s.defaultWriteObject(); 
+            s.writeInt(size); 
+            // Write out all elements in the proper order.
+            for (Entry e = head; e != null; e = e.next)
+                s.writeObject(e.data); 
+        }
+
+        private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException { 
+            s.defaultReadObject(); 
+            int numElements = s.readInt(); 
+            // Read in all elements and insert them in list
+            for (int i = 0; i < numElements; i++) 
+                add((String) s.readObject()); 
+        }
+      }
+      ```
+      使用自定义序列化表单，大多数或所有实例字段都应该标记```transient```修饰符，表示从类的默认序列化形式表单中省略该实例字段，在反序列化实例时，这些实例字段将初始化为默认值（对象引用字段为```null```、数字基本类型字段为0，布尔字段为```false```），故需要提供一个```readObject```方法或延迟初始化的方式将实例字段恢复为可接受的值。```writeObject```方法与```readObject```方法应该使用```@serialData```文档注解表示方法时序列化形式的公共```API```。必须对序列化对象操作强制执行同步，保证线程安全。
+  * 无论选择哪种序列化形式，都需要在编写的每个可序列化类中声明显式的序列版本```UID```。消除序列版本```UID```成为不兼容性的潜在来源且提高性能，避免在运行时因未提供序列版本      ```UID```计算生成。声明序列版本```UID```，在类中新增一行：
+    ```
+    private static final long serialVersionUID = randomLongValue;
+    ```
+
+
+> 保护性的编写readObject方法
 
 > 对于实例控制，枚举类型优于 readResolve
 
