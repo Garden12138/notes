@@ -115,8 +115,102 @@
     private static final long serialVersionUID = randomLongValue;
     ```
 
-
 > 保护性的编写readObject方法
+  * 如果需要极力维护其约束条件和不可变性的类支持序列化或反序列化，则需要编写保护性的```readObject```方法。如不可变的日期范围类，它包含可变的私有变量```Date```，该类构造器支持保护性的拷贝```Date```对象：
+    ```
+    public final class Period { 
+        private final Date start; 
+        private final Date end; 
+        
+        public Period(Date start, Date end) { 
+            this.start = new Date(start.getTime()); 
+            this.end = new Date(end.getTime()); 
+            if (this.start.compareTo(this.end) > 0) 
+                throw new IllegalArgumentException(start + " after " + end); 
+        }
+        
+        public Date start () { 
+            return new Date(start.getTime()); 
+        }
+        
+        public Date end () { 
+            return new Date(end.getTime()); 
+        }
+        
+        public String toString() { 
+            return start + " - " + end; 
+        }
+    }
+    ```
+    该对象的物理表示与逻辑内容相同，所以可以使用默认的序列化形式，在类声明中增加```implements Serializable```，但是这将导致对象失去不变性。因为反序列化时使用默认的```readObject```方法构造对象，没有检查参数的有效性和对参数进行保护性拷贝，以致攻击者可以通过修改序列化后的字节流以及额外的引用引用对象引用，使得可以修改类的不变量：
+    ```
+    public class MutablePeriod { 
+        // A period instance 
+        public final Period period; 
+        // period's start field, to which we shouldn't have access 
+        public final Date start; 
+        // period's end field, to which we shouldn't have access
+        public final Date end; 
+        
+        public MutablePeriod() { 
+            try {
+                ByteArrayOutputStream bos = new ByteArrayOutputStream(); ObjectOutputStream out = new ObjectOutputStream(bos); 
+                // Serialize a valid Period instance 
+                out.writeObject(new Period(new Date(), new Date())); 
+                /** Append rogue "previous object refs" for internal * Date fields in Period. For details, see "Java * Object Serialization Specification," Section 6.4. 
+                */
+                byte[] ref = { 0x71, 0, 0x7e, 0, 5 }; 
+                // Ref #5 
+                bos.write(ref); 
+                // The start field 
+                ref[4] = 4; 
+                // Ref # 4 
+                bos.write(ref); 
+                // The end field 
+                // Deserialize Period and "stolen" Date references ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bos.toByteArray())); 
+                period = (Period) in.readObject(); 
+                start = (Date) in.readObject(); 
+                end = (Date) in.readObject(); 
+            }catch (IOException | ClassNotFoundException e) { 
+                throw new AssertionError(e); 
+            } 
+        } 
+    }
+    ```
+    ```
+    public static void main(String[] args) { 
+        MutablePeriod mp = new MutablePeriod(); 
+        Period p = mp.period; 
+        Date pEnd = mp.end; 
+        // Let's turn back the clock 
+        pEnd.setYear(78);
+        System.out.println(p); 
+        // Bring back the 60s! 
+        pEnd.setYear(69); 
+        System.out.println(p); 
+    }
+    ```
+    ```
+    Wed Nov 22 00:21:29 PST 2017 - Wed Nov 22 00:21:29 PST 1978 
+    Wed Nov 22 00:21:29 PST 2017 - Sat Nov 22 00:21:29 PST 1969
+    ```
+    对```readObject```方法进行参数有效性检查以及不可变变量的保护性拷贝，保护性拷贝必须在有效性检查之前进行，为了使用保护性字段，取消```final```关键字修饰：
+    ```
+    private void readObject(ObjectInputStream s) throws IOException, ClassNotFoundException { 
+        s.defaultReadObject(); 
+        // Defensively copy our mutable components 
+        start = new Date(start.getTime()); 
+        end = new Date(end.getTime()); 
+        // Check that our invariants are satisfied 
+        if (start.compareTo(end) > 0) 
+            throw new InvalidObjectException(start +" after "+ end); 
+    }
+    ```
+  * 编写健壮的```readObject```方法：
+    * 类中的对象引用字段必须保持未私有属性，要保护性的拷贝这些字段的每个对戏。
+    * 对于任何约束条件，如果检查失败就抛出```InvalidObjectException```异常。这些检查动作必须在所有保护性拷贝之后。
+    * 如果整个对象在被反序列化之后必须进行验证，就应该使用```ObjectInputValidation```接口。
+    * 无论是直接方法还是间接方法，都不要调用类中任何可被覆盖的方法。
 
 > 对于实例控制，枚举类型优于 readResolve
 
