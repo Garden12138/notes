@@ -213,5 +213,99 @@
     * 无论是直接方法还是间接方法，都不要调用类中任何可被覆盖的方法。
 
 > 对于实例控制，枚举类型优于 readResolve
+  * 对于单例模式的类，增加```implements Serializable```声明，会返回一个新建的实例，这个新建的实例不同于类初始化时创建的实例，无论使用默认的序列化形式，还是自定义的序列化形，使用默认的```readObject```或是显式的```readObject```都无关。可以使用```readResolve```或枚举类型控制实例控制，但枚举类型优于```readResolve```。单例类如下：
+    ```
+    public class Elvis { 
+        public static final Elvis INSTANCE = new Elvis(); 
+
+        private Elvis() { ... } 
+        
+        public void leaveTheBuilding() { ... } 
+    }
+    ```
+  * 使用```readResolve```解决单例类反序列化破坏单例模式的问题：
+    ```
+    private Object readResolve() { 
+        return INSTANCE; 
+    }
+    ```
+    ```readResolve```特性使用另一个实例代替用```readObject```创建的实例，在序列化之后，新建对象的```readResolve```方法会被调用，该方法返回的对象将取代新建的对象，新建的对线的引用将不会被保留，成为垃圾回收的对象。该方法忽略了被反序列化的对象，只返回类初始化创建的特殊```Elvis```实例，故```Elvis```实例的反序列化形式不应该包含任何实际数据，所有实例字段都应该被声明为```transient```。
+
+    如果依赖```readResolve```进行实例控制，带有对象引用类型的所有实例字段都必须声明为```transient```。否则当对象引用字段的内容在```readResolve```之前被反序列化，它允许攻击者制作的流指向最初被反序列化的单例对象引用：
+    ```
+    // 单例类
+    public class Elvis implements Serializable { 
+        public static final Elvis INSTANCE = new Elvis(); 
+        
+        private Elvis() { } 
+        
+        private String[] favoriteSongs = { 
+            "Hound Dog", "Heartbreak Hotel" 
+        }; 
+        
+        public void printFavorites() { 
+            System.out.println(Arrays.toString(favoriteSongs)); 
+        }
+        
+        private Object readResolve() { 
+            return INSTANCE; 
+        } 
+    }
+    ```
+    ```
+    //攻击类
+    public class ElvisStealer implements Serializable { 
+        static Elvis impersonator; 
+        private static final long serialVersionUID = 0; 
+        private Elvis payload; 
+        
+        private Object readResolve() { 
+            // Save a reference to the "unresolved" Elvis instance impersonator = payload; 
+            // Return object of correct type for favoriteSongs field 
+            return new String[] { "A Fool Such as I" }; 
+        } 
+    }
+    ```
+    ```
+    //攻击程序
+    public class ElvisImpersonator { 
+        // Byte stream couldn't have come from a real Elvis instance! 
+        private static final byte[] serializedForm = { 
+            (byte) 0xac, (byte) 0xed, 0x00, 0x05, 0x73, 0x72, 0x00, 0x05, 0x45, 0x6c, 0x76, 0x69, 0x73, (byte) 0x84, (byte) 0xe6, (byte) 0x93, 0x33, (byte) 0xc3, (byte) 0xf4, (byte) 0x8b, 0x32, 0x02, 0x00, 0x01, 0x4c, 0x00, 0x0d, 0x66, 0x61, 0x76, 0x6f, 0x72, 0x69, 0x74, 0x65, 0x53, 0x6f, 0x6e, 0x67, 0x73, 0x74, 0x00, 0x12, 0x4c, 0x6a, 0x61, 0x76, 0x61, 0x2f, 0x6c, 0x61, 0x6e, 0x67, 0x2f, 0x4f, 0x62, 0x6a, 0x65, 0x63, 0x74, 0x3b, 0x78, 0x70, 0x73, 0x72, 0x00, 0x0c, 0x45, 0x6c, 0x76, 0x69, 0x73, 0x53, 0x74, 0x65, 0x61, 0x6c, 0x65, 0x72, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0x4c, 0x00, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x74, 0x00, 0x07, 0x4c, 0x45, 0x6c, 0x76, 0x69, 0x73, 0x3b, 0x78, 0x70, 0x71, 0x00, 0x7e, 0x00, 0x02 
+        };
+        
+        public static void main(String[] args) { 
+            // Initializes ElvisStealer.impersonator and returns 
+            // the real Elvis (which is Elvis.INSTANCE) 
+            Elvis elvis = (Elvis) deserialize(serializedForm); 
+            Elvis impersonator = ElvisStealer.impersonator; 
+            elvis.printFavorites(); 
+            impersonator.printFavorites();
+        } 
+    }
+    ```
+    这个程序会产生如下输出：
+    ```
+    [Hound Dog, Heartbreak Hotel] 
+    [A Fool Such as I]
+    ```
+    可以通过将```favoriteSongs```字段声明为```transient```，可以修复这个问题。
+
+  * 使用枚举类型解决单例类反序列化破坏单例模式的问题：
+    ```
+    // Enum singleton - the preferred approach 
+    public enum Elvis { 
+        INSTANCE; 
+        
+        private String[] favoriteSongs = { 
+            "Hound Dog", "Heartbreak Hotel" 
+        }; 
+        
+        public void printFavorites() {
+            System.out.println(Arrays.toString(favoriteSongs)); 
+        } 
+    }
+    ```
+  * 应该尽可能的使用枚举类型来实施实例控制的约束条件。如果做不到，同时又需要一个即可序列化又可以实例受控的类，就必须提供一个```readResolve```方法，并确保该类的所有实例化字段都被基本类型，或者是```transient```。
 
 > 考虑用序列化代理代替序列化实例
