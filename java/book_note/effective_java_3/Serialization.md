@@ -309,3 +309,65 @@
   * 应该尽可能的使用枚举类型来实施实例控制的约束条件。如果做不到，同时又需要一个即可序列化又可以实例受控的类，就必须提供一个```readResolve```方法，并确保该类的所有实例化字段都被基本类型，或者是```transient```。
 
 > 考虑用序列化代理代替序列化实例
+  * 实现```Serializable```接口会增加出错和出现安全问题的可能性。使用序列化代理模式可以减少这些风险：
+    * 为可序列化的类设计一个私有的静态嵌套类，称为序列化代理，精确表示外围类的逻辑状态。它包含一个单独的构造器，参数类型为外围类，从它的参数重复制数据，不需要进行任何一致性校验或保护性拷贝。外围类以及其序列化代理都必须声明```Serializable```接口，序列化代理的默认序列化形式是外围类最好的序列化形式：
+      ```
+      private static class SerializationProxy implements Serializable {
+          private final Date start; 
+          private final Date end; 
+          
+          SerializationProxy(Period p) { 
+              this.start = p.start; 
+              this.end = p.end; 
+          }
+          
+          private static final long serialVersionUID = 234098243823485285L;
+      }
+      ```
+    * 将```writeReplace```方法添加至外围类。这个方法将产生一个```SerializationProxy```实例代替外围类的实例：
+      ```
+      private Object writeReplace() { 
+          return new SerializationProxy(this); 
+      }
+      ```
+    * 防止攻击者有可能伪造违反该类约束条件的示例，需要在外围类添加```readObject```方法抛出异常：
+      ```
+      // readObject method for the serialization proxy pattern 
+      private void readObject(ObjectInputStream stream) throws InvalidObjectException { 
+          throw new InvalidObjectException("Proxy required"); 
+      }
+      ```
+    * 最后在```SerializationProxy```类添加一个```readResolve```方法，返回逻辑上等价的外围类，这个方法令序列化系统在反序列化时将序列化代理转为外围类的实例：
+      ```
+      // readResolve method for Period.SerializationProxy 
+      private Object readResolve() { 
+          return new Period(start, end); // Uses public constructor 
+      }
+      ```
+  * 序列化代理方式可以阻止伪字节流的攻击以及内部字段的盗用攻击。使用这种方式，序列化代理模式的功能比保护性拷贝更加强大，允许反序列实例有着与原始序列化实例不同的类，这种方式在实际应用中提供便利，如序列化```EnumSet```枚举类型，它的枚举有60个元素，将这个枚举类型加5个元素后反序列化，结果当它序列化时，是```RegularEnumSet```实例，反序列化时是```JunmboEnumSet```实例：
+    ```
+    private static class SerializationProxy<E extends Enum<E>> implements Serializable { 
+        private static final long serialVersionUID = 362491234563181265L; 
+        
+        // The element type of this enum set. 
+        private final Class<E> elementType; 
+        
+        // The elements contained in this enum set. 
+        private final Enum<?>[] elements; SerializationProxy(EnumSet<E> set){
+            elementType = set.elementType; 
+            elements = set.toArray(new Enum<?>[0]); 
+        }
+        
+        private Object readResolve() { 
+            EnumSet<E> result = EnumSet.noneOf(elementType);
+            for (Enum<?> e : elements) 
+                result.add((E) e);
+            return result; 
+        } 
+    }
+    ```
+  * 序列化代理模式有局限性：
+    * 它不能与可以被客户端拓展的类兼容。
+    * 它不能与对象中包含循环的某些类兼容。
+    * 性能开销增加。
+  * 当必须在一个不能被客户端拓展的类上编写```readObject```或```writeObject```方法时，则应该考虑使用序列化代理模式。
