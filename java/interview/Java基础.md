@@ -1,8 +1,80 @@
 #### Java基础
 
 > 面向对象
-
-> 类图
+  * 三大特性
+    * 封装。利用抽象数据类型将数据和基于数据的操作封装在一起，使其构成一个不可分割的独立实体。数据被保护在抽象数据类型内部（私有成员变量），隐藏内部实现细节，对外只提供访问方法：
+      ```
+      public class Person {
+          
+          private String name;
+          private int gender;
+          private int age;
+          
+          public String getName() {
+              return name;
+          }
+          
+          public String getGender() {
+              return gender == 0 ? "man" : "woman";
+          }
+          
+          public void work() {
+              if (18 <= age && age <= 50) {
+                  System.out.println(name + " is working very hard!");
+          } else {
+              System.out.println(name + " can't work any more!");
+            }
+          }
+      }
+      ```
+      优点：
+        * 减少耦合，可以独立开发、测试、优化、修改以及使用
+        * 减轻维护负担，可以更容易被开发者理解，在调试时可以不影响其他模块
+        * 有效调节性能
+        * 提供软件的重用性
+        * 降低构建大型系统的风险，即使整个系统不可用，独立的模块却可能是有用
+    * 继承。继承实现了```IS-A```关系，如```Cat```和```Animal```是一种```IS-A```关系，故```Cat```继承了```Animal```，从而获得了```Animal```的非```private```属性。继承应该遵循里斯替换原则，子类对象必须能给替换掉所有的父类对象，如可以使用```Animal```引用```Cat```对象，这种父类引用指向子类对象的方式称为向上转型。
+      ```
+      Animal animal = new Cat();
+      ```
+    * 多态。多态分为编译时多态和运行时多态。编译时主要指方法的重载；运行时多态指定义的对象引用所指向的具体类型在运行时才确定，实现运行时多态需要同时满足继承、重写和向上转型：
+      ```
+      public class Instrument {
+          public void play() {
+              System.out.println("Instrument is playing...");
+          }
+      }
+      
+      public class Wind extends Instrument {
+          public void play() {
+              System.out.println("Wind is playing...");
+          }
+      }
+      
+      public class Percussion extends Instrument {
+          public void play() {
+              System.out.println("Percussion is playing...");
+          }
+      }
+      
+      public class Music {
+          public static void main(String[] args) {
+              List<Instrument> instruments = new ArrayList<>();
+              instruments.add(new Wind());
+              instruments.add(new Percussion());
+              for(Instrument instrument : instruments) {
+                  instrument.play();
+              }
+          }
+      }
+      ```
+  * 类图
+    * 泛化关系。
+    * 实现关系。
+    * 聚合关系。
+    * 组合关系。
+    * 关联关系。
+    * 依赖关系。
 
 > 语言基础
 
