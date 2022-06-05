@@ -70,14 +70,105 @@
       ```
   * 类图
     * 泛化关系。用来描述继承关系，在```Java```中使用```extends```关键字。
+      ```
+      @startuml
+      
+      title Generalization
+
+      class Vehical
+      class Car
+      class Truck
+
+      Vehical <|-- Car
+      Vehical <|-- Truck
+
+      @enduml
+      ```
     * 实现关系。用来描述实现接口，在```Java```中使用```implements```关键字。
+      ```
+      @startuml
+      
+      title Realization
+      
+      interface MoveBehavior
+      class Fly
+      class Run
+      
+      MoveBehavior <|.. Fly
+      MoveBehavior <|.. Run
+      
+      @enduml
+      ```
     * 聚合关系。用来描述整体与部分的关系，整体和部分不是强依赖，整体不存在，部分仍存在。如电脑由主机、鼠标以及键盘等聚合而成。
+      ```
+      @startuml
+      
+      title Aggregation
+      
+      class Computer
+      class Keyboard
+      class Mouse
+      class Screen
+      
+      Computer o-- Keyboard
+      Computer o-- Mouse
+      Computer o-- Screen
+      
+      @enduml
+      ```
     * 组合关系。用来描述整体与部分的关系，整体和部分是强依赖，整体不存在，部分则不存在。如公司由多个部门组成，公司不存在则部门不存在。
+      ```
+      @startuml
+      
+      title Composition
+      
+      class Company
+      class DepartmentA
+      class DepartmentB
+      
+      Company *-- DepartmentA
+      Company *-- DepartmentB
+      
+      @enduml
+      ```
     * 关联关系。用来描述不同类对象之间的静态关系，与运行过程的状态无关。如一个班级有多个学生的1对```n```关系。
+      ```
+      @startuml
+      
+      title Association
+      
+      class School
+      class Student
+      
+      School "1" - "n" Student
+      
+      @enduml
+      ```
     * 依赖关系。用来描述不同类对象之间在运行过程的作用关系。如```A```类和```B```类是依赖关系的主要三种形式：
       * ```A```类是```B```类方法中的一个参数。
       * ```A```类是```B```类某方法的局部变量。
       * ```A```类像```B```类发送消息，从而影响```B```类发生变化。
+      ```
+      @startuml
+      
+      title Dependency
+      
+      class Vehicle {
+          move(MoveBehavior)
+      }
+
+      interface MoveBehavior {
+          move()
+      }
+
+      note "MoveBehavior.move()" as N
+
+      Vehicle ..> MoveBehavior
+
+      Vehicle .. N
+
+      @enduml
+      ```
 
 > 语言基础
 
