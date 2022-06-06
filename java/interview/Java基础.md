@@ -171,6 +171,34 @@
       ```
 
 > 语言基础
+  * 数据类型
+    * 包装类型。对应的八个基本类型：
+      ```
+      boolean/1b
+      byte/8b
+      char/16b
+      short/16b
+      int/32b
+      float/32b
+      long/64b
+      double/64b
+      ```
+      包装类型与基本类型之间的赋值使用自动装箱与自动拆箱完成:
+      ```
+      Integer x = 2; //装箱
+      int y = x; //拆箱
+      ```
+    * 缓存池。```new Integer(123)```与```Integer.valueOf(123)```区别在于：
+      * ```new Integer(123)```每次都会创建一个新对象。
+      * ```Integer.valueOf(123)```会优先使用缓存池中的对象，多次调用会取得同一个对象的引用：
+        ```
+        public static Integer valueOf(int i) {
+          if (i >= IntegerCache.low && i <= IntegerCache.high)
+              return IntegerCache.cache[i + (-IntegerCache.low)];
+          return new Integer(i);
+        }
+        ```
+        在```Java8```中，Integer的缓存池大小默认为-128～127。```valueOf```方法会应用在缓存池范围进行自动装箱中，多个```Integer```实例引用相同的对象并且值相同。
 
 > 泛型机制
 
