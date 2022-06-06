@@ -198,7 +198,20 @@
           return new Integer(i);
         }
         ```
-        在```Java8```中，Integer的缓存池大小默认为-128～127。```valueOf```方法会应用在缓存池范围进行自动装箱中，多个```Integer```实例引用相同的对象并且值相同。
+        在```Java8```中，Integer的缓存池大小默认为-128～127。```valueOf```方法会应用在缓存池范围进行自动装箱中，多个```Integer```实例引用相同的对象并且值相同：
+        ```
+        Integer m = 123;
+        Integer n = 123;
+        System.out.println(m == n); // true
+        ```
+        基本类型对应缓存池范围：
+        ```
+        boolean values true and false 
+        all byte values 
+        short values between -128 and 127 
+        int values between -128 and 127 
+        char in the range \u0000 to \u007F
+        ```
 
 > 泛型机制
 
