@@ -212,6 +212,46 @@
         int values between -128 and 127 
         char in the range \u0000 to \u007F
         ```
+  * ```String```
+    * 概览。```String```类被声明为```final```，因此它不可被继承。它内部使用```char```数组（```value```）存储数据，该数组被声明为```final```，意味着```value```数组在初始化之后不能再引用其他数组，且```String```内部没有改变```value```数组的方法，因此可以保证```String```不可变。
+      ```
+      public final class String implements java.io.Serializable, Comparable<String>, CharSequence {
+        /** The value is used for character storage. */
+        private final char value[];
+
+        ...
+      }
+      ```
+    * 不可变性的好处：
+      * 可以缓存```hash```值。因```String```的不可变性使其```hash```值也不可变，因此```hash```值只需要进行一次计算，常应用于```HashMap```的```key```。
+      * 可以支持```String Pool```的需要。如果一个```String```对象被创建过（字面量的创建方式），那么就会从```String Pool```中取得引用，故只有```Sring```不可变，才能使用```String Pool```。
+      * 安全性。```String```经常作为参数（如网络连接参数），```String```不可变性可以保证参数不可变。
+      * 线程安全。```String```不可变性具备线程安全，可以在多个线程中安全地使用。
+    * [String、StringBuffer、StringBuilder](https://stackoverflow.com/questions/2971315/string-stringbuffer-and-stringbuilder)
+      * 可变性。```String```不可变，```StringBuffer```与```StringBuilder```可变。
+      * 线程安全。```String```（不可变性）与```StringBuffer```（内部使用```synchronized```进行同步）线程安全，```StringBuilder```线程不安全。
+    * ```String.intern()```
+      * 使用```String.intern()```可以保证相同的字符串变量引用同一的内存对象。```intern()```首先把其引用的对象放到```String Pool```(字符串常量池)中，然后返回这个对象引用。
+        ```
+        String s1 = new String("aaa");
+        String s2 = new String("aaa");
+        System.out.println(s1 == s2);           // false
+        String s3 = s1.intern();
+        System.out.println(s1.intern() == s3);  // true
+        ```
+        使用字面量创建字符串对象的方式，会自动地将对象放至常量池：
+        ```
+        String s4 = "bbb";
+        String s5 = "bbb";
+        System.out.println(s4 == s5);  // true
+        ```
+      * 不同版本的```HotSpot```保存字符串常量池的位置不同：
+        
+        |JDK版本|是否有永久代，字符串常量池存在位置|方法区逻辑上规范的实际部分实现|
+        |:----:|:----:|:----:|
+        |jdk1.6及之前|有永久代，运行时常量池（包括字符串常量池），静态变量存放在永久代上|方法区在HotSpot中是由永久代来实现的|
+        |jdk1.7|有永久代，但已经逐步“去永久代”，字符串常量池、静态变量移除，保存在堆中|方法区在HotSpot中由永久代（类型信息、字段、方法、常量）和堆（字符串常量池、静态变量）共同实现|
+        |jdk1.8及之后|取消永久代，类型信息、字段、方法、常量保存在本地内存的元空间，但字符串常量池、静态变量仍在堆中|方法区在HotSpot中由本地内存的元空间（类型信息、字段、方法、常量）和堆（字符串常量池、静态变量）共同实现|
 
 > 泛型机制
 
