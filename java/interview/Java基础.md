@@ -252,6 +252,68 @@
         |jdk1.6及之前|有永久代，运行时常量池（包括字符串常量池），静态变量存放在永久代上|方法区在HotSpot中是由永久代来实现的|
         |jdk1.7|有永久代，但已经逐步“去永久代”，字符串常量池、静态变量移除，保存在堆中|方法区在HotSpot中由永久代（类型信息、字段、方法、常量）和堆（字符串常量池、静态变量）共同实现|
         |jdk1.8及之后|取消永久代，类型信息、字段、方法、常量保存在本地内存的元空间，但字符串常量池、静态变量仍在堆中|方法区在HotSpot中由本地内存的元空间（类型信息、字段、方法、常量）和堆（字符串常量池、静态变量）共同实现|
+  * 运算
+    * 参数传递。```Java```的参数是以值传递的形式传入方法中，而不是引用传递。本质上是将对象的地址以值的方式传递至形式参数中，因此在方法中改变指针引用的对象，不影响实客户端指针所指向的对象，这两个指针此时指向的是完全不同的对象：
+      ```
+      public class PassByValueExample {
+        public static void main(String[] args) {
+          Dog dog = new Dog("A");
+          System.out.println(dog.getObjectAddress()); // Dog@4554617c
+          func(dog);
+          System.out.println(dog.getObjectAddress()); // Dog@4554617c
+          System.out.println(dog.getName());          // A
+        }
+      
+        private static void func(Dog dog) {
+          System.out.println(dog.getObjectAddress()); // Dog@4554617c
+          dog = new Dog("B");
+          System.out.println(dog.getObjectAddress()); // Dog@74a14482
+          System.out.println(dog.getName());          // B
+        }
+      }
+      ```
+      但如果在方法中修改对象的字段值，原对象的字段值也会改变，因为改变的是同一个地址所指向的内容：
+      ```
+      class PassByValueExample {
+        public static void main(String[] args) {
+          Dog dog = new Dog("A");
+          System.out.println(dog.getName());          // A
+          func(dog);
+          System.out.println(dog.getName());          // B
+        }
+
+        private static void func(Dog dog) {
+          dog.setName("B");
+        }
+      }
+      ```
+    * ```float```与```double```。1.1字面量为```double```类型，不能直接将1.1赋值给```float```类型，因为```Java```不支持隐式转换向下转型，这样会丢失精度：
+      ```
+      float f = 1.1; //错误
+      float f = 1.1f //正确
+      ```
+    * 隐式类型转换。1字面量为```int```类型，不能直接将1赋值给```short```类型，因为```int```精度比```short```精度高，不能进行隐式向下转型，[但可通过运算符如```+=```的方式进行隐式类型转换](https://stackoverflow.com/questions/8710619/why-dont-javas-compound-assignment-operators-require-casting)：
+      ```
+      short s;
+      s += 1;
+      ```
+      相当于
+      ```
+      short s;
+      s = (short)(s + 1)
+      ```
+    * ```switch```。从```Java7```开始，可以在条件判断语句中使用```String```对象，[但不支持```long```类型](https://stackoverflow.com/questions/2676210/why-cant-your-switch-statement-data-type-be-long-java)：
+      ```
+      String s = "a";
+      switch (s) {
+        case "a":
+          System.out.println("aaa");
+        break;
+        case "b":
+          System.out.println("bbb");
+        break;
+      }
+      ```
 
 > 泛型机制
 
