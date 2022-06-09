@@ -314,6 +314,41 @@
         break;
       }
       ```
+  * 继承
+    * 访问权限。```Java```中可以对类和类中成员添加访问修饰符，如```public```、```protected```以及```private```修饰符，不加访问修饰符则表示默认访问权限，包级可访问。修饰符具体访问权限：
+
+      ||Class|Package|Subclass(same pkg)|Subclass(diff pkg)|World|
+      |:----:|:----:|:----:|:----:|:----:|:----:|
+      |public|+|+|+|+|+|
+      |protected|+|+|+|+||
+      |default|+|+|+|||
+      |priavte|+|||||
+      
+      访问可见的意义：
+        * 类可见表示其他类可以用这个类创建实例对象。
+        * 成员可见表示其他类可以用这个类的实例对象访问到该成员。
+
+      正确使用访问权限：
+        * ```protected```用于修饰类成员，表示在继承体系中对于子类可见，因此该修饰符对于修饰类没有意义。
+        * 若子类重写了父类的方法，则子类中该方法的访问权限不能低于父类，为了确保可以在使用父类实例的同时满足子类实例，则满足里斯替换原则。
+        * 类成员字段一般设置私有（```private```），防止客户端随意的修改行为。但也有例外，包级私有的类或或嵌套类，直接暴露成员字段影响一般不大：
+          ```
+          public class AccessWithInnerClassExample {
+            private class InnerClass {
+              int x;
+            }
+            
+            private InnerClass innerClass;
+            
+            public AccessWithInnerClassExample() {
+              innerClass = new InnerClass();
+            }
+            
+            public int getValue() {
+              return innerClass.x;  // 直接访问
+            }
+          }
+          ```
 
 > 泛型机制
 
