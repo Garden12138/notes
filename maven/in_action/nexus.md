@@ -29,7 +29,8 @@
         ```
       * 运行nexus容器
         ```
-        docker run -d -p 8081:8081 --name nexus sonatype/nexus3
+        mkdir /data/nexus && chown -R 200 /data/nexus
+        docker run --name nexus --restart=always -d -p 8081:8081 -v /data/nexus:/nexus-data -e INSTALL4J_ADD_VM_PARAMS="-Xms1024m -Xmx1024m -XX:MaxDirectMemorySize=1024m -Djava.util.prefs.userRoot=/nexus-data/javaprefs" sonatype/nexus3
         ```
     * 验证安装
       ```
@@ -79,24 +80,29 @@
       # 在当前项目POM文件中配置仓库和插件仓库
       <project>
       ...
-          <repositories>
-              <repository>
+          <profiles>
+              <profile>
                   <id>garden-public</id>
-                  <name>garden-public</name>
-                  <url>http://localhost:9091/repository/garden-public/</url>
-                  <releases><enable>true</enable></releases>
-                  <snapshots><enable>true</enable></snapshots>
-              </repository>
-          </repositories>
-          <pluginRepositories>
-              <pluginRepository>
-                  <id>garden-public</id>
-                  <name>garden-public</name>
-                  <url>http://localhost:9091/repository/garden-public/</url>
-                  <releases><enable>true</enable></releases>
-                  <snapshots><enable>true</enable></snapshots>
-              </pluginRepository>
-          </pluginRepositories>
+                  <repositories>
+                      <repository>
+                          <id>garden-public</id>
+                          <name>garden-public</name>
+                          <url>${addr}/repository/garden-public/</url>
+                          <releases><enable>true</enable></releases>
+                          <snapshots><enable>true</enable></snapshots>
+                      </repository>
+                  </repositories>
+                  <pluginRepositories>
+                      <pluginRepository>
+                          <id>garden-public</id>
+                          <name>garden-public</name>
+                          <url>${addr}/repository/garden-public/</url>
+                          <releases><enable>true</enable></releases>
+                          <snapshots><enable>true</enable></snapshots>
+                      </pluginRepository>
+                  </pluginRepositories>
+              </profile>
+          </profiles>
       ...
       </project>
       ```
@@ -111,22 +117,22 @@
               <profile>
                   <id>garden-public</id>
                   <repositories>
-                  <repository>
-                      <id>garden-public</id>
-                      <name>garden-public</name>
-                      <url>http://localhost:9091/repository/garden-public/</url>
-                      <releases><enable>true</enable></releases>
-                      <snapshots><enable>true</enable></snapshots>
-                  </repository>
+                      <repository>
+                          <id>garden-public</id>
+                          <name>garden-public</name>
+                          <url>${addr}/repository/garden-public/</url>
+                          <releases><enable>true</enable></releases>
+                          <snapshots><enable>true</enable></snapshots>
+                      </repository>
                   </repositories>
                   <pluginRepositories>
-                  <pluginRepository>
-                      <id>garden-public</id>
-                      <name>garden-public</name>
-                      <url>http://localhost:9091/repository/garden-public/</url>
-                      <releases><enable>true</enable></releases>
-                      <snapshots><enable>true</enable></snapshots>
-                  </pluginRepository>
+                      <pluginRepository>
+                          <id>garden-public</id>
+                          <name>garden-public</name>
+                          <url>${addr}/repository/garden-public/</url>
+                          <releases><enable>true</enable></releases>
+                          <snapshots><enable>true</enable></snapshots>
+                      </pluginRepository>
                   </pluginRepositories>
               </profile>
           </profiles>
@@ -142,7 +148,7 @@
           <mirror>
               <id>garden-public-mirror</id>
               <mirrorOf>*<mirrorOf>
-              <url>http://localhost:9091/repository/garden-public/</url>
+              <url>${dev}/repository/garden-public/</url>
           </mirror>
       </mirrors>
       ...
@@ -153,24 +159,48 @@
     * 使用Maven部署构件
 
       ```
-      # 项目POM文件声明私有仓库地址
-      <distributionManagement>
-		  <!-- 声明私有仓库 快照版本-->
-		      <repository>
-              <!-- 与settings.xml文件的 server id 保持一致 -->
-			        <id>garden-snapshots</id>
-			        <name>garden-snapshots</name>
-			        <url>http://localhost:9091/repository/garden-snapshots/</url>
-		      </repository>
-	    </distributionManagement>
       # Maven配置文件settings.xml声明私有仓库地址
       <servers>
           <server>
               <id>garden-snapshots</id>
               <username>admin</username>
-              <password>gardem520</password>
+              <password>garden520</password>
+          </server>
+          <server>
+              <id>garden-releases</id>
+              <username>admin</username>
+              <password>garden520</password>
           </server>
       </servers>
+      # 项目POM文件声明私有仓库地址
+      <profiles>
+          <profile>
+              <!-- dev环境 -->
+              <id>dev</id>
+              <distributionManagement>
+		              <!-- 声明私有仓库 快照版本-->
+		              <repository>
+                      <!-- 与settings.xml文件的 server id 保持一致 -->
+			                <id>garden-snapshots</id>
+			                <name>garden-snapshots</name>
+			                <url>${dev-addr}/repository/garden-snapshots/</url>
+		              </repository>
+	            </distributionManagement>
+          </profile>
+          <profile>
+              <!-- prod环境 -->
+              <id>prod</id>
+              <distributionManagement>
+		              <!-- 声明私有仓库 生产版本-->
+		              <repository>
+                      <!-- 与settings.xml文件的 server id 保持一致 -->
+			                <id>garden-releases</id>
+			                <name>garden-releases</name>
+			                <url>${prod-addr}/repository/garden-releases/</url>
+		              </repository>
+	            </distributionManagement>
+          </profile>
+      </profiles>
       # 执行Maven命令 部署构件
       mvn clean deploy -Dmaven.test.skip=true
       ```
