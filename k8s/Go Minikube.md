@@ -1,3 +1,5 @@
+
+
 ## Go Minikube
 
 > 参考文献
@@ -109,3 +111,50 @@ ln -s $(which minikube) /usr/local/bin/kubectl
   ```
 
 > Pod资源
+
+* Pod是可以在```Kubernetes```中创建和管理的最小可部署计算单元。应用服务（hellok8s-server）运行在容器（docker-container）中，容器进程（docker-process）由```Pod```所管理，```Pod```可管理多个容器进程即```Pod```可管理多个容器（```docker-container```）。
+
+* 定义以及应用```Pod```资源
+
+  * 定义```Pod```资源。创建```Pod```资源定义文件hellok8s.yaml：
+
+    ```bash
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: hellok8s
+    spec:
+      containers:
+        - name: hellok8s-container
+          image: garden12138/hellok8s:v1
+    ```
+
+    ```kind```表示创建资源类型，此处为```Pod```；
+
+    ```metadata.name```表示创建资源名称，此处为```hellowk8s```；
+
+    ```spec.containers```表示资源创建所运行的容器名称和镜像名称，默认镜像来源为```DockerHub```。
+
+  * 应用```Pod```资源：
+
+    ```bash
+    ## 创建Pod资源
+    kubectl apply -f hellok8s.yaml
+    ## 查看Pod资源
+    kubectl get pods
+    ## 端口转发Pod资源
+    kubectl port-forward hellok8s 3000:3000
+    ```
+
+  * 访问```Pod```资源
+
+    ```bash
+    curl http://127.0.0.1:3000
+    ```
+
+  * 删除```Pod```资源
+
+    ```bash
+    kubectl delete pod hellok8s
+    kubectl delete -f hellok8s.yaml
+    ```
