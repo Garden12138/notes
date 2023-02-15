@@ -112,11 +112,11 @@ ln -s $(which minikube) /usr/local/bin/kubectl
 
 > Pod资源
 
-* Pod是可以在```Kubernetes```中创建和管理的最小可部署计算单元。应用服务（hellok8s-server）运行在容器（docker-container）中，容器进程（docker-process）由```Pod```所管理，```Pod```可管理多个容器进程即```Pod```可管理多个容器（```docker-container```）。
+* ```Pod```是可以在```Kubernetes```中创建和管理的最小可部署计算单元。应用服务（```hellok8s-server```）运行在容器（```docker-container```）中，容器进程（```docker-process```）由```Pod```所管理，```Pod```可管理多个容器进程即```Pod```可管理多个容器（```docker-container```）。
 
 * 定义以及应用```Pod```资源
 
-  * 定义```Pod```资源。创建```Pod```资源定义文件hellok8s.yaml：
+  * 定义```Pod```资源。创建```Pod```资源定义文件```hellok8s.yaml```：
 
     ```bash
     apiVersion: v1
@@ -158,3 +158,61 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     kubectl delete pod hellok8s
     kubectl delete -f hellok8s.yaml
     ```
+
+> Deployment资源
+
+* ```Deployment```用于管理```Pod```资源，帮助完成一些自动化操作，如自动扩容、滚动更新、存活探针以及就绪探针等。
+  
+* 自动扩容
+  * 定义```Deployment```资源。创建```Deployment```资源定义文件```deployment.yaml```
+
+    ```bash
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: hellok8s-deployment
+    spec:
+      replicas: 3
+      selector:
+        matchLabels:
+          app: hellok8s
+    template:
+      metadata:
+        labels:
+          app: hellok8s
+    spec:
+      containers:
+        - image: garden12138/hellok8s:v1
+          name: hellok8s-container
+    ```
+
+    ```kind```表示创建资源类型，此处为```Deployment```；
+
+     ```metadata.name```表示创建资源名称，此处为```hellok8s-deployment```；
+
+     ```spec.replicas```表示部署的```pod```资源副本数；
+
+     ```spec.selector.matchLabels.app```声明关联的```pod```资源名称；
+
+     ```template.metadata.labels.app```定义```pod```资源名称，与```spec.selector.matchLabels.app```名称一致，用于表示```pod```资源被```deployment```管理。其声明并不是正常的```pod```资源名称，每次创建```pod```资源名称都会变化；
+
+  * 应用```Deployment```资源
+   
+    ```bash
+    ## 创建Deployment资源
+    kubectl apply -f deployment.yaml
+    ## 查看Deployment资源
+    kubectl get deployments
+    ## 查看Deployment管理的Pod资源
+    kubectl get pods
+    ## 端口转发Deployment管理的任意一个Pod资源
+    kubectl port-forward hellok8s-deployment-77bffb88c5-qlxss 3000:3000
+    ## 删除Deployment管理的任意一个Pod资源【当手动删除一个Pod资源后，Deployment会自动创建一个新的Pod】
+    kubectl delete pod hellok8s-deployment-77bffb88c5-qlxss
+    ```
+
+* 滚动更新
+  
+* 存活探针
+
+* 就绪探针
