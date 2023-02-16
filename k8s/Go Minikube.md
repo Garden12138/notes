@@ -246,7 +246,7 @@ ln -s $(which minikube) /usr/local/bin/kubectl
 
     ```deploment.yaml```文件中设置```strategy=rollingUpdate```，```maxSurge=1```，```maxUnavaliable=1```以及```replicas=3```，这个参数配置意味着最大可能会创建4个```Pod```（```replicas + maxSurge```）, 最小会有2个```Pod```存活（```replicas - maxUnavaliable```）。使用```kubectl apply -f deploment.yaml```创建新版本的```Pod```资源，通过```kubectl get pods --wacth```来观察```Pod```的创建销毁情况，如下图所示：
 
-    ![muo8q.png](https://i.328888.xyz/2023/02/16/muo8q.png)
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-16_15-46-04.png)
   
 * 存活探针
 
