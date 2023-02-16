@@ -212,6 +212,41 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     ```
 
 * 滚动更新
+  * 生产环境上，升级```Pod```副本版本若使用修改资源定义文件```deployment.yaml```的```spec.containers.image```的镜像版本号后重新创建```Deployment```资源```[kubectl apply -f deployment.yaml]```的方式，所有的```Pod```副本在同一时间更新，在更新升级至新版本的过程中，需要等待某个```Pod```副本升级完成后才能继续提供服务，这将导致当前服务在短时间内是不可用的。这个时候需要滚动更新，在保证新版本的```Pod```未```ready```之前，先不删除旧版本的```Pod```。
+  * 在```Deployment```的资源定义中，```spec.strategy.type```有两种方式：
+    * ```RollingUpdate```：逐渐增加新版本的```Pod```，逐渐减少旧版本的```Pod```。大多数情况下采用这种滚动更新的方式，滚动更新又可以通过```maxSurge```和```maxUnavailable```字段来控制升级```Pod```速率：
+      * ```maxSurge```：最大峰值，用来指定可以创建的超出期望```Pod```个数的```Pod```数量。
+      * ```maxUnavailable```：最大不可用，用来指定更新过程中不可用的```Pod```的个数上限。 
+    * ```Recreate```：在新版本的```Pod```增加前，先将所有旧版本的```Pod```删除。 
+  * ```Deployment```资源定义文件定义滚动更新：
+    
+    ```bash
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: hellok8s-deployment
+    spec:
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 1
+      replicas: 3
+      selector:
+        matchLabels:
+          app: hellok8s
+      template:
+        metadata:
+          labels:
+            app: hellok8s
+        spec:
+          containers:
+          - image: guangzhengli/hellok8s:v2
+            name: hellok8s-container
+    ```
+
+    ```deploment.yaml```文件中设置```strategy=rollingUpdate```，```maxSurge=1```，```maxUnavaliable=1```以及```replicas=3```，这个参数配置意味着最大可能会创建4个```Pod```（```replicas + maxSurge```）, 最小会有2个```Pod```存活（```replicas - maxUnavaliable```）。使用```kubectl apply -f deploment.yaml```创建新版本的```Pod```资源，通过```kubectl get pods --wacth```来观察```Pod```的创建销毁情况，如下图所示：
+
+    ![muo8q.png](https://i.328888.xyz/2023/02/16/muo8q.png)
   
 * 存活探针
 
