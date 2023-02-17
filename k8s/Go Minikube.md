@@ -240,8 +240,8 @@ ln -s $(which minikube) /usr/local/bin/kubectl
             app: hellok8s
         spec:
           containers:
-          - image: guangzhengli/hellok8s:v2
-            name: hellok8s-container
+            - image: garden12138/hellok8s:v2
+              name: hellok8s-container
     ```
 
     ```deploment.yaml```文件中设置```strategy=rollingUpdate```，```maxSurge=1```，```maxUnavaliable=1```以及```replicas=3```，这个参数配置意味着最大可能会创建4个```Pod```（```replicas + maxSurge```）, 最小会有2个```Pod```存活（```replicas - maxUnavaliable```）。使用```kubectl apply -f deploment.yaml```创建新版本的```Pod```资源，通过```kubectl get pods --wacth```来观察```Pod```的创建销毁情况，如下图所示：
@@ -249,5 +249,52 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-16_15-46-04.png)
   
 * 存活探针
+  * 存活探针可以探测容器内应用的运行情况，若探测到应用死锁（应用程序在运行，但是无法继续执行后面的步骤），自动重启容器，重启这种状态下的容器有利于提高应用的可用性。```kubectl```使用存活探针（```livenessProb```） 探测和重启容器。
+  * ```Deployment```资源定义文件定义存活探针：
+
+    ```bash
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: hellok8s-deployment
+    spec:
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 1
+      replicas: 3
+      selector:
+        matchLabels:
+          app: hellok8s
+      template:
+        metadata:
+          labels:
+            app: hellok8s
+        spec:
+          containers:
+            - image: garden12138/hellok8s:liveness
+              name: hellok8s-container
+              livenessProbe:
+                httpGet:
+                  path: /healthz
+                  port: 3000
+                initialDelaySeconds: 3
+                periodSeconds: 3
+    ``` 
+
+    ```livenessProbe.httpGet```指定存活探测的请求方式、路径（```/healthz```为自定义接口在服务启动前15S返回状态码200，在15S后返回状态码500）以及端口；```initialDelaySeconds```指定第一次探测前需等待的时间；```periodSeconds```指定每隔多长时间执行一次存活探测。
+  * 可通过```get```或```describe```命令发现```Pod```处于探测以及重启中：
+  
+    ```bash
+    kubectl get pods
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-17_11-32-17.png)
+
+    ```bash
+    kubectl describe pod hellok8s-5995ff9447-rh29x
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-17_11-27-11.png)
 
 * 就绪探针
