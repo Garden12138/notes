@@ -298,3 +298,58 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-17_11-27-11.png)
 
 * 就绪探针
+  * 就绪探针可以探测容器是否准备好接受请求流量。当一个```Pod```内所有的容器就绪时，```Pod```才视为就绪，对于未就绪的```Pod```会从```Service```的负载均衡中剔除。就绪探针常与滚动更新配合使用，就绪探针探测新版本```Pod```是否就绪，针对未就绪进行探测重试，滚动更新保证旧版本```Pod```不受影响。当发布的新版本存在问题时，不允许新版本继续下去，否则服务会出现全部升级完成，从而导致所有服务均不可用的情况。
+  * ```Deployment```资源定义文件定义存活探针：
+    
+    ```bash
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: hellok8s-deployment
+    spec:
+      strategy:
+        rollingUpdate:
+          maxSurge: 1
+          maxUnavailable: 1
+      replicas: 3
+      selector:
+        matchLabels:
+          app: hellok8s
+      template:
+        metadata:
+          labels:
+            app: hellok8s
+        spec:
+          containers:
+            - image: garden12138/hellok8s:bad
+              name: hellok8s-container
+              readinessProbe:
+                httpGet:
+                  path: /healthz
+                  port: 3000
+                initialDelaySeconds: 1
+                successThreshold: 5
+    ```
+
+    ```successThreshold```指定就绪探针在探测失败后，被视为就绪成功的最小连续成功数。
+
+  * 通过```get```命令可以发现两个```Pod```一直处于未```Ready```状态中以及通过```describe```命令可以看到```Pod```未就绪的原因：
+
+    ```bash
+    kubectl get pods
+    ```
+    
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-17_17-03-53.png)
+
+    ```bash
+    kubectl describe pod hellok8s-deployment-9c57c7f56-rww7k
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-17_17-04-07.png)
+
+* 探针配置字段```Probe```描述：
+  * ```initialDelaySeconds```：容器启动后要等待多少秒后才探针。默认是0秒，最小值是0
+  * ```periodSeconds```：执行探测的时间间隔（单位是秒）。默认是10秒，最小值是1
+  * ```timeoutSeconds```：探测的超时后等待多少秒。默认值是1秒，最小值是1
+  * ```successThreshold```：探测失败后，被视为就绪成功的最小连续成功数。默认值是1，最小值是1。启动和存活探针必须为1。
+  * ```failureThreshold```：探测失败时，```Kubernetes```的重试次数。默认值是3，最小值是1。对存活探针，放弃（探测重试仍失败）则意味着重新启动容器。对就绪探针，放弃（探测重试仍失败）意味着```Pod```会被打上未就绪的标签。
