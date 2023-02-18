@@ -353,3 +353,38 @@ ln -s $(which minikube) /usr/local/bin/kubectl
   * ```timeoutSeconds```：探测的超时后等待多少秒。默认值是1秒，最小值是1
   * ```successThreshold```：探测失败后，被视为就绪成功的最小连续成功数。默认值是1，最小值是1。启动和存活探针必须为1。
   * ```failureThreshold```：探测失败时，```Kubernetes```的重试次数。默认值是3，最小值是1。对存活探针，放弃（探测重试仍失败）则意味着重新启动容器。对就绪探针，放弃（探测重试仍失败）意味着```Pod```会被打上未就绪的标签。
+
+> Service资源
+  * ```Service```用于解决如下问题：
+    * 部署的多个```Pod```资源副本的负载均衡问题。
+    * 对未就绪```Pod```资源副本的流量重定向问题。
+    * 使用```port-forward```的方式访问```Pod```资源，在```deployment```重新部署时出现的```Pod```名称和```IP```变化问题。
+    
+    ```Service```资源位于```Pod```前面，负责接收请求并将它们传递给后面的所有```Pod```，这些```Pod```资源则为该```Service```的```Endpoints```。按照类型区分，```Service```资源分为```ClusterIP```、```NodePort```、```LoadBalancer```以及```ExternalName```，默认为```ClusterIP```类型：
+      * ```ClusterIP```：通过集群的内部```IP```暴露服务，选择该值时服务只能够在集群内部访问，这是默认的```Service```类型。
+      * ```NodePort```：通过每个实例节点上的IP和静态端口（```NodePort```）暴露服务。```NodePort```服务会路由到自动创建的```ClusterIP```服务，从集群外部可通过请求```<实例节点IP>:<实例节点静态端口>```访问一个```NodePort```服务。
+      * ```LoadBalancer```：使用云提供商的负载均衡器向外暴露服务。外部负载均衡器可以将流量路由到自动创建的```NodePort```服务和```ClusterIP```服务上。
+      * ```ExternalName```：通过返回```CNAME```和对应值，可以将服务映射到```externalName```字段的内容，如```foo.bar.example.com```，无需创建任何类型代理。
+  * ```ClusterIP Service```
+    * ```Service```资源定义文件定义```ClusterIP```服务：
+       ```
+       apiVersion: v1
+       kind: Service
+       metadata:
+         name: hellok8s-service-clusterip
+       spec:
+         type: ClusterIP
+         selector:
+           app: hellok8s
+       ports:
+         - port: 3000
+         targetPort: 3000
+       ```
+       ```spec.type```定义```Service```资源的类型；```spec.selector.app```选定```Pod```资源作为```Service```资源的```Endpoints```；```ports```的```port```与```targetPort```分别指定```Service```的端口以及```Pod```端口（一般为运行容器端口）。
+    * 可通过```kubectl get endpoints```查看```Service```的```Endpoints```；通过```kubectl get pods -o wide```查看```Pod```的更多信息；通过```kubectl get services```查看```Service```信息：
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-18_23-50-29.png)
+    
+    * 可通过在集群内其他应用（如```nginx-pod```）中访问```hellok8s-service-clusterip```的```IP地址```（10.102.124.7）以及端口（3000）访问```hellok8s:v3```服务：
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-18_23-57-18.png)
