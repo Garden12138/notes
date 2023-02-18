@@ -388,3 +388,8 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     * 可通过在集群内其他应用（如```nginx-pod```）中访问```hellok8s-service-clusterip```的```IP地址```（10.102.124.7）以及端口（3000）访问```hellok8s:v3```服务：
 
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-18_23-57-18.png)
+    
+    * ```ClusterIP Service```处理集群内应用请求流程：
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-19_00-00-22.png)
+      
