@@ -361,8 +361,8 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     * 使用```port-forward```的方式访问```Pod```资源，在```deployment```重新部署时出现的```Pod```名称和```IP```变化问题。
     
     ```Service```资源位于```Pod```前面，负责接收请求并将它们传递给后面的所有```Pod```，这些```Pod```资源则为该```Service```的```Endpoints```。按照类型区分，```Service```资源分为```ClusterIP```、```NodePort```、```LoadBalancer```以及```ExternalName```，默认为```ClusterIP```类型：
-      * ```ClusterIP```：通过集群的内部```IP```暴露服务，选择该值时服务只能够在集群内部访问，这是默认的```Service```类型。
-      * ```NodePort```：通过每个集群节点上的IP和静态端口（```NodePort```）暴露服务。```NodePort```服务会路由到自动创建的```ClusterIP```服务，从集群外部可通过请求```<集群节点IP>:<集群节点静态端口>```访问一个```NodePort```服务。
+      * ```ClusterIP```：通过集群的节点内部```IP```暴露服务，选择该值时服务只能够在集群节点内部访问（```Pod```间的访问方式），这是默认的```Service```类型。
+      * ```NodePort```：通过每个集群节点上的IP和静态端口（```NodePort```）暴露服务。```NodePort```服务会路由到自动创建的```ClusterIP```服务，从集群节点外部可通过请求```<集群节点IP>:<集群节点静态端口>```访问一个```NodePort```服务。
       * ```LoadBalancer```：使用云提供商的负载均衡器向外暴露服务。外部负载均衡器可以将流量路由到自动创建的```NodePort```服务和```ClusterIP```服务上。
       * ```ExternalName```：通过返回```CNAME```和对应值，可以将服务映射到```externalName```字段的内容，如```foo.bar.example.com```，无需创建任何类型代理。
   * ```ClusterIP Service```
@@ -389,7 +389,39 @@ ln -s $(which minikube) /usr/local/bin/kubectl
 
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-18_23-57-18.png)
     
-    * ```ClusterIP Service```处理集群内应用请求流程：
+    * ```ClusterIP Service```处理集群节点内应用请求流程：
 
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-19_00-00-22.png)
       
+  * ```NodePort Service```
+    * ```Service```资源定义文件定义```NodePort```服务：
+      
+      ```
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: hellok8s-service-nodeport
+      spec:
+        type: NodePort
+        selector:
+          app: hellok8s
+      ports:
+        - port: 3000
+          nodePort: 30000
+      ```
+
+      ```ports.nodePort```指定集群节点静态端口。
+
+    * ```NodePort```类型的```Service```通过集群每个节点上的```IP```和静态端口暴露服务，其本质是将```Pod```资源端口映射至```Service```的端口 ，```NodePort```服务会路由到自动创建的```ClusterIP```服务（端口默认与```Pod```暴露的一致），最终重定向至```Pod```服务。
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-19_17-56-52.png)
+
+    * 可通过```minikube ip```查看集群节点```IP```并在集群节点外访问```hellok8s```服务：
+      ```
+      minikube ip
+      # 192.168.49.2
+      curl http://192.168.49.2:30000
+      # [v3] Hello, Kubernetes! From host: hellok8s-deployment-579d8f8c8-dxzlx
+      ```
+    * ```NodePort Service```处理集群节点外应用请求流程：
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-19_17-54-56.png)
