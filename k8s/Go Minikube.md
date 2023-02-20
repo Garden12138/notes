@@ -367,7 +367,7 @@ ln -s $(which minikube) /usr/local/bin/kubectl
       * ```ExternalName```：通过返回```CNAME```和对应值，可以将服务映射到```externalName```字段的内容，如```foo.bar.example.com```，无需创建任何类型代理。
   * ```ClusterIP Service```
     * ```Service```资源定义文件定义```ClusterIP```服务：
-       ```
+       ```bash
        apiVersion: v1
        kind: Service
        metadata:
@@ -396,7 +396,7 @@ ln -s $(which minikube) /usr/local/bin/kubectl
   * ```NodePort Service```
     * ```Service```资源定义文件定义```NodePort```服务：
       
-      ```
+      ```bash
       apiVersion: v1
       kind: Service
       metadata:
@@ -416,7 +416,7 @@ ln -s $(which minikube) /usr/local/bin/kubectl
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-19_17-56-52.png)
 
     * 可通过```minikube ip```查看集群节点```IP```并在集群节点外访问```hellok8s```服务：
-      ```
+      ```bash
       minikube ip
       # 192.168.49.2
       curl http://192.168.49.2:30000
@@ -425,3 +425,23 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     * ```NodePort Service```处理集群节点外应用请求流程：
 
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-19_17-54-56.png)
+
+  * ```LoadBalancer Service```
+    * ```LoadBalancer```是使用云提供商的负载均衡向外部暴露服务，外部负载均衡器可将流量路由到自动创建```NodePort```服务和```ClusterIP```服务上。例如可以在```AWS```的```EKS```集群上创建一个类型为```LoadBalancer```的```Service```，它会自动创建一个```ELB（Elastic Load Balancer）```，并可根据配置的```IP```池中自动分配一个独立的```IP```地址供外部访问。
+    * 使用```minikube tunnel```辅助创建```LoadBalancer```的```EXTERNAL_IP```：
+      * 在另一终端执行```tunnel```命令，使用集群```IP```地址创建网络路由：
+        ```bash
+        minikube tunnel
+        ``` 
+      * 创建```LoadBalancer Service```：
+        ```bash
+        kubectl expose deployment hellok8s-deployment --type=LoadBalancer --port=3000
+        ``` 
+      * 查看```LoadBalancer Service```
+        ```bash
+        kubectl get svc
+        ```   
+      * [详细使用查看文档](https://minikube.sigs.k8s.io/docs/handbook/accessing/#loadbalancer-access)
+    * ```LoadBalancer Service```处理外部请求流程：
+
+        ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-20_14-49-39.png)
