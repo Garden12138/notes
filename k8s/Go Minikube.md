@@ -445,3 +445,137 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     * ```LoadBalancer Service```处理外部请求流程：
 
         ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-20_14-49-39.png)
+  
+  > Ingress资源
+  
+  * ```Ingress```是集群外部到集群内服务的```HTTP```和```HTTPS```路由，```Ingress```定义路由规则控制请求流量。```Ingress```可为```Service```提供外部可访问的```URL```、负载均衡流量、```SSL/TLS```以及基于名称的虚拟托管。通常使用具有负载均衡的```Ingress```控制器实现```Ingress```，如```minikube```默认使用```nginx-ingress```，也支持```Kong-ingress```。
+  * ```Ingress```可简单理解为服务的网关```Gateway```，它是所有请求流量的入口，经过配置的路由规则，将流量重定向至后端服务。
+  * 应用```Ingress```资源：
+    * 开启```Ingress```控制器，在```minikube```中，开启默认的```nginx-ingress```：
+      ```
+      minikube addons enable ingress
+      ``` 
+    * 编写集群内```ClusterIP```类型的应用服务以及管理```Pod```的```Deployment```资源的配置文件```hellok8s.yaml```：
+      ```bash
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: service-hellok8s-clusterip
+      spec:
+        type: ClusterIP
+        selector:
+          app: hellok8s
+        ports:
+          - port: 3000
+            targetPort: 3000
+
+      ---
+
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: hellok8s-deployment
+      spec:
+        replicas: 3
+        selector:
+          matchLabels:
+            app: hellok8s
+      template:
+        metadata:
+          labels:
+            app: hellok8s
+        spec:
+          containers:
+            - image: garden12138/hellok8s:v3
+              name: hellok8s-container
+      ```
+      定义```hellok8s:v3```服务的端口映射为3000:3000
+
+    * 编写集群内```ClusterIP```类型的Nginx服务以及管理```Pod```的```Deployment```资源```nginx.yaml```：
+      ```bash
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: service-nginx-clusterip
+      spec:
+        type: ClusterIP
+        selector:
+          app: nginx
+        ports:
+          - port: 4000
+            targetPort: 80
+
+      ---
+
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: nginx-deployment
+      spec:
+        replicas: 2
+        selector:
+          matchLabels:
+            app: nginx
+      template:
+        metadata:
+          labels:
+            app: nginx
+        spec:
+          containers:
+            - image: nginx
+              name: nginx-container
+      ```
+      定义```nginx```服务的端口映射为4000:80
+
+    * 应用```hellok8s:v3```服务：
+      ```bash
+      kubectl apply -f hellok8s.yaml
+      ```
+    * 应用```nginx```服务：
+      ```bash
+      kubectl apply -f nginx.yaml
+      ```
+    * 定义```Ingress```资源：
+      ```bash
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: hello-ingress
+        annotations:
+          nginx.ingress.kubernetes.io/ssl-redirect: "false"
+      spec:
+        rules:
+          - http:
+              paths:
+                - path: /hello
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: service-hellok8s-clusterip
+                    port:
+                      number: 3000
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: service-nginx-clusterip
+                    port:
+                      number: 4000
+      ```
+      ```nginx.ingress.kubernetes.io/ssl-redirect: "false"```表示关闭```https```连接，只使用```http```连接。定义了匹配前缀为```/hello```重定向到```hellok8s:v3```服务的路由规则；定义了匹配前缀为```/```重定向到```nginx```服务的路由规则。应用```Ingress```：
+      ```
+      kubectl apply -f ingress.yaml
+      ```
+
+    *  查看```Pod```资源（```kubectl get pods```）、查看```Service```资源（```kubectl get service```）、查看```Ingress```资源（```kubectl get ingress```）
+       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-03-26.png)
+       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-04-23.png)
+
+
+    * 集群外部访问：
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-02-34.png)
+
+  * ```Ingress```处理流量请求流程：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-01-13.png)  
