@@ -1,5 +1,4 @@
 
-
 ## Go Minikube
 
 > 参考文献
@@ -44,17 +43,17 @@ ln -s $(which minikube) /usr/local/bin/kubectl
   package main
   
   import (
-  	"io"
-  	"net/http"
+   "io"
+   "net/http"
   )
   
   func hello(w http.ResponseWriter, r *http.Request) {
-  	io.WriteString(w, "[v1] Hello, Kubernetes!")
+   io.WriteString(w, "[v1] Hello, Kubernetes!")
   }
   
   func main() {
-  	http.HandleFunc("/", hello)
-  	http.ListenAndServe(":3000", nil)
+   http.HandleFunc("/", hello)
+   http.ListenAndServe(":3000", nil)
   }
   ```
 
@@ -197,7 +196,7 @@ ln -s $(which minikube) /usr/local/bin/kubectl
      ```template.metadata.labels.app```定义```pod```资源名称，与```spec.selector.matchLabels.app```名称一致，用于表示```pod```资源被```deployment```管理。其声明并不是正常的```pod```资源名称，每次创建```pod```资源名称都会变化；
 
   * 应用```Deployment```资源
-   
+
     ```bash
     ## 创建Deployment资源
     kubectl apply -f deployment.yaml
@@ -216,10 +215,10 @@ ln -s $(which minikube) /usr/local/bin/kubectl
   * 在```Deployment```的资源定义中，```spec.strategy.type```有两种方式：
     * ```RollingUpdate```：逐渐增加新版本的```Pod```，逐渐减少旧版本的```Pod```。大多数情况下采用这种滚动更新的方式，滚动更新又可以通过```maxSurge```和```maxUnavailable```字段来控制升级```Pod```速率：
       * ```maxSurge```：最大峰值，用来指定可以创建的超出期望```Pod```个数的```Pod```数量。
-      * ```maxUnavailable```：最大不可用，用来指定更新过程中不可用的```Pod```的个数上限。 
-    * ```Recreate```：在新版本的```Pod```增加前，先将所有旧版本的```Pod```删除。 
+      * ```maxUnavailable```：最大不可用，用来指定更新过程中不可用的```Pod```的个数上限。
+    * ```Recreate```：在新版本的```Pod```增加前，先将所有旧版本的```Pod```删除。
   * ```Deployment```资源定义文件定义滚动更新：
-    
+
     ```bash
     apiVersion: apps/v1
     kind: Deployment
@@ -280,7 +279,7 @@ ln -s $(which minikube) /usr/local/bin/kubectl
                   port: 3000
                 initialDelaySeconds: 3
                 periodSeconds: 3
-    ``` 
+    ```
 
     ```livenessProbe.httpGet```指定存活探测的请求方式、路径（```/healthz```为自定义接口在服务启动前15S返回状态码200，在15S后返回状态码500）以及端口；```initialDelaySeconds```指定第一次探测前需等待的时间；```periodSeconds```指定每隔多长时间执行一次存活探测。
   * 可通过```get```或```describe```命令发现```Pod```处于探测以及重启中：
@@ -300,7 +299,7 @@ ln -s $(which minikube) /usr/local/bin/kubectl
 * 就绪探针
   * 就绪探针可以探测容器是否准备好接受请求流量。当一个```Pod```内所有的容器就绪时，```Pod```才视为就绪，对于未就绪的```Pod```会从```Service```的负载均衡中剔除。就绪探针常与滚动更新配合使用，就绪探针探测新版本```Pod```是否就绪，针对未就绪进行探测重试，滚动更新保证旧版本```Pod```不受影响。当发布的新版本存在问题时，不允许新版本继续下去，否则服务会出现全部升级完成，从而导致所有服务均不可用的情况。
   * ```Deployment```资源定义文件定义存活探针：
-    
+
     ```bash
     apiVersion: apps/v1
     kind: Deployment
@@ -338,7 +337,7 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     ```bash
     kubectl get pods
     ```
-    
+
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-17_17-03-53.png)
 
     ```bash
@@ -355,18 +354,20 @@ ln -s $(which minikube) /usr/local/bin/kubectl
   * ```failureThreshold```：探测失败时，```Kubernetes```的重试次数。默认值是3，最小值是1。对存活探针，放弃（探测重试仍失败）则意味着重新启动容器。对就绪探针，放弃（探测重试仍失败）意味着```Pod```会被打上未就绪的标签。
 
 > Service资源
-  * ```Service```用于解决如下问题：
-    * 部署的多个```Pod```资源副本的负载均衡问题。
-    * 对未就绪```Pod```资源副本的流量重定向问题。
-    * 使用```port-forward```的方式访问```Pod```资源，在```deployment```重新部署时出现的```Pod```名称和```IP```变化问题。
-    
+
+* ```Service```用于解决如下问题：
+  * 部署的多个```Pod```资源副本的负载均衡问题。
+  * 对未就绪```Pod```资源副本的流量重定向问题。
+  * 使用```port-forward```的方式访问```Pod```资源，在```deployment```重新部署时出现的```Pod```名称和```IP```变化问题。
+
     ```Service```资源位于```Pod```前面，负责接收请求并将它们传递给后面的所有```Pod```，这些```Pod```资源则为该```Service```的```Endpoints```。按照类型区分，```Service```资源分为```ClusterIP```、```NodePort```、```LoadBalancer```以及```ExternalName```，默认为```ClusterIP```类型：
-      * ```ClusterIP```：通过集群的节点内部```IP```暴露服务，选择该值时服务只能够在集群节点内部访问（```Pod```间的访问方式），这是默认的```Service```类型。
-      * ```NodePort```：通过每个集群节点上的IP和静态端口（```NodePort```）暴露服务。```NodePort```服务会路由到自动创建的```ClusterIP```服务，从集群节点外部可通过请求```<集群节点IP>:<集群节点静态端口>```访问一个```NodePort```服务。
-      * ```LoadBalancer```：使用云提供商的负载均衡器向外暴露服务。外部负载均衡器可以将流量路由到自动创建的```NodePort```服务和```ClusterIP```服务上。
-      * ```ExternalName```：通过返回```CNAME```和对应值，可以将服务映射到```externalName```字段的内容，如```foo.bar.example.com```，无需创建任何类型代理。
-  * ```ClusterIP Service```
-    * ```Service```资源定义文件定义```ClusterIP```服务：
+  * ```ClusterIP```：通过集群的节点内部```IP```暴露服务，选择该值时服务只能够在集群节点内部访问（```Pod```间的访问方式），这是默认的```Service```类型。
+  * ```NodePort```：通过每个集群节点上的IP和静态端口（```NodePort```）暴露服务。```NodePort```服务会路由到自动创建的```ClusterIP```服务，从集群节点外部可通过请求```<集群节点IP>:<集群节点静态端口>```访问一个```NodePort```服务。
+  * ```LoadBalancer```：使用云提供商的负载均衡器向外暴露服务。外部负载均衡器可以将流量路由到自动创建的```NodePort```服务和```ClusterIP```服务上。
+  * ```ExternalName```：通过返回```CNAME```和对应值，可以将服务映射到```externalName```字段的内容，如```foo.bar.example.com```，无需创建任何类型代理。
+* ```ClusterIP Service```
+  * ```Service```资源定义文件定义```ClusterIP```服务：
+
        ```bash
        apiVersion: v1
        kind: Service
@@ -380,22 +381,23 @@ ln -s $(which minikube) /usr/local/bin/kubectl
          - port: 3000
          targetPort: 3000
        ```
+
        ```spec.type```定义```Service```资源的类型；```spec.selector.app```选定```Pod```资源作为```Service```资源的```Endpoints```；```ports```的```port```与```targetPort```分别指定```Service```的端口以及```Pod```端口（一般为运行容器端口）。
-    * 可通过```kubectl get endpoints```查看```Service```的```Endpoints```；通过```kubectl get pods -o wide```查看```Pod```的更多信息；通过```kubectl get services```查看```Service```信息：
+  * 可通过```kubectl get endpoints```查看```Service```的```Endpoints```；通过```kubectl get pods -o wide```查看```Pod```的更多信息；通过```kubectl get services```查看```Service```信息：
 
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-18_23-50-29.png)
-    
-    * 可通过在集群内其他应用（如```nginx-pod```）中访问```hellok8s-service-clusterip```的```IP地址```（10.102.124.7）以及端口（3000）访问```hellok8s:v3```服务：
+
+  * 可通过在集群内其他应用（如```nginx-pod```）中访问```hellok8s-service-clusterip```的```IP地址```（10.102.124.7）以及端口（3000）访问```hellok8s:v3```服务：
 
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-18_23-57-18.png)
-    
-    * ```ClusterIP Service```处理集群节点内应用请求流程：
+
+  * ```ClusterIP Service```处理集群节点内应用请求流程：
 
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-19_00-00-22.png)
-      
-  * ```NodePort Service```
-    * ```Service```资源定义文件定义```NodePort```服务：
-      
+
+* ```NodePort Service```
+  * ```Service```资源定义文件定义```NodePort```服务：
+
       ```bash
       apiVersion: v1
       kind: Service
@@ -412,50 +414,61 @@ ln -s $(which minikube) /usr/local/bin/kubectl
 
       ```ports.nodePort```指定集群节点静态端口。
 
-    * ```NodePort```类型的```Service```通过集群每个节点上的```IP```和静态端口暴露服务，其本质是将```Pod```资源端口映射至```Service```的端口 ，```NodePort```服务会路由到自动创建的```ClusterIP```服务（端口默认与```Pod```暴露的一致），最终重定向至```Pod```服务。
+  * ```NodePort```类型的```Service```通过集群每个节点上的```IP```和静态端口暴露服务，其本质是将```Pod```资源端口映射至```Service```的端口 ，```NodePort```服务会路由到自动创建的```ClusterIP```服务（端口默认与```Pod```暴露的一致），最终重定向至```Pod```服务。
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-19_17-56-52.png)
 
-    * 可通过```minikube ip```查看集群节点```IP```并在集群节点外访问```hellok8s```服务：
+  * 可通过```minikube ip```查看集群节点```IP```并在集群节点外访问```hellok8s```服务：
+
       ```bash
       minikube ip
       # 192.168.49.2
       curl http://192.168.49.2:30000
       # [v3] Hello, Kubernetes! From host: hellok8s-deployment-579d8f8c8-dxzlx
       ```
-    * ```NodePort Service```处理集群节点外应用请求流程：
+
+  * ```NodePort Service```处理集群节点外应用请求流程：
 
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-19_17-54-56.png)
 
-  * ```LoadBalancer Service```
-    * ```LoadBalancer```是使用云提供商的负载均衡向外部暴露服务，外部负载均衡器可将流量路由到自动创建```NodePort```服务和```ClusterIP```服务上。例如可以在```AWS```的```EKS```集群上创建一个类型为```LoadBalancer```的```Service```，它会自动创建一个```ELB（Elastic Load Balancer）```，并可根据配置的```IP```池中自动分配一个独立的```IP```地址供外部访问。
-    * 使用```minikube tunnel```辅助创建```LoadBalancer```的```EXTERNAL_IP```：
-      * 在另一终端执行```tunnel```命令，使用集群```IP```地址创建网络路由：
+* ```LoadBalancer Service```
+  * ```LoadBalancer```是使用云提供商的负载均衡向外部暴露服务，外部负载均衡器可将流量路由到自动创建```NodePort```服务和```ClusterIP```服务上。例如可以在```AWS```的```EKS```集群上创建一个类型为```LoadBalancer```的```Service```，它会自动创建一个```ELB（Elastic Load Balancer）```，并可根据配置的```IP```池中自动分配一个独立的```IP```地址供外部访问。
+  * 使用```minikube tunnel```辅助创建```LoadBalancer```的```EXTERNAL_IP```：
+    * 在另一终端执行```tunnel```命令，使用集群```IP```地址创建网络路由：
+
         ```bash
         minikube tunnel
-        ``` 
-      * 创建```LoadBalancer Service```：
+        ```
+
+    * 创建```LoadBalancer Service```：
+
         ```bash
         kubectl expose deployment hellok8s-deployment --type=LoadBalancer --port=3000
-        ``` 
-      * 查看```LoadBalancer Service```
+        ```
+
+    * 查看```LoadBalancer Service```
+
         ```bash
         kubectl get svc
-        ```   
-      * [详细使用查看文档](https://minikube.sigs.k8s.io/docs/handbook/accessing/#loadbalancer-access)
-    * ```LoadBalancer Service```处理外部请求流程：
+        ```
+
+    * [详细使用查看文档](https://minikube.sigs.k8s.io/docs/handbook/accessing/#loadbalancer-access)
+  * ```LoadBalancer Service```处理外部请求流程：
 
         ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-20_14-49-39.png)
   
   > Ingress资源
   
-  * ```Ingress```是集群外部到集群内服务的```HTTP```和```HTTPS```路由，```Ingress```定义路由规则控制请求流量。```Ingress```可为```Service```提供外部可访问的```URL```、负载均衡流量、```SSL/TLS```以及基于名称的虚拟托管。通常使用具有负载均衡的```Ingress```控制器实现```Ingress```，如```minikube```默认使用```nginx-ingress```，也支持```Kong-ingress```。
-  * ```Ingress```可简单理解为服务的网关```Gateway```，它是所有请求流量的入口，经过配置的路由规则，将流量重定向至后端服务。
-  * 应用```Ingress```资源：
-    * 开启```Ingress```控制器，在```minikube```中，开启默认的```nginx-ingress```：
+* ```Ingress```是集群外部到集群内服务的```HTTP```和```HTTPS```路由，```Ingress```定义路由规则控制请求流量。```Ingress```可为```Service```提供外部可访问的```URL```、负载均衡流量、```SSL/TLS```以及基于名称的虚拟托管。通常使用具有负载均衡的```Ingress```控制器实现```Ingress```，如```minikube```默认使用```nginx-ingress```，也支持```Kong-ingress```。
+* ```Ingress```可简单理解为服务的网关```Gateway```，它是所有请求流量的入口，经过配置的路由规则，将流量重定向至后端服务。
+* 应用```Ingress```资源：
+  * 开启```Ingress```控制器，在```minikube```中，开启默认的```nginx-ingress```：
+
       ```
       minikube addons enable ingress
-      ``` 
-    * 编写集群内```ClusterIP```类型的应用服务以及管理```Pod```的```Deployment```资源的配置文件```hellok8s.yaml```：
+      ```
+
+  * 编写集群内```ClusterIP```类型的应用服务以及管理```Pod```的```Deployment```资源的配置文件```hellok8s.yaml```：
+
       ```bash
       apiVersion: v1
       kind: Service
@@ -489,9 +502,11 @@ ln -s $(which minikube) /usr/local/bin/kubectl
             - image: garden12138/hellok8s:v3
               name: hellok8s-container
       ```
+
       定义```hellok8s:v3```服务的端口映射为3000:3000
 
-    * 编写集群内```ClusterIP```类型的Nginx服务以及管理```Pod```的```Deployment```资源```nginx.yaml```：
+  * 编写集群内```ClusterIP```类型的Nginx服务以及管理```Pod```的```Deployment```资源```nginx.yaml```：
+
       ```bash
       apiVersion: v1
       kind: Service
@@ -525,17 +540,23 @@ ln -s $(which minikube) /usr/local/bin/kubectl
             - image: nginx
               name: nginx-container
       ```
+
       定义```nginx```服务的端口映射为4000:80
 
-    * 应用```hellok8s:v3```服务：
+  * 应用```hellok8s:v3```服务：
+
       ```bash
       kubectl apply -f hellok8s.yaml
       ```
-    * 应用```nginx```服务：
+
+  * 应用```nginx```服务：
+
       ```bash
       kubectl apply -f nginx.yaml
       ```
-    * 定义```Ingress```资源：
+
+  * 定义```Ingress```资源：
+
       ```bash
       apiVersion: networking.k8s.io/v1
       kind: Ingress
@@ -562,20 +583,22 @@ ln -s $(which minikube) /usr/local/bin/kubectl
                     port:
                       number: 4000
       ```
+
       ```nginx.ingress.kubernetes.io/ssl-redirect: "false"```表示关闭```https```连接，只使用```http```连接。定义了匹配前缀为```/hello```重定向到```hellok8s:v3```服务的路由规则；定义了匹配前缀为```/```重定向到```nginx```服务的路由规则。应用```Ingress```：
-      ```
+
+      ```bash
       kubectl apply -f ingress.yaml
       ```
 
-    *  查看```Pod```资源（```kubectl get pods```）、查看```Service```资源（```kubectl get service```）、查看```Ingress```资源（```kubectl get ingress```）
-       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-03-26.png)
-       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-04-23.png)
+  * 查看```Pod```资源（```kubectl get pods```）、查看```Service```资源（```kubectl get service```）、查看```Ingress```资源（```kubectl get ingress```）
+   
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-03-26.png)
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-04-23.png)
 
-
-    * 集群外部访问：
+  * 集群外部访问：
 
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-02-34.png)
 
-  * ```Ingress```处理流量请求流程：
+* ```Ingress```处理流量请求流程：
 
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-01-13.png)  
