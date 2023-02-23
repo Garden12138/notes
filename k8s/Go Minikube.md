@@ -591,7 +591,7 @@ ln -s $(which minikube) /usr/local/bin/kubectl
       ```
 
   * 查看```Pod```资源（```kubectl get pods```）、查看```Service```资源（```kubectl get service```）、查看```Ingress```资源（```kubectl get ingress```）
-   
+
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-03-26.png)
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-04-23.png)
 
@@ -601,4 +601,45 @@ ln -s $(which minikube) /usr/local/bin/kubectl
 
 * ```Ingress```处理流量请求流程：
 
-    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-01-13.png)  
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-22_15-01-13.png) 
+
+> Namespace资源 
+
+* 实际开发过程中可能需要不同的环境提供给不同团队使用，如开发和测试团队。```Kubernetes```的```Namespace```支持在不同的环境中区分资源，不同环境的资源独立互相不影响。```Namespace```提供一种机制，将同一集群中的资源划分为相互隔离的组，同一```Namespace```内的资源名称要唯一，跨```Namespace```资源名称可以重复，默认的```namespace```为```default```。```Namespace```的作用域仅针对```Service```、```Deployment```等（可通过```kubectl api-resources --namespaced=true```查看支持```namespace```的资源）。
+* 定义以及创建```Namespace```资源：
+  
+  ```bash
+  apiVersion: v1
+  kind: Namespace
+  metadata:
+    name: dev
+  
+  ---
+
+  apiVersion: v1
+  kind: Namespace
+  metadata:
+   name: test
+  ```
+
+  ```bash
+  kubectl apply -f namespace.yaml
+  ```
+
+* 查看```Namespace```资源：
+
+  ```bash
+  kubectl get namespaces
+  ``` 
+
+* 在创建的```Namespace```下创建资源和获取资源：
+
+  ```bash
+  kubectl apply -f deploment.yaml -n dev
+  ```
+
+  ```bash
+  kubectl get pods -n dev
+  ``` 
+
+* [不同的团队使用不同的环境即实现多租户和命名空间隔离，nginx-ingress提供了解决方案。](https://www.nginx-cn.net/blog/enabling-multi-tenancy-namespace-isolation-in-kubernetes-with-nginx/)
