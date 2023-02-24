@@ -643,3 +643,85 @@ ln -s $(which minikube) /usr/local/bin/kubectl
   ``` 
 
 * [不同的团队使用不同的环境即实现多租户和命名空间隔离，nginx-ingress提供了解决方案。](https://www.nginx-cn.net/blog/enabling-multi-tenancy-namespace-isolation-in-kubernetes-with-nginx/)
+
+> Configmap
+
+* 使用```namespace```区分资源可以使资源独立互相不受影响，但应用程序中的配置信息如数据库配置信息无法区分。```ConfigMap```可以将配置信息与应用程序分开，将非机密性的数据保存至键值对中，此时使用```namespace```区分配置信息可以让应用程序在不同的环境中获取不同的配置信息。```ConfigMap```在设计上并不是用来保存大量数据的，默认保存的数据不可能超过1```MB```，若需保存超出此范围限制的数据可能需要考虑挂载存储卷。
+* 定义且创建不同```namespace```的存放```DB_URL```键值对的```configmap```：
+  
+  ```bash
+  # hellok8s-config-dev.yaml
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: hellok8s-config
+  data:
+    DB_URL: "http://DB_ADDRESS_DEV"
+  ``` 
+
+    ```bash
+  # hellok8s-config-test.yaml
+  apiVersion: v1
+  kind: ConfigMap
+  metadata:
+    name: hellok8s-config
+  data:
+    DB_URL: "http://DB_ADDRESS_TEST"
+  ``` 
+
+  ```bash
+  kubectl apply -f hellok8s-config-dev.yaml -n dev
+  # configmap/hellok8s-config created
+  ```
+
+  ```bash
+  kubectl apply -f hellok8s-config-test.yaml -n test
+  # configmap/hellok8s-config created
+  ```
+
+* 查看所有```namespace```的```configmap```资源：
+
+  ```
+  kubectl get configmap --all-namespaces
+  ```
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-24_17-00-33.png)
+
+* ```Deployment```资源定义文件的```spec.containers```新增```env```配置属性：
+
+  ```bash
+  spec:
+  containers:
+    - name: hellok8s-container
+      image: guangzhengli/hellok8s:v4
+      env:
+        - name: DB_URL
+          valueFrom:
+            configMapKeyRef:
+              name: hellok8s-config
+              key: DB_URL
+  ```
+
+  ```env.name```表示环境变量名称，应用程序从该环境变量取值。```env.valueFrom.configMapKeyRef.name```表示```ConfigMap```资源名称，```env.valueFrom.configMapKeyRef.key```表示```ConfigMap```资源的键，上述的环境变量根据该键取值。
+
+* 应用不同```namesapce```的```deployment```资源：
+
+  ```bash
+  kubectl apply -f hellok8s.yaml -n dev             
+  # pod/hellok8s-pod created
+
+  kubectl port-forward hellok8s-pod 3000:3000 -n dev
+  
+  curl http://localhost:3000
+  # [v4] Hello, Kubernetes! From host: hellok8s-pod, Get Database Connect URL: http://DB_ADDRESS_DEV
+  ```
+
+  ```bash
+  kubectl apply -f hellok8s.yaml -n test             
+  # pod/hellok8s-pod created
+
+  kubectl port-forward hellok8s-pod 3000:3000 -n test
+  
+  curl http://localhost:3000
+  # [v4] Hello, Kubernetes! From host: hellok8s-pod, Get Database Connect URL: http://DB_ADDRESS_TEST
+  ``` 
