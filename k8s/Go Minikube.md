@@ -724,4 +724,57 @@ ln -s $(which minikube) /usr/local/bin/kubectl
   
   curl http://localhost:3000
   # [v4] Hello, Kubernetes! From host: hellok8s-pod, Get Database Connect URL: http://DB_ADDRESS_TEST
-  ``` 
+  ```
+
+  > Secret资源
+
+  * ```configmap```无法存储需加密的配置信息，如挂载数据库的密码，这个时候需要```secret```存储加密的配置信息，虽然只在资源文件上通过```Base64```方式编码，但在实际生产环境中，可以通过```pipeline```和专业的```AWS KMS```服务进行密钥管理从而减少安全事故。
+  * ```Secret```的安全使用：
+    * 为```Secret```[启用静态加密](https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/)；
+    * [启用或配置```RBAC```规则](https://kubernetes.io/docs/reference/access-authn-authz/authorization/)来限制读取```Secret```数据。需要注意的是，被允许创建```Pod```的主体可以隐式地被授权获取```Secret```内容，适当情况下可以使用```RBAC```等机制来限制。
+  * 定义且创建存放DB_PASSWORD键值对的```Secret```：
+    
+    ```bash
+    # hellok8s-secret.yaml
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: hellok8s-secret
+    data:
+      DB_PASSWORD: "ZGJfcGFzc3dvcmQK"
+    ```
+
+    ```bash
+    kubectl apply -f hellok8s-secret.yaml
+    ```
+    
+    ```data```的```Value```值需要进行```Base64```编码。
+  * ```Deployment```资源定义文件的```spec.containers```新增```env```配置属性：
+    
+    ```bash
+    spec:
+      containers:
+        - name: hellok8s-container
+          image: garden12138/hellok8s:v5
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: hellok8s-secret
+                  key: DB_PASSWORD
+    ```
+
+    ```env.name```表示环境变量名称，应用程序从该环境变量取值。```env.valueFrom.secretKeyRef.name```表示```Secret```资源名称，```env.valueFrom.secretKeyRef.key```表示```Secret```资源的键，上述的环境变量根据该键取值
+
+  * 应用```Deployment```资源：
+
+    ```bash
+    kubectl apply -f hellok8s.yaml             
+    # pod/hellok8s-pod created
+
+    kubectl port-forward hellok8s-pod 3000:3000
+  
+    curl http://localhost:3000
+    # [v5] Hello, Kubernetes! From host: hellok8s-deployment-b47d55957-hjcrm, Get Database Connect URL: http://DB_ADDRESS_TEST By PASSWORD: db_password
+    ```
+
