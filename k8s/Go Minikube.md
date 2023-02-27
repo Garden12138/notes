@@ -778,3 +778,36 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     # [v5] Hello, Kubernetes! From host: hellok8s-deployment-b47d55957-hjcrm, Get Database Connect URL: http://DB_ADDRESS_TEST By PASSWORD: db_password
     ```
 
+  > Job资源
+
+  * 实际开发过程中一次性任务如常见的计算任务，只需获取相关数据计算后结果无需一直运行，处理这一类任务的资源是```Job```资源。
+  * ```Job```会创建一个或多个```Pod```，并会尝试重试```Pod```的执行，直到指定数量的```Pod```成功个数到达阈值，```Job```即结束。删除```Job```的操作会清除所有```Job```所创建的```Pod```。挂起```Job```的操作会删除```Job```的所有活跃```Pod```，直至```Job```被再次恢复执行。
+  * ```Job```资源定义文件定义：
+    
+    ```bash
+    apiVersion: batch/v1
+    kind: Job
+    metadata:
+      name: hello-job
+    spec:
+      parallelism: 3
+      completions: 5
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: echo
+              image: busybox
+              command: 
+                - bin/sh
+                - -c
+                - "for i in 9 8 7 6 5 4 3 2 1 ; do echo $i ; done"
+    ```
+
+    ```spec.parallelism```表示并发执行的最大数量。```spec.completions```表示```Pod```执行成功阈值。```spec.template.spec.restartPolicy```表示```Pod```重试策略，设置为```OnFailure```表示```Pod```中的容器因失败退出返回值为非零时，```Pod```则继续保留在当前节点，但容器会被重新运行，此时需要容器内运行的应用程序具备处理重启情况的能力，否则可将值设置为```Never```。
+
+  * 应用```Job```资源：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-27_18-41-00.png)
+
+    ```Job```完成时不会再创建新的```Pod```，通常也不删除已创建的```Pod```。 
