@@ -811,3 +811,39 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-27_18-41-00.png)
 
     ```Job```完成时不会再创建新的```Pod```，通常也不删除已创建的```Pod```。 
+
+> CronJob资源
+
+* ```CronJob```为定时任务，是创建基于```Cron```时间调度的```Jobs```，用于执行周期性的动作，例如备份、报告生成等。
+* ```Cron```时间表语法：
+  
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-28_15-48-49.png)
+
+* ```CronJob```资源定义文件定义：
+
+  ```bash
+  apiVersion: batch/v1
+  kind: CronJob
+  metadata:
+    name: hello-cronjob
+  spec:
+    schedule: "* * * * *"
+    jobTemplate:
+      spec:
+        template:
+          spec:
+            restartPolicy: OnFailure
+            containers:
+              - name: echo
+                image: busybox
+                command: 
+                  - bin/sh
+                  - -c
+                  - "for i in 9 8 7 6 5 4 3 2 1 ; do echo $i ; done"
+  ``` 
+  
+  ```spec.schedule```表示定时任务的周期。
+
+* 应用```CronJob```资源：
+
+   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-28_15-52-56.png)
