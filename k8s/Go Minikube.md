@@ -847,3 +847,15 @@ ln -s $(which minikube) /usr/local/bin/kubectl
 * 应用```CronJob```资源：
 
    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-28_15-52-56.png)
+
+> Helm管理工具
+
+* ```Helm```的认识以及安装
+
+* 创建以及应用```helm charts```
+
+* 本地打包以及应用```helm charts```
+
+* 远程打包、发布以及应用```helm charts```
+
+* 发布社区以及应用```helm charts```
