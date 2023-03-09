@@ -851,11 +851,21 @@ ln -s $(which minikube) /usr/local/bin/kubectl
 > Helm管理工具
 
 * ```Helm```的认识以及安装
+  * 在实际生产使用中，单独使用```kubectl apply -f```创建```pod```、```deployment```、```service```、```ingress```、```configmap```以及```secret```等资源部署```K8S```集群，在遇到换```namespace```或更换集群部署时需要重复操作创建，造成运维繁琐又重复且难以维护。```Helm```管理工具可以解决该问题：
+    *  ```Helm```可管理```Kubernetes```应用（```Helm Charts```，```K8S```资源描述集合），是查找、分享和使用软件构建```Kubernetes```的最优方式。
+    *  复杂性管理，对于复杂的应用，```Helm Chart```仍可描述，提供单点授权的可重复安装应用程序。
+    *  易于升级，可随时升级和自定义钩子。
+    *  分发简单，```Helm Charts```较容易在公有或私有化服务器上发版、分发和部署站点。
+    *  回滚方便，使用```helm rollback```可回滚至之前的发布版本。
+    
+  * 使用二进制版本安装
+    * [下载需要的版本](https://github.com/helm/helm/releases)
+    * 解压（如```tar -zxvf helm-${version}-linux-amd64.tar.gz```）
+    * 解压目录中找到```helm```可执行程序，移动```helm```可执行程序（如```mv ${install_path}/helm /usr/local/bin/helm```）
+  * [其他安装方式参考](https://helm.sh/zh/docs/intro/install/)  
 
 * 创建以及应用```helm charts```
 
 * 本地打包以及应用```helm charts```
 
-* 远程打包、发布以及应用```helm charts```
-
-* 发布社区以及应用```helm charts```
+* 托管以及应用```helm charts```
