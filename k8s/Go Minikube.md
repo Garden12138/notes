@@ -865,7 +865,201 @@ ln -s $(which minikube) /usr/local/bin/kubectl
   * [其他安装方式参考](https://helm.sh/zh/docs/intro/install/)  
 
 * 创建以及应用```helm charts```
+  * 使用```helm create ${chart_name}```创建初始的```Chart```，该命令默认创建一些```K8S```资源定义的初始文件，并且生成官网推荐的目录结果：
+    ```bash
+    helm create hellok8s-helm
+    .
+    ├── Chart.yaml
+    ├── charts
+    ├── templates
+    │   ├── NOTES.txt
+    │   ├── _helpers.tpl
+    │   ├── deployment.yaml
+    │   ├── hpa.yaml
+    │   ├── ingress.yaml
+    │   ├── service.yaml
+    │   ├── serviceaccount.yaml
+    │   └── tests
+    │       └── test-connection.yaml
+    └── values.yaml
+    ```
+  * 修改目录下```hellok8s-helm/values.yaml```文件，定义自定义配置信息，将```K8S```资源中易于变化的参数提取出来，设置在```values.yaml```文件中：
+  * 
+    ```bash
+    application:
+      name: hellok8s
+      hellok8s:
+        image: garden12138/hellok8s:v6
+        replicas: 3
+        message: "It works with Helm Values!"
+        database:
+          url: "http://DB_ADDRESS_DEFAULT"
+          password: "db_password"
+      nginx:
+        image: nginx
+        replicas: 2
+    ```
+
+  * 在```hellok8s-helm/templates```目录下，删除默认生成的资源定义文件，新增集群定义的资源文件且使用```values.yaml```定义的配置信息：
+ 
+    ```bash
+    # hellok8s-configmap.yaml
+    apiVersion: v1
+    kind: ConfigMap
+    metadata:
+      name: {{ .Values.application.name }}-config
+    data:
+      DB_URL: {{ .Values.application.hellok8s.database.url }}
+    ```
+
+    ```bash
+    # hellok8s-secret.yaml
+    apiVersion: v1
+    kind: Secret
+    metadata:
+      name: {{ .Values.application.name }}-secret
+    data:
+      DB_PASSWORD: {{ .Values.application.hellok8s.database.password | b64enc }}
+    ```  
+
+    ```bash
+    # hellok8s-deployment.yaml
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: {{ .Values.application.name }}-deployment
+    spec:
+      replicas: {{ .Values.application.hellok8s.replicas }}
+      selector:
+        matchLabels:
+          app: hellok8s
+      template:
+        metadata:
+          labels:
+            app: hellok8s
+        spec:
+          containers:
+            - image: {{ .Values.application.hellok8s.image }}
+              name: hellok8s-container
+              env:
+                - name: DB_URL
+                  valueFrom:
+                    configMapKeyRef:
+                      name: {{ .Values.application.name }}-config
+                      key: DB_URL
+                - name: DB_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: {{ .Values.application.name }}-secret
+                      key: DB_PASSWORD
+                - name: NAMESPACE
+                  value: {{ .Release.Namespace }}
+                - name: MESSAGE
+                  value: {{ .Values.application.hellok8s.message }}
+    ```
+
+    ```bash
+    # hellok8s-service.yaml
+    appVersion: v1
+    kind: Service
+    metadata:
+      name: {{ .Values.applicaton.name }}-service
+    spec:
+      type: ClusterIP
+      selector:
+        app: hellok8s
+      ports:
+        - port: 3000
+          targetPort: 3000
+    ```
+
+    ```bash
+    # hellok8s-ingress.yaml
+    apiVersion: networking.k8s.io/v1
+    kind: Ingress
+    metadata:
+      name: {{ .Values.application.name }}-ingress
+      annotations:
+        nginx.ingress.kubernetes.io/ssl-redirect: "false"
+    spec:
+      rules:
+        - http:
+            paths:
+              - path: /hello
+                pathType: Prefix
+                backend:
+                  service:
+                    name: {{ .Values.application.name }}-service
+                    port:
+                      number: 3000
+              - path: /
+                pathType: Prefix
+                backend:
+                  service:
+                    name: nginx-service
+                    port:
+                      number: 4000
+    ```
+
+    ```bash
+    # nginx-service.yaml
+    appVersion: v1
+    kind: Service
+    metadata:
+      name: nginx-service
+    spec:
+      type: ClusterIP
+      selector:
+        app: hellok8s
+      ports:
+        - port: 4000
+          targetPort: 80
+    ```
+
+    ```bash
+    # nginx-deployment.yaml
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata:
+      name: nginx-deployment
+    spec:
+      replicas: {{ .Values.application.nginx.replicas }}
+      selector:
+        matchLabels:
+          app: nginx
+      template:
+        metadata:
+          labels:
+            app: nginx
+        spec:
+          containers:
+            - image: {{ .Values.application.nginx.image }}
+              name: nginx-container
+    ```
+
+  * 修改```hellok8s-helm```目录下的```Chart.yaml```文件：
+
+    ```bash
+    apiVersion: v2
+    name: hellok8s-helm
+    description: A k8s helm example
+    type: application
+    version: 0.1.0
+    appVersion: "1.16.0"
+    ```
+
+  * 在```hellok8s-helm```目录下应用```hellok8s chart```：
+    
+    ```bash
+    helm upgrade --install hellok8s-helm --values values.yaml .
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-03-09_18-09-13.png)
 
 * 本地打包以及应用```helm charts```
 
 * 托管以及应用```helm charts```
+
+* ```Helm```的其他应用
+  * 回滚应用
+  * 多环境应用
