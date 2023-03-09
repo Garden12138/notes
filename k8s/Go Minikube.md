@@ -1057,6 +1057,20 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-03-09_18-09-13.png)
 
 * 本地打包以及应用```helm charts```
+  * 在```hellok8s-helm```目录下打包```hellok8s chart```：
+
+    ```bash
+    helm package hellok8s-helm
+
+    helm repo index .
+    ```
+
+    ```helm package```命令将资源文件归档为```tgz```。```helm repo index```命令基于打包包含```chart```的目录，生成仓库的索引文件```index.yaml```。    
+  * 在```hellok8s-helm```目录下应用```hellok8s chart```：
+    
+    ```bash
+    helm upgrade --install hellok8s-helm hellok8s-helm-0.1.0.tgz
+    ```
 
 * 托管以及应用```helm charts```
 
