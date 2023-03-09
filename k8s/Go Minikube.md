@@ -1073,7 +1073,24 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     ```
 
 * 托管以及应用```helm charts```
+  * ```helm```托管```chartmuseum```
+  * [```helm```的其他托管应用]()
 
 * ```Helm```的其他应用
   * 回滚应用
+    * 修改```values.yaml```的```application.hellok8s.message```，再执行```helm upgrade```命令更新```K8S```资源，通过```helm ls```可观察到```K8S```资源已更新版本。
+    * 使用```helm rollback```命令可快速回滚，回滚后```Helm REVISION```会递增而不会回滚。
+
+      ```bash
+      helm rollback hellok8s-helm 1
+      ```
+
   * 多环境应用
+    * ```Helm```支持多环境部署，应用时可指定多个环境配置信息（使用多个```-f```参数指定），最右配置文件的优先级最高，相同的配置会覆盖低优先级：
+      ```
+      helm upgrade --install hello-helm -f values.yaml -f values-dev.yaml -n dev .
+      ```
+    * 还可使用```set-file```方式指定另外环境的配置信息：
+      ```
+      helm upgrade --install hello-helm -f values.yaml -f values-dev.yaml --set application.hellok8s.message="It works with set helm values[v3]" -n dev .
+      ```
