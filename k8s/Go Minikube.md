@@ -1073,8 +1073,50 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     ```
 
 * 托管以及应用```helm charts```
-  * ```helm```托管```chartmuseum```
-  * [```helm```的其他托管应用]()
+  * ```helm```托管[```chartmuseum```](https://chartmuseum.com/docs/#)
+    * 使用```Docker```运行```chartmuseum```服务（使用本地存储方式）:
+     
+      ```bash
+      docker run --rm -it \
+        -p 8080:8080 \
+        -e DEBUG=1 \
+        -e STORAGE=local \
+        -e STORAGE_LOCAL_ROOTDIR=/charts \
+        -v $(pwd)/charts:/charts \
+        chartmuseum/chartmuseum:latest
+      ```
+      
+      宿主机的```charts```文件夹需要赋予读写权限：
+      
+      ```bash
+      chmod 777 charts
+      ```
+    
+    * ```chart```打包并上传：
+      
+      ```bash
+      helm package .
+      curl --data-binary "@hellok8s-helm-0.1.0.tgz" ${chartmuseum_host}/api/charts
+      ``` 
+
+    * 下载安装```chart```
+
+      ```bash
+      # 将chartmuseum安装地址添加到本地仓库中
+      helm repo add hellok8s-chartmuseum ${chartmuseum_host}
+      # 查找添加的本地仓库的charts
+      helm search repo hellok8s-chartmuseum/
+      # 安装chart
+      helm install hellok8s-chartmuseum/hello-helm --generate-name
+      ``` 
+      
+      安装前可先更新本地仓库确保```chart```为最新版本：
+      
+      ```bash
+      helm repo update
+      ```
+          
+  * [```helm```的其他托管应用](https://helm.sh/zh/docs/topics/chart_repository/)
 
 * ```Helm```的其他应用
   * 回滚应用
