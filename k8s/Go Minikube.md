@@ -1149,3 +1149,8 @@ ln -s $(which minikube) /usr/local/bin/kubectl
   ```bash
   k9s
   ```
+> Kubernetes主要资源关系
+  
+* 关系图如下：
+  
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-03-13_23-17-11.png)
