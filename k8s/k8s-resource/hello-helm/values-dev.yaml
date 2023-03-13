@@ -1,0 +1,12 @@
+application:
+  name: hellok8s
+  hellok8s:
+    image: garden12138/hellok8s:v6
+    replicas: 3
+    message: "It works with Helm Values values-dev.yaml!"
+    database:
+      url: "http://DB_ADDRESS_DEV"
+      password: "db_password_dev"
+  nginx:
+    image: nginx
+    replicas: 2
