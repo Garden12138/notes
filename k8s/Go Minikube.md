@@ -1136,3 +1136,16 @@ ln -s $(which minikube) /usr/local/bin/kubectl
       ```
       helm upgrade --install hello-helm -f values.yaml -f values-dev.yaml --set application.hellok8s.message="It works with set helm values[v3]" -n dev .
       ```
+> Dashboard
+
+* ```kubernetes dashboard```是基于网页的```Kubernetes```用户界面。可以使用```Dashboard```将容器应用部署到```Kubernetes```集群中，也可以对容器应用进行编排以及管理集群资源。[在```minikube```环境中，可使用命令开启```Dashboard```](https://kubernetes.io/zh-cn/docs/tasks/access-application-cluster/web-ui-dashboard/)：
+  
+  ```bash
+  minikube dashboard
+  ```
+
+* ```K9s```是基于```Terminal```的轻量级```UI```，可以更轻松地观察和管理已部署的```k8s```资源。安装成功后输入```k9s```即可开启[```Terminal Dashboard```](https://k9scli.io/)：
+  
+  ```bash
+  k9s
+  ```
