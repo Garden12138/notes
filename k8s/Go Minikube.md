@@ -456,7 +456,7 @@ ln -s $(which minikube) /usr/local/bin/kubectl
 
         ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-02-20_14-49-39.png)
   
-  > Ingress资源
+> Ingress资源
   
 * ```Ingress```是集群外部到集群内服务的```HTTP```和```HTTPS```路由，```Ingress```定义路由规则控制请求流量。```Ingress```可为```Service```提供外部可访问的```URL```、负载均衡流量、```SSL/TLS```以及基于名称的虚拟托管。通常使用具有负载均衡的```Ingress```控制器实现```Ingress```，如```minikube```默认使用```nginx-ingress```，也支持```Kong-ingress```。
 * ```Ingress```可简单理解为服务的网关```Gateway```，它是所有请求流量的入口，经过配置的路由规则，将流量重定向至后端服务。
@@ -726,7 +726,7 @@ ln -s $(which minikube) /usr/local/bin/kubectl
   # [v4] Hello, Kubernetes! From host: hellok8s-pod, Get Database Connect URL: http://DB_ADDRESS_TEST
   ```
 
-  > Secret资源
+> Secret资源
 
   * ```configmap```无法存储需加密的配置信息，如挂载数据库的密码，这个时候需要```secret```存储加密的配置信息，虽然只在资源文件上通过```Base64```方式编码，但在实际生产环境中，可以通过```pipeline```和专业的```AWS KMS```服务进行密钥管理从而减少安全事故。
   * ```Secret```的安全使用：
@@ -778,7 +778,7 @@ ln -s $(which minikube) /usr/local/bin/kubectl
     # [v5] Hello, Kubernetes! From host: hellok8s-deployment-b47d55957-hjcrm, Get Database Connect URL: http://DB_ADDRESS_TEST By PASSWORD: db_password
     ```
 
-  > Job资源
+> Job资源
 
   * 实际开发过程中一次性任务如常见的计算任务，只需获取相关数据计算后结果无需一直运行，处理这一类任务的资源是```Job```资源。
   * ```Job```会创建一个或多个```Pod```，并会尝试重试```Pod```的执行，直到指定数量的```Pod```成功个数到达阈值，```Job```即结束。删除```Job```的操作会清除所有```Job```所创建的```Pod```。挂起```Job```的操作会删除```Job```的所有活跃```Pod```，直至```Job```被再次恢复执行。
