@@ -58,7 +58,19 @@
 
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-03-22_16-26-04.png)
    
-  * 省略上下文 
+  * 省略上下文。若```Dockerfile```中的指令不需要对任何文件进行操作，可省略构建上下文，此时不会向```Server Docker Daemon```发送额外的文件，从而提供构建速度。如```Dockerfile```：
+
+    ```bash
+    FROM busybox
+    RUN echo "hello world"
+    EOF
+    ```
+
+    构建命令：
+
+    ```
+    docker build -t ${imageName} -<<EOF
+    ``` 
 
 > 构建缓存
 
