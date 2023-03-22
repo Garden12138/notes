@@ -48,7 +48,15 @@
 
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-03-22_15-16-59.png)
 
-  * ```URL```上下文
+  * ```URL```上下文。构建命令（```docker build```）支持指定远程仓库地址：
+
+    ```bash
+    docker build -t ${imageName} ${repository}#${branch}:${subDir}
+    ```  
+
+    ```${repository}```代表远程仓库地址，```${branch}```表示仓库分支，```${subDir}```指定仓库根目录下的子目录，该目录为```URL上下文```，其中包含```Dockerfile```文件。构建流程如下：
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-03-22_16-26-04.png)
    
   * 省略上下文 
 
