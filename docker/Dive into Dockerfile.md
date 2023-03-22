@@ -68,8 +68,8 @@
 
     构建命令：
 
-    ```
-    docker build -t ${imageName} -<<EOF
+    ```bash
+    docker build -t ${imageName} -f ${dockerfile-path}/${dockerfile} -<<EOF
     ``` 
 
 > 构建缓存
