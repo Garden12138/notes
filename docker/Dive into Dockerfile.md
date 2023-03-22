@@ -63,13 +63,12 @@
     ```bash
     FROM busybox
     RUN echo "hello world"
-    EOF
     ```
 
     构建命令：
 
     ```bash
-    docker build -t ${imageName} -f ${dockerfile-path}/${dockerfile} -<<EOF
+    docker build -t ${imageName} - < ${dockerfile-path}/${dockerfile}
     ``` 
 
 > 构建缓存
@@ -93,3 +92,5 @@
 #### 参考文档
 
 > [一篇文章带你吃透 Dockerfile](https://juejin.cn/post/7179042892395053113)
+
+> [官方文档](https://docs.docker.com/reference/)
