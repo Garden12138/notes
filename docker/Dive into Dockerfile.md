@@ -73,6 +73,17 @@
 
 > 构建缓存
 
+* 迭代过程中```Dockerfile```经常修改，镜像需要频繁重新构建，在这个情况下构建缓存可以提高构建速度。
+* 镜像构建过程中，```Dockerfile```中的指令会从上往下顺序执行，每一个构建步骤的结果会被缓存起来：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-03-23_17-35-58.png)
+
+  若再次构建，会直接使用构建缓存中的结果（```Using Cache```）；若修改源代码```main.c```，从```COPY main.c Makefile /src/```这条指令开始，后续的指令的构建缓存将会失效，需要重新构建：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-03-23_17-41-21.png)
+
+  若不使用缓存，可在执行构建命令（```docker build```）时传入```--no-cache```。
+
 > 镜像构建过程
 
 #### .dockerignore介绍
