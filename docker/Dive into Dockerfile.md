@@ -86,6 +86,13 @@
 
 > 镜像构建过程
 
+* ```Dokcer Client```执行构建命令（```docker build```）
+* ```Docker Engine```确定构建上下文，若构建上下文中存在```.dockerignore```文件，解析该文件并将符合匹配规则的文件资源从构建上下文中排除，最后将确定的构建上下文与```Dokcerfile```文件通过```Rest API```请求方式发送给```Docker Daemon Server```。
+* ```Docker Daemon Server```逐条校验```Dokcerfile```中的指令是否合法，若不合法则立即结束构建。指令校验成功后将逐条执行指令，每条指令都会在原有镜像层上创建一层临时的```conatiner```层，用于指令执行指定的命令，每条指令执行结束后将删除临时```container```，最后生成镜像层。
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-03-25_17-04-37.png)
+
+
 #### .dockerignore介绍
 
 > 语法规则
