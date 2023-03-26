@@ -95,9 +95,32 @@
 
 #### .dockerignore介绍
 
+> 介绍
+
+* ```.dockerignore```是一个文本文件，存放在构建上下文的根目录下，在```Docker Client```发送构建请求之前，优先检查这个文件是否存在，若存在则解析这个文件，排除构建上下文中符合匹配规则的文件或文件夹。
+
 > 语法规则
 
+* 以```#```开头的行是备注，不会被解析为匹配规则
+* 支持```?```通配符，匹配单个字符
+* 支持```*```通配符，匹配多个字符，只能匹配单级目录
+* 支持```**```通配符，可匹配多级目录
+* 支持```!```匹配符，声明某些文件资源不需要被排除
+* 可以用```.dockerignore```排除```Dockerfile```和```.dockerignore```文件。```Docker Client```仍会将这两个文件发送到```Docker Daemon Server```。
+
 > 示例
+
+* 假设构建上下文的根目录为```/```，```.dockerignore```文件如下：
+  ```bash
+  # 第一行是注释
+  */demo* # 表示排除构建上下文中第一级目录下以demo开头的文件夹或文件，如/test/demofile.txt，/another/demo-dir/
+  */*/demo* # 表示排除构建上下文中第二级目录下以demo开头的文件夹或文件
+  demo? # 表示排除构建上下文中以demo开头且后只有一个任意字符的文件或文件夹，如demo1，demob
+  **/demo* # 表示排除构建上下文中任意目录下以demo开头的文件或文件夹
+  *.md # 表示排除构建上下文中所有Markdown中间
+  !README*.md #表示不排除以README开头的Markdown文件
+  README-secret.md #表示排除README-secret.md文件
+  ```
 
 #### Dockerfile介绍
 
