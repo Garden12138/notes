@@ -195,6 +195,35 @@
   
   * ```tag```与```digest```为可选项，若不指定则使用```latest```版本作为基础镜像。
   * 若不以任何镜像为基础，则使用```FROM scratch```，```scratch```是一个空镜像，可用于构建```debian```，```busybox```等超小的基础镜像。
+  
+* ```LABEL```，设置镜像的元数据
+
+  语法：
+
+  ```bash
+  # 语法
+  LABEL <key>=<value> <key>=<value> <key>=<value> ...
+  LABEL <key>=<value> \ 
+        <key>=<value> \ 
+        <key>=<value> \
+        ...
+  # 示例
+  LABEL author="Garden" version="1.0.0" description="Dockerfile LABEL"
+  LABEL author="Garden" \
+        version="1.0.0" \
+        description="Dockerfile LABEL"
+  ```
+
+  说明：
+
+  * ```LABEL```定义键值对结构的元数据，一条```LABEL```指令可指定多个元数据，用空格分开，可以在同一行定义也可以通过换行符多行定义。
+  * 定义元数据时尽量使用双引号。
+  * 当前镜像可以继承或覆盖基础镜像或父级镜像中的元数据。
+  * 使用```docker image inspect```命令查看镜像的元数据
+
+    ```bash
+    docker image inspect -f='{{json.ContainerConfig.Labels}}' ${imageName}
+    ``` 
 
 > 其他指令
 
