@@ -176,6 +176,26 @@
   | ```CMD``` | 用于镜像构建成功后所创建的容器启动时执行的命令，常与```ENTRYPOINT```结合使用 |
   | ```ENTRYPOINT``` | 用于配置容器以可执行的方式运行，常与```CMD```结合使用 |
 
+* ```FROM```，指定基础镜像或父级镜像
+  
+  语法：
+  
+  ```bash
+  #语法
+  FROM [--platform=<platform>] <image> [AS <name>]
+  FROM [--platform=<platform>] <image>[:<tag>] [AS <name>]
+  FROM [--platform=<platform>] <image>[@<digest>] [AS <name>]
+  # 示例
+  FROM redis
+  FROM redis:7.0.5
+  FROM redis@7614ae9453d1
+  ```
+
+  说明：
+  
+  * ```tag```与```digest```为可选项，若不指定则使用```latest```版本作为基础镜像。
+  * 若不以任何镜像为基础，则使用```FROM scratch```，```scratch```是一个空镜像，可用于构建```debian```，```busybox```等超小的基础镜像。
+
 > 其他指令
 
 #### 参考文档
