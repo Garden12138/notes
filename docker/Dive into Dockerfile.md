@@ -165,7 +165,7 @@
   | :---- | :---- |
   | ```FROM``` | 指定基础镜像或父级镜像 |
   | ```LABEL``` | 设置镜像的元数据 |
-  | ```ENV``` | 设置环境变量，最终持久化到容器中 |
+  | ```ENV``` | 设置构建过程环境变量，最终持久化到容器中 |
   | ```WORKDIR``` | 指定后续构建指令的工作目录，功能类似```Linux```的```cd```命令 |
   | ```USER``` | 指定当前构建阶段以及容器运行时的默认用户或用户组 |
   | ```VOLUME``` | 创建具有指定名称的挂载数据卷，用于数据持久化 |
@@ -218,12 +218,44 @@
 
   * ```LABEL```定义键值对结构的元数据，一条```LABEL```指令可指定多个元数据，用空格分开，可以在同一行定义也可以通过换行符多行定义。
   * 定义元数据时尽量使用双引号。
-  * 当前镜像可以继承或覆盖基础镜像或父级镜像中的元数据。
+  * 当前镜像可以继承和覆盖基础镜像或父级镜像中的元数据。
   * 使用```docker image inspect```命令查看镜像的元数据
 
     ```bash
     docker image inspect -f='{{json.ContainerConfig.Labels}}' ${imageName}
     ``` 
+  
+* ENV，设置构建过程中环境变量，最终持久化在容器中
+
+  语法：
+  
+  ```bash
+  # 语法
+  ENV <key>=<value> ...
+  # 示例
+  ENV INSTRUCTION_ENV_NAME="Dockerfile ENV NAME" INSTRUCTION_ENV_DESC=Dockerfile\ ENV\ DESC INSTRUCTION=ENV
+  ```
+
+  说明：
+
+  * 可以使用多个指令设置多个环境变量，也可使用同一个指令设置多个环境变量。
+  * 若需设置包含空格值的环境变量，可使用双引号包含或反斜杆分隔。
+  * 当前镜像可以继承和覆盖基础镜像或父级镜像中的环境变量。因此定义环境变量时需谨慎，如```ENV DEBIAN_FRONTEND=noninteractive```会改变```apt-get```的默认行为。
+  * 对于只在镜像构建过程中使用的变量，推荐使用```ARG```或行内环境变量
+
+    ```bash
+    # ARG
+    ARG DEBIAN_FRONTEND=noninteractive
+    RUN apt-get update && apt-get install -y ...
+    # 行内环境变量
+    RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y ...
+    ```  
+  * 可以在运行容器（```docker run```）时，通过```--env = ```或```-e = ```覆盖镜像中定义的环境变量。
+  * 使用```docker image inspect```命令查看镜像的环境变量
+
+    ```bash
+    docker image inspect -f='{{json.ContainerConfig.Env}}' ${imageName}
+    ```
 
 > 其他指令
 
