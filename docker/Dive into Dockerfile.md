@@ -249,8 +249,9 @@
     RUN apt-get update && apt-get install -y ...
     # 行内环境变量
     RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y ...
-    ```  
-  * 可以在运行容器（```docker run```）时，通过```--env = ```或```-e = ```覆盖镜像中定义的环境变量。
+    ```
+  
+  * 可以在运行容器（```docker run```）时，通过```--env=```或```-e=```覆盖镜像中定义的环境变量。
   * 使用```docker image inspect```命令查看镜像的环境变量
 
     ```bash
