@@ -435,6 +435,31 @@
   * ```RUN```指令每执行一次都换新建一个镜像层，为了避免创建过多的镜像层，可以使用```&&```符号链接多个命令。
   * 在下一次构建期间，```RUN```指令缓存不会自动失效，构建镜像时可用```--no-cache```标志让该指令缓存失效。若```ADD```和```COPY```指令对应的资源文件发生变更，其后的```RUN```指令缓存也会失效。
 
+* ```CMD```，用于镜像构建成功后所创建的容器启动时执行的命令
+
+  语法：
+
+  ```bash
+  # 语法
+  CMD command param1 param2 # shell方式
+  CMD ["executable","param1","param2"] # exec方式
+  CMD ["param1","param2"]   # 作为ENTRYPOINT的默认参数
+  # 示例
+  CMD echo "Hello Dockerfile"
+  CMD ["echo", "Hello Dockerfile"]
+  ```
+
+  说明：
+
+  * ```Dockerfile```中只有一条```CMD```指令生效，若指定多条也只有最后一条指令生效。虽然指定多条```CMD```指令只有最后一条生效，但在构建过程中会新增多个镜像层，这种情况下只定义一条```CMD```指令并使用```&&```连接多个命令。
+  * ```exec```方式是通过```JSON```数组方式解析的，因此使用双引号。
+  * 与```RUN```指令不同，```RUN```指令作用在镜像构建过程中，```CMD```指令作用在容器启动时。
+  * ```docker run```后的**命令行参数**可覆盖```CMD```指令中的命令（如下```/bin/bash```）
+    
+    ```bash
+    docker run -d --name hello-dockerfile hello-dockerfile-image:v1 /bin/bash 
+    ```
+
 > 其他指令
 
 #### 参考文档
