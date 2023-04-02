@@ -571,6 +571,27 @@
   * ```Dockerfile```中定义了```HEALTHCHECK```指令，启动容器后状态中会多出健康状态这一项，值为```healthy```或```unhealthy```。
   * ```Dockerfile```中只有最后一条```HEALTHCHECK```生效。
 
+* ```SHELL```，设置以```shell```方式执行的指令的默认```Shell```，这些指令包括```RUN```、```CMD```以及```ENTRYPOINT```
+
+  语法：
+
+  ```bash
+  # 语法
+  SHELL ["executable", "parameters"]
+  # 示例1
+  FROM ubuntu
+  SHELL ["/bin/sh", "-c"]
+  # 示例2
+  FROM microsoft/windowsservercore
+  SHELL ["powershell", "-command"]
+  ```
+
+  说明：
+   
+  * ```Linux```系统默认```Shell```是```["/bin/sh", -c]```。
+  * ```Windows```系统默认```Shell```是```["cmd", "/S", "/C"]```。
+
+
 #### 参考文档
 
 > [一篇文章带你吃透 Dockerfile](https://juejin.cn/post/7179042892395053113)
