@@ -487,6 +487,42 @@
 
 > 其他指令
 
+* ```ARG```，定义构建变量，可接收外部参数，该变量不会持久化在镜像层中。
+
+  语法：
+
+  ```bash
+  # 语法
+  ARG <name>[=<default value>]
+  # 示例 1
+  ARG build_user # 不带默认值的构建变量
+  ARG build_comment="built by garden" # 带默认值的构建变量
+  # 示例 2
+  ARG build_user=Garden
+  ENV build_user=Garden12138
+  RUN echo $build_user # 此时build_user已经被ENV指令覆盖为Garden12138
+  ```
+
+  说明：
+   * 不推荐使用构建变量传递不安全或敏感的信息。
+   * 对于有默认值的构建变量，若构建时传入参数，则```Dockerfile```中使用传入的参数，若不传入则使用默认值。构建时可通过```--build-arg```传入参数：
+     
+     ```bash
+     dokcer build -t ${imageName} --build-arg build_user=Garden12138520 .
+     ```
+  * 构建变量从```Dockerfile```中定义的行开始生效，一直到当前构建阶段结束。
+  * 构建变量会被其后定义的同名**环境变量**覆盖。
+  * 构建变量不会持久化到镜像层中，但构建变量的变化可能会使构建缓存失效。
+  * ```Docker```有一组预定义的构建变量，可直接使用。
+
+    ```bash
+    HTTP_PROXY | http_proxy
+    HTTPS_PROXY | https_proxy
+    FTP_PROXY | ftp_proxy
+    NO_PROXY | no_proxy
+    ALL_PROXY | all_proxy
+    ```
+
 #### 参考文档
 
 > [一篇文章带你吃透 Dockerfile](https://juejin.cn/post/7179042892395053113)
