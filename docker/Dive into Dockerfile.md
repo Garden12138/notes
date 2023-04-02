@@ -523,6 +523,24 @@
     ALL_PROXY | all_proxy
     ```
 
+* ```STOPSIGNAL```，设置在```docker stop```时被发送到容器内执行退出的系统调用信息。该信号可以是```SIG```形式的信号名称，如```SIGKILL```；还可以是与内核系统调研表中的位置匹配的无符号数，如```9```。
+
+  语法：
+
+  ```bash
+  # 语法
+  STOPSIGNAL <signal>
+  # 示例
+  STOPSIGNAL SIGTERM
+  STOPSIGNAL SIGKILL
+  STOPSIGNAL 9
+  ```
+
+  说明：
+
+  * 若不显式指定，默认的```STOPSIGNAL```是```SIGTERM```。
+  * 运行容器时可通过```--stop-signal```覆盖```STOPSIGNAL```。
+
 #### 参考文档
 
 > [一篇文章带你吃透 Dockerfile](https://juejin.cn/post/7179042892395053113)
