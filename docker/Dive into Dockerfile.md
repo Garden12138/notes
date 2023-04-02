@@ -460,6 +460,31 @@
     docker run -d --name hello-dockerfile hello-dockerfile-image:v1 /bin/bash 
     ```
 
+* ```ENTRYPOINT```，用于配置容器以可执行的方式运行
+  
+  语法：
+
+  ```bash
+  # 语法
+  ENTRYPOINT command param1 param2 # shell方式
+  ENTRYPOINT ["executable", "param1", "param2"] # exec方式
+  # 示例1
+  FROM ubuntu
+  ENTRYPOINT exec top -b
+  # 示例2
+  FROM ubuntu
+  ENTRYPOINT ["top", "-b"]
+  CMD ["-c"]
+  ```
+
+  说明：
+
+  * ```Dockerfile```中只有最后一条```ENTRYPOIN```指令生效。
+  * ```shell```形式的```ENTRYPOINT```指令会让```CMD```指令以及```docker run```中的**命令行参数**失效。此时```ENTRYPOINT```命令作为```/bin/bsh -c```的子命令不会传递信号，如停止容器时，容器内接收不到```SIGTERM```信号，但可通过在命令前添加```exec```解决，如```ENTRYPOINT exec top -b```。
+  * ```exec```方式是通过```JSON```数组方式解析的，因此使用双引号。```ENTRYPOINT```指令使用```exec```形式，若```docker run```中存在**命令行参数**则会追加到```JSON```数组后面。
+  * 指定```ENTRYPOINT```后，```CMD```的内容将作为默认参数传给```ENTRYPOINT```指令。若```CMD```在基础镜像中定义则当前镜像定义的```ENTRYPOINT```会将```CMD```的值重置为空值，这种情况下需要重新定义```CMD```。
+  * 运行容器时可使用```docker run --entrypoint```覆盖```ENTRYPOINT```指令。
+
 > 其他指令
 
 #### 参考文档
