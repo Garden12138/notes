@@ -591,6 +591,33 @@
   * ```Linux```系统默认```Shell```是```["/bin/sh", -c]```。
   * ```Windows```系统默认```Shell```是```["cmd", "/S", "/C"]```。
 
+* ```ONBUILD```，将一个触发指令添加到镜像中，当该镜像作为另一个镜像的基础镜像或父级镜像时执行。
+
+  语法：
+
+  ```bash
+  # 语法
+  ONBUILD <INSTRUCTION>
+
+  # 示例
+  # 定义ONBUILD的Dockerfile
+  FROM ubuntu
+  ONBUILD ["echo", "I'm used as a base image"]
+  # 构建父级镜像
+  docker build -t onbuild-image .
+  # 触发ONBUILD的Dockerfile
+  FROM onbuild-image
+  RUN ["echo", "I just trigger the ONBUILD instruction"]
+  ```
+
+  说明：
+
+  * 除```FRON```、```LABEL```以及```ONBUILD```以外的构建指令都可作为触发指令。
+  * 触发指令不影响定义触发指令的所在的镜像，构建结束后，触发器列表会被保存在当前镜像的元数据的```ONBUILD```属性中，可使用```docker inspect```命令查看：
+    
+    ```bash
+    docker inspect -f='{{json.ContainerConfig.OnBuild}}' onbuild-image
+    ```
 
 #### 参考文档
 
