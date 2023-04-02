@@ -541,6 +541,36 @@
   * 若不显式指定，默认的```STOPSIGNAL```是```SIGTERM```。
   * 运行容器时可通过```--stop-signal```覆盖```STOPSIGNAL```。
 
+* ```HEALTHCHECK```，在容器内执行某些命令，用于检查容器的健康情况，确认容器是否还在正常运行。
+
+  语法：
+
+  ```bash
+  # 语法
+  HEALTHCHECK [OPTIONS] CMD command # 在容器内运行命令，检查容器的健康状况
+  HEALTHCHECK NONE # 禁用任何健康检查，包括从基础镜像继承而来的
+
+  # 示例
+  HEALTHCHECK --interval=5m --timeout=3s \
+    CMD curl -f http://localhost/ || exit 1
+
+  # CMD前的可选参数
+  --interval=DURATION(执行时间间隔，默认值30s)
+  --timeout=DURATION(执行单次命令的超时时间，如果超时，会增加失败次数，默认值30s)
+  --start-period=DURATION(启动时间，在该时间段内，检查失败不计入总失败次数，默认值0s)
+  --retries=N(健康检查失败后的重试次数，默认值3)
+
+  # 健康检查命令的退出状态码有三种
+  0: healthy - 容器正常运行中，处于可用状态
+  1: unhealthy - 容器运行状态异常，不可用
+  2:reserved - 未使用退出状态码
+  ```
+
+  说明：
+
+  * ```Dockerfile```中定义了```HEALTHCHECK```指令，启动容器后状态中会多出健康状态这一项，值为```healthy```或```unhealthy```。
+  * ```Dockerfile```中只有最后一条```HEALTHCHECK```生效。
+
 #### 参考文档
 
 > [一篇文章带你吃透 Dockerfile](https://juejin.cn/post/7179042892395053113)
