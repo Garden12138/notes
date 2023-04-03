@@ -2,7 +2,7 @@
 
 #### [完成Dockerfile的实践与总结](https://juejin.cn/post/7179042892395053113)
 
-#### 完成知识库Think的实践与总结
+#### [完成知识库Think的实践与总结](https://github.com/fantasticit/think/)
 
 #### 完成GoCD的实践与总结
 
