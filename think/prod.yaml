@@ -74,5 +74,5 @@ oss:
 
 # jwt 配置
 jwt:
-  secretkey: 'zA_Think+KNOWLEDGE+WIKI+DOCUMENTS@2022'
+  secretkey: 'zA_Think+KNOWLEDGE+WIKI+DOCUMENTS@2023'
   expiresIn: '6h'
