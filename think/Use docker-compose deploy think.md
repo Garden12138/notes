@@ -162,6 +162,12 @@
 
 * [若需前置```Nginx```，```nginx.conf```可参考](https://gitee.com/FSDGarden/learn-note/tree/master/think/nginx.conf.sample)
 
+> 使用效果图
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-03_17-41-08.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-03_17-40-42.png)
+ 
 > 参考文献
 
 * [how-to-use-docker](https://github.com/fantasticit/think/blob/main/how-to-use-docker.md)
