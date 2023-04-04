@@ -1,4 +1,4 @@
-#### 使用 docker-compose 部署 think 知识库
+## 使用 docker-compose 部署 think 知识库
 
 > 安装部署
 
