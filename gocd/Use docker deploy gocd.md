@@ -21,7 +21,7 @@
 * 构建 ```gocd-server``` 镜像
   
   ```bash
-  docker build -t gardeb12138/gocd-server-jdk8 -f server.dockerfile .
+  docker build -t garden12138/gocd-server-jdk8 -f server.dockerfile .
   ```
 
 > 运行 ```gocd-server```容器
@@ -101,3 +101,15 @@ docker run \
   ```
   
 * [若需添加```Shell```脚本执行插件，点击下载](https://github.com/gocd-contrib/script-executor-task/releases/download/1.0.1/script-executor-1.0.1.jar)
+
+> 参考文献
+
+* [GoCD 整行记（一）：定制 gocd-server](https://www.jianshu.com/p/e4e4ed65f100)
+
+* [GoCD 整行记（二）：定制 gocd-agent](https://www.jianshu.com/p/6b0961d806d2)
+
+* [GoCD 整行记（三）：创建流水线](https://www.jianshu.com/p/4711f9781aa1)
+
+* [GoCD 整行记（四）：配置流水线](https://www.jianshu.com/p/27cb772dd35f)
+
+* [GoCD 整行记（五）：部署应用](https://www.jianshu.com/p/79e829fdb2a1)
