@@ -14,14 +14,16 @@
   ## server.dockerfile
   FROM gocd/gocd-server:v22.2.0
   MAINTAINER garden12138
-  USER root  # 指定构建过程以及容器创建所使用root用户
-  RUN apk update && apk add openjdk8  # 执行安装openjdk8命令
+  ## 指定构建过程以及容器创建所使用root用户
+  USER root
+  ## 执行安装openjdk8命令
+  RUN apk update && apk add openjdk8
   ```
 
 * 构建 ```gocd-server``` 镜像
   
   ```bash
-  docker build -t garden12138/gocd-server-jdk8 -f server.dockerfile .
+  docker build -t gardeb12138/gocd-server-jdk8 -f server.dockerfile .
   ```
 
 > 运行 ```gocd-server```容器
@@ -54,11 +56,16 @@
   ## agent.dockerfile
   FROM gocd/gocd-agent-alpine-3.12:v22.1.0
   MAINTAINER garden12138
-  USER root  # 指定构建过程以及容器创建所使用root用户
-  RUN apk update && apk add expect && apk add maven && apk add openjdk8 && apk add docker && apk add openrc # 执行安装maven，openjdk8，docker以及openrc命令
-  COPY entrypoint.sh . # 复制构建上下文的entrypoint.sh文件至镜像内文件系统的当前工作目录
-  RUN chmod +x entrypoint.sh # 赋予entrypoint.sh文件读写权限
-  ENTRYPOINT ["/entrypoint.sh"] # 设置容器以entrypoint.sh方式启动
+  ## 指定构建过程以及容器创建所使用root用户
+  USER root
+  ## 执行安装maven，openjdk8，docker以及openrc命令
+  RUN apk update && apk add expect && apk add maven && apk add openjdk8 && apk add docker && apk add openrc
+  ## 复制构建上下文的entrypoint.sh文件至镜像内文件系统的当前工作目录
+  COPY entrypoint.sh .
+  ## 赋予entrypoint.sh文件读写权限
+  RUN chmod +x entrypoint.sh
+  ## 设置容器以entrypoint.sh方式启动
+  ENTRYPOINT ["/entrypoint.sh"]
   ```
 
 * 编写 ```gocd-agent``` 的启动脚本 ```entrypoint.sh```
@@ -66,7 +73,8 @@
   ```bash
   ## entrypoint.sh
   #!/bin/bash
-  chown go /var/run/docker.sock # 设置go用户拥有使用docker的权限
+  ## 设置go用户拥有使用docker的权限
+  chown go /var/run/docker.sock
   bash /docker-entrypoint.sh
   ```
 
@@ -105,7 +113,7 @@ docker run \
 > 参考文献
 
 * [GoCD 整行记（一）：定制 gocd-server](https://www.jianshu.com/p/e4e4ed65f100)
-
+  
 * [GoCD 整行记（二）：定制 gocd-agent](https://www.jianshu.com/p/6b0961d806d2)
 
 * [GoCD 整行记（三）：创建流水线](https://www.jianshu.com/p/4711f9781aa1)
