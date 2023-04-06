@@ -112,7 +112,9 @@ docker run \
 * ```gocd-agent``` 若需集成```Maven```，需要拷贝```maven setting.xml```文件至容器内（```/root/.m2/```）。
   
   ```bash
-  docker cp settings.xml gocd-agent:/root/.m2
+  docker exec -it gocd-agent /bin/bash
+  mkdir /root/.m2/
+  docker cp settings.xml gocd-agent:/root/.m2/
   ```
   
 * [若需添加```Shell```脚本执行插件，点击下载](https://github.com/gocd-contrib/script-executor-task/releases/download/1.0.1/script-executor-1.0.1.jar)
