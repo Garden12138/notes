@@ -25,7 +25,7 @@
 * 构建 ```gocd-server``` 镜像
   
   ```bash
-  docker build -t gardeb12138/gocd-server-jdk8 -f server.dockerfile .
+  docker build -t garden12138/gocd-server-jdk8 -f server.dockerfile .
   ```
 
 > 运行 ```gocd-server```容器
