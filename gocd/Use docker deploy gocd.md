@@ -79,7 +79,6 @@
 * 编写 ```gocd-agent``` 的启动脚本 ```entrypoint.sh```
 
   ```bash
-  ## entrypoint.sh
   #!/bin/bash
   ## 设置go用户拥有使用docker的权限
   chown go /var/run/docker.sock
