@@ -116,14 +116,34 @@ docker run \
   mkdir /root/.m2/
   docker cp settings.xml gocd-agent:/root/.m2/
   ```
-  
-* [若需添加```Shell```脚本执行插件，点击下载](https://github.com/gocd-contrib/script-executor-task/releases/download/1.0.1/script-executor-1.0.1.jar)
 
+* 安装```Shell```脚本执行插件
+  
+  * [```Shell```脚本执行插件下载地址](https://github.com/gocd-contrib/script-executor-task/releases/download/1.0.1/script-executor-1.0.1.jar)，也可使用```Linux```命令下载：
+
+    ```bash
+    wget https://github.com/gocd-contrib/script-executor-task/releases/download/1.0.1/script-executor-1.0.1.jar
+    ```
+
+  * 移动插件文件至宿主机挂载目录下的插件文件夹，如上述的```/data/godata/```的```/plugins/external/```：
+
+    ```bash
+    mv script-executor-1.0.1.jar /data/godata/plugins/external/
+    ```
+  
+  * 重启```gocd-server```：
+
+    ```bash
+    docker restart gocd-server 
+    ```
+  
 > 参考文献
 
 * [GoCD 整行记（一）：定制 gocd-server](https://www.jianshu.com/p/e4e4ed65f100)
   
 * [GoCD 整行记（二）：定制 gocd-agent](https://www.jianshu.com/p/6b0961d806d2)
+
+* [GoCD Plugin User Guide](https://www.bookstack.cn/read/gocd-20.5-en/42e37f2ec557d5bc.md#ejh70a)
 
 * [GoCD 整行记（三）：创建流水线](https://www.jianshu.com/p/4711f9781aa1)
 
