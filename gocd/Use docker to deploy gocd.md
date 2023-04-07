@@ -134,6 +134,7 @@ docker run \
   * 重启```gocd-server```：
 
     ```bash
+    # 按照目前的部署方式，重启gocd-server后需要重新运行gocd-agent，因为重启gocd-server后gocd-server的容器ip会发生变化
     docker restart gocd-server 
     ```
   
