@@ -144,9 +144,3 @@ docker run \
 * [GoCD 整行记（二）：定制 gocd-agent](https://www.jianshu.com/p/6b0961d806d2)
 
 * [GoCD Plugin User Guide](https://www.bookstack.cn/read/gocd-20.5-en/42e37f2ec557d5bc.md#ejh70a)
-
-* [GoCD 整行记（三）：创建流水线](https://www.jianshu.com/p/4711f9781aa1)
-
-* [GoCD 整行记（四）：配置流水线](https://www.jianshu.com/p/27cb772dd35f)
-
-* [GoCD 整行记（五）：部署应用](https://www.jianshu.com/p/79e829fdb2a1)
