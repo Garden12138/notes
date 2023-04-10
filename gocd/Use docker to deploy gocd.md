@@ -1,5 +1,11 @@
 ## 使用 docker 部署 gocd
 
+> 创建自定义网络，运行的```server```与```agent```容器都使用该网络，使得```server```和```agent```容器重启时，容器```ip```固定不变，```agent```服务访问```server```服务的```ip```不变，```server```服务中```agent```服务的注册```ip```不变，保持```server```和```agent```的可用性。
+  
+  ```bash
+  docker network create --subnet=172.18.0.0/16 gocd-network
+  ```
+
 > 构建 ```gocd-server``` 镜像
 
 * 拉取相应版本 ```gocd-server``` 父级镜像，如```v22.2.0```
@@ -33,6 +39,8 @@
   ```bash
   docker run \
   --name gocd-server \
+  --net gocd-network \
+  --ip 172.18.0.12 \
   --privileged \
   --restart always \
   --log-opt max-size=10m \
@@ -97,12 +105,14 @@
 ```bash
 docker run \
   --name gocd-agent \
+  --net gocd-network \
+  --ip 172.18.0.13 \
   --privileged \
   --restart always \
   --log-opt max-size=10m \
   --log-opt max-file=3 \
   -d \
-  -e GO_SERVER_URL=http://$(docker inspect --format='{{(index (index .NetworkSettings.IPAddress))}}' gocd-server):8153/go \
+  -e GO_SERVER_URL=http://$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' gocd-server):8153/go \
   -v '/var/run/docker.sock:/var/run/docker.sock' \
   garden12138/gocd-agent-jdk8
 ```
@@ -133,10 +143,9 @@ docker run \
     mv script-executor-1.0.1.jar /data/godata/plugins/external/
     ```
   
-  * 重启```gocd-server```：
+  * 重启```gocd-server```，使安装的插件生效：
 
     ```bash
-    # 按照目前的部署方式，重启gocd-server后需要重新运行gocd-agent，因为重启gocd-server后gocd-server的容器ip会发生变化
     docker restart gocd-server 
     ```
   
