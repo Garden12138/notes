@@ -34,6 +34,7 @@
   docker run \
   --name gocd-server \
   --privileged \
+  --restart always \
   --log-opt max-size=10m \
   --log-opt max-file=3 \
   -d \
@@ -97,6 +98,7 @@
 docker run \
   --name gocd-agent \
   --privileged \
+  --restart always \
   --log-opt max-size=10m \
   --log-opt max-file=3 \
   -d \
