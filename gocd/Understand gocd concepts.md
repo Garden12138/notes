@@ -16,9 +16,13 @@
 
 * 一个阶段由多个作业组成，阶段中的多个作业并行执行，每个作业都独立于其他作业运行，若其中一个作业失败，该阶段将视为失败但其他作业不受影响将继续运行完成：
 
-   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-02-54.png)
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-02-54.png)
 
-> Pipeline
+> Pipeline【管道】
+
+* 一个管道由多个阶段组成，管道中的多个阶段串行执行，若其中一个阶段失败，后续阶段将不会执行并且该管道将视为失败：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-03-04.png) 
 
 > Materials
 
