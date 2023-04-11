@@ -65,4 +65,5 @@ garden520/Harbor12345
 
 * [超详细的harbor私有仓库搭建并使用域名登录](https://blog.csdn.net/weixin_45231541/article/details/125556143)
 * [Docker Harbor私有仓库部署与管理](https://developer.aliyun.com/article/898329)
-* [](https://hub.docker.com/r/bitnami/harbor-core)
+* [Harbor Core packaged by Bitnami](https://hub.docker.com/r/bitnami/harbor-core)
+* [docker login 登录 Harbor](https://randyou.github.io/2020/06/16/docker-login-harbor/index.html)	
