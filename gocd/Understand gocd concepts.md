@@ -96,7 +96,18 @@
 
   ```Job1```可分配给```Agent1```或```Agent3```；```Job2```只能分配给```Agent1```，因为它是唯一提供```Linux```资源的代理；```Job3```只能分配给```Agent1```，因为它是唯一提供```Linux```资源和```FireFox```资源；```Job4```可分配任意一个```Agent```，因该作业不需任何资源。
 
-> Environment
+> Environment【环境】
+
+* 环境是一种分组隔离管道和代理的方法，有以下规则：
+
+  * 一个管道最多只能关联一个环境。
+  * 代理可以与多个环境相关联，也可以不与任何环境相关联，若关联环境，只能在其关联的环境中被分配管道作业。
+
+* 在环境中管道作业分配代理：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-10-06.png)
+  
+  ```Pipeline1```和```Pipeline2```中的作业只能由```Agent1```、```Agent2```和```Agent3```拾取；```Pipeline3```和```Pipeline4```中的作业只能由```Agent3```和```Agent4```拾取；```Pipeline5```、```Pipeline6```和```Pipeline7```中的作业只能由```Agent5```拾取。
 
 > Environment Variables
 
