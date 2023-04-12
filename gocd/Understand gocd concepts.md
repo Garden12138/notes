@@ -24,7 +24,21 @@
 
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-03-04.png) 
 
-> Materials
+> Materials【材料】
+
+* 材料是管道运行的因素。通常它是源代码存储库，如```Git```、```SVN```以及```Mercurial```等。```GoCD```服务器会不断轮询其对应配置的材料，当发现新的更高或提交时，将运行或触发相应的管道。存在不同类型的材料，如```Git```与```SVN```分别为：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-03-30.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-03-38.png)
+
+  管道可以配置多种材料，如同时配置```Git```与```SVN```材料，当任意存储库有新提交时，将触发管道：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-07-33.png)
+
+  存在特殊的材料-定时触发器，可以在指定时间或指定时间间隔触发管道：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-03-46.png)
 
 > Pipeline Dependencies
 

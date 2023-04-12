@@ -61,9 +61,12 @@ garden520/Harbor12345
 	"stackOrchestrator": "swarm"
 }
 
+Error response from daemon: Get "https://159.75.138.212:80/v2/": http: server gave HTTP response to HTTPS client
+Error response from daemon: Get "http://159.75.138.212/v2/": Get "http://reg.mydomain.com/service/token?account=admin&client_id=docker&offline_token=true&service=harbor-registry": dial tcp: lookup reg.mydomain.com on 183.60.83.19:53: no such host
+
 > 参考文献
 
 * [超详细的harbor私有仓库搭建并使用域名登录](https://blog.csdn.net/weixin_45231541/article/details/125556143)
 * [Docker Harbor私有仓库部署与管理](https://developer.aliyun.com/article/898329)
 * [Harbor Core packaged by Bitnami](https://hub.docker.com/r/bitnami/harbor-core)
-* [docker login 登录 Harbor](https://randyou.github.io/2020/06/16/docker-login-harbor/index.html)	
+* [docker login 登录 Harbor](https://randyou.github.io/2020/06/16/docker-login-harbor/index.html)
