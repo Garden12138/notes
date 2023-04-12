@@ -52,6 +52,18 @@
 
 > Fan-in and Fan-out
 
+* 扇入是指一个上游材料的完成触发多个下游管道（```1-N```）：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-08-14.png)
+
+* 扇出是指多个上游材料的完成触发一个下游管道（```N-1```）：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-08-25.png) 
+
+  扇出时下游管道会等待所有上游材料完成后才触发。
+
+* 扇入和扇出的上游材料不一定都是管道依赖材料，它可以是任何材料。
+
 > Value Stream Map
 
 > Artifacts
