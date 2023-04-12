@@ -109,7 +109,21 @@
   
   ```Pipeline1```和```Pipeline2```中的作业只能由```Agent1```、```Agent2```和```Agent3```拾取；```Pipeline3```和```Pipeline4```中的作业只能由```Agent3```和```Agent4```拾取；```Pipeline5```、```Pipeline6```和```Pipeline7```中的作业只能由```Agent5```拾取。
 
-> Environment Variables
+> Environment Variables【环境变量】
+
+* 环境变量是在配置中定义的用户定义变量，这些环境变量可用于任务的执行（如同在操作系统运行时可用于进程中的环境变量）。环境变量可在多个级别内定义：环境内、管道内、阶段内和作业内，它们遵循级联系统，级别大的环境变量会被级别小的环境变量覆盖，如:
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-10-24.png)
+
+  提供给此作业中每个任务的环境变量将是：
+
+  ```bash
+  ENV_ENV => 1
+  ENV_PIP => 2
+  ENV_STG => 3
+  ENV_JOB => 4
+  MY_VAR  => 4
+  ```
 
 > Templates
 
