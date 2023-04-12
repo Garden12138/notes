@@ -40,7 +40,15 @@
 
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-03-46.png)
 
-> Pipeline Dependencies
+> Pipeline Dependencies【管道依赖】
+
+* 一个管道的一个阶段可作为另一个管道的材料，如：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-07-50.png)
+
+  管道1的阶段2作为管道2的材料，只要管道1的阶段2成功完成，管道2就会触发。在该配置中，管道1称为上游管道，管道2称为下游管道，管道1的阶段2称为管道2的上游依赖材料。上游管道的任何阶段都可作为下游管道的材料：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-08-02.png)  
 
 > Fan-in and Fan-out
 
