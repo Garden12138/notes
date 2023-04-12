@@ -84,7 +84,9 @@
   
   ```Pipeline1```的```Stage1```中的作业发布了构件，在```Stage2```的```Fetch Artifact Task```获取在```Stage1```中发布的构件，然后```Pipeline2```中，```Fetch Artifact Task```获取在```Pipeline1```中发布的构件，最后在最下游的```Pipeline3```中，```Fetch Artifact Task```获取```Pipeline1```到```Pipeline2```之间发布的构件。
 
-> Agent
+> Agent【代理】
+
+* 代理负责执行分配的作业，```GoCD```服务器轮询材料的变化，当检测到变化并且在触发管道时，相应的作业会被分配到代理，让代理执行具体的任务，代理会把分配的作业的状态报告给```GoCD```服务器。
 
 > Resources
 
