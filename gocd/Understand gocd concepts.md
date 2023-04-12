@@ -64,7 +64,13 @@
 
 * 扇入和扇出的上游材料不一定都是管道依赖材料，它可以是任何材料。
 
-> Value Stream Map
+> Value Stream Map【价值流图】
+
+* 价值流图是管道、其上游依赖项和它触发的下游管道的端到端视图：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-08-38.png)
+
+  当```Repo1```中发现新提交时，```GoCD```不会立即触发```Pipeline5```，它将等待```Pipeline1```触发并成功完成，然后等待```Pipeline4```触发并成功完成，最后它将触发```Pipeline5```。
 
 > Artifacts
 
