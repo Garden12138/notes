@@ -72,7 +72,17 @@
 
   当```Repo1```中发现新提交时，```GoCD```不会立即触发```Pipeline5```，它将等待```Pipeline1```触发并成功完成，然后等待```Pipeline4```触发并成功完成，最后它将触发```Pipeline5```。
 
-> Artifacts
+> Artifacts【构件】
+
+* 每个作业都可选择发布构件（即文件或文件夹）提供给下游管道阶段使用：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-08-52.png)
+  
+  ```GoCD```提供了获取构建的特殊任务，它运行从任何组件管道（即当前管道上游的任何管道）中获取和使用构件：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-11_17-09-10.png)
+  
+  ```Pipeline1```的```Stage1```中的作业发布了构件，在```Stage2```的```Fetch Artifact Task```获取在```Stage1```中发布的构件，然后```Pipeline2```中，```Fetch Artifact Task```获取在```Pipeline1```中发布的构件，最后在最下游的```Pipeline3```中，```Fetch Artifact Task```获取```Pipeline1```到```Pipeline2```之间发布的构件。
 
 > Agent
 
