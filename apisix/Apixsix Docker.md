@@ -1,12 +1,3 @@
-#### [下载安装Docker Compose](https://docs.docker.com/compose/install/)
-```
--- 外网安装（https://docs.docker.com/compose/install/）
-sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-docker-compose --version
--- 离线安装（https://www.hangge.com/blog/cache/detail_2469.html）
-```
-
 #### [安装 Apache APISIX](https://apisix.apache.org/zh/docs/apisix/getting-started)
 ```
 -- 外网
