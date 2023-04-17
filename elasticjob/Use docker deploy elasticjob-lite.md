@@ -211,6 +211,10 @@
 
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-14_11-39-30.png)
 
+  若设置生效后处于分片待调整状态，可将```cron```表达式更新为当前可触发时间（如```* * * * *```）使状态变为正常，然后再将原本```cron```表达式更新：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-17_15-28-43.png)
+
 > 参考文献
 
 * [Running docker container : iptables: No chain/target/match by that name](https://stackoverflow.com/questions/31667160/running-docker-container-iptables-no-chain-target-match-by-that-name)
