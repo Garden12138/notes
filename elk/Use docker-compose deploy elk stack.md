@@ -73,3 +73,88 @@ output.elasticsearch:
  docker logs -f --tail 200 filebeat
 
  curl http://127.0.0.1:9200/_cat/indices?v
+
+ > logstash
+
+ docker pull docker.elastic.co/logstash/logstash:7.17.9
+
+ mkdir -p /data/elk/logstash/config && mkdir -p /data/elk/logstash/pipeline && chown -R 1000:1000 /data/elk/logstash
+
+ vim /data/elk/logstash/config/logstash.yml
+ ```
+ config:
+   reload:
+     automatic: true
+     interval: 3s
+ xpack:
+   management.enabled: false
+   monitoring.enabled: false
+ ```
+
+ vim /data/elk/logstash/config/pipelines.yml
+ ```
+ - pipeline.id: logstash_dev
+   path.config: /usr/share/logstash/pipeline/logstash_dev.conf
+ ```
+
+ vim /data/elk/logstash/pipeline/logstash_dev.conf
+```
+input {
+  beats {
+    port => 9900
+  }
+}
+ 
+filter {
+  grok {
+    match => { "message" => "%{COMBINEDAPACHELOG}" }
+  }
+ 
+  mutate {
+    convert => {
+      "bytes" => "integer"
+    }
+  }
+ 
+  geoip {
+    source => "clientip"
+  }
+ 
+  useragent {
+    source => "user_agent"
+    target => "useragent"
+  }
+ 
+  date {
+    match => ["timestamp", "dd/MMM/yyyy:HH:mm:ss Z"]
+  }
+}
+ 
+output {
+  stdout { }
+ 
+  elasticsearch {
+    hosts => ["172.17.0.2:9200"]
+    index => "logstash_example"
+  }
+} 
+```
+
+docker run -d --name logstash --restart=always --privileged=true -p 5047:5047 -p 9600:9600 -v /data/elk/logstash/pipeline/:/usr/share/logstash/pipeline/ -v /data/elk/logstash/config/:/usr/share/logstash/config/ docker.elastic.co/logstash/logstash:7.17.9
+
+docker logs -f --tail 200 logstash
+
+vim /data/elk/filebeat/filebeat.yml
+```
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /usr/share/filebeat/logs/*
+
+output.logstash:
+  hosts: ["172.17.0.5:9900"]
+```
+
+curl http://127.0.0.1:9200/_cat/indices?v
+
