@@ -158,3 +158,15 @@ output.logstash:
 
 curl http://127.0.0.1:9200/_cat/indices?v
 
+vim weblog-sample.log
+```bash
+14.49.42.25 - - [12/May/2019:01:24:44 +0000] "GET /articles/ppp-over-ssh/ 
+HTTP/1.1" 200 18586 "-" "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; 
+rv:1.9.2b1) Gecko/20091014 Firefox/3.6b1 GTB5"
+```
+
+> 参考文献
+
+* [一文带你搭建一套 ELK Stack 日志平台](https://www.51cto.com/article/707776.html)
+* [一口气完成ELK 日志平台的搭建，我感觉我又行了!](https://juejin.cn/post/7157596325918277663)
+* [支持一览表](https://www.elastic.co/cn/support/matrix#matrix_os)

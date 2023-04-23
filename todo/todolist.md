@@ -1,9 +1,17 @@
-#### ELK
+> Kafka实战
 
-* [一文带你搭建一套 ELK Stack 日志平台](https://www.51cto.com/article/707776.html)
-* [docker compose 部署ELK8.4.3+filebeat](https://juejin.cn/post/7164561208765317127)
-* [Docker-compose 部署 ELK （单机版）详细教程](https://juejin.cn/post/7143974532766760990)
-* [elastic guide](https://www.elastic.co/guide/en)
-* [一口气完成ELK 日志平台的搭建，我感觉我又行了!](https://juejin.cn/post/7157596325918277663)
-* [2023最新ELK日志平台（elasticsearch+logstash+kibana）搭建](https://juejin.cn/post/7206977593588219959)
-* [支持一览表](https://www.elastic.co/cn/support/matrix#matrix_os)
+* [Docker/Docker-Compose 安装 Kafka](https://juejin.cn/post/7091842457318473764)
+
+> SpringBoot日志实战
+
+* [Spring Boot 整合 Logback 定制日志框架](https://tobebetterjavaer.com/springboot/logback.html#%E7%BC%96%E7%A8%8B%E5%96%B5%E5%AE%9E%E6%88%98%E9%A1%B9%E7%9B%AE%E7%9A%84%E6%97%A5%E5%BF%97%E6%A1%88%E4%BE%8B%E5%88%86%E6%9E%90)
+* [SpringBoot2.0+Log4j2实现日志管理功能](https://juejin.cn/post/7098939871191892004)
+
+> logstash配置实践
+
+* [Logstash 最佳实践](https://doc.yonyoucloud.com/doc/logstash-best-practice-cn/index.html)
+* [Spring Boot 使用 Log4j2 & Logback 输出日志到 EKL](https://blog.csdn.net/aixiaoyang168/article/details/90548938
+
+> docker compose部署elk stack
+
+* [Integrate Filebeat, Kafka, Logstash, Elasticsearch And Kibana](https://github.com/eunsour/docker-elk)
