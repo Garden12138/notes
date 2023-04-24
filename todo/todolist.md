@@ -2,6 +2,7 @@
 
 * [带你理清kafka术语](https://juejin.cn/post/7165844594817499166)
 * [bitnami/kafka](https://hub.docker.com/r/bitnami/kafka)
+* [Kafka Listeners - Explained](https://rmoff.net/2018/08/02/kafka-listeners-explained/)
 
 > SpringBoot日志实战
 
