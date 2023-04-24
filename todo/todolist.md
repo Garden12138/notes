@@ -1,6 +1,7 @@
 > Kafka实战
 
-* [Docker/Docker-Compose 安装 Kafka](https://juejin.cn/post/7091842457318473764)
+* [带你理清kafka术语](https://juejin.cn/post/7165844594817499166)
+* [bitnami/kafka](https://hub.docker.com/r/bitnami/kafka)
 
 > SpringBoot日志实战
 
