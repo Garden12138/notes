@@ -165,6 +165,40 @@ HTTP/1.1" 200 18586 "-" "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US;
 rv:1.9.2b1) Gecko/20091014 Firefox/3.6b1 GTB5"
 ```
 
+> kafka
+
+```bash
+version: "2"
+
+services:
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.8
+    user: root
+    ports:
+      - "2181:2181"
+    volumes:
+      - "/data/zookeeper_data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka0:
+    image: docker.io/bitnami/kafka:3.4
+    user: root
+    ports:
+      - "9092:9092"
+    volumes:
+      - "/data/kafka0_data:/bitnami"
+    environment:
+      - KAFKA_BROKER_ID=0
+      - KAFKA_ENABLE_KRAFT=no
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
+    depends_on:
+      - zookeeper
+```
+
+
 > 参考文献
 
 * [一文带你搭建一套 ELK Stack 日志平台](https://www.51cto.com/article/707776.html)
