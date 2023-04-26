@@ -196,8 +196,57 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
     depends_on:
       - zookeeper
+  kafka1:
+    image: docker.io/bitnami/kafka:3.4
+    user: root
+    ports:
+      - "9093:9093"
+    volumes:
+      - "/data/kafka1_data:/bitnami"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ENABLE_KRAFT=no
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9093
+    depends_on:
+      - zookeeper
+  kafka2:
+    image: docker.io/bitnami/kafka:3.4
+    user: root
+    ports:
+      - "9094:9094"
+    volumes:
+      - "/data/kafka2_data:/bitnami"
+    environment:
+      - KAFKA_BROKER_ID=2
+      - KAFKA_ENABLE_KRAFT=no
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9094
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9094
+    depends_on:
+      - zookeeper
 ```
 
+docker exec kafka-kafka0-1 kafka-topics.sh --create --topic kafka-test-topic --bootstrap-server kafka-kafka0-1:9092 --partitions 3 --replication-factor 3
+docker exec kafka-kafka0-1 kafka-topics.sh --describe --topic kafka-test-topic --bootstrap-server kafka-kafka0-1:9092 --partitions 3 --replication-factor 3
+
+![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-26_16-18-42.png)
+
+docker exec -it kafka-kafka0-1 sh
+kafka-console-producer.sh --topic kafka-test-topic --bootstrap-server kafka-kafka0-1:9092
+docker exec -it garden_kafka0_1 sh
+kafka-console-producer.sh --topic kafka-test-topic --bootstrap-server garden_kafka0_1:9092
+
+
+docker exec -it kafka-kafka1-1 sh
+kafka-console-consumer.sh --topic kafka-test-topic --from-beginning --bootstrap-server kafka-kafka1-1:9093
+docker exec -it garden_kafka1_1 sh
+kafka-console-consumer.sh --topic kafka-test-topic --from-beginning --bootstrap-server garden_kafka1_1:9093
+
+![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-26_16-51-09.png)
 
 > 参考文献
 
