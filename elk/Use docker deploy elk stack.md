@@ -248,6 +248,16 @@ kafka-console-consumer.sh --topic kafka-test-topic --from-beginning --bootstrap-
 
 ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-26_16-51-09.png)
 
+![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-27_15-59-05.png)
+
+![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-27_15-59-32.png)
+
+![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-27_15-56-42.png)
+
+![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-27_15-57-43.png)
+
+![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-27_15-58-29.png)
+
 > 参考文献
 
 * [一文带你搭建一套 ELK Stack 日志平台](https://www.51cto.com/article/707776.html)
