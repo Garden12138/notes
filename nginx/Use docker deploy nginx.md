@@ -10,11 +10,11 @@
 
   ```bash
   docker run --name nginx-test -d nginx:latest  
-  mkdir -p /data/nginx/conf && docker cp nginx-test:/etc/nginx/nginx.conf /data/nginx/conf/ && docker stop nginx-test && docker rm nginx-test
+  docker cp nginx-test:/etc/nginx /data && docker cp nginx-test:/usr/share/nginx/html /data/nginx && docker stop nginx-test && docker rm nginx-test
   ```
 
 > 运行容器
 
   ```bash
-  docker run --name nginx --restart=always --privileged=true -p 4000:80 -v /data/nginx/conf/nginx.conf:/etc/nginx/nginx.conf:ro -v /data/nginx/conf/conf.d:/etc/nginx/conf.d:ro -v /data/nginx/html:/usr/share/nginx/html:rw -v /data/nginx/logs:/var/log/nginx -d nginx:latest
+  docker run --name nginx --restart=always --privileged=true -p 4000:80 -v /data/nginx:/etc/nginx -v /data/nginx/html:/usr/share/nginx/html -v /data/nginx/logs:/var/log/nginx -d nginx:latest
   ```
