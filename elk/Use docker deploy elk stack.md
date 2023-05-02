@@ -309,6 +309,71 @@ kafka-topics.sh --describe --topic kafka-test-topic --bootstrap-server 159.75.13
 kafka-topics.sh --describe --topic kafka-test-topic --bootstrap-server garden_kafka0_1:9092
 kafka-topics.sh --describe --topic kafka-test-topic --bootstrap-server 116.205.156.93:9092
 
+filebeat.yml
+```
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /usr/share/filebeat/logs/*
+
+output.kafka:
+  enabled: true
+  ##hosts: ["116.205.156.93:9092"]
+  hosts: ["159.75.138.212:4000"]
+  topic: kafka-test-topic
+
+##output.logstash:
+##  hosts: ["172.17.0.5:9900"]
+  
+##output.elasticsearch: 
+##  hosts: ["172.17.0.2:9200"]
+```
+
+logstash_dev.conf
+```
+input {
+  kafka {
+    bootstrap_servers => "159.75.138.212:4000"
+    topics => "kafka-test-topic"
+  }
+}
+ 
+filter {
+  grok {
+    match => { "message" => "%{COMBINEDAPACHELOG}" }
+  }
+ 
+  mutate {
+    convert => {
+      "bytes" => "integer"
+    }
+  }
+ 
+  geoip {
+    source => "clientip"
+  }
+ 
+  useragent {
+    source => "user_agent"
+    target => "useragent"
+  }
+ 
+  date {
+    match => ["timestamp", "dd/MMM/yyyy:HH:mm:ss Z"]
+  }
+}
+ 
+output {
+  stdout { }
+ 
+  elasticsearch {
+    hosts => ["172.17.0.3:9200"]
+    index => "logstash_example"
+  }
+}
+```
+
 > 参考文献
 
 * [一文带你搭建一套 ELK Stack 日志平台](https://www.51cto.com/article/707776.html)
