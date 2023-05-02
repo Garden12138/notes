@@ -258,8 +258,61 @@ kafka-console-consumer.sh --topic kafka-test-topic --from-beginning --bootstrap-
 
 ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-27_15-58-29.png)
 
+> nginx
+
+```
+user  nginx;
+worker_processes  auto;
+
+error_log  /var/log/nginx/error.log notice;
+pid        /var/run/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+stream {
+    upstream kafka {
+        server 116.205.156.93:9092;
+        server 116.205.156.93:9093;
+        server 116.205.156.93:9094;
+    }
+    server {
+        listen 80;
+        proxy_pass kafka;
+    }
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    #gzip  on;
+
+    #include /etc/nginx/conf.d/*.conf;
+}
+```
+
+kafka-topics.sh --describe --topic kafka-test-topic --bootstrap-server 159.75.138.212:4000
+kafka-topics.sh --describe --topic kafka-test-topic --bootstrap-server garden_kafka0_1:9092
+kafka-topics.sh --describe --topic kafka-test-topic --bootstrap-server 116.205.156.93:9092
+
 > 参考文献
 
 * [一文带你搭建一套 ELK Stack 日志平台](https://www.51cto.com/article/707776.html)
 * [一口气完成ELK 日志平台的搭建，我感觉我又行了!](https://juejin.cn/post/7157596325918277663)
 * [支持一览表](https://www.elastic.co/cn/support/matrix#matrix_os)
+* [Kafka:用nginx做kafka集群代理（非http）](https://cloud.tencent.com/developer/article/1750382)
+* [利用nginx的stream模块实现内网端口的转发代理](https://www.linuxprobe.com/nginx-linux-stream.html)
