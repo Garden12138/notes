@@ -14,6 +14,7 @@
 * [Logstash 最佳实践](https://doc.yonyoucloud.com/doc/logstash-best-practice-cn/index.html)
 * [Spring Boot 使用 Log4j2 & Logback 输出日志到 EKL](https://blog.csdn.net/aixiaoyang168/article/details/90548938)
 * [logstash multi pipeline的使用](https://juejin.cn/post/6960855581062070309)
+* [Filebeat+Kafka+Logstash+ElasticSearch+Kibana+Springboot二次部署笔记](https://blog.csdn.net/artaganan8/article/details/90288396)
 
 > docker compose部署elk stack
 
