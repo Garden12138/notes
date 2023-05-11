@@ -374,6 +374,117 @@ output {
 }
 ```
 
+[2023-05-10 12:19:19.011] [WINDOWS-ECSBFQF] [main] INFO c.g.s.SpringbootLoggingApplicationTests@lombokTest:23 - lombokTest => logback testing
+(?m)\[%{TIMESTAMP_ISO8601:timestamp}\] \[%{HOSTNAME:host}\] \[%{DATA:thread}\] %{LOGLEVEL:logLevel} %{DATA:class}@%{DATA:method}:%{DATA:line} \- %{GREEDYDATA:message}
+{
+  "logLevel": "INFO",
+  "method": "lombokTest",
+  "line": "23",
+  "host": "WINDOWS-ECSBFQF",
+  "thread": "main",
+  "message": "lombokTest => logback testing",
+  "class": "c.g.s.SpringbootLoggingApplicationTests",
+  "timestamp": "2023-05-10 12:19:19.011"
+}
+(?m)\[%{TIMESTAMP_ISO8601:timestamp}\] \[%{HOSTNAME:host}\] \[%{DATA:thread}\] %{LOGLEVEL:logLevel} %{DATA:class}@%{DATA:method}:%{DATA:line} \- (?<message>(.|\r|\n)*)
+{
+  "logLevel": "INFO",
+  "method": "lombokTest",
+  "line": "23",
+  "host": "WINDOWS-ECSBFQF",
+  "thread": "main",
+  "message": "lombokTest => logback testing",
+  "class": "c.g.s.SpringbootLoggingApplicationTests",
+  "timestamp": "2023-05-10 12:19:19.011"
+}
+
+> logstash默认模板
+
+```
+
+{
+    "@timestamp" => 2023-05-11T02:34:05.166Z,
+    "@version" => "1",
+    "message" => "lombokTest => logback testing\",\"input\":{\"type\":\"log\"},\"ecs\":{\"version\":\"1.12.0\"},\"host\":{\"name\":\"d1abcc3b3e8b\"},\"agent\":{\"name\":\"d1abcc3b3e8b\",\"type\":\"filebeat\",\"version\":\"7.17.9\",\"hostname\":\"d1abcc3b3e8b\",\"ephemeral_id\":\"75725398-4897-4b19-9313-261c2ebdb43b\",\"id\":\"a9d4d2aa-a8fd-42e8-b25e-7818eb1d4c2c\"},\"log\":{\"offset\":663,\"file\":{\"path\":\"/usr/share/filebeat/logs/logback-customize.log\"}}}"
+}
+```
+
+```
+input {
+  kafka {
+    bootstrap_servers => "159.75.138.212:4000"
+    topics => ["kafka-test-topic"]
+  }
+}
+
+filter {
+
+  grok {
+    match => ["message", "(?m)\[%{TIMESTAMP_ISO8601:timestamp}\] \[%{HOSTNAME:host}\] \[%{DATA:thread}\] %{LOGLEVEL:logLevel} %{DATA:class}@%{DATA:method}:%{DATA:line} \- %{GREEDYDATA:message}"]
+    overwrite => ["message"]
+  }
+
+  mutate {
+    remove_field => ["timestamp", "host", "thread", "logLevel", "class", "method", "line"]
+  }
+
+}
+
+output {
+  stdout {}
+  elasticsearch {
+    hosts => ["172.17.0.3:9200"]
+    index => "logback_customize_dev_%{+YYYY.MM.dd}"
+  }
+}
+```
+
+```
+[2023-05-10 12:19:31.011] [WINDOWS-ECSBFQF] [main] INFO c.g.s.SpringbootLoggingApplicationTests@lombokTest:23 - lombokTest => logback testing
+```
+
+> 单个服务单个日志级别配置
+```
+
+input {
+  kafka {
+    bootstrap_servers => "159.75.138.212:4000"
+    topics => ["kafka-test-topic"]
+    codec => "json"
+  }
+}
+
+filter {
+
+  grok {
+    match => ["message", "(?m)\[%{TIMESTAMP_ISO8601:timestamp}\] \[%{HOSTNAME:host}\] \[%{DATA:thread}\] %{LOGLEVEL:logLevel} %{DATA:class}@%{DATA:method}:%{DATA:line} \- %{GREEDYDATA:message}"]
+    overwrite => ["host", "message"]
+  }
+
+  mutate {
+    add_field => {
+      "code" => "%{thread}-%{class}@%{method}:%{line}"
+    }
+    remove_field => ["thread", "class", "method", "line"]
+    lowercase => ["logLevel"]
+  }
+
+  date {
+    match => ["timestamp" , "YYYY-MM-dd HH:mm:ss.SSS"]
+    target => "@timestamp"
+  }
+
+}
+
+output {
+  stdout {}
+  elasticsearch {
+    hosts => ["172.17.0.3:9200"]
+    index => "logback_customize_dev_%{logLevel}_%{+YYYY.MM.dd}"
+  }
+}
+```
+
 > 参考文献
 
 * [一文带你搭建一套 ELK Stack 日志平台](https://www.51cto.com/article/707776.html)
