@@ -485,6 +485,55 @@ output {
 }
 ```
 
+> 构建不同索引输出至es
+```
+input {
+  kafka {
+    bootstrap_servers => "159.75.138.212:4000"
+    topics => ["kafka-test-topic"]
+    codec => "json"
+  }
+}
+
+filter {
+
+  grok {
+    match => ["message", "(?m)\[%{TIMESTAMP_ISO8601:timestamp}\] \[%{HOSTNAME:host}\] \[%{DATA:thread}\] %{LOGLEVEL:logLevel} %{DATA:class}@%{DATA:method}:%{DATA:line} \- %{GREEDYDATA:message}"]
+    overwrite => ["host", "message"]
+  }
+
+  mutate {
+    add_field => {
+      "code" => "%{thread}-%{class}@%{method}:%{line}"
+    }
+    remove_field => ["thread", "class", "method", "line"]
+    lowercase => ["logLevel"]
+  }
+
+  date {
+    match => ["timestamp" , "YYYY-MM-dd HH:mm:ss.SSS"]
+    target => "@timestamp"
+  }
+
+  if [logLevel] == 'info' {
+    mutate { add_field => { "[@metadata][target_index]" => "logback_customize_dev-info-%{+YYYY.MM.dd}" } }
+  } else if [logLevel] == 'error'{
+    mutate { add_field => { "[@metadata][target_index]" => "logback_customize_dev-error-%{+YYYY.MM.dd}" } }
+  } else {
+    mutate { add_field => { "[@metadata][target_index]" => "logback_customize_dev-other-%{+YYYY.MM.dd}" } }
+  }
+
+}
+
+output {
+  stdout {}
+  elasticsearch {
+    hosts => ["172.17.0.3:9200"]
+    index => "%{[@metadata][target_index]}"
+  }
+}
+```
+
 > 参考文献
 
 * [一文带你搭建一套 ELK Stack 日志平台](https://www.51cto.com/article/707776.html)
