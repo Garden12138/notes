@@ -18,6 +18,7 @@
 * [Grok Constructor](http://grokconstructor.appspot.com/do/match#result)
 * [kyungw00k/logback.xml](https://gist.github.com/kyungw00k/e7b3cee94d9c669e5586)
 * [使用 Logstash 拆分数据并将数据发送到多个输出](https://www.elastic.co/cn/blog/using-logstash-to-split-data-and-send-it-to-multiple-outputs)
+* [plugins-outputs-elasticsearch.html#_writing_to_different_indices_best_practices](https://www.elastic.co/guide/en/logstash/7.17/plugins-outputs-elasticsearch.html#_writing_to_different_indices_best_practices)
 
 > docker compose部署elk stack
 
