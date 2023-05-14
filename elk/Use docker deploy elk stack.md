@@ -534,6 +534,52 @@ output {
 }
 ```
 
+> logback默认配置对应的logstash配置
+```
+input {
+  kafka {
+    bootstrap_servers => "159.75.138.212:4000"
+    topics => ["kafka-test-topic"]
+    codec => "json"
+  }
+}
+
+filter {
+
+  grok {
+    match => ["message", "%{TIMESTAMP_ISO8601:timestamp}  %{LOGLEVEL:level} %{NUMBER:tid} --- \[%{DATA:thread}\] %{DATA:class} :%{GREEDYDATA:message}"]
+    overwrite => ["message"]
+  }
+
+  mutate {
+    lowercase => ["logLevel"]
+    update => ["host", "host.name"]
+  }
+  
+  date {
+    match => ["timestamp" , "YYYY-MM-dd HH:mm:ss.SSS"]
+    target => "@timestamp"
+  }
+
+  if [logLevel] == 'info' {
+    mutate { add_field => { "[@metadata][target_index]" => "logback_general-develop-info-%{+YYYY.MM.dd}" } }
+  } else if [logLevel] == 'error'{
+    mutate { add_field => { "[@metadata][target_index]" => "logback_general-develop-error-%{+YYYY.MM.dd}" } }
+  } else {
+    mutate { add_field => { "[@metadata][target_index]" => "logback_general-develop-other-%{+YYYY.MM.dd}" } }
+  }
+
+}
+ 
+output {
+  stdout {}
+  elasticsearch {
+    hosts => ["172.17.0.3:9200"]
+    index => "%{[@metadata][target_index]}"
+  }
+}
+```
+
 > 参考文献
 
 * [一文带你搭建一套 ELK Stack 日志平台](https://www.51cto.com/article/707776.html)
