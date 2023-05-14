@@ -547,7 +547,7 @@ input {
 filter {
 
   grok {
-    match => ["message", "%{TIMESTAMP_ISO8601:timestamp}  %{LOGLEVEL:level} %{NUMBER:tid} --- \[%{DATA:thread}\] %{DATA:class} :%{GREEDYDATA:message}"]
+    match => ["message", "%{TIMESTAMP_ISO8601:timestamp}  %{LOGLEVEL:logLevel} %{NUMBER:tid} --- \[%{DATA:thread}\] %{DATA:class} :%{GREEDYDATA:message}"]
     overwrite => ["message"]
   }
 
@@ -567,6 +567,52 @@ filter {
     mutate { add_field => { "[@metadata][target_index]" => "logback_general-develop-error-%{+YYYY.MM.dd}" } }
   } else {
     mutate { add_field => { "[@metadata][target_index]" => "logback_general-develop-other-%{+YYYY.MM.dd}" } }
+  }
+
+}
+ 
+output {
+  stdout {}
+  elasticsearch {
+    hosts => ["172.17.0.3:9200"]
+    index => "%{[@metadata][target_index]}"
+  }
+}
+```
+
+> log4j对应的logstash配置
+```
+input {
+  kafka {
+    bootstrap_servers => "159.75.138.212:4000"
+    topics => ["kafka-test-topic"]
+    codec => "json"
+  }
+}
+
+filter {
+
+  grok {
+    match => ["message", "%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:logLevel} %{DATA:class} \[%{DATA:thread}\] %{GREEDYDATA:message}"]
+    overwrite => ["message"]
+  }
+
+  mutate {
+    lowercase => ["logLevel"]
+    update => ["host", "host.name"]
+  }
+  
+  date {
+    match => ["timestamp" , "YYYY-MM-dd HH:mm:ss.SSS"]
+    target => "@timestamp"
+  }
+
+  if [logLevel] == 'info' {
+    mutate { add_field => { "[@metadata][target_index]" => "log4j_dev-info-%{+YYYY.MM.dd}" } }
+  } else if [logLevel] == 'error'{
+    mutate { add_field => { "[@metadata][target_index]" => "log4j_dev-error-%{+YYYY.MM.dd}" } }
+  } else {
+    mutate { add_field => { "[@metadata][target_index]" => "log4j_dev-other-%{+YYYY.MM.dd}" } }
   }
 
 }
