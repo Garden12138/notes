@@ -13,7 +13,6 @@
   * Docker version 20.10.18
   * Docker Compose version v2.4.1  
 
-
 > 部署 elasticsearch
 
 * 拉取镜像
@@ -71,28 +70,46 @@
 
 > kibana
 
-docker pull kibana:7.17.9
+* 拉取镜像
 
-mkdir -p /data/elk/kibana && chown -R 1000:1000 /data/elk/kibana
+  ```bash
+  docker pull kibana:7.17.9
+  ```
 
-docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' elasticsearch
+* 创建服务目录并赋予读写权限
+  
+  ```bash
+  mkdir -p /data/elk/kibana && chown -R 1000:1000 /data/elk/kibana
+  ```
 
-vim /data/elk/kibana/kibana.yml
-```
-server.port: 5601
-server.name: kibana
-server.host: 0.0.0.0
-elasticsearch.hosts: ["http://172.17.0.2:9200"]
-## elasticsearch.username: es-admin
-## elasticsearch.password: nXxDlKe0n4O7wSn
-xpack.monitoring.ui.container.elasticsearch.enabled: true
-i18n.locale: "zh-CN"
-```
+* 查看```elasticsearch```容器```ip```，如```172.17.0.2```
+  
+  ```bash
+  docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' elasticsearch
+  ```
 
-docker run --name kibana --restart=always --log-driver json-file --log-opt max-size=100m --log-opt max-file=2 -d -p 5601:5601 -v /data/elk/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml kibana:7.17.9
+* 编写配置，设置端口、服务名称以及本地```host```，指定```elasticsearch```访问地址以及账号密码，启动```xpack.monitoring.ui```插件以及设置系统字体为中文
+  
+  ```bash
+  vim /data/elk/kibana/kibana.yml
 
-browser:
-${IP}:5601/
+  server.port: 5601
+  server.name: kibana
+  server.host: 0.0.0.0
+  elasticsearch.hosts: ["http://172.17.0.2:9200"]
+  elasticsearch.username: kibana
+  elasticsearch.password: garden520
+  xpack.monitoring.ui.container.elasticsearch.enabled: true
+  i18n.locale: "zh-CN"
+  ```
+
+* 运行容器
+
+  ```bash
+  docker run --name kibana --restart=always --log-driver json-file --log-opt max-size=100m --log-opt max-file=2 -d -p 5601:5601 -v /data/elk/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml kibana:7.17.9
+  ```
+
+* 验证是否部署成功，浏览器输入访问地址如```http://159.75.138.212:5601/```，输入访问账号密码，如```elastic/garden520```
 
 > filebeat
 
