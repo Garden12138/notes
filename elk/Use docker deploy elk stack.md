@@ -1,22 +1,56 @@
-## 使用 docker-compose 部署 elk stack
+## 使用 docker 部署 elk stack
 
-> elasticsearch
+> 实现简单的 elk stack 的整体流程
+![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-17_10-21-38.png)
 
-docker pull elasticsearch:7.17.9
+> 实现环境
 
-mkdir -p /data/elk/es/config && mkdir -p /data/elk/es/data && mkdir -p /data/elk/es/logs && chown -R 1000:1000 /data/elk/es
+* 一台 CentOS 7.6.1810 2核8G
+  * Docker version 20.10.17
+  * docker-compose version 1.18.0  
 
-vim /data/elk/es/config/elasticsearch.yml
-```
-cluster.name: "elasticsearch"
-network.host: 0.0.0.0
-http.port: 9200
-```
+* 一台 CentOS 8.0.1905 2核4G
+  * Docker version 20.10.18
+  * Docker Compose version v2.4.1  
 
-docker run --name elasticsearch --restart=always -d -p 9200:9200 -p 9300:9300 -e ES_JAVA_OPTS="-Xms512m -Xmx1024m" -e "discovery.type=single-node" -v /data/elk/es/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml -v /data/elk/es/data:/usr/share/elasticsearch/data -v /data/elk/es/logs:/usr/share/elasticsearch/logs elasticsearch:7.17.9
 
-local_console:
-curl http:127.0.0.1:9200/
+> 部署 elasticsearch
+
+* 拉取镜像
+  
+  ```bash
+  docker pull elasticsearch:7.17.9
+  ```
+
+* 创建存储配置、数据以及日志的目录并读写权限
+  
+  ```bash
+  mkdir -p /data/elk/es/config && mkdir -p /data/elk/es/data && mkdir -p /data/elk/es/logs && chown -R 1000:1000 /data/elk/es
+  ```
+
+* 编写配置，设置集群名称、本地```host```以及端口
+
+  ```bash
+  vim /data/elk/es/config/elasticsearch.yml
+
+  cluster.name: "elasticsearch"
+  network.host: 0.0.0.0
+  http.port: 9200
+  ```
+
+* 运行容器
+
+  ```bash
+  docker run --name elasticsearch --restart=always -d -p 9200:9200 -p 9300:9300 -e ES_JAVA_OPTS="-Xms512m -Xmx1024m" -e "discovery.type=single-node" -v /data/elk/es/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml -v /data/elk/es/data:/usr/share/elasticsearch/data -v /data/elk/es/logs:/usr/share/elasticsearch/logs elasticsearch:7.17.9
+  ```
+
+  使用```ES_JAVA_OPTS```环境变量指定```JVM```参数，使用```discovery.type```环境变量设置服务类型，本例使用的是单例```single-node```。最后需挂载配置文件、数据以及日志的数据卷。
+
+* 验证部署是否成功
+  
+  ```bash
+  curl http://localhost:9200
+  ```
 
 > kibana
 
