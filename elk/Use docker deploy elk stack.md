@@ -28,7 +28,7 @@
   mkdir -p /data/elk/es/config && mkdir -p /data/elk/es/data && mkdir -p /data/elk/es/logs && chown -R 1000:1000 /data/elk/es
   ```
 
-* 编写配置，设置集群名称、本地```host```以及端口
+* 编写配置，设置集群名称、本地```host```以及端口并且开启```xpack.security```插件（用于设置访问账号密码）
 
   ```bash
   vim /data/elk/es/config/elasticsearch.yml
@@ -36,6 +36,7 @@
   cluster.name: "elasticsearch"
   network.host: 0.0.0.0
   http.port: 9200
+  xpack.security.enabled: true
   ```
 
 * 运行容器
@@ -46,11 +47,27 @@
 
   使用```ES_JAVA_OPTS```环境变量指定```JVM```参数，使用```discovery.type```环境变量设置服务类型，本例使用的是单例```single-node```。最后需挂载配置文件、数据以及日志的数据卷。
 
-* 验证部署是否成功
+* 进入容器设置访问账号密码
   
   ```bash
-  curl http://localhost:9200
+  docker exec -it elasticsearch /bin/bash
+
+  cd bin
+
+  elasticsearch-setup-passwords interactive
   ```
+
+  设置密码的用户如下：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-17_15-27-58.png)
+
+* 重启容器
+  
+  ```bash
+  docker restart elasticsearch
+  ```
+
+* 验证部署是否成功，浏览器输入访问地址如```http://159.75.138.212:9200/```，输入访问账号密码，如```elastic/garden520```
 
 > kibana
 
