@@ -111,6 +111,110 @@
 
 * 验证是否部署成功，浏览器输入访问地址如```http://159.75.138.212:5601/```，输入访问账号密码，如```elastic/garden520```
 
+> kafka
+
+* 编写 ```kafka``` 集群的 ```kafka-docker-compose.yaml``` 文件
+
+  ```bash
+  version: "2"
+
+  services:
+    zookeeper:
+      image: docker.io/bitnami/zookeeper:3.8
+      user: root
+      ports:
+        - "2181:2181"
+      volumes:
+        - "/data/zookeeper_data:/bitnami"
+      environment:
+        - ALLOW_ANONYMOUS_LOGIN=yes
+    kafka0:
+      image: docker.io/bitnami/kafka:3.4
+      user: root
+      ports:
+        - "9092:9092"
+      volumes:
+        - "/data/kafka0_data:/bitnami"
+      environment:
+        - KAFKA_BROKER_ID=0
+        - KAFKA_ENABLE_KRAFT=no
+        - ALLOW_PLAINTEXT_LISTENER=yes
+        - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+        - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+        - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
+      depends_on:
+        - zookeeper
+    kafka1:
+      image: docker.io/bitnami/kafka:3.4
+      user: root
+      ports:
+        - "9093:9093"
+      volumes:
+        - "/data/kafka1_data:/bitnami"
+      environment:
+        - KAFKA_BROKER_ID=1
+        - KAFKA_ENABLE_KRAFT=no
+        - ALLOW_PLAINTEXT_LISTENER=yes
+        - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+        - KAFKA_CFG_LISTENERS=PLAINTEXT://:9093
+        - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9093
+      depends_on:
+        - zookeeper
+    kafka2:
+      image: docker.io/bitnami/kafka:3.4
+      user: root
+      ports:
+        - "9094:9094"
+      volumes:
+        - "/data/kafka2_data:/bitnami"
+      environment:
+        - KAFKA_BROKER_ID=2
+        - KAFKA_ENABLE_KRAFT=no
+        - ALLOW_PLAINTEXT_LISTENER=yes
+        - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+        - KAFKA_CFG_LISTENERS=PLAINTEXT://:9094
+        - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9094
+      depends_on:
+        - zookeeper
+  ```
+  
+  环境变量```KAFKA_CFG_LISTENERS=PLAINTEXT```设置内部监听方式，用于容器间内部互相访问；环境变量```KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT```设置客户端监听方式，用户客户端的访问，一般使用宿主机的内网或外网地址以及端口。
+
+* 运行编排的容器
+  
+  ```bash
+  docker-compose -f kafka-docker-compose.yaml up -d
+  ```
+
+* 创建主题，进入任意```kafka```容器内，通过```kafka-topics.sh --create --topic```命令创建主题
+  
+  ```bash
+  docker exec ${kafka_container_name} kafka-topics.sh --create --topic ${topic} --bootstrap-server ${kafka_container_name}:${kafka_conatiner_port} --partitions 3 --replication-factor 3
+  ```
+  
+  ```--partitions```参数设置逻辑分区，```replication-factor```设置每个逻辑分区的副本数，通过这两个参数可以逻辑上编排```broker```，每个分区上都有一名```leader```职责的```broker```负责消息的写操作，其他则负责消息的读操作。
+
+  查看主题，进入任意```kafka```容器内，通过```kafka-topics.sh --describe --topic```命令查看主题：
+
+  ```bash
+  docker exec ${kafka_container_name} kafka-topics.sh --describe --topic ${topic} --bootstrap-server ${kafka_container_name}:${kafka_conatiner_port} --partitions 3 --replication-factor 3
+  ```
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-26_16-18-42.png)
+
+* 验证主题是否可用，通过进入任意```kafka```容器使用```kafka-console-producer.sh --topic```命令向主题生产推送消息，进入任意```kafka```容器使用```kafka-console-consumer.sh --topic```命令向主题订阅消费消息：
+
+  ```bash
+  docker exec -it ${kafka_container_name} sh
+  kafka-console-producer.sh --topic ${topic} --bootstrap-server ${kafka_container_name}:${kafka_conatiner_port}
+  ```
+
+  ```bash
+  docker exec -it ${kafka_container_name} sh
+  kafka-console-consumer.sh --topic ${topic} --from-beginning --bootstrap-server ${kafka_container_name}:${kafka_conatiner_port}
+  ```
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-26_16-51-09.png)
+
 > filebeat
 
 docker pull docker.elastic.co/beats/filebeat:7.17.9
@@ -232,99 +336,6 @@ vim weblog-sample.log
 HTTP/1.1" 200 18586 "-" "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; 
 rv:1.9.2b1) Gecko/20091014 Firefox/3.6b1 GTB5"
 ```
-
-> kafka
-
-```bash
-version: "2"
-
-services:
-  zookeeper:
-    image: docker.io/bitnami/zookeeper:3.8
-    user: root
-    ports:
-      - "2181:2181"
-    volumes:
-      - "/data/zookeeper_data:/bitnami"
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-  kafka0:
-    image: docker.io/bitnami/kafka:3.4
-    user: root
-    ports:
-      - "9092:9092"
-    volumes:
-      - "/data/kafka0_data:/bitnami"
-    environment:
-      - KAFKA_BROKER_ID=0
-      - KAFKA_ENABLE_KRAFT=no
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
-    depends_on:
-      - zookeeper
-  kafka1:
-    image: docker.io/bitnami/kafka:3.4
-    user: root
-    ports:
-      - "9093:9093"
-    volumes:
-      - "/data/kafka1_data:/bitnami"
-    environment:
-      - KAFKA_BROKER_ID=1
-      - KAFKA_ENABLE_KRAFT=no
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9093
-    depends_on:
-      - zookeeper
-  kafka2:
-    image: docker.io/bitnami/kafka:3.4
-    user: root
-    ports:
-      - "9094:9094"
-    volumes:
-      - "/data/kafka2_data:/bitnami"
-    environment:
-      - KAFKA_BROKER_ID=2
-      - KAFKA_ENABLE_KRAFT=no
-      - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9094
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9094
-    depends_on:
-      - zookeeper
-```
-
-docker exec kafka-kafka0-1 kafka-topics.sh --create --topic kafka-test-topic --bootstrap-server kafka-kafka0-1:9092 --partitions 3 --replication-factor 3
-docker exec kafka-kafka0-1 kafka-topics.sh --describe --topic kafka-test-topic --bootstrap-server kafka-kafka0-1:9092 --partitions 3 --replication-factor 3
-
-![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-26_16-18-42.png)
-
-docker exec -it kafka-kafka0-1 sh
-kafka-console-producer.sh --topic kafka-test-topic --bootstrap-server kafka-kafka0-1:9092
-docker exec -it garden_kafka0_1 sh
-kafka-console-producer.sh --topic kafka-test-topic --bootstrap-server garden_kafka0_1:9092
-
-
-docker exec -it kafka-kafka1-1 sh
-kafka-console-consumer.sh --topic kafka-test-topic --from-beginning --bootstrap-server kafka-kafka1-1:9093
-docker exec -it garden_kafka1_1 sh
-kafka-console-consumer.sh --topic kafka-test-topic --from-beginning --bootstrap-server garden_kafka1_1:9093
-
-![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-26_16-51-09.png)
-
-![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-27_15-59-05.png)
-
-![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-27_15-59-32.png)
-
-![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-27_15-56-42.png)
-
-![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-27_15-57-43.png)
-
-![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-27_15-58-29.png)
 
 > nginx
 
