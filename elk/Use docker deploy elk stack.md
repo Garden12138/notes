@@ -267,34 +267,48 @@
 
 > filebeat
 
-docker pull docker.elastic.co/beats/filebeat:7.17.9
+* 拉取镜像
 
-mkdir -p /data/elk/filebeat && chown -R 1000:1000 /data/elk/filebeat
+  ```bash
+  docker pull docker.elastic.co/beats/filebeat:7.17.9
+  ```
 
-#docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' logstash
-docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' elasticsearch
+* 创建服务目录并赋予读写权限
 
-vim /data/elk/filebeat/filebeat.yml
-```
-filebeat.inputs:
-- type: log
-  enabled: true
-  paths:
-    - /usr/share/filebeat/logs/*
+  ```bash
+  mkdir -p /data/elk/filebeat && chown -R 1000:1000 /data/elk/filebeat
+  ```
 
-# output.logstash:
-#  hosts: ["172.17.0.5:9900"]
+* 编写配置文件```filebeat.yml```
+
+  ```bash
+  vim /data/elk/filebeat/filebeat.yml
+
+  filebeat.inputs:
+  - type: log
+    enabled: true
+    paths:
+      - /usr/share/filebeat/logs/microservices-consumer/*
+    fields:
+      log_topic: consumer-log-topic
+  - type: log
+    enabled: true
+    paths:
+      - /usr/share/filebeat/logs/microservices-provider/*
+    fields:
+      log_topic: provider-log-topic
   
+  output.kafka:
+    enabled: true
+    hosts: ["159.75.138.212:4000"]
+    topic: '%{[fields.log_topic]}'
+  ```
+
+* 运行容器
   
-output.elasticsearch: 
-  hosts: ["172.17.0.2:9200"]  
-```
-
- docker run --name filebeat -d -v /data/elk/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml -v /root/logs:/usr/share/filebeat/logs docker.elastic.co/beats/filebeat:7.17.9
-
- docker logs -f --tail 200 filebeat
-
- curl http://127.0.0.1:9200/_cat/indices?v
+  ```bash
+  docker run --name filebeat -d -v /data/elk/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml -v /data/logs:/usr/share/filebeat/logs docker.elastic.co/beats/filebeat:7.17.9
+  ```
 
  > logstash
 
