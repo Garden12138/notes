@@ -7,11 +7,17 @@
 
 * 一台 CentOS 7.6.1810 2核8G
   * Docker version 20.10.17
-  * docker-compose version 1.18.0  
+  * docker-compose version 1.18.0
+  * 部署的服务：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-18_17-01-52.png)  
 
 * 一台 CentOS 8.0.1905 2核4G
   * Docker version 20.10.18
-  * Docker Compose version v2.4.1  
+  * Docker Compose version v2.4.1
+  * 部署的服务：
+    
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-18_17-01-52.png)   
 
 > 部署 elasticsearch
 
@@ -482,6 +488,11 @@
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-18_16-45-35.png)
 
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-18_16-46-52.png)
+
+> 存在问题
+  
+* ```logstash```的```pipeline```配置中，```host```字段未能获取业务服务具体的```host```。
+* ```logstash```输出到```elasticsearch```以及```kibana```注册到```elasticsearch```都使用```elasticsearch```容器```ip```端口，```docker```进程重启后```elasticsearch```容器```ip```可能会发生改变，每次重启后需要检查```elasticsearch```容器```ip```，若改变需修改```logstash```的管道输出配置以及```kibana```注册至```elasticsearch```
 
 > 参考文献
 
