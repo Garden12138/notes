@@ -489,6 +489,8 @@
 
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-18_16-46-52.png)
 
+> [相关日志与对应的logstash管道配置](https://gitee.com/FSDGarden/learn-note/tree/master/elk/log2logstashPipelineConfig)
+
 > 存在问题
   
 * ```logstash```的```pipeline```配置中，```host```字段未能获取业务服务具体的```host```。
