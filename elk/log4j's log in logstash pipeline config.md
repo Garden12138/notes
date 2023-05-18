@@ -1,13 +1,13 @@
-## log4j日志 在 logstash 的管道配置
+## log4j 日志 在 logstash 的管道配置
 
-> log4j日志样例：
+> log4j 日志样例：
   
 ```bash
 2023-05-05 15:37:55,103 INFO com.garden.springbootlogging.SpringbootLoggingApplicationTests [main] loggerTest => log4j2 testing
 2023-05-05 15:37:55,103 ERROR com.garden.springbootlogging.SpringbootLoggingApplicationTests [main] loggerTest => log4j2 err
 ```
 
-> logstash管道配置
+> logstash 管道配置
 
 ```bash
 input {
