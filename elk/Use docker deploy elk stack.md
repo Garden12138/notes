@@ -197,7 +197,7 @@
   查看主题，进入任意```kafka```容器内，通过```kafka-topics.sh --describe --topic```命令查看主题：
 
   ```bash
-  docker exec ${kafka_container_name} kafka-topics.sh --describe --topic ${topic} --bootstrap-server ${kafka_container_name}:${kafka_conatiner_port} --partitions 3 --replication-factor 3
+  docker exec ${kafka_container_name} kafka-topics.sh --describe --topic ${topic} --bootstrap-server ${kafka_container_name}:${kafka_conatiner_port}
   ```
 
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-26_16-18-42.png)
