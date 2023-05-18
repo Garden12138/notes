@@ -54,6 +54,8 @@ output {
   elasticsearch {
     hosts => ["172.17.0.3:9200"]
     index => "%{[@metadata][target_index]}"
+    user => elastic
+    password => garden520
   }
 }
 ```
