@@ -312,411 +312,176 @@
 
  > logstash
 
- docker pull docker.elastic.co/logstash/logstash:7.17.9
+ * 拉取镜像
 
- mkdir -p /data/elk/logstash/config && mkdir -p /data/elk/logstash/pipeline && chown -R 1000:1000 /data/elk/logstash
+  ```bash
+  docker pull docker.elastic.co/logstash/logstash:7.17.9
+  ```
 
- vim /data/elk/logstash/config/logstash.yml
- ```
- config:
-   reload:
-     automatic: true
-     interval: 3s
- xpack:
-   management.enabled: false
-   monitoring.enabled: false
- ```
+* 创建服务目录并赋予读写权限
 
- vim /data/elk/logstash/config/pipelines.yml
- ```
- - pipeline.id: logstash_dev
-   path.config: /usr/share/logstash/pipeline/logstash_dev.conf
- ```
+  ```bash
+  mkdir -p /data/elk/logstash/config && mkdir -p /data/elk/logstash/pipeline && chown -R 1000:1000 /data/elk/logstash
+  ```
 
- vim /data/elk/logstash/pipeline/logstash_dev.conf
-```
-input {
-  beats {
-    port => 9900
-  }
-}
- 
-filter {
-  grok {
-    match => { "message" => "%{COMBINEDAPACHELOG}" }
-  }
- 
-  mutate {
-    convert => {
-      "bytes" => "integer"
-    }
-  }
- 
-  geoip {
-    source => "clientip"
-  }
- 
-  useragent {
-    source => "user_agent"
-    target => "useragent"
-  }
- 
-  date {
-    match => ["timestamp", "dd/MMM/yyyy:HH:mm:ss Z"]
-  }
-}
- 
-output {
-  stdout { }
- 
-  elasticsearch {
-    hosts => ["172.17.0.2:9200"]
-    index => "logstash_example"
-  }
-} 
-```
-
-docker run -d --name logstash --restart=always --privileged=true -p 5047:5047 -p 9600:9600 -v /data/elk/logstash/pipeline/:/usr/share/logstash/pipeline/ -v /data/elk/logstash/config/:/usr/share/logstash/config/ docker.elastic.co/logstash/logstash:7.17.9
-
-docker logs -f --tail 200 logstash
-
-vim /data/elk/filebeat/filebeat.yml
-```
-filebeat.inputs:
-- type: log
-  enabled: true
-  paths:
-    - /usr/share/filebeat/logs/*
-
-output.logstash:
-  hosts: ["172.17.0.5:9900"]
-```
-
-curl http://127.0.0.1:9200/_cat/indices?v
-
-vim weblog-sample.log
-```bash
-14.49.42.25 - - [12/May/2019:01:24:44 +0000] "GET /articles/ppp-over-ssh/ 
-HTTP/1.1" 200 18586 "-" "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; 
-rv:1.9.2b1) Gecko/20091014 Firefox/3.6b1 GTB5"
-```
-
-> filebeat.yml
-```
-filebeat.inputs:
-- type: log
-  enabled: true
-  paths:
-    - /usr/share/filebeat/logs/*
-
-output.kafka:
-  enabled: true
-  ##hosts: ["116.205.156.93:9092"]
-  hosts: ["159.75.138.212:4000"]
-  topic: kafka-test-topic
-
-##output.logstash:
-##  hosts: ["172.17.0.5:9900"]
+* 查看```elasticsearch```容器```ip```，如```172.17.0.2```
   
-##output.elasticsearch: 
-##  hosts: ["172.17.0.2:9200"]
-```
+  ```bash
+  docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' elasticsearch
+  ```
 
-logstash_dev.conf
-```
-input {
-  kafka {
-    bootstrap_servers => "159.75.138.212:4000"
-    topics => "kafka-test-topic"
-  }
-}
- 
-filter {
-  grok {
-    match => { "message" => "%{COMBINEDAPACHELOG}" }
-  }
- 
-  mutate {
-    convert => {
-      "bytes" => "integer"
-    }
-  }
- 
-  geoip {
-    source => "clientip"
-  }
- 
-  useragent {
-    source => "user_agent"
-    target => "useragent"
-  }
- 
-  date {
-    match => ["timestamp", "dd/MMM/yyyy:HH:mm:ss Z"]
-  }
-}
- 
-output {
-  stdout { }
- 
-  elasticsearch {
-    hosts => ["172.17.0.3:9200"]
-    index => "logstash_example"
-  }
-}
-```
+* 编写服务配置文件```logstash.yml```
 
-[2023-05-10 12:19:19.011] [WINDOWS-ECSBFQF] [main] INFO c.g.s.SpringbootLoggingApplicationTests@lombokTest:23 - lombokTest => logback testing
-(?m)\[%{TIMESTAMP_ISO8601:timestamp}\] \[%{HOSTNAME:host}\] \[%{DATA:thread}\] %{LOGLEVEL:logLevel} %{DATA:class}@%{DATA:method}:%{DATA:line} \- %{GREEDYDATA:message}
-{
-  "logLevel": "INFO",
-  "method": "lombokTest",
-  "line": "23",
-  "host": "WINDOWS-ECSBFQF",
-  "thread": "main",
-  "message": "lombokTest => logback testing",
-  "class": "c.g.s.SpringbootLoggingApplicationTests",
-  "timestamp": "2023-05-10 12:19:19.011"
-}
-(?m)\[%{TIMESTAMP_ISO8601:timestamp}\] \[%{HOSTNAME:host}\] \[%{DATA:thread}\] %{LOGLEVEL:logLevel} %{DATA:class}@%{DATA:method}:%{DATA:line} \- (?<message>(.|\r|\n)*)
-{
-  "logLevel": "INFO",
-  "method": "lombokTest",
-  "line": "23",
-  "host": "WINDOWS-ECSBFQF",
-  "thread": "main",
-  "message": "lombokTest => logback testing",
-  "class": "c.g.s.SpringbootLoggingApplicationTests",
-  "timestamp": "2023-05-10 12:19:19.011"
-}
+  ```bash
+  vim /data/elk/logstash/config/logstash.yml
 
-> logstash默认模板
+  config:
+    reload:
+      automatic: true
+       interval: 3s
+  xpack:
+    management.enabled: false
+    monitoring.enabled: false
+  ```
 
-```
-
-{
-    "@timestamp" => 2023-05-11T02:34:05.166Z,
-    "@version" => "1",
-    "message" => "lombokTest => logback testing\",\"input\":{\"type\":\"log\"},\"ecs\":{\"version\":\"1.12.0\"},\"host\":{\"name\":\"d1abcc3b3e8b\"},\"agent\":{\"name\":\"d1abcc3b3e8b\",\"type\":\"filebeat\",\"version\":\"7.17.9\",\"hostname\":\"d1abcc3b3e8b\",\"ephemeral_id\":\"75725398-4897-4b19-9313-261c2ebdb43b\",\"id\":\"a9d4d2aa-a8fd-42e8-b25e-7818eb1d4c2c\"},\"log\":{\"offset\":663,\"file\":{\"path\":\"/usr/share/filebeat/logs/logback-customize.log\"}}}"
-}
-```
-
-```
-input {
-  kafka {
-    bootstrap_servers => "159.75.138.212:4000"
-    topics => ["kafka-test-topic"]
-  }
-}
-
-filter {
-
-  grok {
-    match => ["message", "(?m)\[%{TIMESTAMP_ISO8601:timestamp}\] \[%{HOSTNAME:host}\] \[%{DATA:thread}\] %{LOGLEVEL:logLevel} %{DATA:class}@%{DATA:method}:%{DATA:line} \- %{GREEDYDATA:message}"]
-    overwrite => ["message"]
-  }
-
-  mutate {
-    remove_field => ["timestamp", "host", "thread", "logLevel", "class", "method", "line"]
-  }
-
-}
-
-output {
-  stdout {}
-  elasticsearch {
-    hosts => ["172.17.0.3:9200"]
-    index => "logback_customize_dev_%{+YYYY.MM.dd}"
-  }
-}
-```
-
-```
-[2023-05-10 12:19:31.011] [WINDOWS-ECSBFQF] [main] INFO c.g.s.SpringbootLoggingApplicationTests@lombokTest:23 - lombokTest => logback testing
-```
-
-> 单个服务单个日志级别配置
-```
-
-input {
-  kafka {
-    bootstrap_servers => "159.75.138.212:4000"
-    topics => ["kafka-test-topic"]
-    codec => "json"
-  }
-}
-
-filter {
-
-  grok {
-    match => ["message", "(?m)\[%{TIMESTAMP_ISO8601:timestamp}\] \[%{HOSTNAME:host}\] \[%{DATA:thread}\] %{LOGLEVEL:logLevel} %{DATA:class}@%{DATA:method}:%{DATA:line} \- %{GREEDYDATA:message}"]
-    overwrite => ["host", "message"]
-  }
-
-  mutate {
-    add_field => {
-      "code" => "%{thread}-%{class}@%{method}:%{line}"
-    }
-    remove_field => ["thread", "class", "method", "line"]
-    lowercase => ["logLevel"]
-  }
-
-  date {
-    match => ["timestamp" , "YYYY-MM-dd HH:mm:ss.SSS"]
-    target => "@timestamp"
-  }
-
-}
-
-output {
-  stdout {}
-  elasticsearch {
-    hosts => ["172.17.0.3:9200"]
-    index => "logback_customize_dev_%{logLevel}_%{+YYYY.MM.dd}"
-  }
-}
-```
-
-> 构建不同索引输出至es
-```
-input {
-  kafka {
-    bootstrap_servers => "159.75.138.212:4000"
-    topics => ["kafka-test-topic"]
-    codec => "json"
-  }
-}
-
-filter {
-
-  grok {
-    match => ["message", "(?m)\[%{TIMESTAMP_ISO8601:timestamp}\] \[%{HOSTNAME:host}\] \[%{DATA:thread}\] %{LOGLEVEL:logLevel} %{DATA:class}@%{DATA:method}:%{DATA:line} \- %{GREEDYDATA:message}"]
-    overwrite => ["host", "message"]
-  }
-
-  mutate {
-    add_field => {
-      "code" => "%{thread}-%{class}@%{method}:%{line}"
-    }
-    remove_field => ["thread", "class", "method", "line"]
-    lowercase => ["logLevel"]
-  }
-
-  date {
-    match => ["timestamp" , "YYYY-MM-dd HH:mm:ss.SSS"]
-    target => "@timestamp"
-  }
-
-  if [logLevel] == 'info' {
-    mutate { add_field => { "[@metadata][target_index]" => "logback_customize_dev-info-%{+YYYY.MM.dd}" } }
-  } else if [logLevel] == 'error'{
-    mutate { add_field => { "[@metadata][target_index]" => "logback_customize_dev-error-%{+YYYY.MM.dd}" } }
-  } else {
-    mutate { add_field => { "[@metadata][target_index]" => "logback_customize_dev-other-%{+YYYY.MM.dd}" } }
-  }
-
-}
-
-output {
-  stdout {}
-  elasticsearch {
-    hosts => ["172.17.0.3:9200"]
-    index => "%{[@metadata][target_index]}"
-  }
-}
-```
-
-> logback默认配置对应的logstash配置
-```
-input {
-  kafka {
-    bootstrap_servers => "159.75.138.212:4000"
-    topics => ["kafka-test-topic"]
-    codec => "json"
-  }
-}
-
-filter {
-
-  grok {
-    match => ["message", "%{TIMESTAMP_ISO8601:timestamp}  %{LOGLEVEL:logLevel} %{NUMBER:tid} --- \[%{DATA:thread}\] %{DATA:class} :%{GREEDYDATA:message}"]
-    overwrite => ["message"]
-  }
-
-  mutate {
-    lowercase => ["logLevel"]
-    update => ["host", "host.name"]
-  }
+* 编写管道映射文件以及管道配置文件
   
-  date {
-    match => ["timestamp" , "YYYY-MM-dd HH:mm:ss.SSS"]
-    target => "@timestamp"
-  }
+  ```bash
+  vim /data/elk/logstash/config/pipelines.yml
 
-  if [logLevel] == 'info' {
-    mutate { add_field => { "[@metadata][target_index]" => "logback_general-develop-info-%{+YYYY.MM.dd}" } }
-  } else if [logLevel] == 'error'{
-    mutate { add_field => { "[@metadata][target_index]" => "logback_general-develop-error-%{+YYYY.MM.dd}" } }
-  } else {
-    mutate { add_field => { "[@metadata][target_index]" => "logback_general-develop-other-%{+YYYY.MM.dd}" } }
-  }
+  - pipeline.id: consumer_service_pipeline
+    path.config: /usr/share/logstash/pipeline/consumer_service_pipeline.conf
+  - pipeline.id: provider_service_pipeline
+    path.config: /usr/share/logstash/pipeline/provider_service_pipeline.conf
+  ```
 
-}
- 
-output {
-  stdout {}
-  elasticsearch {
-    hosts => ["172.17.0.3:9200"]
-    index => "%{[@metadata][target_index]}"
-  }
-}
-```
-
-> log4j对应的logstash配置
-```
-input {
-  kafka {
-    bootstrap_servers => "159.75.138.212:4000"
-    topics => ["kafka-test-topic"]
-    codec => "json"
-  }
-}
-
-filter {
-
-  grok {
-    match => ["message", "%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:logLevel} %{DATA:class} \[%{DATA:thread}\] %{GREEDYDATA:message}"]
-    overwrite => ["message"]
-  }
-
-  mutate {
-    lowercase => ["logLevel"]
-    update => ["host", "host.name"]
-  }
+  ```bash
+  vim /data/elk/logstash/pipeline/consumer_service_pipeline.conf
   
-  date {
-    match => ["timestamp" , "YYYY-MM-dd HH:mm:ss.SSS"]
-    target => "@timestamp"
+  input {
+
+    kafka {
+      bootstrap_servers => "159.75.138.212:4000"
+      topics => ["consumer-log-topic"]
+      codec => "json"
+    }
+
   }
 
-  if [logLevel] == 'info' {
-    mutate { add_field => { "[@metadata][target_index]" => "log4j_dev-info-%{+YYYY.MM.dd}" } }
-  } else if [logLevel] == 'error'{
-    mutate { add_field => { "[@metadata][target_index]" => "log4j_dev-error-%{+YYYY.MM.dd}" } }
-  } else {
-    mutate { add_field => { "[@metadata][target_index]" => "log4j_dev-other-%{+YYYY.MM.dd}" } }
-  }
+  filter {
 
-}
+    grok {
+      match => ["message", "%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:logLevel} %{DATA:class} \[%{DATA:thread}\] %{GREEDYDATA:message}"]
+      overwrite => ["message"]
+    }
+
+    mutate {
+      lowercase => ["logLevel"]
+      update => ["host", "host.name"]
+    }
+  
+    date {
+      match => ["timestamp" , "YYYY-MM-dd HH:mm:ss.SSS"]
+      target => "@timestamp"
+    }
+
+    if [logLevel] == 'info' {
+      mutate { add_field => { "[@metadata][target_index]" => "consumer-service-info-%{+YYYY.MM.dd}" } }
+    } else if [logLevel] == 'error'{
+      mutate { add_field => { "[@metadata][target_index]" => "consumer-service-error-%{+YYYY.MM.dd}" } }
+    } else {
+      mutate { add_field => { "[@metadata][target_index]" => "consumer-service-other-%{+YYYY.MM.dd}" } }
+    }
+
+  }
  
-output {
-  stdout {}
-  elasticsearch {
-    hosts => ["172.17.0.3:9200"]
-    index => "%{[@metadata][target_index]}"
+  output {
+
+    stdout {}
+
+    elasticsearch {
+      hosts => ["172.17.0.2:9200"]
+      index => "%{[@metadata][target_index]}"
+      user => elastic
+      password => garden520
+    }
+
   }
-}
-```
+  ```
+
+  ```bash
+  vim /data/elk/logstash/pipeline/provider_service_pipeline.conf
+
+  input {
+
+    kafka {
+      bootstrap_servers => "159.75.138.212:4000"
+      topics => ["provider-log-topic"]
+      codec => "json"
+    }
+    
+  }
+
+  filter {
+
+    grok {
+      match => ["message", "%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:logLevel} %{DATA:class} \[%{DATA:thread}\] %{GREEDYDATA:message}"]
+      overwrite => ["message"]
+    }
+
+    mutate {
+      lowercase => ["logLevel"]
+      update => ["host", "host.name"]
+    }
+  
+    date {
+      match => ["timestamp" , "YYYY-MM-dd HH:mm:ss.SSS"]
+      target => "@timestamp"
+    }
+
+    if [logLevel] == 'info' {
+      mutate { add_field => { "[@metadata][target_index]" => "provider-service-info-%{+YYYY.MM.dd}" } }
+    } else if [logLevel] == 'error'{
+      mutate { add_field => { "[@metadata][target_index]" => "provider-service-error-%{+YYYY.MM.dd}" } }
+    } else {
+      mutate { add_field => { "[@metadata][target_index]" => "provider-service-other-%{+YYYY.MM.dd}" } }
+    }
+
+  }
+ 
+  output {
+
+    stdout {}
+
+    elasticsearch {
+      hosts => ["172.17.0.2:9200"]
+      index => "%{[@metadata][target_index]}"
+      user => elastic
+      password => garden520
+    }
+
+  }
+  ```
+
+* 运行容器
+  
+  ```bash
+  docker run -d --name logstash --restart=always --privileged=true -p 5047:5047 -p 9600:9600 -v /data/elk/logstash/pipeline/:/usr/share/logstash/pipeline/ -v /data/elk/logstash/config/:/usr/share/logstash/config/ docker.elastic.co/logstash/logstash:7.17.9
+  ```
+
+> 验证 elk stack 是否搭建成功
+  
+  * 使用```curl```调用```consumner-service```接口
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-18_16-47-54.png) 
+  
+  * 登录 ```kibana```，如访问地址```http://159.75.138.212:5601/```，账号密码```elastic/garden520```。创建索引并查看```Discover```对应索引下的服务日志信息
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-18_16-43-35.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-18_16-45-35.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-18_16-46-52.png)
 
 > 参考文献
 
