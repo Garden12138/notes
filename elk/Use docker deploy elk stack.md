@@ -213,7 +213,57 @@
   docker exec -it ${kafka_container_name} sh
   kafka-console-consumer.sh --topic ${topic} --from-beginning --bootstrap-server ${kafka_container_name}:${kafka_conatiner_port}
   ```
+  
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-04-26_16-51-09.png)
+
+> nginx
+
+* [使用docker部署nginx](https://gitee.com/FSDGarden/learn-note/blob/master/nginx/Use%20docker%20deploy%20nginx.md)
+* 修改配置文件```nginx.conf```
+  
+  ```bash
+  user  nginx;
+  worker_processes  auto;
+
+  error_log  /var/log/nginx/error.log notice;
+  pid        /var/run/nginx.pid;
+
+  events {
+      worker_connections  1024;
+  }
+
+  stream {
+      upstream kafka {
+          server 116.205.156.93:9092;
+          server 116.205.156.93:9093;
+          server 116.205.156.93:9094;
+      }
+      server {
+          listen 80;
+          proxy_pass kafka;
+      }
+  }
+
+  http {
+      include       /etc/nginx/mime.types;
+      default_type  application/octet-stream;
+
+      log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+      access_log  /var/log/nginx/access.log  main;
+
+      sendfile        on;
+      #tcp_nopush     on;
+
+      keepalive_timeout  65;
+
+      #gzip  on;
+
+      #include /etc/nginx/conf.d/*.conf;
+  }
+  ```
 
 > filebeat
 
@@ -337,58 +387,7 @@ HTTP/1.1" 200 18586 "-" "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US;
 rv:1.9.2b1) Gecko/20091014 Firefox/3.6b1 GTB5"
 ```
 
-> nginx
-
-```
-user  nginx;
-worker_processes  auto;
-
-error_log  /var/log/nginx/error.log notice;
-pid        /var/run/nginx.pid;
-
-
-events {
-    worker_connections  1024;
-}
-
-stream {
-    upstream kafka {
-        server 116.205.156.93:9092;
-        server 116.205.156.93:9093;
-        server 116.205.156.93:9094;
-    }
-    server {
-        listen 80;
-        proxy_pass kafka;
-    }
-}
-
-http {
-    include       /etc/nginx/mime.types;
-    default_type  application/octet-stream;
-
-    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-                      '$status $body_bytes_sent "$http_referer" '
-                      '"$http_user_agent" "$http_x_forwarded_for"';
-
-    access_log  /var/log/nginx/access.log  main;
-
-    sendfile        on;
-    #tcp_nopush     on;
-
-    keepalive_timeout  65;
-
-    #gzip  on;
-
-    #include /etc/nginx/conf.d/*.conf;
-}
-```
-
-kafka-topics.sh --describe --topic kafka-test-topic --bootstrap-server 159.75.138.212:4000
-kafka-topics.sh --describe --topic kafka-test-topic --bootstrap-server garden_kafka0_1:9092
-kafka-topics.sh --describe --topic kafka-test-topic --bootstrap-server 116.205.156.93:9092
-
-filebeat.yml
+> filebeat.yml
 ```
 filebeat.inputs:
 - type: log
