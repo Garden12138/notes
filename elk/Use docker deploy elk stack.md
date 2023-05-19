@@ -136,6 +136,7 @@
         - ALLOW_ANONYMOUS_LOGIN=yes
     kafka0:
       image: docker.io/bitnami/kafka:3.4
+      container_name: kafka0
       user: root
       ports:
         - "9092:9092"
@@ -147,11 +148,12 @@
         - ALLOW_PLAINTEXT_LISTENER=yes
         - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
         - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-        - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9092
+        - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://${宿主机IP}:9092
       depends_on:
         - zookeeper
     kafka1:
       image: docker.io/bitnami/kafka:3.4
+      container_name: kafka1
       user: root
       ports:
         - "9093:9093"
@@ -163,11 +165,12 @@
         - ALLOW_PLAINTEXT_LISTENER=yes
         - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
         - KAFKA_CFG_LISTENERS=PLAINTEXT://:9093
-        - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9093
+        - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://${宿主机IP}:9093
       depends_on:
         - zookeeper
     kafka2:
       image: docker.io/bitnami/kafka:3.4
+      container_name: kafka2
       user: root
       ports:
         - "9094:9094"
@@ -179,12 +182,26 @@
         - ALLOW_PLAINTEXT_LISTENER=yes
         - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
         - KAFKA_CFG_LISTENERS=PLAINTEXT://:9094
-        - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://127.0.0.1:9094
+        - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://${宿主机IP}:9094
       depends_on:
         - zookeeper
+    kafka-ui:
+      image: provectuslabs/kafka-ui:latest
+      container_name: kafka-ui
+      restart: always
+      ports:
+        - 18080:8080
+      volumes:
+        - /etc/localtime:/etc/localtime
+      environment:
+        - KAFKA_CLUSTERS_0_NAME=local
+        - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka0:9092,kafka1:9093,kafka2:9094
+        - AUTH_TYPE=LOGIN_FORM
+        - SPRING_SECURITY_USER_NAME=kafkaui
+        - SPRING_SECURITY_USER_PASSWORD=garden520
   ```
   
-  环境变量```KAFKA_CFG_LISTENERS=PLAINTEXT```设置内部监听方式，用于容器间内部互相访问；环境变量```KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT```设置客户端监听方式，用户客户端的访问，一般使用宿主机的内网或外网地址以及端口。
+  环境变量```KAFKA_CFG_LISTENERS=PLAINTEXT```设置内部监听方式，用于容器间内部互相访问；环境变量```KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT```设置客户端监听方式，用户客户端的访问，一般使用宿主机的内网或外网地址以及端口。环境变量```AUTH_TYPE```为设置```kafka-ui```权限类型，环境变量```SPRING_SECURITY_USER_NAME```与环境变量```SPRING_SECURITY_USER_PASSWORD```为设置```kafka-ui```登录账号密码。
 
 * 运行编排的容器
   
@@ -199,6 +216,14 @@
   ```
   
   ```--partitions```参数设置逻辑分区，```replication-factor```设置每个逻辑分区的副本数，通过这两个参数可以逻辑上编排```broker```，每个分区上都有一名```leader```职责的```broker```负责消息的写操作，其他则负责消息的读操作。
+
+  或者登录```kafka-ui```创建主题，如```http://116.205.156.93:18080/```，账号密码为```kafkaui/garden520```
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-19_15-13-59.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-19_15-20-38.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-19_15-20-38.png)
 
   查看主题，进入任意```kafka```容器内，通过```kafka-topics.sh --describe --topic```命令查看主题：
 
@@ -511,3 +536,4 @@
 * [kyungw00k/logback.xml](https://gist.github.com/kyungw00k/e7b3cee94d9c669e5586)
 * [plugins-outputs-elasticsearch.html#_writing_to_different_indices_best_practices](https://www.elastic.co/guide/en/logstash/7.17/plugins-outputs-elasticsearch.html#_writing_to_different_indices_best_practices)
 * [Filebeats input多个log文件，输出Kafka多个topic配置](https://www.cnblogs.com/saneri/p/15919227.html)
+* [UI for Apache Kafka Quick Start](https://docs.kafka-ui.provectus.io/configuration/quick-start)
