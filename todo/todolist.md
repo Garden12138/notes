@@ -5,3 +5,9 @@
 * [Get started with Spring 5 and Spring Boot 2, through the Learn Spring course](https://www.baeldung.com/junit-5)
 * [JUnit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/#overview)
 * [SpringCloud各组件](https://pdai.tech/md/interview/x-interview-2.html#_14-1-spring-cloud)
+* 深入学习Java
+* 深入学习Spring
+* 深入学习MySQL
+* 深入学习Nginx
+* 深入学习Redis
+* 深入学习RocketMQ
