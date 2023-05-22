@@ -23,6 +23,34 @@
     ```
  
 > SpringBoot 使用 JUnit5
+  
+* 引入依赖：
+
+  ```bash
+  <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-test</artifactId>
+      <scope>test</scope>
+  </dependency>
+  ```
+
+  ```spring-boot-starter-test```依赖默认集成```JUnit Jupiter```：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-22_17-21-27.png)
+
+* 单元测试：
+  
+  * 对需进行单元测试的服务类使用快捷键```shift + ctrl + t```，创建单元测试类：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-22_17-25-44.png)
+
+  * 单元测试类添加```@SpringBootTest```注解，依赖注入服务类的```bean```：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-22_17-33-41.png)
+
+  * 使用注解```@Test```注解声明测试方法，编写测试逻辑后执行测试：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-22_17-34-34.png) 
 
 > JUnit5 常用测试注解
 
