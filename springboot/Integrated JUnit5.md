@@ -54,4 +54,28 @@
 
 > JUnit5 常用测试注解
 
+* ```@DisplayName```注解，为测试类或测试方法定义客户端展示名称：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-23_14-41-37.png)
+
+* ```@Disabled```注解，令测试类或测试方法不可用：
+  
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-23_14-44-53.png)
+
+* ```@BeforeAll```注解，在当前测试类所有测试方法执行前会优先执行，修饰方法必须为静态：
+  
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-23_14-54-57.png)
+
+* ```@BeforeEach```注解，在当前测试类每个测试方法执行前会优先执行：
+  
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-23_14-58-05.png)
+
+* ```@AfterAll```注解，在当前测试类所有测试方法执行后再执行，修饰方法必须为静态：
+  
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-23_15-07-18.png)
+
+* ```AfterEach```注解，在当前测试类每个测试方法执行后再执行：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-23_15-20-13.png) 
+
 > JUnit5 新特性使用
