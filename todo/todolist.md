@@ -4,6 +4,8 @@
 * [【SpringBoot 2】(十一)单元测试JUnit 5 指标监控](https://bbs.huaweicloud.com/blogs/374443)
 * [Get started with Spring 5 and Spring Boot 2, through the Learn Spring course](https://www.baeldung.com/junit-5)
 * [我想把Junit5说给你听 ｜Java 开发实战](https://developer.aliyun.com/article/971909)
+* [JUnit 5标记和过滤，@ Tag示例](https://blog.csdn.net/cyan20115/article/details/106549237)
+* [JUnit5官方文档中文版](https://doczhcn.gitbook.io/junit5/)
 * [JUnit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/#overview)
 * [SpringCloud各组件](https://pdai.tech/md/interview/x-interview-2.html#_14-1-spring-cloud)
 * 深入学习Java

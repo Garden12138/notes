@@ -79,3 +79,62 @@
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-23_15-20-13.png) 
 
 > JUnit5 新特性使用
+
+* 更强大的断言
+  
+  * 分组断言，多个条件同时满足时断言才成功
+  * 异常断言
+  * 超时断言
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_09-56-23.png) 
+
+* 标签和过滤
+
+  * 通过标签注解```Tag```将测试用例进行标签分组，在平台上运行时（如```maven```）可以选择和过滤指定标签分组：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_10-02-03.png)
+
+    ```maven```上运行```JUnit5```需要添加```maven-surefire-plugin```插件，然后执行```mvn clean test```命令，选择和过滤指定标签分组可设置在插件配置里或者使用```mvn```命令行参数：
+    
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_10-06-18.png)
+
+    ```bash
+    mvn clean test -Dgroups="dev,test"
+    mvn clean test -DexcludedGroups="prod"
+    ```
+
+* 测试构造函数和方法的依赖注入
+  
+  * 测试构造函数和方法都允许有参数且构造函数和方法启用依赖注入：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_10-15-12.png) 
+
+* 嵌套测试
+  
+  * 使用```@Nested```注解，以静态内部成员类的形式对测试用例类进行逻辑分组，以至于能够解决测试类数量爆炸的问题：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_10-24-56.png) 
+
+* 重复测试
+
+  * 多次调用同一个测试用例：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_10-27-48.png)  
+
+* 动态测试
+
+  * 对各种类型的输入和输出结果进行验证，适用于```Java Stream```：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_10-32-31.png) 
+
+* 超时测试
+  
+  * 通过时间来验证测试用例是否超时，单个测试用例一般不超过1秒：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_10-32-31.png) 
+
+* 参数测试
+  
+  * 单个测试方法可实现多个测试用例，可大量减少重复模板代码：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_10-41-21.png) 
