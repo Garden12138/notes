@@ -532,10 +532,24 @@
       target: ''
       fields:
         host_ip: '116.205.156.93'
-  ## xxx-pipelin.yml
+  ## xxx-pipeline.yml
   ...
   mutate {
-    update => ["host", "%{host_ip"]
+    update => ["host", "%{host_ip}"]
+  }
+  ...
+  ```
+
+  或采集器```filebeat```与其采集的客户端服务都部署在云上，```filebeat```上可通过```add-cloud-metadata```向```logstash```传输云产品信息，其中包含云实例```id```字段，```logstash```的```pipeline```配置上可使用该字段覆盖```host```字段：
+
+  ```bash
+  ## filebeat.yml
+  processors:
+    - add_cloud_metadata: ~
+  ## xxx-pipeline.yml
+  ...
+  mutate {
+    update => ["host", "%{[cloud][instance][id]}"]
   }
   ...
   ```
@@ -628,5 +642,6 @@
 * [kyungw00k/logback.xml](https://gist.github.com/kyungw00k/e7b3cee94d9c669e5586)
 * [plugins-outputs-elasticsearch.html#_writing_to_different_indices_best_practices](https://www.elastic.co/guide/en/logstash/7.17/plugins-outputs-elasticsearch.html#_writing_to_different_indices_best_practices)
 * [Filebeats input多个log文件，输出Kafka多个topic配置](https://www.cnblogs.com/saneri/p/15919227.html)
+* [Add-cloud-metadata](https://www.elastic.co/guide/en/beats/filebeat/7.17/add-cloud-metadata.html)
 * [UI for Apache Kafka Quick Start](https://docs.kafka-ui.provectus.io/configuration/quick-start)
 * [Integrate Filebeat, Kafka, Logstash, Elasticsearch And Kibana](https://github.com/eunsour/docker-elk)
