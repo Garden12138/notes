@@ -519,7 +519,82 @@
 > 存在问题
   
 * ```logstash```的```pipeline```配置中，```host```字段未能获取业务服务具体的```host```。
-* ```logstash```输出到```elasticsearch```以及```kibana```注册到```elasticsearch```都使用```elasticsearch```容器```ip```端口，```docker```进程重启后```elasticsearch```容器```ip```可能会发生改变，每次重启后需要检查```elasticsearch```容器```ip```，若改变需修改```logstash```的管道输出配置以及```kibana```注册至```elasticsearch```
+* ```logstash```输出到```elasticsearch```以及```kibana```注册到```elasticsearch```都使用```elasticsearch```容器```ip```端口，```docker```进程重启后```elasticsearch```容器```ip```可能会发生改变，每次重启后需要检查```elasticsearch```容器```ip```，若改变需修改```logstash```的管道输出配置以及```kibana```注册至```elasticsearch```。
+
+> 问题解决
+
+* 问题2可使用```docker-compose```将```elasticsearch```、```logstash```以及```kibana```容器进行编排，```logstash```输出到```elasticsearch```以及```kibana```注册到```elasticsearch```的地址都可使用```serviceName```，```docker-compose```如下：
+
+  ```bash
+  version: '2'
+  services:
+    elasticsearch:
+      container_name: elasticsearch
+      image: elasticsearch:7.17.9
+      ports:
+        - 9200:9200
+        - 9300:9300
+      expose:
+        - 9200
+        - 9300
+      volumes:
+        - /data/elk/es/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+        - /data/elk/es/data:/usr/share/elasticsearch/data
+        - /data/elk/es/logs:/usr/share/elasticsearch/logs
+      environment:
+        - "ES_JAVA_OPTS=-Xms512m -Xmx1024m"
+        - "discovery.type=single-node"
+      restart: always
+      networks:
+        - elk
+
+    kibana:
+      container_name: kibana
+      image: kibana:7.17.9
+      ports:
+        - 5601:5601
+      expose:
+        - 5601
+      volumes:
+        - /data/elk/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+      restart: always
+      networks:
+        - elk
+      depends_on:
+        - elasticsearch
+
+    logstash:
+      container_name: logstash
+      image: docker.elastic.co/logstash/logstash:7.17.9
+      ports:
+        - "5047:5047"
+        - "9600:9600"
+      expose:
+        - 5047
+        - 9600
+      volumes:
+        - /data/elk/logstash/pipeline/:/usr/share/logstash/pipeline/
+        - /data/elk/logstash/config/:/usr/share/logstash/config/
+      restart: always
+      networks:
+        - elk
+      depends_on:
+        - elasticsearch
+
+  networks:
+    elk:
+      driver: bridge
+  ```
+
+  ```kibana```的配置修改如下：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_15-23-03.png)
+
+  ```logstash```的```consumer```以及```provider```的```pipeline```配置修改如下：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_15-25-04.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_15-27-00.png)
 
 > 参考文献
 
@@ -537,3 +612,4 @@
 * [plugins-outputs-elasticsearch.html#_writing_to_different_indices_best_practices](https://www.elastic.co/guide/en/logstash/7.17/plugins-outputs-elasticsearch.html#_writing_to_different_indices_best_practices)
 * [Filebeats input多个log文件，输出Kafka多个topic配置](https://www.cnblogs.com/saneri/p/15919227.html)
 * [UI for Apache Kafka Quick Start](https://docs.kafka-ui.provectus.io/configuration/quick-start)
+* [Integrate Filebeat, Kafka, Logstash, Elasticsearch And Kibana](https://github.com/eunsour/docker-elk)

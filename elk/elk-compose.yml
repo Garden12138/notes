@@ -1,0 +1,61 @@
+version: '2'
+services:
+  elasticsearch:
+    container_name: elasticsearch
+    image: elasticsearch:7.17.9
+    user: root
+    ports:
+      - 9200:9200
+      - 9300:9300
+    expose:
+      - 9200
+      - 9300
+    volumes:
+      - /data/elk/es/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+      - /data/elk/es/data:/usr/share/elasticsearch/data
+      - /data/elk/es/logs:/usr/share/elasticsearch/logs
+    environment:
+      - "ES_JAVA_OPTS=-Xms512m -Xmx1024m"
+      - "discovery.type=single-node"
+    restart: always
+    networks:
+      - elk
+
+  kibana:
+    container_name: kibana
+    image: kibana:7.17.9
+    user: root
+    ports:
+      - 5601:5601
+    expose:
+      - 5601
+    volumes:
+      - /data/elk/kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+    restart: always
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+  logstash:
+    container_name: logstash
+    image: docker.elastic.co/logstash/logstash:7.17.9
+    user: root
+    ports:
+      - "5047:5047"
+      - "9600:9600"
+    expose:
+      - 5047
+      - 9600
+    volumes:
+      - /data/elk/logstash/pipeline/:/usr/share/logstash/pipeline/
+      - /data/elk/logstash/config/:/usr/share/logstash/config/
+    restart: always
+    networks:
+      - elk
+    depends_on:
+      - elasticsearch
+
+networks:
+  elk:
+    driver: bridge
