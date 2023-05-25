@@ -138,3 +138,11 @@
   * 单个测试方法可实现多个测试用例，可大量减少重复模板代码：
 
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-05-25_10-41-21.png) 
+
+> 参考文献
+
+* [我想把Junit5说给你听 ｜Java 开发实战](https://developer.aliyun.com/article/971909)
+* [JUnit 5标记和过滤，@ Tag示例](https://blog.csdn.net/cyan20115/article/details/106549237)
+* [Get started with Spring 5 and Spring Boot 2, through the Learn Spring course](https://www.baeldung.com/junit-5)
+* [JUnit5官方文档中文版](https://doczhcn.gitbook.io/junit5/)
+* [JUnit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/#overview)
