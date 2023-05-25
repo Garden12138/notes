@@ -523,6 +523,23 @@
 
 > 问题解决
 
+* 问题1可通过在采集器```filebeat```添加```host_ip```字段对应```logstash```的```pipeline```配置使用该字段覆盖```host```字段：
+
+  ```bash
+  ## filebeat.yml
+  processors:
+  - add_fields:
+      target: ''
+      fields:
+        host_ip: '116.205.156.93'
+  ## xxx-pipelin.yml
+  ...
+  mutate {
+    update => ["host", "%{host_ip"]
+  }
+  ...
+  ```
+
 * 问题2可使用```docker-compose```将```elasticsearch```、```logstash```以及```kibana```容器进行编排，```logstash```输出到```elasticsearch```以及```kibana```注册到```elasticsearch```的地址都可使用```serviceName```，```docker-compose```如下：
 
   ```bash
