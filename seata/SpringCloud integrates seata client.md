@@ -108,3 +108,7 @@ CREATE TABLE `undo_log`
 > 集成持久化框架
 
 > 完成业务接口
+
+> 参考文献
+
+* [你为Spring Cloud整合Seata、Nacos实现分布式事务案例跑不起来苦恼过吗（巨细排坑版）](https://developer.aliyun.com/article/1058275#slide-26)
