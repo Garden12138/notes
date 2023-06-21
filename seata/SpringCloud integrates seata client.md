@@ -30,8 +30,8 @@ CREATE TABLE `undo_log`
     `context`       varchar(128) NOT NULL,
     `rollback_info` longblob     NOT NULL,
     `log_status`    int(11) NOT NULL,
-    `log_created`   datetime     NOT NULL,
-    `log_modified`  datetime     NOT NULL,
+    `log_created` timestamp NULL DEFAULT NULL,
+    `log_modified` timestamp NULL DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `ux_undo_log` (`xid`,`branch_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
@@ -62,8 +62,8 @@ CREATE TABLE `undo_log`
     `context`       varchar(128) NOT NULL,
     `rollback_info` longblob     NOT NULL,
     `log_status`    int(11) NOT NULL,
-    `log_created`   datetime     NOT NULL,
-    `log_modified`  datetime     NOT NULL,
+    `log_created` timestamp NULL DEFAULT NULL,
+    `log_modified` timestamp NULL DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `ux_undo_log` (`xid`,`branch_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
@@ -96,8 +96,8 @@ CREATE TABLE `undo_log`
     `context`       varchar(128) NOT NULL,
     `rollback_info` longblob     NOT NULL,
     `log_status`    int(11) NOT NULL,
-    `log_created`   datetime     NOT NULL,
-    `log_modified`  datetime     NOT NULL,
+    `log_created` timestamp NULL DEFAULT NULL,
+    `log_modified` timestamp NULL DEFAULT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `ux_undo_log` (`xid`,`branch_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
