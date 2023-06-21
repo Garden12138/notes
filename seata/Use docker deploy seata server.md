@@ -58,7 +58,7 @@ transport.threadFactory.bossThreadSize=1
 transport.threadFactory.workerThreadSize=default
 transport.shutdown.wait=3
 service.vgroupMapping.saint-trade-tx-group=seata-server-sh
-service.default.grouplist=159.75.138.212:8091
+service.seata-server-sh.grouplist=159.75.138.212:8091
 service.enableDegrade=false
 service.disableGlobalTransaction=false
 client.rm.asyncCommitBufferLimit=10000
@@ -75,17 +75,11 @@ client.tm.rollbackRetryCount=5
 client.tm.degradeCheck=false
 client.tm.degradeCheckAllowTimes=10
 client.tm.degradeCheckPeriod=2000
-store.mode=file
-store.file.dir=file_store/data
-store.file.maxBranchSessionSize=16384
-store.file.maxGlobalSessionSize=512
-store.file.fileWriteBufferCacheSize=16384
-store.file.flushDiskMode=async
-store.file.sessionReloadReadSize=100
+store.mode=db
 store.db.datasource=druid
 store.db.dbType=mysql
-store.db.driverClassName=com.mysql.jdbc.Driver
-store.db.url=jdbc:mysql://159.75.138.212:13306/seata-server?useUnicode=true&characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false
+store.db.driverClassName=com.mysql.cj.jdbc.Driver
+store.db.url=jdbc:mysql://159.75.138.212:13306/seata-server?useUnicode=true
 store.db.user=root
 store.db.password=garden520
 store.db.minConn=5
@@ -95,13 +89,6 @@ store.db.branchTable=branch_table
 store.db.queryLimit=100
 store.db.lockTable=lock_table
 store.db.maxWait=5000
-store.redis.host=127.0.0.1
-store.redis.port=6379
-store.redis.maxConn=10
-store.redis.minConn=1
-store.redis.database=0
-store.redis.password=null
-store.redis.queryLimit=100
 server.recovery.committingRetryPeriod=1000
 server.recovery.asynCommittingRetryPeriod=1000
 server.recovery.rollbackingRetryPeriod=1000
@@ -235,5 +222,6 @@ docker pull seataio/seata-server:1.3.0
 docker run --name seata-server --restart=always --privileged=true -d -p 8091:8091 -e SEATA_PORT=8091 -e SEATA_IP=159.75.138.212 -e SEATA_CONFIG_NAME=file:/root/seata-config/registry -v /data/seata/config:/root/seata-config seataio/seata-server:1.3.0
 ```
 
-wget https://github.com/seata/seata/releases/download/v1.3.0/seata-server-1.3.0.zip
-unzip seata-server-1.3.0.zip
+> 参考文献
+
+* [dockerhub seataio/seata-server](https://hub.docker.com/r/seataio/seata-server)
