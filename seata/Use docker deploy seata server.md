@@ -346,3 +346,4 @@
 > 参考文献
 
 * [dockerhub seataio/seata-server](https://hub.docker.com/r/seataio/seata-server)
+* [你为Spring Cloud整合Seata、Nacos实现分布式事务案例跑不起来苦恼过吗（巨细排坑版）](https://developer.aliyun.com/article/1058275#slide-26)
