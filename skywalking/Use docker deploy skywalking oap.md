@@ -2,6 +2,10 @@
 
 > 本文使用集成elasticsearch7的镜像
 
+> 前期准备
+
+* [部署```elasticsearch7```](https://gitee.com/FSDGarden/learn-note/blob/master/elk/Use%20docker%20deploy%20elk%20stack.md)
+
 > 拉取镜像
 
   ```bash
