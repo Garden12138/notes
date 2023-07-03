@@ -290,6 +290,7 @@
 > 完整代码示例
 
 * [feature/sc-2020.0.1-v2.0.1](https://gitee.com/FSDGarden/microservices-spring/tree/feature%2Fsc-2020.0.1-v2.0.1/)
+* * [feature/sc-2020.0.1-v2.0.2](https://gitee.com/FSDGarden/microservices-spring/tree/feature%2Fsc-2020.0.1-v2.0.2/)
 
 > 参考文献
 
