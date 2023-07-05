@@ -27,15 +27,12 @@ filter {
 
   grok {
     match => ["message", "%{TIMESTAMP_ISO8601:timestamp}  %{LOGLEVEL:logLevel} \[%{DATA:service},%{DATA:trace},%{DATA:span}\] %{NUMBER:tid} --- \[%{DATA:thread}\] %{DATA:class} :\s+(?<message>.*)"]
-    overwrite => ["host", "message"]
+    overwrite => ["message"]
   }
 
   mutate {
-    add_field => {
-      "code" => "%{thread}-%{class}@%{method}:%{line}"
-    }
-    remove_field => ["thread", "class", "method", "line"]
     lowercase => ["logLevel"]
+    update => ["host", "host.name"]
   }
 
   date {
