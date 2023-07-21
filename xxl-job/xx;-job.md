@@ -125,5 +125,6 @@ docker run --name xxl-job-admin --restart=always -d -p 18081:8080 -e PARAMS="--s
 http://114.132.78.39:18081/xxl-job-admin/
 admin/123456
 
-docker pull garden12138/xxl-job-executor:2.4.0
-docker run --name xxl-job-executor --restart=always -d -e PARAMS="xxl.job.admin.addresses=http://114.132.78.39:18081/xxl-job-admin xxl.job.accessToken=CsjnD0xFU4JfDjQR23UB7YxGoYVcaRx xxl.job.executor.port=9999" garden12138/xxl-job-executor:2.4.0
+docker build -t garden12138/xxl-job-executor-frameless:2.4.0 .
+docker pull garden12138/xxl-job-executor-frameless:2.4.0
+docker run --name xxl-job-executor-frameless --restart=always -d -e PARAMS="xxl.job.admin.addresses=http://114.132.78.39:18081/xxl-job-admin xxl.job.accessToken=CsjnD0xFU4JfDjQR23UB7YxGoYVcaRx xxl.job.executor.port=9999" garden12138/xxl-job-executor-frameless:2.4.0
