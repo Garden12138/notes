@@ -122,6 +122,8 @@ commit;
 
 docker run --name xxl-job-admin --restart=always -d -p 18081:8080 -e PARAMS="--spring.datasource.url=jdbc:mysql://159.75.138.212:13306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai --spring.datasource.username=root --spring.datasource.password=garden520 --xxl.job.accessToken=CsjnD0xFU4JfDjQR23UB7YxGoYVcaRx" -v /data/xxl-job/logs:/data/applogs xuxueli/xxl-job-admin:2.4.0
 
+docker run --name xxl-job-admin --restart=always -d -p 18081:8080 -e PARAMS="--spring.datasource.url=jdbc:mysql://159.75.138.212:13306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai --spring.datasource.username=root --spring.datasource.password=garden520 --xxl.job.accessToken=CsjnD0xFU4JfDjQR23UB7YxGoYVcaRx" -v /data/xxl-job/logs:/data/applogs garden12138/xxl-job-admin:2.4.0
+
 http://114.132.78.39:18081/xxl-job-admin/
 admin/123456
 
@@ -132,3 +134,6 @@ docker run --name xxl-job-executor-frameless --restart=always -d -e PARAMS="xxl.
 docker build -t garden12138/xxl-job-executor-springboot:2.4.0 .
 docker pull garden12138/xxl-job-executor-springboot:2.4.0
 docker run --name xxl-job-executor-springboot --restart=always -d -p 18083:8081 -e PARAMS="--xxl.job.admin.addresses=http://114.132.78.39:18081/xxl-job-admin --xxl.job.accessToken=CsjnD0xFU4JfDjQR23UB7YxGoYVcaRx --xxl.job.executor.port=9999" garden12138/xxl-job-executor-springboot:2.4.0
+
+ALTER TABLE `xxl_job_group` MODIFY title VARCHAR(128);
+
