@@ -11,10 +11,10 @@
 * 运行容器
 
   ```bash
-  docker run --name xxl-job-glue-executor --restart=always -d -e PARAMS="xxl.job.admin.addresses=${XXL_JOB_ADMIN_ADDRESSES} xxl.job.accessToken=${XXL_JOB_ACCESSTOKEN} xxl.job.executor.ip=${XXL_JOB_EXECUTOR_IP} xxl.job.executor.port=${XXL_JOB_EXECUTOR_PORT}" garden12138/xxl-job-glue-executor:2.4.0
+  docker run --name xxl-job-glue-executor --restart=always -d -e PARAMS="xxl.job.admin.addresses=${XXL_JOB_ADMIN_ADDRESSES} xxl.job.accessToken=${XXL_JOB_ACCESSTOKEN} xxl.job.executor.appname=${XXL_JOB_EXECUTOR_APPNAME} xl.job.executor.ip=${XXL_JOB_EXECUTOR_IP} xxl.job.executor.port=${XXL_JOB_EXECUTOR_PORT}" garden12138/xxl-job-glue-executor:2.4.0
   ```
 
-  环境变量```${XXL_JOB_ADMIN_ADDRESSES}```为```xxl-job-admin```可访问地址，如```http://114.132.78.39:18081/xxl-job-admin```；环境变量```XXL_JOB_ACCESSTOKEN```为访问```xxl-job-admin```所使用的```token```，如```CsjnD0xFU4JfDjQR23UB7YxGoYVcaRx```；环境变量```XXL_JOB_EXECUTOR_IP```为执行器本身可访问```IP```，如```114.132.78.39```；环境变量```XXL_JOB_EXECUTOR_PORT```为执行器本身可访问端口，如```9999```。
+  环境变量```${XXL_JOB_ADMIN_ADDRESSES}```为```xxl-job-admin```可访问地址，如```http://114.132.78.39:18081/xxl-job-admin```；环境变量```XXL_JOB_ACCESSTOKEN```为访问```xxl-job-admin```所使用的```token```，如```CsjnD0xFU4JfDjQR23UB7YxGoYVcaRx```；环境变量```${XXL_JOB_EXECUTOR_APPNAME}```为执行器名称，如```xxl-job-glue-executor```；环境变量```XXL_JOB_EXECUTOR_IP```为执行器本身可访问```IP```，如```114.132.78.39```；环境变量```XXL_JOB_EXECUTOR_PORT```为执行器本身可访问端口，如```9999```。
 
 > 在xxl-job-admin上创建且执行执行器的Glue任务
 
