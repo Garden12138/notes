@@ -50,4 +50,3 @@
 * Go实战
 * K8S实战
 
-map.put("logging.pattern.level", "%5p [${spring.zipkin.service.name:" + "${spring.application.name:}},%X{traceId:-},%X{spanId:-}]");
