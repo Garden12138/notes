@@ -4,7 +4,7 @@
 * SpringCloud微服务生态
   * Nacos + SpringCloud Gateway + SprngCloud Sleuth + Zipkin + Sentinel + Seata (feature/sc-2020.0.1-v1.0) √
   * Nacos + SpringCloud Gateway + SprngCloud Sleuth + Zipkin + Sentinel + Seata + logback采集 (feature/sc-2020.0.1-v1.1) √
-  * Nacos + SpringCloud Gateway + SprngCloud Sleuth + Zipkin + Sentinel + Seata + log4j2采集 (feature/sc-2020.0.1-v1.2)
+  * Nacos + SpringCloud Gateway + SprngCloud Sleuth + Zipkin + Sentinel + Seata + log4j2采集 (feature/sc-2020.0.1-v1.2) √
   * Nacos + SpringCloud Gateway + Skywalking + Sentinel + Seata (feature/sc-2020.0.1-v2.0) √
   * Nacos + SpringCloud Gateway + Skywalking + Sentinel + Seata + logback采集 (feature/sc-2020.0.1-v2.1) √
   * Nacos + SpringCloud Gateway + Skywalking + Sentinel + Seata + log4j2采集 (feature/sc-2020.0.1-v2.2) √
@@ -49,4 +49,3 @@
 > 提升
 * Go实战
 * K8S实战
-
