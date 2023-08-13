@@ -1,4 +1,4 @@
-## Java应用客户端集成 xxl-job
+## Java 应用客户端集成 xxl-job
 
 > 引入 xxl-job-core maven 依赖
 
@@ -284,4 +284,4 @@
 
 * 本文所指的```xxl-job-admin```自定义镜像[在这](https://hub.docker.com/repository/docker/garden12138/xxl-job-admin/general)
 
-* 示例可参考[官方](https://github.com/Garden12138/xxl-job/tree/2.4.0/xxl-job-executor-samples)或[这里](https://gitee.com/FSDGarden/xxl-job-executor/tree/frameless/)
+* 示例可参考[官方](https://github.com/xuxueli/xxl-job/tree/2.4.0/xxl-job-executor-samples/xxl-job-executor-sample-frameless)或[这里](https://gitee.com/FSDGarden/xxl-job-executor/tree/frameless/)
