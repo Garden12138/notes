@@ -131,7 +131,7 @@
   }
   ```
 
-  每添加完一个任务类，需在配置类（```XxlJobConfig```）的初始化方法中（```initXxlJobExecutor```）中，手动添加```bean```注册：
+  在一个任务类中，可新建多个使用注解```@XxlJob```修饰的任务方法。每添加完一个任务类，需在配置类（```XxlJobConfig```）的初始化方法中（```initXxlJobExecutor```）中，手动添加```bean```注册：
 
   ```bash
   xlJobExecutor.setXxlJobBeanList(Arrays.<Object>asList(...));
