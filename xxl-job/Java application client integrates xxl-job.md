@@ -221,7 +221,7 @@
   }
   ```
 
-  若需执行跨平台任务，任务创建方式如：
+  若需执行跨平台```http```任务，任务创建方式如：
 
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-08-21_18-06-26.png)
 
