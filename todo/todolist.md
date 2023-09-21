@@ -52,4 +52,5 @@
 
 > 当前
 * [SpringBoot2.x整合Prometheus+Grafana](https://developer.aliyun.com/article/999667)
-* [Docker部署Prometheus+Grafana监控系统](https://segmentfault.com/a/1190000039671651)
+* [Spring Boot 微服务应用集成Prometheus + Grafana 实现监控告警](https://juejin.cn/post/6844904052417904653)
+* [Grafana和Prometheus监控SpringBoot项目](https://www.xiaojingge.com/blog/posts/1639853710.html)
