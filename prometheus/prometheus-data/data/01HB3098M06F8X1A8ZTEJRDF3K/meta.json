@@ -1,0 +1,17 @@
+{
+	"ulid": "01HB3098M06F8X1A8ZTEJRDF3K",
+	"minTime": 1695528505710,
+	"maxTime": 1695535200000,
+	"stats": {
+		"numSamples": 6118,
+		"numSeries": 756,
+		"numChunks": 756
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01HB3098M06F8X1A8ZTEJRDF3K"
+		]
+	},
+	"version": 1
+}

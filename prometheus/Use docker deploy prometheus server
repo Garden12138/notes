@@ -1,0 +1,14 @@
+## 使用 docker 部署 prometheus
+
+docker pull prom/prometheus
+
+docker run \
+    --name prometheus-server \
+    --restart=always \
+    -d \
+    -p 9090:9090 \
+    -v /Users/cengjiada/Documents/study/learn-note/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml \
+    -v /Users/cengjiada/Documents/study/learn-note/prometheus/prometheus-data:/prometheus \
+    prom/prometheus --config.file=/etc/prometheus/prometheus.yml --web.enable-lifecycle
+
+curl -X POST http://ip:9090/-/reload
