@@ -1,10 +1,10 @@
 # 全局配置
 global:
   resolve_timeout: 5m
-  smtp_smarthost: 'xxxxxx'
-  smtp_from: 'xxxx@xx.com'
-  smtp_auth_username: 'xxxx@xx.com'
-  smtp_auth_password: 'XXXXXX'
+  smtp_smarthost: 'smtp.163.com:465'
+  smtp_from: 'nedrag520@163.com'
+  smtp_auth_username: 'nedrag520@163.com'
+  smtp_auth_password: 'OIOVIGMUVGYDMGLW'
 # 路由配置
 route:
   receiver: 'default-receiver' # 父节点
@@ -21,7 +21,7 @@ route:
 receivers:
 - name: 'default-receiver'
   email_configs:
-  - to: 'xxxx@xx.com'
+  - to: '847686279@qq.com'
 - name: 'rhf-mail-receiver'
   email_configs:
-  - to: 'xxxx@xx.com'
+  - to: '847686279@qq.com'
