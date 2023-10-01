@@ -1,0 +1,17 @@
+{
+	"ulid": "01HBN383ED03TMVMS2CK3FYP0A",
+	"minTime": 1696133866227,
+	"maxTime": 1696140000000,
+	"stats": {
+		"numSamples": 3527,
+		"numSeries": 496,
+		"numChunks": 496
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01HBN383ED03TMVMS2CK3FYP0A"
+		]
+	},
+	"version": 1
+}
