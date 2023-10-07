@@ -11,6 +11,15 @@
 * [部署 ```Altermanger```](https://gitee.com/FSDGarden/learn-note/blob/master/altermanager/Use%20docker%20deploy%20altermanager.md)
 
 > SpringBoot 集成 Prometheus
+  
+  * 添加 ```micrometer prometheus registry```依赖
+    
+    ```bash
+    <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+    ```
 
 > Prometheus Server 注册 SpringBoot Server
 
