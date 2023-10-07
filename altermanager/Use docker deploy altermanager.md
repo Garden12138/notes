@@ -2,7 +2,7 @@
 
 > 前期准备
 
-* 编写配置文件```altermanager.yml```
+* 编写配置文件```/data/altermanager/altermanager.yml```
 
   ```bash
   # 全局配置
