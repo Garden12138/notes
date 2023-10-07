@@ -2,7 +2,7 @@
 
 > 前期准备
 
-* 编写配置文件```/data/prometheus/prometheus.yml``：
+* 编写配置文件```/data/prometheus/prometheus.yml```：
   
   ```bash
   # my global config
@@ -34,16 +34,6 @@
 
       static_configs:
         - targets: ["localhost:9090"]
-
-      # demo job
-    -  job_name: 'consumer' # 作业名称
-       metrics_path: '/exporter/prometheus' # 指标获取路径
-       scrape_interval: 5s # 时间间隔
-       basic_auth: # Spring Security basic auth 
-         username: 'garden'
-         password: 'garden520'
-       static_configs:
-       - targets: ['host.docker.internal:8763'] # 应用实例的地址，默认的协议是http，docker容器访问宿主机使用host.docker.internal域名
   ```
 
   [这里是官方配置文件模版](https://gitee.com/FSDGarden/learn-note/blob/master/prometheus/prometheus-latest.yml)
@@ -67,4 +57,4 @@
       prom/prometheus:latest --config.file=/etc/prometheus/prometheus.yml --web.enable-lifecycle
   ```
   
-  挂载宿主机```/data/prometheus/prometheus-data```目录为工作目录；命令行参数```--config.file=/etc/prometheus/prometheus.yml --web.enable-lifecycle```表示设置启动配置热更新。当配置文件修改后，可执行```curl -X POST http://${ip}:9090/-/reload```实现热更新。浏览器访问```prometheus```（```http://${ip}:9090```）校验是否运行成功
+  挂载宿主机```/data/prometheus/prometheus-data```目录为工作目录；命令行参数```--config.file=/etc/prometheus/prometheus.yml --web.enable-lifecycle```表示设置启动配置热更新。当配置文件修改后，可执行```curl -X POST http://${host}/-/reload```实现热更新。浏览器访问```prometheus```（```http://${host}```）校验是否运行成功
