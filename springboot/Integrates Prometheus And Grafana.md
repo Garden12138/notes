@@ -55,13 +55,19 @@
 
   * 登录```Grafana```可访问地址```http://${host}/dashboards```，初始账号密码为```admin/admin```，首次登录成功后会要求更新密码。
 
-  * 点击菜单```Toggle menue -> Connections -> DataSouce -> Add new data Souce```，搜索选择```Prometheus```：
+  * 点击菜单```Toggle menu -> Connections -> DataSouce -> Add new data Souce```，搜索选择```Prometheus```：
     
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-10-07_16-34-07.png)
 
 > 实践
 
-* 创建监控 ```Grafana Dashboard```
+* 创建监控 ```Grafana Dashboard```：
+  
+  * 登录```Grafana```可访问地址```http://${host}/dashboards```，点击菜单```Toggle menu -> Dashboards -> New dashboard -> Add visualization```，选择```Prometheus```数据源。
+
+  * 添加查询语句：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-10-07_17-45-19.png)
 
 * 引入监控 ```Grafana Dashboard```市场
 
