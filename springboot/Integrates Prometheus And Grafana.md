@@ -49,15 +49,15 @@
            - targets: ['host.docker.internal:8763'] # 应用实例的地址，默认的协议是http，docker容器访问宿主机使用host.docker.internal域名
     ```
 
-    * 配置文件保存更新后，执行```curl -X POST http://${host}/-/reload```热更新```Prometheus Server```，其中```${host}```为```Prometheus Server```的可访问地址。
+  * 配置文件保存更新后，执行```curl -X POST http://${host}/-/reload```热更新```Prometheus Server```，其中```${host}```为```Prometheus Server```的可访问地址。
 
 > Grafana 连接 Prometheus Server
 
   * 登录```Grafana```可访问地址```http://${host}/dashboards```，初始账号密码为```admin/admin```，首次登录成功后会要求更新密码。
 
   * 点击菜单```Toggle menu -> Connections -> DataSouce -> Add new data Souce```，搜索选择```Prometheus```：
-    
-    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-10-07_16-34-07.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-08_14-45-19.png)
 
 > 实践
 
@@ -67,7 +67,7 @@
 
   * 添加查询语句：
 
-    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/minikube/Snipaste_2023-10-07_17-45-19.png)
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-08_14-45-40.png)
 
 * 引入监控 ```Grafana Dashboard```市场
 
