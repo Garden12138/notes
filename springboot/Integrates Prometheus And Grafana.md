@@ -71,6 +71,28 @@
 
 * 引入监控 ```Grafana Dashboard```市场
 
+  * ```Dashboard```市场存在开箱即用、通用型的```Dashboard```模版。目前比较常用的有[```JVM (Micrometer)```](https://grafana.com/grafana/dashboards/4701-jvm-micrometer/)以及[```Spring Boot Statistics```](https://grafana.com/grafana/dashboards/6756-spring-boot-statistics/)。以```JVM (Micrometer)```为例，导入步骤如下：
+    
+    进入[```Grafana Dashboard市场```](https://grafana.com/grafana/dashboards/)，输入关键词搜索指定```Dashboard```：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-08_15-33-20.png)
+
+    选择指定```Dashboard```，拷贝```ID```：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-08_15-33-46.png)
+
+    在```Grafana```选择```Import dashboard```，输入```ID```后点击```load```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-08_15-36-08.png)
+
+    选择```Prometheus```数据源：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-08_15-50-28.png)
+
+    最后在```Dashboard```页面可查看到导入的```Dashboard```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-08_15-36-46.png)
+
 * 自定义业务监控指标
 
 * 添加监控警告
