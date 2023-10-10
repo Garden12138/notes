@@ -29,12 +29,12 @@ scrape_configs:
       - targets: ["localhost:9090"]
 
     # demo job
-  -  job_name: 'consumer' # 作业名称
+  -  job_name: 'microservices-spring' # 作业名称
      metrics_path: '/exporter/prometheus' # 指标获取路径
      scrape_interval: 5s # 间隔
      basic_auth: # Spring Security basic auth 
        username: 'garden'
        password: 'garden520'
      static_configs:
-     - targets: ['host.docker.internal:8763'] # 实例的地址，默认的协议是http
+     - targets: ['host.docker.internal:8763','host.docker.internal:8766'] # 实例的地址，默认的协议是http
 

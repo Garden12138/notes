@@ -95,6 +95,84 @@
 
 * 自定义业务监控指标
 
+  * 对于业务指标（埋点），可实现自定义。如实现订单服务的统计订单总金额、创建10分钟内下单失败率的指标监控：
+
+    * 订单服务新增普罗米修斯监控管理类，维护下单失败次数、下单总数以及下单累计金额指标：
+      
+      ```bash
+      @Component
+      public class PrometheusCusMonitor {
+
+          /**
+           * 下单失败次数
+           */
+          private Counter orderErrorCount;
+
+          /**
+           * 下单总数
+           */
+          private Counter orderCount;
+
+          /**
+           * 下单累计金额
+           */
+          private DistributionSummary orderAmountSum;
+
+          private final MeterRegistry registry;
+
+          @Autowired
+          public PrometheusCusMonitor(MeterRegistry registry) {
+              this.registry = registry;
+          }
+
+          @PostConstruct
+          private void init() {
+              orderErrorCount = registry.counter("order_error_count", "status", "error");
+              orderCount = registry.counter("order_count", "order", "order_tpl");
+              orderAmountSum = registry.summary("order_amount_sum", "order", "order_tpl");
+          }
+
+          public Counter getOrderErrorCount() {
+              return orderErrorCount;
+          }
+
+          public Counter getOrderCount() {
+              return orderCount;
+          }
+
+          public DistributionSummary getOrderAmountSum() {
+              return orderAmountSum;
+          }
+
+      }
+      ```
+      
+      ```init()```初始化方法中，如```registry.counter```调用方法的参数，第一个参数表示为指标名称，第二、三个参数表示为指标```label```及其值。
+
+    * 订单服务中的创建订单接口，应用监控指标：
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-10_16-20-05.png)
+
+    * 启动订单服务，执行创建订单接口（包含失败）：
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-10_16-31-02.png)
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-10_16-31-57.png)
+
+    * 查看订单服务暴露的```prometheus```端点是否已包含自定义监控指标：
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-10_16-35-05.png)
+
+    * ```grafana```上创建```创建10分钟内下单失败率```以及```统计订单总金额```面板：
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-10_16-47-01.png)
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-10_16-54-35.png)  
+
+      其中创建10分钟内下单失败率指标为```sum(rate(order_error_count_total{status="error",}[10m])) / sum(rate(order_count_total{order="order_tpl",}[10m])) * 100```，统计订单总金额指标为```order_amount_sum_sum{order="order_tpl",}```
+    
+    * 上述的步骤前提为订单服务集成```prometheus```。
+
 * 添加监控警告
 
 > 参考文献
