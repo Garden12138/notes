@@ -5,6 +5,7 @@ global:
   smtp_from: 'nedrag520@163.com'
   smtp_auth_username: 'nedrag520@163.com'
   smtp_auth_password: 'OIOVIGMUVGYDMGLW'
+  smtp_require_tls: false
 # 路由配置
 route:
   receiver: 'default-receiver' # 父节点
@@ -13,15 +14,15 @@ route:
   group_interval: 1m  #定义相同的Group之间发送告警通知的时间间隔
   repeat_interval: 1m
   routes: # 子路由，根据match路由
-  - receiver: 'rhf-mail-receiver'
+  - receiver: 'garden-mail-receiver'
     group_wait: 10s
     match: # 匹配自定义标签
-      team: rhf    
+      team: garden    
 # 告警接收者配置
 receivers:
 - name: 'default-receiver'
   email_configs:
   - to: '847686279@qq.com'
-- name: 'rhf-mail-receiver'
+- name: 'garden-mail-receiver'
   email_configs:
   - to: '847686279@qq.com'
