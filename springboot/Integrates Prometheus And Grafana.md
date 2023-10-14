@@ -174,6 +174,80 @@
     * 上述的步骤前提为订单服务集成```prometheus```。
 
 * 添加监控警告
+  
+  * 对于监控指标，可配置警告规则，当达到警告条件时触发警告。如添加10分钟内下单失败率大于10%的监控警告：
+
+    * 在```/prometheus```目录下新建```/rules```子目录并在其目录下新增订单服务警告规则文件```order-service-alert-rule.yaml```：
+      
+      ```bash
+      groups:
+        - name: order-service-alert-rule # 警告分组名称
+          rules:
+            - alert: order-error-rate-high # 警告名称
+              expr: sum(rate(order_error_count_total{status="error",}[10m])) / sum(rate(order_count_total{order="order_tpl",}[10m])) > 0.1 # 警告规则：10分钟内下单失败率大于10%
+              for: 1m
+              labels: # 自定义标签
+                severity: major # 设置严重程度标签
+                team: garden # 设置警告团队，用于匹配alertmanager接收邮箱设置
+              annotations:
+                summary: "订单服务响应异常！！" # 设置标题
+                description: "10分钟订单错误率已经超过10% (当前值: {{ $value }} ！！！" # 设置内容描述
+
+      ```
+
+    * ```prometheus-server```新增```altermanager```连接配置：
+      
+      ```bash
+      alerting:
+        alertmanagers:
+          - static_configs:
+              - targets:
+                  - host.docker.internal:9093 # altermanager地址，默认的协议是http，docker容器访问宿主机使用host.docker.internal域名
+      ```
+
+      以及新增警告规则文件路径配置：
+
+      ```bash
+      rule_files:
+        - /prometheus/rules/*.yaml
+      ```
+
+      最后刷新```prometheus-server```配置（```curl -X POST http://${host}/-/reload```）
+
+    * ```altermanager```路由配置新增子路由：
+      
+      ```bash
+      routes: # 子路由，根据match路由
+        - receiver: 'garden-mail-receiver'
+          group_wait: 10s
+          match: # 匹配自定义标签
+          team: garden  
+      ```
+
+      以及新增告警接收者配置：
+      
+      ```bash
+      receivers:
+        - name: 'garden-mail-receiver'
+          email_configs:
+            - to: '847686279@qq.com'
+      ```
+
+      最后刷新```altermanager```配置（```curl -X POST http://${host}/-/reload```）
+
+    * 订单服务模拟创建订单失败：
+      
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-14_23-01-04.png)
+
+      此时10分钟内下单失败率为100%，大于10%。
+
+    * 登录```altermanager dashboard```(```http://${host}```，```${host}```为```altermanager dashboard```的可访问域名)可查看触发的警告：
+      
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-12_16-55-55.png)
+
+      登录收件人邮箱可查看警告邮件：
+      
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-14_23-09-38.png)
 
 > 参考文献
 
