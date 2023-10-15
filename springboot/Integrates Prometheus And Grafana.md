@@ -49,11 +49,11 @@
            - targets: ['host.docker.internal:8763'] # 应用实例的地址，默认的协议是http，docker容器访问宿主机使用host.docker.internal域名
     ```
 
-  * 配置文件保存更新后，执行```curl -X POST http://${host}/-/reload```热更新```Prometheus Server```，其中```${host}```为```Prometheus Server```的可访问地址。
+  * 配置文件保存更新后，执行```curl -X POST http://${ip}:9090/-/reload```热更新```Prometheus Server```。
 
 > Grafana 连接 Prometheus Server
 
-  * 登录```Grafana```可访问地址```http://${host}/dashboards```，初始账号密码为```admin/admin```，首次登录成功后会要求更新密码。
+  * 登录```Grafana```可访问地址```http://${ip}:3000/dashboards```，初始账号密码为```admin/admin```，首次登录成功后会要求更新密码。
 
   * 点击菜单```Toggle menu -> Connections -> DataSouce -> Add new data Souce```，搜索选择```Prometheus```：
 
@@ -63,7 +63,7 @@
 
 * 创建监控 ```Grafana Dashboard```：
   
-  * 登录```Grafana```可访问地址```http://${host}/dashboards```，点击菜单```Toggle menu -> Dashboards -> New dashboard -> Add visualization```，选择```Prometheus```数据源。
+  * 登录```Grafana```可访问地址```http://${ip}:3000/dashboards```，点击菜单```Toggle menu -> Dashboards -> New dashboard -> Add visualization```，选择```Prometheus```数据源。
 
   * 添加查询语句：
 
@@ -212,7 +212,7 @@
         - /prometheus/rules/*.yaml
       ```
 
-      最后刷新```prometheus-server```配置（```curl -X POST http://${host}/-/reload```）
+      最后刷新```prometheus-server```配置（```curl -X POST http://${ip}:9090/-/reload```）
 
     * ```altermanager```路由配置新增子路由：
       
@@ -233,7 +233,7 @@
             - to: '847686279@qq.com'
       ```
 
-      最后刷新```altermanager```配置（```curl -X POST http://${host}/-/reload```）
+      最后刷新```altermanager```配置（```curl -X POST http://${ip}:9093/-/reload```）
 
     * 订单服务模拟创建订单失败：
       
@@ -241,7 +241,7 @@
 
       此时10分钟内下单失败率为100%，大于10%。
 
-    * 登录```altermanager dashboard```(```http://${host}```，```${host}```为```altermanager dashboard```的可访问域名)可查看触发的警告：
+    * 登录```altermanager dashboard```(```http://${ip}:9093```)可查看触发的警告：
       
       ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/springboot/Snipaste_2023-10-12_16-55-55.png)
 

@@ -57,4 +57,4 @@
       prom/prometheus:latest --config.file=/etc/prometheus/prometheus.yml --web.enable-lifecycle
   ```
   
-  挂载宿主机```/data/prometheus/prometheus-data```目录为工作目录；命令行参数```--config.file=/etc/prometheus/prometheus.yml --web.enable-lifecycle```表示设置启动配置热更新。当配置文件修改后，可执行```curl -X POST http://${host}/-/reload```实现热更新。浏览器访问```prometheus```（```http://${host}```）校验是否运行成功
+  挂载宿主机```/data/prometheus/prometheus-data```目录为工作目录；命令行参数```--config.file=/etc/prometheus/prometheus.yml --web.enable-lifecycle```表示设置启动配置热更新。当配置文件修改后，可执行```curl -X POST http://${ip}:9090/-/reload```实现热更新。浏览器访问```prometheus```（```http://${ip}:9090```）校验是否运行成功

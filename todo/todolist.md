@@ -51,7 +51,3 @@
 * K8S实战
 
 > 当前
-* [Spring Boot (十九)：使用 Spring Boot Actuator 监控应用](http://www.ityouknow.com/springboot/2018/02/06/spring-boot-actuator.html)
-* [SpringBoot2.x整合Prometheus+Grafana](https://developer.aliyun.com/article/999667)
-* [Spring Boot 微服务应用集成Prometheus + Grafana 实现监控告警](https://juejin.cn/post/6844904052417904653)
-* [Grafana和Prometheus监控SpringBoot项目](https://www.xiaojingge.com/blog/posts/1639853710.html)
