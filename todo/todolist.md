@@ -51,3 +51,6 @@
 * K8S实战
 
 > 当前
+
+* [什么是Minio？如何搭建Minio集群？](https://juejin.cn/post/7108553532776644622)
+* [Minio](https://min.io/)
