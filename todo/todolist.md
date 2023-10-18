@@ -54,3 +54,6 @@
 
 * [什么是Minio？如何搭建Minio集群？](https://juejin.cn/post/7108553532776644622)
 * [Minio](https://min.io/)
+* [记录Minio Docker部署](https://juejin.cn/post/7206615325022224443)
+* [使用Docker搭建MinIO集群服务](https://www.cnblogs.com/mstmdev/p/17212289.html)
+* [Ai learn](https://github.com/ben1234560/AiLearning-Theory-Applying)
