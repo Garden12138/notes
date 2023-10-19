@@ -1,0 +1,17 @@
+{
+	"ulid": "01HD3CAXEE6A24CC1HP2QTR9KE",
+	"minTime": 1697688624887,
+	"maxTime": 1697695200000,
+	"stats": {
+		"numSamples": 129758,
+		"numSeries": 512,
+		"numChunks": 1081
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01HD3CAXEE6A24CC1HP2QTR9KE"
+		]
+	},
+	"version": 1
+}
