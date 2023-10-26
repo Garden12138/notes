@@ -1,0 +1,17 @@
+{
+	"ulid": "01HDMZ5T3DZTP19BRN6DY44MS1",
+	"minTime": 1698278808453,
+	"maxTime": 1698285600000,
+	"stats": {
+		"numSamples": 79223,
+		"numSeries": 512,
+		"numChunks": 542
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01HDMZ5T3DZTP19BRN6DY44MS1"
+		]
+	},
+	"version": 1
+}
