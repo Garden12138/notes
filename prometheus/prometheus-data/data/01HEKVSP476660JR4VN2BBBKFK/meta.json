@@ -1,0 +1,17 @@
+{
+	"ulid": "01HEKVSP476660JR4VN2BBBKFK",
+	"minTime": 1699315452971,
+	"maxTime": 1699322400000,
+	"stats": {
+		"numSamples": 73406,
+		"numSeries": 512,
+		"numChunks": 547
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01HEKVSP476660JR4VN2BBBKFK"
+		]
+	},
+	"version": 1
+}
