@@ -52,10 +52,8 @@
 
 > 当前
 
-* [什么是Minio？如何搭建Minio集群？](https://juejin.cn/post/7108553532776644622)
-* [Minio](https://min.io/)
-* [记录Minio Docker部署](https://juejin.cn/post/7206615325022224443)
-* [Minio控制台详细教程](https://juejin.cn/post/7206973995727372343)
-* [Springboot集成Minio](https://juejin.cn/post/7209110611858309179)
-* [使用Docker搭建MinIO集群服务](https://www.cnblogs.com/mstmdev/p/17212289.html)
+* [Redis 教程](https://redis.net.cn/tutorial/3501.html)
+* [文档](http://www.redis.cn/documentation.html)
+* [try redis](https://try.redis.io/)
+* [Documentation](https://redis.io/docs/)
 * [Ai learn](https://github.com/ben1234560/AiLearning-Theory-Applying)
