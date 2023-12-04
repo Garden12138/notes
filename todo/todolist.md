@@ -56,4 +56,5 @@
 * [文档](http://www.redis.cn/documentation.html)
 * [try redis](https://try.redis.io/)
 * [Documentation](https://redis.io/docs/)
+* [Redis dockerhub](https://hub.docker.com/_/redis)
 * [Ai learn](https://github.com/ben1234560/AiLearning-Theory-Applying)
