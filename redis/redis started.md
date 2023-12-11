@@ -123,6 +123,60 @@
       docker exec -it redis /bin/bash
       redis-cli
       ```
+  
+* 配置
+
+  * 配置文件（```redis.conf```）位于```Redis```安装目录下，可通过```CONFIG```命令查看配置项：
+    
+    ```bash
+    CONFIG GET CONFIG_SETTING_NAME 
+    # CONFIG GET loglevel
+    # CONFIG GET *
+    ```
+
+    编辑配置项：
+
+    ```bash
+    CONFIG SET CONFIG_SETTING_NAME NEW_CONFIG_VALUE
+    # CONFIG SET loglevel "notice"
+    ```
+
+  * 基本参数说明：
+
+    | 序号 | 配置项 | 说明 |
+    | :--- | :--- | :--- | 
+    | 1 | daemonize no | Redis 默认不以守护进程的方式运行，可通过该配置项修改，使用 yes 启用守护进程（Windows 不支持守护线程的配置为 no ） |
+    | 2 | pidfile /var/run/redis.pid | 当 daemonize yes 时，Redis 默认会将 pid 写入 /var/run/redis.pid，可通过 pidfile 指定路径 |
+    | 3 | port 6379 | 指定 Redis 服务监听的端口 |
+    | 4 | bind 127.0.0.1 | 指定绑定的主机地址 |
+    | 5 | timeout 300 | 指定客户端等待时间，若超过该时间则关闭连接，若指定为0则表示关闭该功能 |
+    | 6 | loglevel notice | 指定日志级别，共支持四个级别：debug、verbose、notice、warning，默认为 notice |
+    | 7 | logfile stdout | 指定日志文件，默认为标准输出，若为标准输出且 daemonize yes ，日志将输出至 /dev/null |
+    | 8 | databases 16 | 指定数据库的数量，默认为0 |
+    | 9 | save seconds changes | 指定多长时间内有多少次更新操作，就将数据同步至数据文件中，可多条件配合，默认配置文件中提供三个条件：<br> save 900 1 <br> save 300 10 <br> save 60 10000 |
+    | 10 | rdbcompression yes | 指定存储至本地数据库时是否压缩数据，默认为 yes，Redis 采用 LZF 压缩，若为节省 CPU 时间，可关闭该选项，但会导致数据库文件庞大 |
+    | 11 | dbfilename dump.rdb |  |  |
+    | 12 | dir ./ |  |  |
+    | 13 | slaveof <masterip> <masterport> |  |  |
+    | 14 | masterauth <master-password> |  |  |
+    | 15 | requirepass foobared |  |  |
+    | 16 | maxclients 128 |  |  |
+    | 17 | maxmemory <bytes> |  |  |
+    | 18 | appendonly no |  |  |
+    | 19 | appendfilename appendonly.aof |  |  |
+    | 20 | appendfsync everysec |  |  |
+    | 21 | vm-enabled no |  |  |
+    | 22 | vm-swap-file /tmp/redis.swap |  |  |
+    | 23 | vm-max-memory 0 |  |  |
+    | 24 | vm-page-size 32 |  |  |
+    | 25 | vm-pages 134217728 |  |  |
+    | 26 | vm-max-threads 4 |  |  |
+    | 27 | glueoutputbuf yes |  |  |
+    | 28 | hash-max-zipmap-entries 64 <br> hash-max-zipmap-value 512 |  |  |
+    | 29 | activerehashing yes |  |  |
+    | 30 | include /path/to/local.conf |  |  |
+
+  * [各版本官方配置文件](https://redis.io/docs/management/config/)
 
 > Redis 命令
 
