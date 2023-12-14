@@ -7,9 +7,13 @@
   * ```Redis（Remote Dictionary Server）```是由开源的使用```ANSI C```语言编写、遵守```BSD```协议且支持网络、基于内存可持久化的```Key-Value```型数据库，并支持多种语言的```API```。它通常被称为数据结构服务器，因值```（Value）```可以为字符串```（String）```、哈希```（Hash）```、列表```（List）```、集合```（Set）```以及排序集合```（ZSet）```等数据结构。
 
   * ```Redis```与其他```Key-Value```存储的优势：
+
     * ```Redis```运行在内存中，性能极高，同时还支持持久化至磁盘。
+
     * 支持丰富的数据类型，如字符串```（String）```、哈希```（Hash）```、列表```（List）```、集合```（Set）```以及排序集合```（ZSet）```等数据类型，这些复杂的数据类型在内存中可非常方便的操作，对开发者透明，无需进行额外的抽象。
+
     * 原子性，```Redis```所有操作都是原子性，同时还支持对几个操作全并后的原子性执行。
+
     * 丰富的特性，```Redis```支持数据备份```（Master-Slave）模式```、发布/订阅和管道等特性。
 
 * 安装
@@ -103,6 +107,7 @@
   * ```Docker```（快速安装）
     
     * [```dockerhub```选择合适版本](https://hub.docker.com/_/redis/tags)
+
     * 拉取选定版本的镜像
       
       ```bash
@@ -179,6 +184,135 @@
   * [各版本官方配置文件](https://redis.io/docs/management/config/)
 
 > Redis 命令
+
+* ```Key```，用于管理 ```redis```的键，基本语法如下：
+  
+  ```bash
+  COMMAND KEY_NAME
+  ```
+
+  没有直接创建```Key```的命令，一般都伴随着```Value```的创建生成，常见的有创建字符串类型的```Value```：
+
+  ```bash
+  SET KEY_NAME KEY_VALUE
+  # SET name redis
+  # OK
+  ```
+
+  基本的常用命令：
+    
+    * ```DEL```，用于删除已存在的```Key```，不存在的```Key```忽略：
+      
+      ```bash
+      DEL KEY_NAME
+      # DEL name
+      ```
+    
+    * ```DUMP```，用于序列化指定```Key```，并返回序列化值：
+
+      ```bash
+      DUMP KEY_NAME
+      # DUMP name
+      ```
+
+    * ``EXISTS``，用于检查指定```Key```是否存在：
+
+      ```bash
+      EXISTS KEY_NAME
+      # EXISTS name
+      ```
+
+    * ```EXPIRE```，设置```Key```过期时间，单位为秒：
+
+      ```bash
+      EXPIRE KEY_NAME SEC
+      # EXPIRE name 6000
+      ```
+
+    * ```EXPIREAT```，设置```Key```过期时间，单位为```UNIX```时间戳秒：
+
+      ```bash
+      EXPIREAT KEY_NAME TIMESTAMP_SEC
+      # EXPIREAT name 1702655999
+      ```
+
+    * ```PEXPIRE```，设置```Key```过期时间，单位为毫秒：
+
+      ```bash
+      PEXPIRE KEY_NAME MILLSEC
+      # PEXPIRE name 6000000
+      ```
+
+    * ```PEXPIREAT```，设置```Key```过期时间，单位为```UNIX```时间戳毫秒：
+
+      ```bash
+      PEXPIREAT KEY_NAME TIMESTAMP_MILLSEC
+      # PEXPIREAT name 1702655999000
+      ```
+
+    * ```KEYS```，查找符合指定模式的```Key```
+
+      ```bash
+      KEYS PATTERN
+      # KEYS nam*
+      ```
+
+    * ```MOVE```，将当前数据库的```Key```移动至指定的数据库```db```：
+
+      ```bash
+      MOVE KEY_NAME DESTINATION_DATABASE
+      # MOVE name 1
+      ```
+
+    * ```PERSIST```，移除指定```Key```的过期时间并持久化，使得```Key```永不过期：
+
+      ```bash
+      PERSIST KEY_NAME
+      # PERSIST name 
+      ```
+
+    * ```PTTL```，返回指定```Key```的剩余过期时间，单位为毫秒：
+
+      ```bash
+      PTTL KEY_NAME
+      # PTTL name
+      ```
+
+    * ```TTL```，返回指定```Key```的剩余过期时间，单位为秒：
+
+      ```bash
+      TTL KEY_NAME
+      # TTL name
+      ```
+
+    * ```RANDOMKEY```，随机返回一个存在的```Key```：
+
+      ```bash
+      RANDOMKEY
+      # RANDOMKEY
+      ```
+
+    * ```RENAME```，修改```Key```的名称，若```newKey```已存在，将使用```newKey```，原本```newKey```则丢失：
+
+      ```bash
+      RENAME KEY_NAME NEW_KEY_NAME
+      # RENAME name name1
+      ```
+
+    * ```RENAMENX```，修改```Key```的名称，仅当```newKey```不存在时，将```Key```修改为```newKey```：
+      
+
+      ```bash
+      RENAMENX KEY_NAME NEW_KEY_NAME
+      # RENAMENX name name1
+      ```
+
+    * ```TYPE```，返回```Key```所存储的值的类型：
+
+      ```bash
+      TYPE KEY_NAME
+      # TYPE name
+      ```
 
 > Redis 高级功能
 
