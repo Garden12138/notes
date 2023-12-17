@@ -314,6 +314,153 @@
       # TYPE name
       ```
 
+* ```String```，用于管理```redis```的字符串类型的值，基本语法如下：
+
+  ```bash
+  COMMAND KEY_NAME
+  ```
+
+  基本的常见命令：
+
+    * ```SET```，指定```Key```的值：
+      
+      ```bash
+      SET KEY_NAME VALUE
+      # SET name redis
+      ```
+
+    * ```GET```，获取```Key```字符串类型的值：
+
+      ```bash
+      GET KEY_NAME
+      # GET name
+      ```
+
+    * ```GETRANGE```，获取```Key```指定起始偏移量的子字符串的值：
+
+      ```bash
+      GETRANGE KEY_NAME START_OFFSET END_OFFSET
+      # GETRANGE name 0 2
+      ```
+
+    * ```GETSET```，获取```Key```的字符串旧值并设置新值：
+
+      ```bash
+      GETSET KEY_NAME VALUE
+      # GETSET name redis1
+      ```
+
+    * ```GETBIT```，获取```Key```的字符串值的二进制值的指定偏移量上的位（```bit```）：
+
+      ```bash
+      GETBIT KEY_NAME OFFSET
+      # GETBIT name 2
+      ```
+
+    * ```MGET```，获取多个指定```Key```的多个字符串值：
+
+      ```bash
+      MGET KEY_NAME_1 KEY_NAME_2 .. KEY_NAME_N
+      # MGET name name2
+      ```
+
+    * ```SETBIT```，指定或移除```Key```的字符串值的二进制值的指定偏移量上的位（```bit```）：
+
+      ```bash
+      SETBIT KEY_NAME OFFSET
+      # SETBIT name 2 1
+      ```
+
+    * ```SETEX```，指定```Key```的值并设置过期时间，单位为秒：
+
+      ```bash
+      SETEX KEY_NAME TIMEOUT VALUE
+      # SETEX name 60 redis
+      ```
+
+    * ```SETNX```，当```Key```不存在时指定```Key```的值：
+
+      ```bash
+      SETNX KEY_NAME VALUE
+      ```
+
+    * ```SETRANGE```，从指定偏移量开始，使用参数值将```Key```的值覆盖：
+
+      ```bash
+      SETRANGE KEY_NAME OFFSET VALUE
+      # SETRANGE name 0 R
+      ```
+
+    * ```STRLEN```，获取```Key```存储的字符串值长度：
+
+      ```bash
+      STRLEN KEY_NAME
+      # STRLEN name
+      ```
+
+    * ```MSET```，指定多个```Key-Value```：
+
+      ```bash
+      MSET KEY_NAME_1 VALUE_1 KEY_NAME_2 VALUE_2
+      # MSET name redis name1 redis2
+      ```
+
+    * ```MSETNX```，当```Key```不存在时，指定多个```Key-Value```：
+
+      ```bash
+      MSETNX KEY_NAME_1 VALUE_1 KEY_NAME_2 VALUE_2
+      # MSETNX name redis name1 redis2
+      ```
+
+    * ```PSETEX```，指定```Key```的值并设置过期时间，单位为毫秒：
+
+      ```bash
+      PSETEX KEY_NAME TIMEOUT VALUE
+      # PSETEX name 60000 redis
+      ```
+
+    * ```INCR```，将```Key```中的数字值增一，若```Key```不存在，则先初始化数字值为0，再执行```INCR```操作；若值包含错误类型或不为数字值类型，将返回一个错误。数字值限制在64位有符号数字表示之内：
+
+      ```bash
+      INCR KEY_NAME
+      # INCR name
+      ```
+
+    * ```INCRBY```，将```Key```中的数字值增指定数值：
+
+      ```bash
+      INCRBY KEY_NAME INCR_AMOUNT
+      # INCR name 50
+      ```
+
+    * ```INCRBYFLOAT```，将```Key```中的数字值增指定浮点型数值：
+
+      ```bash
+      INCRBYFLOAT KEY_NAME INCR_AMOUNT
+      # INCRBYFLOAT name 50.02
+      ```
+
+    * ```DECR```，将```Key```中的数字值减一：
+
+      ```bash
+      DECR KEY_NAME
+      # DECR name
+      ```
+
+    * ```DECRBY```，将```Key```中的数字值减指定数值：
+
+      ```bash
+      DECRBY KEY_NAME DECREMENT_AMOUNT
+      # DECRBY name 10
+      ```
+
+    * ```APPEND```，若```Key```存在且为字符串，将值追加至尾部；若```Key```不存在则直接设值：
+
+      ```bash
+      APPEND KEY_NAME NEW_VALUE
+      # APPEND name hello
+      ```
+
 > Redis 高级功能
 
 > 参考文献
