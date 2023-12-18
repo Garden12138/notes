@@ -563,8 +563,8 @@
     * ```HSCAN```，迭代哈希表```Key```的键值对：
 
       ```bash
-      HSCAN KEY_NAME CURSOR MATCH PATTERN COUNT NUMBER
-      # HSCAN person_1 0 MATCH "re" COUNT 2
+      HSCAN KEY_NAME CURSOR [MATCH PATTERN] [COUNT NUMBER]
+      # HSCAN person_1 0 MATCH "re"
       ```
 
 > Redis 高级功能
