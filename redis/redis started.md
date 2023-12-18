@@ -314,7 +314,7 @@
       # TYPE name
       ```
 
-* ```String```，用于管理```redis```的字符串类型的值，基本语法如下：
+* ```String```，用于存储```redis```的字符串类型的值，基本语法如下：
 
   ```bash
   COMMAND KEY_NAME
@@ -459,6 +459,112 @@
       ```bash
       APPEND KEY_NAME NEW_VALUE
       # APPEND name hello
+      ```
+
+* ```Hash```，，用于存储```redis```的键值对类型的值（```String```类型的```field```和```value```的映射表），基本语法如下：
+
+  ```bash
+  COMMAND KEY_NAME
+  ```
+
+  基本的常见命令：
+
+    * ```HDEL```，删除哈希表```Key```一个或多个字段：
+
+      ```bash
+      HDEL KEY_NAME FIELD1.. FIELDN
+      # HDEL person_1 name age
+      ```
+
+    * ```HEXISTS```，查看哈希表```Key```中是否存在指定字段：
+
+      ```bash
+      HEXISTS KEY_NAME FIELD_NAME
+      # HEXISTS person_1 name
+      ```
+
+    * ```HGET```，获取哈希表```Key```中指定字段的值：
+
+      ```bash
+      HGET KEY_NAME FIELD_NAME 
+      # HGET person_1 name
+      ```
+
+    * ```HGETALL```，获取哈希表```Key```中所有字段的值：
+
+      ```bash
+      HGETALL KEY_NAME
+      # HGETALL person_1
+      ```
+
+    * ```HINCRBY```，为哈希表```Key```指定字段的整形值加上整形增量：
+
+      ```bash
+      HINCRBY KEY_NAME FIELD_NAME INCR_BY_NUMBER
+      # HINCRBY person_1 age 1
+      ```
+
+    * ```HINCRBYFLOAT```，为哈希表```Key```指定字段的浮点型值加上浮点型增量：
+
+      ```bash
+      HINCRBYFLOAT KEY_NAME FIELD_NAME INCR_BY_NUMBER
+      # HINCRBYFLOAT person_1 weight 3.2
+      ```
+
+    * ```HKEYS```，获取哈希表```Key```中所有字段：
+
+      ```bash
+      HKEYS KEY_NAME
+      # HKEYS person_1
+      ```
+
+    * ```HLEN```，获取哈希表```Key```中所有字段的数量：
+
+      ```bash
+      HLEN KEY_NAME
+      # HLEN person_1
+      ```
+
+    * ```HMGET```，获取哈希表```Key```中多个指定字段的多个值：
+
+      ```bash
+      HMGET KEY_NAME FIELD1...FIELDN
+      # HMGET person_1 name age
+      ```
+
+    * ```HMSET```，在哈希表```key```同时设置多个键值对（```field-value```）：
+      
+      ```bash
+      HMSET KEY_NAME FIELD1 VALUE1 ...FIELDN VALUEN
+      # HMSET person_1 name redis age 18
+      ```
+
+    * ```HSET```，将哈希表```key```中的字段```field```的值设置为```value```：
+    
+      ```bash
+      HSET KEY_NAME FIELD VALUE
+      # HSET person_1 name redis
+      ```
+
+    * ```HSETNX```，哈希表```key```中，当字段```field```不存在时，将字段```field```的值设置为```value```：
+
+      ```bash
+      HSETNX KEY_NAME FIELD VALUE
+      # HSETNX person_1 name redis
+      ```
+
+    * ```HVALS```，获取哈希表```Key```中所有字段值：
+
+      ```bash
+      HVALS KEY_NAME
+      # HVALS person_1
+      ```
+
+    * ```HSCAN```，迭代哈希表```Key```的键值对：
+
+      ```bash
+      HSCAN KEY_NAME CURSOR MATCH PATTERN COUNT NUMBER
+      # HSCAN person_1 0 MATCH "re" COUNT 2
       ```
 
 > Redis 高级功能
