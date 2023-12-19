@@ -560,12 +560,14 @@
       # HVALS person_1
       ```
 
-    * ```HSCAN```，迭代哈希表```Key```的键值对：
+    * ```HSCAN```，迭代[渐进式迭代]哈希表```Key```的键值对：
 
       ```bash
       HSCAN KEY_NAME CURSOR [MATCH PATTERN] [COUNT NUMBER]
       # HSCAN person_1 0 MATCH "re"
       ```
+
+      参数```COUNT```生效的场景为：键数大于512或值的长度大于64（本质上将```ziplist```类型降级为```dict```类型），具体可参考[这里](https://blog.csdn.net/zjcsuct/article/details/108138876)或[官方说明](https://redis.io/commands/hscan/)。
 
 > Redis 高级功能
 
