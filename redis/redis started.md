@@ -569,6 +569,135 @@
 
       参数```COUNT```生效的场景为：键数大于512或值的长度大于64（本质上将```ziplist```类型降级为```dict```类型），具体可参考[这里](https://blog.csdn.net/zjcsuct/article/details/108138876)或[官方说明](https://redis.io/commands/hscan/)。
 
+* ```List```，用于存储简单的字符串列表，按照插入顺序排序，元素可从头部（左边）或尾部（右边）添加，基本语法如下：
+
+  ```bash
+  COMMAND KEY_NAME
+  ```
+
+  基本的常见命令：
+
+    * ```BLPOP```，弹出多个```Key```的列表第一个元素，若列表中不存在元素则会阻塞队列等待超时（单位为秒）或发现可弹出元素为止：
+
+      ```bash
+      BLPOP KEY_NAME1 ... KEY_NAMEN TIMEOUT
+      # BLPOP name 10
+      ```
+
+    * ```BRPOP```，弹出多个```Key```的列表最后一个元素，若列表中不存在元素则会阻塞队列等待超时（单位为秒）或发现可弹出元素为止：
+
+      ```bash
+      BRPOP KEY_NAME1 ... KEY_NAMEN TIMEOUT
+      # BRPOP name 10
+      ```
+
+    * ```BRPOPLPUSH```，弹出一个列表的尾部元素添加至另一个列表的头部，若列表中不存在元素则会阻塞队列等待超时（单位为秒）或发现可弹出元素为止：
+    
+      ```bash
+      BRPOPLPUSH KEY_NAME KEY_NAME1 TIMEOUT 
+      # BRPOPLPUSH name name1 10
+      ```
+
+    * ```LINDEX```，通过索引获取列表中的元素。可使用负数表示，如-1表示倒数第一个元素，-2表示倒数第二个元素，以此类推：
+
+      ```bash
+      LINDEX KEY_NAME INDEX_POSITION
+      # LINDEX name 0
+      ```
+
+    * ```LINSERT```，在指定元素前或后插入新元素。若```Key```不存在则视为空列表，不做操作；若```Key```存在且指定元素不存在，不做操作；若·```Key```存在且类型不为列表返回错误：
+
+      ```bash
+      LINSERT KEY_NAME BEFORE[AFTER] EXISTING_VALUE NEW_VALUE
+      # LINSERT name BEFORE redis redis 
+      ```
+
+    * ```LLEN```，返回列表的长度。若```Key```不存在则解释为空返回0；若```Key```存在且类型不为列表则返回错误：
+
+      ```bash
+      LLEN KEY_NAME
+      # LLEN name
+      ```
+
+    * ```LPOP```，弹出列表第一个元素：
+
+      ```bash
+      LPOP KEY_NAME
+      # LPOP name
+      ```
+
+    * ```LPUSH```，将一个或多个值插入列表头部。若```Key```不存在则先创建再进行插入；若```Key```存在且类型不为列表则返回错误：
+
+      ```bash
+      LPUSH KEY_NAME VALUE1.. VALUEN
+      # LPUSH name redis1 redis2
+      ```
+
+    * ```LPUSHX```，当前仅当```Key```存在时，将一个或多个值插入列表头部：
+
+      ```bash
+      LPUSHX KEY_NAME VALUE1.. VALUEN
+      # LPUSHX name redis3
+      ```
+
+    * ```LRANGE```，获取列表指定区间的元素：
+
+      ```bash
+      LRANGE KEY_NAME START END
+      # LRANGE name 0 -1
+      ```
+
+    * ```LREM```，移除列表中的与指定值相等的指定数量的元素：
+
+      ```bash
+      LREM KEY_NAME COUNT VALUE
+      # LREM name 0 redis
+      ```
+
+      参数```COUNT```可以为负数（< 0），代表从列表尾部开始向头部搜索，移除与```VALUE```相等的元素，数量为```COUNT```的绝对值；可以为正数（> 0），代表从列表头部开始向尾部搜索，移除与```VALUE```相等的元素，数量为```COUNT```；也可以为零（= 0），移除所有与```VALUE```相等的元素。
+
+    * ```LSET```，通过指定索引设置值：
+
+      ```bash
+      LSET KEY_NAME INDEX VALUE
+      # LSET name 0 redis
+      ```
+
+    * ```LTRIM```，对列表中指定区间进行裁剪，保留区间内元素，移除区间外元素：
+
+      ```bash
+      LTRIM KEY_NAME START STOP
+      # LTRIM name 1 -1
+      ```
+
+    * ```RPOP```，弹出列表最后一个元素：
+
+      ```bash
+      RPOP KEY_NAME
+      # RPOP name
+      ```
+
+    * ```RPOPLPUSH```，弹出一个列表的尾部元素添加至另一个列表的头部：
+    
+      ```bash
+      RPOPLPUSH KEY_NAME KEY_NAME1
+      # RPOPLPUSH name name1
+      ```
+
+    * ```RPUSH```，将一个或多个值插入列表尾部。若```Key```不存在则先创建再进行插入；若```Key```存在且类型不为列表则返回错误：
+
+      ```bash
+      RPUSH KEY_NAME VALUE1.. VALUEN
+      # RPUSH name redis1 redis2
+      ```
+
+    * ```RPUSHX```，当前仅当```Key```存在时，将一个或多个值插入列表尾部：
+
+      ```bash
+      RPUSHX KEY_NAME VALUE1.. VALUEN
+      # RPUSHX name redis3
+      ```
+
 > Redis 高级功能
 
 > 参考文献
