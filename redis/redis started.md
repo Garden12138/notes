@@ -698,6 +698,122 @@
       # RPUSHX name redis3
       ```
 
+* ```Set```，用于存储字符串类型的无序集合，基础语法如下：
+
+  ```bash
+  COMMAND KEY_NAME
+  ```
+
+  基本的常见命令：
+
+    * ```SADD```，向集合添加一个或多个成员。若```Key```不存在则先创建```Key```后添加成员；若```Key```存在且类型不为无序集合则返回错误：
+
+      ```bash
+      SADD KEY_NAME VALUE1..VALUEN
+      # SADD name redis redis1
+      ```
+
+    * ```SCARD```，获取集合的成员数量：
+      
+      ```bash
+      SCARD KEY_NAME 
+      # SCARD name
+      ```
+
+    * ```SDIFF```，获取指定集合间的差集：
+
+      ```bash
+      SDIFF KEY_NAME KEY_NAME1..KEY_NAMEN
+      # SDIFF name1 name2
+      ```
+
+    * ```SDIFFSTORE```，将指定集合间的差集的结果存储在目标集合：
+
+      ```bash
+      SDIFFSTORE DESTINATION_KEY_NAME KEY_NAME1..KEY_NAMEN
+      # SDIFFSTORE name name1 name2
+      ```
+
+    * ```SINTER```，获取指定集合间的交集：
+
+      ```bash
+      SINTER KEY_NAME KEY_NAME1..KEY_NAMEN
+      # SINTER name1 name2
+      ```
+
+    * ```SINTERSTORE```，将指定集合间的交集的结果存储在目标集合：
+
+      ```bash
+      SINTERSTORE DESTINATION_KEY_NAME KEY_NAME1..KEY_NAMEN
+      # SINTERSTORE name name1 name2
+      ```
+
+    * ```SISMEMBER```，判断指定成员是否属于集合成员：
+
+      ```bash
+      SISMEMBER KEY_NAME VALUE
+      # SISMEMBER name redis
+      ```
+
+    * ```SMEMBERS```，获取集合的所有成员：
+
+      ```bash
+      SMEMBERS KEY_NAME
+      # SMEMBERS name
+      ```
+
+    * ```SMOVE```，将指定成员从一个集合移动至另一个集合：
+
+      ```bash
+      SMOVE KEY_NAME1 KEY_NAME2 MEMBER
+      # SMOVE name1 name2 redis1
+      ```
+
+    * ```SPOP```，弹出一个随机成员：
+
+      ```bash
+      SPOP KEY
+      # SPOP name
+      ```
+
+    * ```SRANDMEMBER```，获取一个或多个随机成员：
+    
+      ```bash
+      SRANDMEMBER KEY_NAME [COUNT]
+      # SRANDMEMBER name 2
+      ```
+
+      ```COUNT```参数可以为正数，若小于集合基数则返回```COUNT```个成员，若大于等于集合基数则返回所有成员，返回的成员都各不相同；也可以为负数，返回```COUNT```绝对值的成员，返回的成员可能重复。
+
+    * ```SREM```，移除集合一个或多个成员：
+
+      ```bash
+      SREM KEY_NAME MEMBER1..MEMBERN
+      # SREM name redis redis1
+      ```
+
+    * ```SUNION```，获取指定集合间的并集：
+
+      ```bash
+      SUNION KEY_NAME KEY_NAME1..KEY_NAMEN
+      # SUNION name1 name2
+      ```
+
+    * ```SUNIONSTORE```，将指定集合间的并集的结果存储在目标集合：
+
+      ```bash
+      SUNIONSTORE DESTINATION_KEY_NAME KEY_NAME1..KEY_NAMEN
+      # SUNIONSTORE name name1 name2
+      ```
+
+    * ```SSCAN```，迭代集合的成员：
+
+      ```bash
+      SSCAN KEY_NAME CURSOR [MATCH PATTERN] [COUNT NUMBER]
+      ```
+
+      参数用法与```HSCAN```相似。
+
 > Redis 高级功能
 
 > 参考文献
