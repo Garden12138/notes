@@ -814,6 +814,89 @@
 
       参数用法与```HSCAN```相似。
 
+* ```Zset```，用于存储字符串类型的有序集合，每个成员都关联一个```double```类型的分数（数值可以是整数值或双精度浮点数），集合根据这个分数排序，基础语法如下：
+
+  ```bash
+  COMMAND KEY_NAME
+  ```
+
+  基本的常见命令：
+
+    * ```ZADD```，将一个或多个元素添加值有序集合，若元素已存在则更新其分数值：
+
+      ```bash
+      ZADD KEY_NAME SCORE1 VALUE1.. SCOREN VALUEN
+      # ZADD name 1 redis1 2 redis2
+      ```
+
+    * ```ZCARD```，获取有序集合的成员数：
+
+      ```bash
+      ZCARD KEY_NAME
+      # ZCARD name
+      ```
+
+    * ```ZCOUNT```，获取指定分数区间的有序集合的成员数：
+
+      ```bash
+      ZCOUNT KEY_NAME SCORE_START SCORE_END
+      # ZCOUNT name 0 1
+      ```
+
+    * ```ZINCRBY```
+
+    * ```ZINTERSTORE```
+
+    * ```ZLEXCOUNT```
+
+    * ```ZRANGE```，获取有序集合(按分数递增排序)中指定索引区间的成员：
+
+      ```bash
+      ZRANGE KEY_NAME INDEX_START INDEX_END [WITHSCORES]
+      # ZRANGE name 0 -1
+      ```
+
+    * ```ZRANGEBYLEX```
+
+    * ```ZRANGEBYSCORE```
+
+    * ```ZRANK```，返回有序集合（按分数递增排序）中指定成员的索引：
+
+      ```bash
+      ZRANK KEY_NAME MEMBER
+      # ZRANK name redis1
+      ```
+
+    * ```ZREM```
+
+    * ```ZREMRANGEBYLEX```
+
+    * ```ZREMRANGEBYRANK```
+
+    * ```ZREMRANGEBYSCORE```
+
+    * ```ZREVRANGE```，获取有序集合(按分数递减排序)中指定索引区间的成员：
+
+      ```bash
+      ZREVRANGE KEY_NAME INDEX_START INDEX_END [WITHSCORES]
+      # ZREVRANGE name 0 -1
+      ```
+
+    * ```ZREVRANGEBYSCORE```
+
+    * ```ZREVRANK```，返回有序集合（按分数递减排序）中指定成员的索引：
+
+      ```bash
+      ZREVRANK KEY_NAME MEMBER
+      # ZREVRANK name redis2
+      ```
+
+    * ```ZSCORE```
+
+    * ```ZUNIONSTORE```
+
+    * ```ZSCAN```
+
 > Redis 高级功能
 
 > 参考文献

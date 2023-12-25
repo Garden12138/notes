@@ -1,0 +1,17 @@
+{
+	"ulid": "01HJFX894XYNXPN1020CD95XV7",
+	"minTime": 1703477729153,
+	"maxTime": 1703484000000,
+	"stats": {
+		"numSamples": 84518,
+		"numSeries": 512,
+		"numChunks": 1055
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01HJFX894XYNXPN1020CD95XV7"
+		]
+	},
+	"version": 1
+}
