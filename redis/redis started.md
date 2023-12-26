@@ -843,11 +843,27 @@
       # ZCOUNT name 0 1
       ```
 
-    * ```ZINCRBY```
+    * ```ZINCRBY```，有序集合中对指定成员的分数加上增量：
 
-    * ```ZINTERSTORE```
+      ```bash
+      INCRBY KEY_NAME INCR MEMBER
+      # INCRBY name 1 redis
+      ```
 
-    * ```ZLEXCOUNT```
+    * ```ZINTERSTORE```，将多个有序集合的交集结果存储在新的有序集合中：
+
+      ```bash
+      ZINTERSTORE DEST_KEY_NAME KEYSNUMBER KEY_NAME1 ..KEY_NAMEN [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]
+      # ZINTERSTORE name3 2 name1 name2
+      ```
+
+    * ```ZLEXCOUNT```，获取指定字典区间1的有序集合的成员数：
+
+      ```bash
+      ZLEXCOUNT KEY_NAME MIN MAX
+      # ZADD name 0 a 0 b 0 c 0 d 0 e
+      # ZLEXCOUNT name [b [f
+      ```
 
     * ```ZRANGE```，获取有序集合(按分数递增排序)中指定索引区间的成员：
 
@@ -856,9 +872,21 @@
       # ZRANGE name 0 -1
       ```
 
-    * ```ZRANGEBYLEX```
+    * ```ZRANGEBYLEX```，获取有序集合(按分数递增排序)中指定字典区间的成员：
 
-    * ```ZRANGEBYSCORE```
+      ```bash
+      ZRANGEBYLEX KEY_NAME MIN MAX [LIMIT off count]
+      # ZADD name 0 a 0 b 0 c 0 d 0 e
+      # ZRANGEBYLEX name [b [f
+      ```
+
+    * ```ZRANGEBYSCORE```，获取有序集合(按分数递增排序)中指定分数区间的成员：
+
+      ```bash
+      ZRANGEBYSCORE KEY_NAME MIN MAX [WITHSCORES] [LIMIT offset count]
+      # ZADD name 1 a 2 b 3 c 4 d 5 e
+      # ZRANGEBYSCORE name -inf +inf
+      ```
 
     * ```ZRANK```，返回有序集合（按分数递增排序）中指定成员的索引：
 
@@ -867,13 +895,34 @@
       # ZRANK name redis1
       ```
 
-    * ```ZREM```
+    * ```ZREM```，移除有序集合中的一个或多个成员：
 
-    * ```ZREMRANGEBYLEX```
+      ```bash
+      ZREM KEY_NAME MEMBER1 ..MEMBERN
+      # ZREM name redis1 redis2
+      ```
 
-    * ```ZREMRANGEBYRANK```
+    * ```ZREMRANGEBYLEX```，移除有序集合中指定字典区间的所有成员：
 
-    * ```ZREMRANGEBYSCORE```
+      ```bash
+      ZREMRANGEBYLEX KEY_NAME MIN MAX
+      # ZADD name 0 aaaa 0 b 0 c 0 d 0 e 0 foo 0 zap 0 zip 0 ALPHA 0 alpha
+      # ZREMRANGEBYLEX name [alpha [omega
+      ```
+
+    * ```ZREMRANGEBYRANK```，移除有序集合中指定索引区间的所有成员：
+
+      ```bash
+      ZREMRANGEBYRANK KEY_NAME START END
+      # ZREMRANGEBYRANK name 0 -1
+      ```
+
+    * ```ZREMRANGEBYSCORE```，移除有序集合中指定分数区间的所有成员：
+
+      ```bash
+      ZREMRANGEBYSCORE KEY_NAME MIN MAX
+      # ZREMRANGEBYSCORE name 0 1000
+      ```
 
     * ```ZREVRANGE```，获取有序集合(按分数递减排序)中指定索引区间的成员：
 
@@ -882,7 +931,13 @@
       # ZREVRANGE name 0 -1
       ```
 
-    * ```ZREVRANGEBYSCORE```
+    * ```ZREVRANGEBYSCORE```，获取有序集合(按分数递减排序)中指定分数区间的成员：
+
+      ```bash
+      ZREVRANGEBYSCORE KEY_NAME MAX MIN [WITHSCORES] [LIMIT OFFSET COUNT]
+      # ZADD name 1 a 2 b 3 c 4 d 5 e
+      # ZREVRANGEBYSCORE name +inf -inf
+      ```
 
     * ```ZREVRANK```，返回有序集合（按分数递减排序）中指定成员的索引：
 
@@ -891,11 +946,26 @@
       # ZREVRANK name redis2
       ```
 
-    * ```ZSCORE```
+    * ```ZSCORE```，获取有序集合中指定成员的分数值：
 
-    * ```ZUNIONSTORE```
+      ```bash
+      ZSCORE KEY_NAME MEMBER
+      ```
 
-    * ```ZSCAN```
+    * ```ZUNIONSTORE```，将多个有序集合的并集结果存储在新的有序集合中：
+
+      ```bash
+      ZUNIONSTORE DEST_KEY_NAME KEYSNUMBER KEY_NAME1 ..KEY_NAMEN [WEIGHTS weight [weight ...]] [AGGREGATE SUM|MIN|MAX]
+      # ZUNIONSTORE name3 2 name1 name2
+      ```
+
+    * ```ZSCAN```，迭代有序集合中的成员及其分数：
+
+      ```bash
+      ZSCAN KEY_NAME cursor [MATCH pattern] [COUNT count]
+      ```
+
+      参数用法与```HSCAN```相似。
 
 > Redis 高级功能
 
