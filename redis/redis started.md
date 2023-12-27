@@ -967,6 +967,37 @@
 
       参数用法与```HSCAN```相似。
 
+* ```HyperLogLog```，用于基数统计。在输入元素的数量或体积非常庞大时，计算基数所需的空间总是固定且很小的：
+
+  ```bash
+  COMMAND KEY_NAME
+  ```
+
+  基本的常见命令：
+
+    * ```PFADD```，添加指定元素：
+
+      ```bash
+      PFADD KEY_NAME ELEMENT1 ...ELEMENTN
+      # PFADD name1 redis redis1 redis2 redis
+      ```
+
+    * ```PFCOUNT```，获取指定```HyperLogLog```的基数估算值：
+
+      ```bash
+      PFCOUNT KEY_NAME1 ...KEY_NAMEN
+      # PFCOUNT name1 name2
+      ```
+
+    * ```PFMERGE```，将多个```HyperLogLog```合并成新的```HyperLogLog```：
+
+      ```bash
+      PFMERGE DEST_KEY_NAME SOURCE_KEY_NAME1 ...SOURCE_KEY_NAMEN
+      # PFMERGE name3 name2 name3
+      ```
+
+      合并后的```HyperLogLog```的基数估算值是通过对所有给定```HyperLogLog```进行并集计算得出的。
+
 > Redis 高级功能
 
 > 参考文献
