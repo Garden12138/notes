@@ -993,7 +993,7 @@
 
       ```bash
       PFMERGE DEST_KEY_NAME SOURCE_KEY_NAME1 ...SOURCE_KEY_NAMEN
-      # PFMERGE name3 name2 name3
+      # PFMERGE name3 name2 name1
       ```
 
       合并后的```HyperLogLog```的基数估算值是通过对所有给定```HyperLogLog```进行并集计算得出的。
