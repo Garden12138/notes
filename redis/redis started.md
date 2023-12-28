@@ -998,6 +998,66 @@
 
       合并后的```HyperLogLog```的基数估算值是通过对所有给定```HyperLogLog```进行并集计算得出的。
 
+* ```PUB/SUB```，发布订阅是一种消息通信模式，发送者（```PUB```）发送消息，订阅者（```SUB```）接收消息。客户端可订阅任意数量的频道（```CHANNEL```）：
+  
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/Snipaste_2023-12-28_17-27-12.png)
+
+  当新消息通过```PUBLISH```命令向频道发送，订阅的客户端则会收到消息：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/Snipaste_2023-12-28_17-41-36.png)
+
+  基础语法如下：
+
+  ```bash
+  COMMAND CHANNEL_NAME
+  ```
+
+  基本的常见命令：
+
+    * ```PSUBSCRIBE```，订阅指定模式的一个或多个频道：
+         
+      ```bash
+      PSUBSCRIBE CHANNEL_PATTERN1 ...CHANNEL_PATTERNN
+      # PSUBSCRIBE ch*
+      ```
+
+      每个模式以*作为匹配符，比如 ```it*```匹配所有以```it```开头的频道(```it.news、it.blog、it.tweets```等等)
+
+    * ```PUBSUB```，查看发布与订阅的系统状态：
+
+      ```bash
+      PUBSUB <SUBCMD> [ARG [ARG ...]]
+      # PUBSUB CHANNELS
+      ```
+
+    * ```PUBLISH```，将消息发送至指定的频道：
+
+      ```bash
+      PUBLISH CHANNEL MESSAGE
+      # PUBLISH ch1 "hello,ch1!"
+      ```
+
+    * ```PUNSUBSCRIBE```，退订指定模式的一个或多个频道：
+
+      ```bash
+      PUNSUBSCRIBE CHANNEL_PATTERN1 ...CHANNEL_PATTERNN
+      # PUNSUBSCRIBE ch*
+      ```
+
+    * ```SUBSCRIBE```，订阅指定的一个或多个频道：
+
+      ```bash
+      SUBSCRIBE CHANNEL1 ...CHANNELN
+      # SUBSCRIBE ch1 ch2
+      ```
+
+    * ```UNSUBSCRIBE```，退订指定的一个或多个频道：
+
+      ```bash
+      UNSUBSCRIBE CHANNEL1 ...CHANNELN
+      # UNSUBSCRIBE ch1 ch2
+      ```
+
 > Redis 高级功能
 
 > 参考文献
