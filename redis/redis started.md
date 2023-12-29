@@ -1107,6 +1107,57 @@
       # WATCH lock lock_times
       ```
 
+* ```SCRIPT```，```Redis```可使用```LUA```解释器（2.6版本支持内嵌的```LUA```环境）来执行脚本，  基础语法如下：
+
+  ```bash
+  COMMAND
+  ```
+
+  基本的常见命令：
+
+    * ```EVAL```，执行```LUA```脚本：
+
+      ```bash
+      EVAL SCRIPT KEY_NUMBER KEY_NAME1 ...KEY_NAMEN ARG1 ...ARGN
+      # EVAL "return {KEYS[1],KEYS[2],ARGV[1],ARGV[2]}" 2 key1 key2 first second
+      ```
+
+      ```KEY_NAME1 ...KEY_NAMEN```表示脚本中所会使用的```Redis Key```，```LUA```中通过全局变量数组```KEYS```以基址的形式访问如```KEYS[1]、KEYS[2]...```
+
+      ```ARG1 ...ARGN```表示脚本中会使用的附加参数，```LUA```中通过全局变量数组```ARGV```以基址的形式访问如```ARGV[1]、ARGV[2]...```
+
+    * ```EVALSHA```，执行缓存在脚本缓存中指定```SHA1```校验码的```LUA```脚本：
+
+      ```bash
+      EVALSHA SHA1 KEY_NUMBER KEY_NAME1 ...KEY_NAMEN ARG1 ...ARGN
+      # EVALSHA 232fd51614574cf0867b83d384a5e898cfd24e5a 2 key1 key2 first second
+      ```
+      
+      参数```KEY_NAME1 ...KEY_NAMEN```与```ARG1 ...ARGN```同```EVAL```。
+
+    * ```SCRIPT EXISTS```，根据```SHA1```校验码查看```LUA```脚本是否缓存：
+
+      ```bash
+      SCRIPT EXISTS SHA1 ...SHAN
+      # SCRIPT EXISTS 232fd51614574cf0867b83d384a5e898cfd24e5a
+      ```
+
+    * ```SCRIPT FLUSH```，移除缓存中所有```LUA```脚本：
+
+      ```bash
+      SCRIPT FLUSH
+      # SCRIPT FLUSH
+      ```
+
+    * ```SCRIPT KILL```，杀死当前正在运行的```LUA```脚本（当且仅当这个脚本未进行任何写操作时生效），脚本被杀死后执行这个脚本的客户端会从```EVAL```或```EVALSHA```命令的阻塞中退出并返回一个错误。
+
+    * ```SCRIPT LOAD```，将```LUA```脚本缓存在脚本缓存中并返回```SHA1```校验码，缓存成功后并不立即执行：
+
+      ```bash
+      SCRIPT LOAD LUA_SCRIPT
+      # SCRIPT LOAD script
+      ```
+
 > Redis 高级功能
 
 > 参考文献
