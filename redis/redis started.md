@@ -1201,6 +1201,243 @@
       # SELECT 1
       ```
 
+* ```Server```，用于管理```redis```服务：
+
+  ```bash
+  COMMAND
+  ```
+
+  基本的常见命令：
+
+    * ```BGWRITEAOF```，用于后台异步执行```AOF```文件重写操作：
+      
+      ```bash
+      BGWRITEAOF
+      # BGWRITEAOF
+      ```
+
+    * ```BGSAVE```，用于后台异步执行保存当前数据库数据至磁盘的操作：
+
+      ```bash
+      BGSAVE
+      # BGSAVE
+      ```
+
+    * ```CLIENT KILL```，关闭指定的客户端连接：
+
+      ```bash
+      CLIENT KILL IP:PORT
+      # CLIENT KILL 127.0.0.1:43501
+      ```
+
+    * ```CLIENT LIST```，获取连接到```redis```服务器的客户端列表，包含客户端信息和统计数据：
+
+      ```bash
+      CLIENT LIST
+      # CLIENT LIST
+      ```
+
+      其中列表字段的含义可参考[这里](https://redis.net.cn/order/3657.html)
+
+    * ```CLIENT GETNAME```，获取当前连接的名称（基于```CLIENT SETNAME```命令生成的名称）：
+
+      ```bash
+      CLIENT GETNAME
+      ```
+
+    * ```CLIENT PAUSE```，阻塞客户端连接一段时间，单位为毫秒：
+
+      ```bash
+      CLIENT PAUSE TIMEOUT
+      ```
+
+    * ```CLIENT SETNAME```，用于设置当前连接的名称：
+
+      ```bash
+      CLIENT SETNAME CONN_NAME
+      # CLIENT SETNAME redis-client-1
+      ```
+
+    * ```CLUSTER SLOTS```，获取当前的集群状态，以数组形式表示：
+
+      ```bash
+      CLUSTER SLOTS
+      # CLUSTER SLOTS
+      ```
+
+    * ```COMMAND```，获取所有```redis```命令的详细信息，以数组形式表示：
+      
+      ```bash
+      COMMAND
+      # COMMAND
+      ```
+
+    * ```COMMAND COUNT```，获取```redis```命令总数：
+
+      ```bash
+      COMMAND COUNT
+      # COMMAND COUNT
+      ```
+
+    * ```COMMAND GETKEYS```，获取指定命令的所有```Key```：
+      
+      ```bash
+      COMMAND GETKEYS CMD
+      # COMMAND GETKEYS MSET a b c d e f
+      ```
+
+    * ```COMMAND INFO```，获取多个```redis```命令的详细信息：
+
+      ```bash
+      COMMAND INFO CMD1 ...CMDN
+      # COMMAND INFO get set eval
+      ```
+
+    * ```CONFIG GET```，获取指定配置参数的值：
+
+      ```bash
+      CONFIG GET PARAM
+      # CONFIG GET *max-*-entries*
+      ```
+
+    * ```CONFIG REWRITE```，将服务器当前使用的配置覆盖至```redis.conf```（该配置文件会在```redis```服务启动时读取）中：
+
+      ```bash
+      # CONFIG REWRITE
+      CONFIG REWRITE
+      ```
+
+    * ```CONFIG SET```，修改```redis```当前配置参数（无需重启）：
+
+      ```bash
+      CONFIG SET PARAM VALUE
+      # CONFIG SET slowlog-max-len 10086
+      ```
+
+    * ```CONFIG RESETSTAT```，重置```INFO```命令中的统计数据：
+
+      ```bash
+      CONFIG RESETSTAT
+      # CONFIG RESETSTAT
+      ```
+
+    * ```DBSIZE```，获取当前数据库所有```Key```的数量：
+      
+      ```bash
+      DBSIZE
+      # DBSIZE
+      ```
+
+    * ```DEBUG OBJECT```，获取指定```Key```的调试信息：
+
+      ```bash
+      DEBUG OBJECT KEY_NAME
+      # DEBUG OBJECT name
+      ```
+
+    * ```DEBUG SEGFAULT```，执行一个非法的内存访问让```redis```崩溃（仅用于开发时调试）：
+
+      ```bash
+      DEBUG SEGFAULT
+      # DEBUG SEGFAULT
+      ```
+
+    * ```FLUSHALL```，删除所有数据库的所有```Key```：
+
+      ```bash
+      FLUSHALL
+      # FLUSHALL
+      ```
+
+    * ```FLUSHDB```，删除当前数据库的所有```Key```：
+
+      ```bash
+      FLUSHDB
+      # FLUSHDB
+      ```
+
+    * ```INFO```，获取```redis```服务的各种信息和统计数据：
+
+      ```bash
+      # INFO
+      INFO
+      ```
+
+    * ```LASTSAVE```，返回```redis```最近一次成功保存数据至磁盘的时间，以```UNIX```时间戳格式表示（单位为秒）：
+
+      ```bash
+      LASTSAVE
+      # LASTSAVE
+      ```
+
+    * ```MONITOR```，实时打印```redis```所接受的命令（开发调试时使用）：
+
+      ```bash
+      MONITOR
+      # MONITOR
+      ```
+
+    * ```ROLE```，获取主从实例所属的角色，包含：```master```、```slave```以及```sentinel```：
+
+      ```bash
+      ROLE
+      # ROLE
+      ```
+
+    * ```SAVE```，将当前实例的所有快照数据保存至磁盘：
+
+      ```bash
+      SAVE
+      # SAVE
+      ```
+
+    * ```SHUTDOWN```，关闭```redis```服务：
+
+      ```bash
+      SHUTDOWN [NOSAVE] [SAVE]
+      # SHUTDOWN
+      ```
+
+      实际的执行顺序：停止所有客户端 -> 若至少一个保存点在等待则执行```SAVE```（可通过参数```[NOSAVE]与[SAVE]```设置）-> 若```AOF```选项打开则更新```AOF```文件 -> 关闭```redis```服务。
+
+    * ```SLAVEOF```，将当前服务实例设置为指定服务实例的从属服务：
+
+      ```bash
+      SLAVEOF HOST PORT
+      # SLAVEOF 127.0.0.1 6379
+      # SLAVEOF NO ONE
+      ```
+
+      若当前服务器已为某主服务(```master server```)的从属服务，在执行```SLAVEOF HOST PORT```后将使当前服务停止对旧主服务的同步，丢弃旧数据集，转而开始对新主服务进行同步。
+
+      若对从属服务执行命令```SLAVEOF NO ONE```将使得这个从属服务关闭复制功能，并使从属服务转变回主服务，但原来同步所得的数据集不会被丢弃。利用这个特性，可在主服务失败时将从服务转变回主服务，从而确保无间断运行。
+
+    * ```SLOWLOG```，管理```reids```的慢日志，
+
+      ```bash
+      SLOWLOG SUBCMD [ARG]
+      # 查看日志信息
+      # SLOWLOG GET 2
+      # 查看当前日志的数量
+      # SLOWLOG LEN
+      # 清空慢日志
+      # SLOWLOG RESET
+      ```
+
+    * ```SYNC```，同步主服务的数据：
+
+      ```bash
+      SYNC
+      # SYNC
+      ```
+
+    * ```TIME```，获取当前服务器时间：
+
+      ```bash
+      TIME
+      # TIME
+      ```
+
 > Redis 高级功能
 
 > 参考文献
