@@ -1158,6 +1158,49 @@
       # SCRIPT LOAD script
       ```
 
+* ```Connection```，用于连接```redis```服务：
+
+  ```bash
+  COMMAND
+  ```
+
+  基本的常见命令：
+
+    * ```AUTH```，检测指定密码是否与配置文件所配置的相同：
+
+      ```bash
+      AUTH PASSWORD
+      # AUTH mypassword
+      ```
+
+    * ```ECHO```，打印指定字符串：
+
+      ```bash
+      ECHO STR
+      # ECHO redis
+      ```
+
+    * ```PING```，检测服务是否正常运行，是则返回```PONG```，否则返回连接超时：
+
+      ```bash
+      PING
+      # PING
+      ```
+
+    * ```QUIT```，关闭当前客户端与```redis```服务的连接“
+
+      ```bash
+      QUIT
+      # QUIT
+      ```
+
+    * ```SELECT```，切换至指定索引的数据库，默认为0:
+
+      ```bash
+      SELECT INDEX
+      # SELECT 1
+      ```
+
 > Redis 高级功能
 
 > 参考文献
