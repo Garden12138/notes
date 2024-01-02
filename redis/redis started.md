@@ -1449,6 +1449,26 @@
 
   * 恢复数据，只需将```dump.rdb```备份文件移至安装目录下并启动服务即可。
 
+* 安全：
+
+  * 服务安全，在应用场景中需保证```redis```服务的安全访问，可通过设置配置文件的密码参数：
+
+    ```bash
+    # CONFIG SET requirepass newpassword
+    ```
+
+    可使用如下命令查看当前生效的密码参数的值：
+
+    ```bash
+    # CONFIG GET requirepass
+    ```
+
+    客户端在访问```redis```服务前需使用```AUTH```命令输入安全密码：
+    
+    ```bash
+    # AUTH newpassword
+    ```
+
 > 参考文献
 
 * [Redis 教程](https://redis.net.cn/tutorial/3501.html)
