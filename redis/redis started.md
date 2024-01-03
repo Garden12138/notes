@@ -1499,6 +1499,21 @@
     | 14 | -I（```i```的大些形式） | ```Ide```模式，仅打开```N```个```ide```连接并等待 |  |
 
 
+* 管道技术：
+
+  * 管道技术，可将客户端的多个命令请求一次性向服务端发送请求（```socket```监听），并最终一次性读取所有服务端的响应，解决了客户端向服务端发送一个请求，需阻塞等待服务响应的问题：
+
+    ```bash
+    # 首先查看redis服务是否可用， 再设置w3ckey的值为redis，然后我们获取w3ckey的值并令visitor自增3次
+    $(echo -en "PING\r\n SET w3ckey redis\r\n GET w3ckey\r\n INCR visitor\r\n INCR visitor\r\n INCR visitor\r\n"; sleep 10) | nc localhost 6379
+    # +PONG
+    # +OK
+    # redis
+    # :1
+    # :2
+    # :3
+    ```
+
 > 参考文献
 
 * [Redis 教程](https://redis.net.cn/tutorial/3501.html)
