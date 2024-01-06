@@ -1546,6 +1546,35 @@
 
       哈希分区的优势在于适用于任何形式的```key```。
 
+* ```Java使用Reids```：
+
+  * [下载驱动](https://repo1.maven.org/maven2/redis/clients/jedis/)，或者```maven```项目可使用：
+
+    ```bash
+    <dependency>
+        <groupId>redis.clients</groupId>
+        <artifactId>jedis</artifactId>
+        <version>${version}</version>
+    </dependency>
+    ```
+
+  * ```redis```连接：
+
+    ```bash
+    //连接本地的 Redis 服务，构造参数为 Redis 服务的可访问地址
+    Jedis jedis = new Jedis("localhost");
+    System.out.println("Connection to server sucessfully");
+    ```
+
+  * ```redis```使用，如```String```：
+
+    ```bash
+    //使用 Jedis 实例设置 Redis 字符串数据
+    jedis.set("name", "redis");
+    // 获取存储的字符串数据
+    System.out.println("Stored string in redis:: "+ jedis.get("name"));
+    ```
+
 > 参考文献
 
 * [Redis 教程](https://redis.net.cn/tutorial/3501.html)
