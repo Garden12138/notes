@@ -104,7 +104,7 @@
       redis-cli
       ```
 
-  * ```Docker```（快速安装）
+  * ```Docker```（单机安装）
     
     * [```dockerhub```选择合适版本](https://hub.docker.com/_/redis/tags)
 
@@ -114,13 +114,39 @@
       # version为选定的镜像版本
       docker pull redis:${version}
       ```
+
+    * 下载```redis.conf```文件
+
+      ```bash
+      wget http://download.redis.io/redis-stable/redis.conf
+      ```
+
+      修改默认的基本配置信息：
+
+      ```bash
+      bind 127.0.0.1 # 绑定本地连接，需注释
+      protected-mode no # 设置是否只允许在本机的回环连接，其他机器无法连接，默认yes，需设置no
+      requirepass redis@2024 # 设置密码，默认为空字符串，需设置自定义密码
+      appendonly yes # 设置是否允许持久化，默认为no，需设置yes
+      ```
     
     * 运行容器
 
       ```bash
       # version为选定的镜像版本
-      docker run --name redis -d -p 6379:6379 redis:${version}
+      docker run \
+             --name redis \
+             -d \
+             -v /data/redis/redis.conf:/etc/redis/redis.conf \
+             -v /data/redis/rdb:/data \
+             -v /data/redis/exp:/exp \
+             -p 6379:6379 \
+             redis:latest \
+             redis-server /etc/redis/redis.conf --appendonly yes
       ```
+
+      挂载文件```/data/redis/redis.conf```为```redis```服务配置文件；挂载目录```/data/redis/rdb```为```redis```服务的```rdb```保存目录；挂载目录```/data/redis/exp```为```redis```服务的扩展模块目录，如布隆过滤器插件```redisbloom.so```；
+      启动命令参数```/etc/redis/redis.conf```为指定```redis```服务启动时所读取的配置；启动命令参数```--appendonly yes```为指定允许```redis```服务持久化。
 
     * 进入容器并链接```Redis```服务
 
