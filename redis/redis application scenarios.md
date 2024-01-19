@@ -226,4 +226,11 @@
     }
     ```
 
-      
+> 参考文献
+
+* [5 分钟搞懂布隆过滤器，亿级数据过滤算法你值得拥有！](https://juejin.cn/post/6844904007790673933)
+* [记一篇REDIS布隆过滤器的使用](https://zhuanlan.zhihu.com/p/89883126)
+* [Redis布隆过滤器（原理+图解）](https://c.biancheng.net/redis/bloom-filter.html)
+* [Redis 布隆（Bloom Filter）过滤器原理与实战](https://www.51cto.com/article/704389.html)
+* [（Redis使用系列） Springboot 在redis中使用BloomFilter布隆过滤器机制 六](https://developer.aliyun.com/article/951745)
+* [SpringBoot 中使用布隆过滤器 Guava、Redission实现](https://juejin.cn/post/7136214205618716709)
