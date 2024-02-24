@@ -16,7 +16,7 @@ services:
       - /data/redis/redis.conf:/etc/redis/redis.conf
       - /data/redis/rdb-master:/data
       - /data/redis/exp:/exp
-    command: redis-server /etc/redis/redis.conf
+    command: redis-server /etc/redis/redis.conf --masterauth garden520
 
   redis-slave1:
     image: redis:latest
@@ -59,8 +59,6 @@ services:
     container_name: redis-sentinel1
     ports:
       - "26379:26379"
-    networks:
-      - redis-network
     volumes:
       - /data/redis/sentinel.conf:/etc/redis/sentinel.conf
       - /data/redis/sentinel1:/data
@@ -71,8 +69,6 @@ services:
     container_name: redis-sentinel2
     ports:
       - "26378:26379"
-    networks:
-      - redis-network
     volumes:
       - /data/redis/sentinel.conf:/etc/redis/sentinel.conf
       - /data/redis/sentinel2:/data
@@ -83,14 +79,13 @@ services:
     container_name: redis-sentinel3
     ports:
       - "26377:26379"
-    networks:
-      - redis-network
     volumes:
       - /data/redis/sentinel.conf:/etc/redis/sentinel.conf
       - /data/redis/sentinel3:/data
     command: redis-sentinel /etc/redis/sentinel.conf
 
 networks:
-  redis-network:
-    driver: bridge
+  default:
+    external: true
+    name: redis-master-slave_redis-network
 ```
