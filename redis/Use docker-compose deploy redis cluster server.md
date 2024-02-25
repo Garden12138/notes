@@ -89,3 +89,8 @@ networks:
     external: true
     name: redis-master-slave_redis-network
 ```
+
+> 存在问题
+
+* org:redisson:redisson:2.15.2 不支持sentinel auth command，故redis sentinel config 未配置requirepass。
+* docker compose 部署的 redis sentinel 只返回容器ip与端口，外网客户端无法访问。
