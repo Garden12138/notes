@@ -90,6 +90,76 @@ networks:
     name: redis-master-slave_redis-network
 ```
 
+> 集群模式
+
+```bash
+version: '3'
+services:
+  redis-6379:
+    image: redis:latest
+    container_name: redis-6379
+    network_mode: "host"
+    volumes:
+      - /data/redis/redis-cluster-6379.conf:/etc/redis/redis.conf
+      - /data/redis/redis-cluster-6379:/data
+      - /data/redis/exp:/exp
+    command: redis-server /etc/redis/redis.conf
+
+  redis-6378:
+    image: redis:latest
+    container_name: redis-6378
+    network_mode: "host"
+    volumes:
+      - /data/redis/redis-cluster-6378.conf:/etc/redis/redis.conf
+      - /data/redis/redis-cluster-6378:/data
+      - /data/redis/exp:/exp
+    command: redis-server /etc/redis/redis.conf
+
+  redis-6377:
+    image: redis:latest
+    container_name: redis-6377
+    network_mode: "host"
+    volumes:
+      - /data/redis/redis-cluster-6377.conf:/etc/redis/redis.conf
+      - /data/redis/redis-cluster-6377:/data
+      - /data/redis/exp:/exp
+    command: redis-server /etc/redis/redis.conf
+
+  redis-6376:
+    image: redis:latest
+    container_name: redis-6376
+    network_mode: "host"
+    volumes:
+      - /data/redis/redis-cluster-6376.conf:/etc/redis/redis.conf
+      - /data/redis/redis-cluster-6376:/data
+      - /data/redis/exp:/exp
+    command: redis-server /etc/redis/redis.conf
+
+  redis-6375:
+    image: redis:latest
+    container_name: redis-6375
+    network_mode: "host"
+    volumes:
+      - /data/redis/redis-cluster-6375.conf:/etc/redis/redis.conf
+      - /data/redis/redis-cluster-6375:/data
+      - /data/redis/exp:/exp
+    command: redis-server /etc/redis/redis.conf
+
+  redis-6374:
+    image: redis:latest
+    container_name: redis-6374
+    network_mode: "host"
+    volumes:
+      - /data/redis/redis-cluster-6374.conf:/etc/redis/redis.conf
+      - /data/redis/redis-cluster-6374:/data
+      - /data/redis/exp:/exp
+    command: redis-server /etc/redis/redis.conf
+```
+
+```bash
+redis-cli -a garden520 --cluster create 114.132.78.39:6379 114.132.78.39:6378 114.132.78.39:6377 114.132.78.39:6376 114.132.78.39:6375 114.132.78.39:6374 --cluster-replicas 1
+```
+
 > 存在问题
 
 * org:redisson:redisson:2.15.2 不支持sentinel auth command，故redis sentinel config 未配置requirepass。
