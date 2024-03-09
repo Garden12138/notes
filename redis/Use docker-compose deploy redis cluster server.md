@@ -136,78 +136,121 @@
   networks:
     default:
       external: true
-      name: redis-master-slave_redis-network
+      name: redis-master-slave_redis-network # 使用命令docker network ls命令可查看主从复制模式的容器所使用的网络名称
   ```
 
-> 集群模式
+> 集群主从复制模式
 
-```bash
-version: '3'
-services:
-  redis-6379:
-    image: redis:latest
-    container_name: redis-6379
-    network_mode: "host"
-    volumes:
-      - /data/redis/redis-cluster-6379.conf:/etc/redis/redis.conf
-      - /data/redis/redis-cluster-6379:/data
-      - /data/redis/exp:/exp
-    command: redis-server /etc/redis/redis.conf
+* 集群模式实现了```Redis```的分布式存储，通过引入哈希槽（```hash slot```），使每个节点存储的内容都不一样。为了保证高可用，在此基础上引入主从复制模型。```Redis```集群有16384个哈希槽，每个```key```通过```CRC16```校验后对16384进行取模来决定放置哪个槽，集群的每个节点负责一部分哈希槽，如当前集群有3个主服务节点，那么：
 
-  redis-6378:
-    image: redis:latest
-    container_name: redis-6378
-    network_mode: "host"
-    volumes:
-      - /data/redis/redis-cluster-6378.conf:/etc/redis/redis.conf
-      - /data/redis/redis-cluster-6378:/data
-      - /data/redis/exp:/exp
-    command: redis-server /etc/redis/redis.conf
+  * 节点A：0～5460号哈希槽
+  * 节点B：5461～10922号哈希槽
+  * 节点C：10923～16383号哈希槽
 
-  redis-6377:
-    image: redis:latest
-    container_name: redis-6377
-    network_mode: "host"
-    volumes:
-      - /data/redis/redis-cluster-6377.conf:/etc/redis/redis.conf
-      - /data/redis/redis-cluster-6377:/data
-      - /data/redis/exp:/exp
-    command: redis-server /etc/redis/redis.conf
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/Snipaste_2024-03-09_23-29-41.png)
 
-  redis-6376:
-    image: redis:latest
-    container_name: redis-6376
-    network_mode: "host"
-    volumes:
-      - /data/redis/redis-cluster-6376.conf:/etc/redis/redis.conf
-      - /data/redis/redis-cluster-6376:/data
-      - /data/redis/exp:/exp
-    command: redis-server /etc/redis/redis.conf
+* ```edis-cluster-x.conf```配置文件编写：
 
-  redis-6375:
-    image: redis:latest
-    container_name: redis-6375
-    network_mode: "host"
-    volumes:
-      - /data/redis/redis-cluster-6375.conf:/etc/redis/redis.conf
-      - /data/redis/redis-cluster-6375:/data
-      - /data/redis/exp:/exp
-    command: redis-server /etc/redis/redis.conf
+  ```bash
+  #由于docker部署的集群模式必须使用HOST网络模式，故每个服务节点配置都各自维护
+  port 6379 #设置端口
+  requirepass ${password} #设置访问认证
+  masterauth ${password} #设置从节点访问主节点认证密码
+  protected-mode no #设置保护模式为关闭，外部网络可访问
+  daemonize no #docker容器启动方式需将后台守护线程设置为关闭
+  appendonly yes #设置开启AOF持久化模式
+  cluster-enabled yes #设置开启集群模式
+  cluster-config-file nodes.conf #设置集群节点信息文件
+  cluster-node-timeout 15000 #设置集群节点连接超时时间
+  cluster-announce-ip 114.132.78.39 #设置集群节点可访问IP（宿主机）
+  cluster-announce-port 6379 #设置集群节点可访问端口（宿主机）
+  cluster-announce-bus-port 16379 #设置集群节点总线可访问端口（宿主机），用于节点之间的通信，端口值总是cluster-announce-port值加10000
+  ```
 
-  redis-6374:
-    image: redis:latest
-    container_name: redis-6374
-    network_mode: "host"
-    volumes:
-      - /data/redis/redis-cluster-6374.conf:/etc/redis/redis.conf
-      - /data/redis/redis-cluster-6374:/data
-      - /data/redis/exp:/exp
-    command: redis-server /etc/redis/redis.conf
-```
+* ```docker-compose.yaml```配置文件编写：
 
-```bash
-redis-cli -a garden520 --cluster create 114.132.78.39:6379 114.132.78.39:6378 114.132.78.39:6377 114.132.78.39:6376 114.132.78.39:6375 114.132.78.39:6374 --cluster-replicas 1
-```
+  ```bash
+  version: '3'
+  services:
+    redis-6379:
+      image: redis:latest
+      container_name: redis-6379
+      network_mode: "host"
+      volumes:
+        - /data/redis/redis-cluster-6379.conf:/etc/redis/redis.conf #挂载配置文件目录
+        - /data/redis/redis-cluster-6379:/data #挂载数据保存目录
+        - /data/redis/exp:/exp #挂载插件目录
+      command: redis-server /etc/redis/redis.conf #启动命令参数为指定配置文件
+
+    redis-6378:
+      image: redis:latest
+      container_name: redis-6378
+      network_mode: "host"
+      volumes:
+        - /data/redis/redis-cluster-6378.conf:/etc/redis/redis.conf #挂载配置文件目录
+        - /data/redis/redis-cluster-6378:/data #挂载数据保存目录
+        - /data/redis/exp:/exp #挂载插件目录
+      command: redis-server /etc/redis/redis.conf
+
+    redis-6377:
+      image: redis:latest
+      container_name: redis-6377
+      network_mode: "host"
+      volumes:
+        - /data/redis/redis-cluster-6377.conf:/etc/redis/redis.conf #挂载配置文件目录
+        - /data/redis/redis-cluster-6377:/data #挂载数据保存目录
+        - /data/redis/exp:/exp #挂载插件目录
+      command: redis-server /etc/redis/redis.conf #启动命令参数为指定配置文件
+
+    redis-6376:
+      image: redis:latest
+      container_name: redis-6376
+      network_mode: "host"
+      volumes:
+        - /data/redis/redis-cluster-6376.conf:/etc/redis/redis.conf #挂载配置文件目录
+        - /data/redis/redis-cluster-6376:/data #挂载数据保存目录
+        - /data/redis/exp:/exp #挂载插件目录
+      command: redis-server /etc/redis/redis.conf #启动命令参数为指定配置文件
+
+    redis-6375:
+      image: redis:latest
+      container_name: redis-6375
+      network_mode: "host"
+      volumes:
+        - /data/redis/redis-cluster-6375.conf:/etc/redis/redis.conf #挂载配置文件目录
+        - /data/redis/redis-cluster-6375:/data #挂载数据保存目录
+        - /data/redis/exp:/exp #挂载插件目录
+      command: redis-server /etc/redis/redis.conf #启动命令参数为指定配置文件
+
+    redis-6374:
+      image: redis:latest
+      container_name: redis-6374
+      network_mode: "host"
+      volumes:
+        - /data/redis/redis-cluster-6374.conf:/etc/redis/redis.conf #挂载配置文件目录
+        - /data/redis/redis-cluster-6374:/data #挂载数据保存目录
+        - /data/redis/exp:/exp #挂载插件目录
+      command: redis-server /etc/redis/redis.conf #启动命令参数为指定配置文件
+  ```
+
+* 进入任意容器，执行集群开启命令：
+
+  ```bash
+  redis-cli -a ${password} --cluster create 114.132.78.39:6379 114.132.78.39:6378 114.132.78.39:6377 114.132.78.39:6376 114.132.78.39:6375 114.132.78.39:6374 --cluster-replicas 1 # 集群开启命令参数分别为访问认证密码、集群所有节点可访问IP和端口以及集群节点副本数
+  ```
+
+* 可通过查看集群信息和节点信息验证部署是否成功：
+
+  ```bash
+  # 进入任意容器
+  docker exec -it redis-6379 /bin/bash
+  # 使用redis客户端
+  redis-cli -c -a ${password} -h 192.168.10.11 -p 6379
+  # 查看集群信息
+  cluster info
+  # 查看集群结点信息
+  cluster nodes
+  ```
 
 > 存在问题
 
@@ -226,3 +269,9 @@ redis-cli -a garden520 --cluster create 114.132.78.39:6379 114.132.78.39:6378 11
   # sentinel.conf use host_ip and host_port
   sentinel monitor mymaster ${host_ip} ${host_port} 2
   ```
+
+> 参考文献
+
+* [[Redis] 你了解 Redis 的三种集群模式吗？](https://segmentfault.com/a/1190000022808576])
+* [主从复制是怎么实现的？](https://xiaolincoding.com/redis/cluster/master_slave_replication.html)
+* [Docker Compose 搭建 Redis Cluster 集群环境](https://www.cnblogs.com/mrhelloworld/p/docker14.html)
