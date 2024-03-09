@@ -78,46 +78,66 @@
 
   若节点信息显示职责```role```为```master```，且同时出现```slave```节点信息则表情主从复制模式部署成功。
 
-> 哨兵模式
+> 哨兵模式模式
 
-```bash
-version: '3'
-services:
-  redis-sentinel1:
-    image: redis:latest
-    container_name: redis-sentinel1
-    ports:
-      - "26379:26379"
-    volumes:
-      - /data/redis/sentinel.conf:/etc/redis/sentinel.conf
-      - /data/redis/sentinel1:/data
-    command: redis-sentinel /etc/redis/sentinel.conf
+* 哨兵实际上是一个运行在特殊模式下的```Redis进程```，主要对主从节点进行“观察”，具体负责监控、选主以及通知：
 
-  redis-sentinel2:
-    image: redis:latest
-    container_name: redis-sentinel2
-    ports:
-      - "26378:26379"
-    volumes:
-      - /data/redis/sentinel.conf:/etc/redis/sentinel.conf
-      - /data/redis/sentinel2:/data
-    command: redis-sentinel /etc/redis/sentinel.conf
+  * 监控：对主从节点发送```ping```命令，对未正常响应的节点标记为“主观下线”，当主服务节点被标记为“主观下线”，哨兵集群其他节点会进行投票，若投票数达到设定值（哨兵配置文件中的```quorum```配置项），则将主服务节点标记为“客观下线”。
+  * 选主：针对“客观下线”的主服务节点，哨兵集群节点间会推选出```leader```，由```leader```执行故障转移，选出新的主服务节点。
+  * 通知：针对“客观下线”的主服务节点，在故障转移选出新的主服务节点后，会将新的主服务节点信息通知客户端。
 
-  redis-sentinel3:
-    image: redis:latest
-    container_name: redis-sentinel3
-    ports:
-      - "26377:26379"
-    volumes:
-      - /data/redis/sentinel.conf:/etc/redis/sentinel.conf
-      - /data/redis/sentinel3:/data
-    command: redis-sentinel /etc/redis/sentinel.conf
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/Snipaste_2024-03-09_19-11-06.png)
 
-networks:
-  default:
-    external: true
-    name: redis-master-slave_redis-network
-```
+* ```sentinel.conf```配置文件编写：
+  
+  ```bash
+  daemonize no #docker容器启动方式需将后台守护线程设置为关闭
+  sentinel monitor mymaster 114.132.78.39 16379 2 #设置sentinel监控的主服务节点的IP、端口以及客观下线投票数
+  sentinel auth-pass mymaster ${password} #设置sentinel连接主从节点时密码
+  ```
+
+  其余配置信息可参考[```sentinel.conf```](https://github.com/redis/redis/blob/7.2.4/sentinel.conf)官方模板。
+
+* ```docker-compose.yaml```配置文件编写：
+
+  ```bash
+  version: '3'
+  services:
+    redis-sentinel1:
+      image: redis:latest
+      container_name: redis-sentinel1
+      ports:
+        - "26379:26379"
+      volumes:
+        - /data/redis/sentinel.conf:/etc/redis/sentinel.conf #挂载配置文件目录
+        - /data/redis/sentinel1:/data #挂载数据保存目录
+      command: redis-sentinel /etc/redis/sentinel.conf --sentinel announce-ip 114.132.78.39 --sentinel announce-port 26379 #启动命令参数分别为指定配置文件、暴露的可访问地址以及端口
+
+    redis-sentinel2:
+      image: redis:latest
+      container_name: redis-sentinel2
+      ports:
+        - "26378:26379"
+      volumes:
+        - /data/redis/sentinel.conf:/etc/redis/sentinel.conf #挂载配置文件目录
+        - /data/redis/sentinel2:/data #挂载数据保存目录
+      command: redis-sentinel /etc/redis/sentinel.conf --sentinel announce-ip 114.132.78.39 --sentinel announce-port 26378 #启动命令参数分别为指定配置文件、暴露的可访问地址以及端口
+
+    redis-sentinel3:
+      image: redis:latest
+      container_name: redis-sentinel3
+      ports:
+        - "26377:26379"
+      volumes:
+        - /data/redis/sentinel.conf:/etc/redis/sentinel.conf #挂载配置文件目录
+        - /data/redis/sentinel3:/data #挂载数据保存目录
+      command: redis-sentinel /etc/redis/sentinel.conf --sentinel announce-ip 114.132.78.39 --sentinel announce-port 26377 #启动命令参数分别为指定配置文件、暴露的可访问地址以及端口
+
+  networks:
+    default:
+      external: true
+      name: redis-master-slave_redis-network
+  ```
 
 > 集群模式
 
