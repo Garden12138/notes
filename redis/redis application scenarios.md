@@ -236,6 +236,31 @@
     }
     ```
 
+> 分布式锁
+
+* 分布式锁是控制分布式系统不同进程共同访问共享资源的一种锁的实现。不同的系统或同一系统的不同主机之间共享某个临界资源，需要互斥来防止彼此干扰以确保一致性。分布式锁应该有这些特征：
+
+  * 互斥性：任意时刻，有且只有一个客户端能持有锁。
+  * 锁超时释放：持有锁超时时可释放，防止死锁。
+  * 可重入性：一个线程持有锁后可再次对其请求加锁。
+  * 高性能与高可用：加锁和解锁开销需尽可能低，同时保证高可用。
+  * 安全性：锁只能被持有的客户端删除，不能被其他客户端删除。
+
+* 分布式锁实现原理使用以下基本命令：
+  
+  * ```SETNX key val```：仅当```key```不存在时设置```val```字符串且返回1；若```key```存在时设置失败且返回0。
+  * ```EXPIRE key timeout```：为```key```设置超时时间，单位为秒，超过该时间锁则自动释放，避免死锁。
+  * ```DEL key```：删除```key```。
+
+    使用```SETNX```与```EXPIRE```命令实现加锁（由于原子性问题，这两条命令需在```LUA```脚本中使用或使用命令```SET key value [expiration EX seconds|PX milliseconds] [NX|XX]```代替）；使用```DEL```命令实现解锁。
+
+* 分布式锁的常见实现：
+
+  * 对于```Redis```单机部署场景，常用```LUA```脚本使用```SETNX```、```EXPIRE```、```GET```以及```DEL```命令实现。
+  * 对于```Redis```集群部署场景，常用```Redisson```框架实现。
+
+    以```SpringBoot```为例，上诉两种实现方式可参考[这里]()。对于单机部署可参考[这里](https://gitee.com/FSDGarden/learn-note/blob/master/redis/redis%20started.md)；对于集群部署可参考[这里](https://gitee.com/FSDGarden/learn-note/blob/master/redis/Use%20docker-compose%20deploy%20redis%20cluster%20server.md)。
+
 > 参考文献
 
 * [5 分钟搞懂布隆过滤器，亿级数据过滤算法你值得拥有！](https://juejin.cn/post/6844904007790673933)
@@ -244,3 +269,5 @@
 * [Redis 布隆（Bloom Filter）过滤器原理与实战](https://www.51cto.com/article/704389.html)
 * [（Redis使用系列） Springboot 在redis中使用BloomFilter布隆过滤器机制 六](https://developer.aliyun.com/article/951745)
 * [SpringBoot 中使用布隆过滤器 Guava、Redission实现](https://juejin.cn/post/7136214205618716709)
+* [Redis分布式锁应用（实现+原理）](https://c.biancheng.net/redis/distributed-lock.html)
+* [七种方案！探讨Redis分布式锁的正确使用姿势](https://juejin.cn/post/6936956908007850014)
