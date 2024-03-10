@@ -1,0 +1,17 @@
+{
+	"ulid": "01HRK776T4PZMSJ64KDQN7EYWM",
+	"minTime": 1710030782734,
+	"maxTime": 1710036000000,
+	"stats": {
+		"numSamples": 2635,
+		"numSeries": 512,
+		"numChunks": 512
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01HRK776T4PZMSJ64KDQN7EYWM"
+		]
+	},
+	"version": 1
+}
