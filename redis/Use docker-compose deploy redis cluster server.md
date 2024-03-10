@@ -149,7 +149,7 @@
 
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/Snipaste_2024-03-09_23-29-41.png)
 
-* ```edis-cluster-x.conf```配置文件编写：
+* ```redis-cluster-x.conf```配置文件编写：
 
   ```bash
   #由于docker部署的集群模式必须使用HOST网络模式，故每个服务节点配置都各自维护
