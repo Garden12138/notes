@@ -1,0 +1,17 @@
+{
+	"ulid": "01HSAAPN9S1KDC1RQYR75SW87A",
+	"minTime": 1710806695543,
+	"maxTime": 1710813600000,
+	"stats": {
+		"numSamples": 118108,
+		"numSeries": 489,
+		"numChunks": 566
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01HSAAPN9S1KDC1RQYR75SW87A"
+		]
+	},
+	"version": 1
+}

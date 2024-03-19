@@ -105,6 +105,8 @@
   private RedisUtil RedisUtil;
   ```
 
+  ```RedisUtil```实现类参考[这里](https://gitee.com/FSDGarden/microservices-spring/blob/feature/sc-2020.0.1-v1/common/common-redis/src/main/java/com/garden/redis/utils/RedisUtil.java)
+
 > 参考文献
 
 * [【第二章】SpringBoot2.x集成Redis](https://juejin.cn/post/6844903936143392775)
