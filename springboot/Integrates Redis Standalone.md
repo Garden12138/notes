@@ -1,4 +1,4 @@
-## SpringBoot集成Redis
+## SpringBoot 集成 Redis 单例
 
 > 简介
 

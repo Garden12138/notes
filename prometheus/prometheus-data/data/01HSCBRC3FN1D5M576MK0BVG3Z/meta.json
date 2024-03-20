@@ -1,0 +1,17 @@
+{
+	"ulid": "01HSCBRC3FN1D5M576MK0BVG3Z",
+	"minTime": 1710871359281,
+	"maxTime": 1710878400000,
+	"stats": {
+		"numSamples": 1064,
+		"numSeries": 512,
+		"numChunks": 512
+	},
+	"compaction": {
+		"level": 1,
+		"sources": [
+			"01HSCBRC3FN1D5M576MK0BVG3Z"
+		]
+	},
+	"version": 1
+}
