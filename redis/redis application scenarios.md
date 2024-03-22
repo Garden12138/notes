@@ -259,7 +259,7 @@
   * 对于```Redis```单机部署场景，常用```LUA```脚本使用```SETNX```、```EXPIRE```、```GET```以及```DEL```命令实现。
   * 对于```Redis```集群部署场景，常用```Redisson```框架实现。
 
-    以```SpringBoot```为例，上诉两种实现方式可参考[这里]()。对于单机部署可参考[这里](https://gitee.com/FSDGarden/learn-note/blob/master/redis/redis%20started.md)；对于集群部署可参考[这里](https://gitee.com/FSDGarden/learn-note/blob/master/redis/Use%20docker-compose%20deploy%20redis%20cluster%20server.md)。
+    以```SpringBoot```为例，上诉两种实现方式可参考[这里](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Lock.md)。对于单机部署可参考[这里](https://gitee.com/FSDGarden/learn-note/blob/master/redis/redis%20started.md)；对于集群部署可参考[这里](https://gitee.com/FSDGarden/learn-note/blob/master/redis/Use%20docker-compose%20deploy%20redis%20cluster%20server.md)。
 
 > 缓存
 
@@ -289,8 +289,14 @@
 
 * ```Redis```缓存常见实现：
 
-  * [```lettuce```实现](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis.md)
-  * [```redissson```实现]()
+  * ```lettuce```实现
+    
+    * [单例模式](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Standalone.md)
+    * [主从复制模式](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Master-Slave.md)
+    * [哨兵模式](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Sentinel.md)
+    * [集群模式](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Cluster.md)
+
+  * [```redissson```实现](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Intergrates%20Redisson.md)
   * [框架```SpringCache```实现]()
 
 > 参考文献
