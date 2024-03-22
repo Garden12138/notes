@@ -50,7 +50,7 @@
           min-idle: 0
   ```
 
-* 新增```Redis```配置类型：
+* 新增```Redis```配置类：
 
   ```bash
   @Configuration
