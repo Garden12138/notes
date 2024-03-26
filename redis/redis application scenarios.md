@@ -153,6 +153,48 @@
   * [```redissson```实现](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Intergrates%20Redisson.md)
   * [框架```SpringCache```实现](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20SpringCache.md)
 
+> 排行榜
+
+* 排行榜有许多应用场景，如博客热搜榜以及礼物贡献实时榜等。它们有共同的特点为榜上的条目是唯一的（不重复）且按指定系数排序。```redis```的有序集合（```zset```）适合该应用场景，它是```String```类型元素的集合且不允许重复的成员，每个成员都会关联一个```double```类型的分数，有序集合可根据这个分数进行排序。排行榜可用到的几个基本命令：
+  
+  ```bash
+  # 将一个或多个元素添加值有序集合，若元素已存在则更新其分数值
+  # ZADD KEY_NAME SCORE1 VALUE1.. SCOREN VALUEN
+  ZADD blog_hot 100 blog_1 1000 blog_2
+
+  # 有序集合中对指定成员的分数加上增量
+  # INCRBY KEY_NAME INCR MEMBER
+  INCRBY blog_hot 1 blog_2
+
+  # 获取有序集合中指定成员的分数值
+  # ZSCORE KEY_NAME MEMBER
+  ZSCORE blog_hot blog_2
+
+  # 获取有序集合(按分数递增排序)中指定索引区间的成员
+  # ZRANGE KEY_NAME INDEX_START INDEX_END [WITHSCORES]
+  ZRANGE blog_hot 0 -1 WITHSCORES
+
+  # 获取有序集合(按分数递减排序)中指定索引区间的成员
+  # ZREVRANGE KEY_NAME INDEX_START INDEX_END [WITHSCORES]
+  ZREVRANGE blog_hot 0 -1 WITHSCORES
+  ```
+
+  排行榜有序集合内的成员一般为成员的唯一标识，如博客```id```，这时我们可通过哈希类型存储博客详细信息，常使用```HMSET```命令：
+
+  ```bash
+  # 在哈希表key同时设置多个键值对field-value
+  # HMSET KEY_NAME FIELD1 VALUE1 ...FIELDN VALUEN
+  HMSET blog_hot:blog_1 title redis3 author redis3
+  ```
+
+  一般排行榜都存在时效性，如周榜、月榜等，常使用```EXPIRE```命令：
+
+  ```bash
+  # 设置Key过期时间，单位为秒
+  # EXPIRE KEY_NAME SEC
+  EXPIRE blog_hot 1711987199
+  ```
+
 > 参考文献
 
 * [5 分钟搞懂布隆过滤器，亿级数据过滤算法你值得拥有！](https://juejin.cn/post/6844904007790673933)
@@ -163,3 +205,4 @@
 * [SpringBoot 中使用布隆过滤器 Guava、Redission实现](https://juejin.cn/post/7136214205618716709)
 * [Redis分布式锁应用（实现+原理）](https://c.biancheng.net/redis/distributed-lock.html)
 * [七种方案！探讨Redis分布式锁的正确使用姿势](https://juejin.cn/post/6936956908007850014)
+* [一口气讲完了 Redis 常用的数据结构及应用场景](https://xie.infoq.cn/article/c742001e651de0198d7f8a5d7)
