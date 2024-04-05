@@ -195,6 +195,22 @@
   EXPIRE blog_hot 1711987199
   ```
 
+> 分布式Session
+
+* ```Http```协议是无状态的，客户端（浏览器）只需向服务器请求资源，服务器向客户端返回资源，其之间不记录彼此历史信息，每次请求都是独立的。实际上客户端（浏览器）与服务器之间使用```Socket```嵌套字进行通信，当服务器将请求结果返回给客户端（浏览器）后会关闭当前的```Socket```连接。但在许多```Web```应用场景中需维护用户态（用户是否登录），此时出现了保持```Http```连接状态的技术，一个是```Cookie```（浏览器实现方案），另一个是```Session```（服务器实现方案）。```Cookie + Session```是单机经典的实现方案，对于分布式集群也在其基础上做出扩展，如：
+
+  * ```Session Stick```：将客户端（浏览器）的每次请求都转发至同一台服务器，这需负载均衡器根据每次请求的会话（```SessionId```）来进行请求转发。
+  * ```Session Replication```：```Web``服务器之间增加了会话数据同步的功能，各个服务器之间通过同步保证不同```Web``服务器之间的```Session```数据的一致性。
+  * ```Cookie Base```：将```Session```数据放在```Cookie```里，访问```Web```服务器时，再由```Web```服务器生成对应的```Session```数据。
+  * ```Session Redis```：使用```Redis```将集群中的所有```Session```集中存储起来：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/Snipaste_2024-04-05_23-24-44.png)
+
+    ```SpringBoot```集成分布式```Session Redis```可参考[这里](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Session.md)。
+
+  还可以使用无状态的```JWT```方案。（后续更新...）
+
+
 > 参考文献
 
 * [5 分钟搞懂布隆过滤器，亿级数据过滤算法你值得拥有！](https://juejin.cn/post/6844904007790673933)
@@ -206,3 +222,4 @@
 * [Redis分布式锁应用（实现+原理）](https://c.biancheng.net/redis/distributed-lock.html)
 * [七种方案！探讨Redis分布式锁的正确使用姿势](https://juejin.cn/post/6936956908007850014)
 * [一口气讲完了 Redis 常用的数据结构及应用场景](https://xie.infoq.cn/article/c742001e651de0198d7f8a5d7)
+* [分布式系统 - 分布式会话及实现方案](https://pdai.tech/md/arch/arch-z-session.html)
