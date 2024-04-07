@@ -210,6 +210,38 @@
 
   还可以使用无状态的```JWT```方案。（后续更新...）
 
+> 计数器
+
+* ```Redis```是内存数据结构存储系统，具备快速的读写性能，利用其```String```类型的```int```编码的自增特性，适合用于实现计数器。计数器用到的基本命令：
+
+  ```bash
+  INCR KEY_NAME
+  # INCR blog:read:1
+  ```
+
+  ```SpringBoot```在集成```Redis```（[单例](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Standalone.md)、[主从复制](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Master-Slave.md)、[哨兵](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Sentinel.md)以及[集群](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Cluster.md)）后可使用```StringRedisTemplate```封装实现：
+
+  ```bash
+  @Service  
+  public class CounterService {  
+  
+      @Autowired  
+      private StringRedisTemplate stringRedisTemplate;  
+      
+      public long increment(String key) {  
+          return stringRedisTemplate.opsForValue().increment(key, 1);  
+      }  
+  
+      public long getCount(String key) {
+          return stringRedisTemplate.opsForValue().get(key) == null ? 0 : Long.parseLong(stringRedisTemplate.opsForValue().get(key));  
+      }  
+  
+      public void reset(String key) {  
+          stringRedisTemplate.delete(key);  
+      }  
+  }
+  ```
+
 
 > 参考文献
 
