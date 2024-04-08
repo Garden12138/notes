@@ -382,6 +382,56 @@
   }
   ```
 
+> 集合间运算
+
+* 集合间的运算可以利用```Redis```的```Set```类型实现，用的基本命令有：
+
+  ```bash
+  SADD KEY_NAME VALUE ...VALUEN
+  # SADD set1 1 2 3
+
+  SUNION KEY_NAME KEY_NAME ...KEY_NAMEN
+  # SUNION set1 set2
+
+  SINTER KEY_NAME KEY_NAME ...KEY_NAMEN
+  # SINTER set1 set2
+
+  SDIFF KEY_NAME KEY_NAME ...KEY_NAMEN
+  # SDIFF set1 set2
+  ```
+
+  ```SpringBoot```在集成```Redis```（[单例](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Standalone.md)、[主从复制](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Master-Slave.md)、[哨兵](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Sentinel.md)以及[集群](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Cluster.md)）后可使用```RedisTemplate```封装实现：
+
+  ```bash
+  @Service
+  public class SetOpsServiceImpl implements SetOpsService {
+
+      @Autowired
+      private RedisTemplate<String, Object> redisTemplate;
+
+      @Override
+      public long addToSet(String key, Object value) {
+          return redisTemplate.opsForSet().add(key, value);
+      }
+
+      @Override
+      public Set<Object> union(String key1, String key2) {
+          return redisTemplate.opsForSet().union(key1, key2);
+      }
+
+      @Override
+      public Set<Object> intersect(String key1, String key2) {
+          return redisTemplate.opsForSet().intersect(key1, key2);
+      }
+
+      @Override
+      public Set<Object> difference(String key1, String key2) {
+          return redisTemplate.opsForSet().difference(key1, key2);
+      }
+
+  }
+  ```
+
 > 参考文献
 
 * [5 分钟搞懂布隆过滤器，亿级数据过滤算法你值得拥有！](https://juejin.cn/post/6844904007790673933)
