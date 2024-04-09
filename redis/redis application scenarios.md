@@ -432,6 +432,197 @@
   }
   ```
 
+> 应用限流
+
+* 应用限流可利用```Redis```的```String```类型数据结构的```int```编码以及其原子性操作实现（限制逻辑可在```lua```脚本实现），用到的基本命令有：
+
+  ```bash
+  GET KEY_NAME
+  # GET rate_limit:127.0.0.1/redisApiRateLimiter
+
+  INCR KEY_NAME
+  # INCR rate_limit:127.0.0.1/redisApiRateLimiter
+
+  EXPIRE KEY_NAME SEC
+  # EXPIRE rate_limit:127.0.0.1/redisApiRateLimiter 120
+  ```
+
+  ```SpringBoot```在集成```Redis```（[单例](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Standalone.md)、[主从复制](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Master-Slave.md)、[哨兵](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Sentinel.md)以及[集群](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Cluster.md)）后可使用```RedisTemplate```结合注解以及切面封装实现：
+
+  1）限流器注解：
+  
+  ```bash
+  @Target({ElementType.METHOD})
+  @Retention(RetentionPolicy.RUNTIME)
+  @Inherited
+  public @interface RedisRateLimiter {
+
+      /**
+       * key前缀
+       */
+      String keyPrefix() default "rate_limit:";
+      /**
+       * 限流时间,单位秒
+       */
+      int time() default 60;
+
+      /**
+       * 限流次数
+       */
+      int count() default 100;
+
+      /**
+       * 类型：api、method，默认为api
+       */
+      String limitType() default "api";
+
+  }
+  ```
+
+  2）限流器工具类：
+
+  ```bash
+  @Slf4j
+  @Component
+  public class RedisRateLimiterUtil {
+
+      @Autowired
+      private RedisTemplate<String, String> redisTemplate;
+
+      private static final String RATE_LIMITER_LUA_SCRIPT =
+              "local key = KEYS[1]; " +
+                      "local count = tonumber(ARGV[1]); " +
+                      "local time = tonumber(ARGV[2]); " +
+                      "local current = redis.call('get', key); " +
+                      "if current and tonumber(current) >= count then " +
+                      "    return true; " +
+                      "end; " +
+                      "current = redis.call('incr', key); " +
+                      "if tonumber(current) == 1 then " +
+                      "    redis.call('expire', key, time); " +
+                      "end; " +
+                      "return false; ";
+
+      /**
+       * 限流
+       *
+       * @param key
+       * @param count
+       * @param time
+       * @return
+        */
+      public boolean limit(String key, int count, int time) {
+          try {
+              String[] keys = {key};
+              String[] args = {String.valueOf(count), String.valueOf(time)};
+              RedisScript<Boolean> script = new DefaultRedisScript<>(RATE_LIMITER_LUA_SCRIPT, Boolean.class);
+              Boolean result = redisTemplate.execute(script, Arrays.asList(keys), args);
+              return result != null && result;
+          } catch (Exception e) {
+              log.error("limit occurred an exception: {}, key : {}", e.getMessage(), key);
+              return true;
+          }
+      }
+
+  }
+  ```
+
+  3）切面处理类：
+
+  ```bash
+  @Slf4j
+  @Aspect
+  @Configuration
+  public class RedisRateLimiterAspect {
+
+      @Autowired
+      private RedisRateLimiterUtil redisRateLimiterUtil;
+
+      @Before("@annotation(com.garden.redis.annotation.RedisRateLimiter)")
+      public void handle(JoinPoint point) {
+          Method method = ((MethodSignature) point.getSignature()).getMethod();
+          RedisRateLimiter redisRateLimiter = method.getAnnotation(RedisRateLimiter.class);
+          String limitType = redisRateLimiter.limitType();
+          String keyPrefix = redisRateLimiter.keyPrefix();
+          int count = redisRateLimiter.count();
+          int time = redisRateLimiter.time();
+          String key = buildKey(limitType, keyPrefix, point);
+          boolean limitResult = redisRateLimiterUtil.limit(key, count, time);
+          if (limitResult) {
+              throw new RuntimeException("访问太频繁！");
+          }
+      }
+
+      private String buildKey(String limitType, String keyPrefix, JoinPoint point) {
+          StringBuffer sb = new StringBuffer(keyPrefix);
+          if ("method".equals(limitType)) {
+              // method拼接方式如：rate_limit:com.garden.consumer.service.impl.RedisRateLimiterServiceImpl.doMethod
+              Method method = ((MethodSignature) point.getSignature()).getMethod();
+              Class<?> targetClass = method.getDeclaringClass();
+              sb.append(targetClass.getName()).append(".").append(method.getName());
+          } else {
+              // api拼接方式如：rate_limit:127.0.0.1/redisApiRateLimiter
+              RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();
+              HttpServletRequest request = (HttpServletRequest) requestAttributes.resolveReference(RequestAttributes.REFERENCE_REQUEST);
+              sb.append(request.getRemoteAddr()).append(request.getRequestURI());
+          }
+          return sb.toString();
+      }
+
+  }
+  ```
+
+  4）测试用例实现：
+
+  ```bash
+  @Slf4j
+  @Service
+  public class RedisRateLimiterServiceImpl implements RedisRateLimiterService {
+
+      @RedisRateLimiter(time = 120, count = 50, limitType = "method")
+      @Override
+      public void doMethod() {
+          log.info("RedisRateLimiterService.doMethod running...");
+      }
+
+  }
+  ```
+
+  ```bash
+  @Slf4j
+  @RestController
+  public class RateLimiterController {
+
+      @Autowired
+      private RedisRateLimiterService redisRateLimiterService;
+
+      /**
+       * ab -n 50 -c 10 http://localhost:8763/redisApiRateLimiter
+       * ab -n 1 -c 1 http://localhost:8763/redisApiRateLimiter
+       * @return
+       */
+      @RedisRateLimiter(time = 120, count = 50)
+      @GetMapping("/redisApiRateLimiter")
+      public String redisApiRateLimiter() {
+          return "success";
+      }
+
+      /**
+       * ab -n 50 -c 10 http://localhost:8763/redisMethodRateLimiter
+       * ab -n 1 -c 1 http://localhost:8763/redisMethodRateLimiter
+       * @return
+       */
+      @GetMapping("/redisMethodRateLimiter")
+      public String redisMethodRateLimiter() {
+          redisRateLimiterService.doMethod();
+          return "success";
+      }
+
+  }
+  ```
+  
+  该示例用于说明如何使用```Redis```实现应用限流，在实际生产应用中，场景可能更加复杂多变如分布式环境下的限流，我们一般会选择比较成熟的限流库中间件，如```Bucket4j```或```Sentinel```。但从应用限流的实现思路可得出，对于次数有限制的业务场景也同样适用，比如验证码点击获取次数。
+
 > 参考文献
 
 * [5 分钟搞懂布隆过滤器，亿级数据过滤算法你值得拥有！](https://juejin.cn/post/6844904007790673933)
@@ -444,3 +635,4 @@
 * [七种方案！探讨Redis分布式锁的正确使用姿势](https://juejin.cn/post/6936956908007850014)
 * [一口气讲完了 Redis 常用的数据结构及应用场景](https://xie.infoq.cn/article/c742001e651de0198d7f8a5d7)
 * [分布式系统 - 分布式会话及实现方案](https://pdai.tech/md/arch/arch-z-session.html)
+* [SpringBoot + Redis 实现接口限流，一个注解的事](https://cloud.tencent.com/developer/article/2187143)
