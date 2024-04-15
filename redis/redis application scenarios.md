@@ -623,6 +623,10 @@
   
   该示例用于说明如何使用```Redis```实现应用限流，在实际生产应用中，场景可能更加复杂多变如分布式环境下的限流，我们一般会选择比较成熟的限流库中间件，如```Bucket4j```或```Sentinel```。但从应用限流的实现思路可得出，对于次数有限制的业务场景也同样适用，比如验证码点击获取次数。
 
+> 消息队列
+
+* 
+
 > 参考文献
 
 * [5 分钟搞懂布隆过滤器，亿级数据过滤算法你值得拥有！](https://juejin.cn/post/6844904007790673933)
@@ -636,3 +640,4 @@
 * [一口气讲完了 Redis 常用的数据结构及应用场景](https://xie.infoq.cn/article/c742001e651de0198d7f8a5d7)
 * [分布式系统 - 分布式会话及实现方案](https://pdai.tech/md/arch/arch-z-session.html)
 * [SpringBoot + Redis 实现接口限流，一个注解的事](https://cloud.tencent.com/developer/article/2187143)
+* [SpringBoot+Redis实现消息的发布与订阅](https://juejin.cn/post/7084032744245854221)

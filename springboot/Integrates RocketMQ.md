@@ -1,6 +1,6 @@
 ## SpringBoot集成RocketMQ
 
-> RocketMQ快速开始
+> RocketMQ快速开始
   * 简介：Apache RocketMQ是一个分布式消息传递和流媒体平台，具有低延迟，高性能和可靠性、万亿级容量和灵活的可伸缩性。它提供了许多功能，具体参考：https://github.com/apache/rocketmq
   * 准备：根据[官方快速开始指导手册](http://rocketmq.apache.org/docs/quick-start/)，RocketMQ的使用环境环境需要具备以下条件：
     * 64bit OS，推荐使用Linux/Unix/Mac
