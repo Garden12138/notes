@@ -625,7 +625,131 @@
 
 > 消息队列
 
-* 
+* 消息队列的实现有三个要点：消息保序、重复消费以及消息可靠性，```Redis```的```List```数据结构、```Stream```数据结构以及发布订阅模式可实现。
+
+* 基于```List```的消息队列实现：
+
+  生产者实现：
+
+  ```bash
+  @Component
+  public class RedisMessageQueueProducer {
+    
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    public void sendMessageByList(String topic, String message) {
+        Map<String, Object> msg = new HashMap<>();
+        msg.put("message", message);
+        msg.put("createTime", new Date());
+        //将业务id作为消息id，避免重复消费问题
+        //msg.put("id", ${message.id});
+        redisTemplate.opsForList().leftPush(topic, msg);
+    }
+
+  }
+  ```
+
+  消费者实现：
+
+  ```bash
+  @Slf4j
+  @Component
+  @EnableScheduling
+  public class RedisListConsumer1 {
+
+      @Autowired
+      private RedisTemplate<String, Object> redisTemplate;
+
+      private static final String REDIS_MESSAGE_QUEUE_TOPIC = "redis-message-queue-topic";
+
+      // 每隔5秒执行一次
+      @Scheduled(fixedDelay = 5000)
+      public void onMessage() {
+          // 向右弹出元素，阻塞3s，并生成备份
+          Object message = redisTemplate.opsForList()
+                  .rightPopAndLeftPush(REDIS_MESSAGE_QUEUE_TOPIC, REDIS_MESSAGE_QUEUE_TOPIC.concat(":bak"), 3, TimeUnit.SECONDS);
+          // 模拟业务逻辑实现
+          // 根据消息id判断消息是否已消费
+          // if (queryById(${message.id})) { return; }
+          log.info("message: {}", message);
+      }
+
+  }
+  ```
+
+  该实现方案存在一些缺点：
+
+    * 消费者通过定时器轮询列表的方式存在消耗```CPU```性能缺点。
+    * 消费者在消费时会将消息写进备份(```key:bak```)，若此时```redis```宕机，等待其恢复之后，需手动将备份数据重新消费。
+
+* 基于```Stream```的消息队列实现：
+
+  以```SpringBoot```为例的实现可参考[这里](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Stream.md)。
+
+* 基于发布订阅模式的消息队列实现：
+
+  生产者实现：
+
+  ```bash
+  @Component
+  public class RedisMessageQueueProducer {
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
+
+    public void sendMessageByPub(String topic, String message) {
+        Map<String, Object> msg = new HashMap<>();
+        msg.put("message", message);
+        msg.put("createTime", new Date());
+        stringRedisTemplate.convertAndSend(topic, JSON.toJSONString(msg));
+    }
+
+  }
+  ```
+
+  消费者实现及其监听容器声明：
+
+  ```bash
+  @Slf4j
+  @Component
+  public class RedisMessageQueueConsumer implements MessageListener {
+
+      @Override
+      public void onMessage(Message message, byte[] bytes) {
+          String msg = new String(message.getBody());
+          String channel = new String(message.getChannel());
+          log.info("RedisMessageQueueConsumer received：{} from: {}", msg, channel);
+      }
+
+  }
+  ```
+
+  ```bash
+  @Configuration
+  public class RedisMessageQueueConsumerConfig {
+
+      private static final String REDIS_MESSAGE_QUEUE_TOPIC = "redis-message-queue-topic";
+
+      /**
+       * 消息监听容器
+       *
+       * @param lettuceConnectionFactory
+       * @param redisMessageQueueConsumer
+       * @return
+       */
+      @Bean
+      public RedisMessageListenerContainer getRedisMessageListenerContainer(LettuceConnectionFactory lettuceConnectionFactory, RedisMessageQueueConsumer redisMessageQueueConsumer) {
+          RedisMessageListenerContainer redisMessageListenerContainer = new RedisMessageListenerContainer();
+          redisMessageListenerContainer.setConnectionFactory(lettuceConnectionFactory);
+          redisMessageListenerContainer.addMessageListener(redisMessageQueueConsumer, new PatternTopic(REDIS_MESSAGE_QUEUE_TOPIC));
+          return redisMessageListenerContainer;
+      }
+
+  }
+  ```
+
+* 以上三种实现方案的前提都是已集成```redis```（[单例](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Standalone.md)、[主从复制](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Master-Slave.md)、[哨兵](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Sentinel.md)以及[集群](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Cluster.md)）。
 
 > 参考文献
 
@@ -641,3 +765,5 @@
 * [分布式系统 - 分布式会话及实现方案](https://pdai.tech/md/arch/arch-z-session.html)
 * [SpringBoot + Redis 实现接口限流，一个注解的事](https://cloud.tencent.com/developer/article/2187143)
 * [SpringBoot+Redis实现消息的发布与订阅](https://juejin.cn/post/7084032744245854221)
+* [springboot使用redis实现消息队列功能](https://blog.51cto.com/u_13540373/5685322)
+* [redis中stream数据结构使用详解](https://blog.51cto.com/u_13540373/5684811)
