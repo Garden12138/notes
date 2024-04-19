@@ -896,7 +896,8 @@
                 long v = list.get(0) == null ? 0 : list.get(0);
                 for (int i = date.lengthOfMonth(); i > 0; i--) {
                     LocalDate d = date.withDayOfMonth(i);
-                    signMap.put(formatDate(d, "yyyy-MM-dd"), v >> 1 << 1 != v);
+                    // 复制该代码块时注意将符号 \ 删除
+                    signMap.put(formatDate(d, "yyyy-MM-dd"), v \>\> 1 \<\< 1 != v);
                     v >>= 1;
                 }
             }
