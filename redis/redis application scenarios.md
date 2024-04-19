@@ -751,6 +751,223 @@
 
 * 以上三种实现方案的前提都是已集成```redis```（[单例](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Standalone.md)、[主从复制](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Master-Slave.md)、[哨兵](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Sentinel.md)以及[集群](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Cluster.md)）。
 
+> 用户每日签到
+
+* 对于用户每日签到的功能，使用```MySQL```创建签到表用于统计不合适，当用户量级达到百万级，一年间所有用户的签到记录数量达到了百万*365条。```Redis```的```BitMap```是比较合适的解决方案，```BitMap```在```Redis```的实际存储中为```String```类型，但是对其的操作是二进制的位操作，我们可定义每位上的0代表未签到，1代表已签到这样子记录每个用户的签到记录，定义```Key```的格式为```u:sign:uid:yyyyMM```，```Value```则采用长度为4个字节（32位）的位图（最大月份只有31天），如：
+
+  ```bash
+  #key
+  u:sign:1000:202404
+  #value
+  380380
+  ```
+  
+  此时签到记录的业务本质上是对于二进制的操作：
+
+  ```bash
+  # 用户1000在2024年4月16日签到
+  SETBIT u:sign:1000:202404 15 1 # 偏移量是从0开始，故16 - 1
+
+  # 检查用户1000在2024年4月16日是否签到
+  GETBIT u:sign:1000:202404 15   # 偏移量是从0开始，故16 - 1
+
+  # 统计用户1000在4月份签到次数
+  BITCOUNT u:sign:1000:202404
+
+  # 获取2月份前16天的签到数据
+  BITFIELD u:sign:1000:202404 get u16 0
+
+  # 获取2月份首次签到日期
+  BITPOS u:sign:1000:202404 1  # 返回首次签到的偏移量，+1即为当月的某一天
+  ```
+
+* 集成步骤：
+
+  * 集成```redis```（[单例](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Standalone.md)、[主从复制](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Master-Slave.md)、[哨兵](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Sentinel.md)以及[集群](https://gitee.com/FSDGarden/learn-note/blob/master/springboot/Integrates%20Redis%20Cluster.md)）
+
+  * 封装用户签到实现类：
+
+    ```bash
+    @Service
+    public class UserSignServiceImpl implements UserSignService {
+
+        @Autowired
+        private RedisTemplate<String, Object> redisTemplate;
+
+        /**
+         * 用户签到
+         *
+         * @param uid
+         * @param date
+         * @return
+         */
+        @Override
+        public boolean doSign(int uid, LocalDate date) {
+            int offset = date.getDayOfMonth() - 1;
+            return Boolean.TRUE.equals(redisTemplate.opsForValue().setBit(buildSignKey(uid, date), offset, true));
+        }
+
+        /**
+         * 检查用户是否签到
+         *
+         * @param uid
+         * @param date
+         * @return
+         */
+        @Override
+        public boolean checkSign(int uid, LocalDate date) {
+            int offset = date.getDayOfMonth() - 1;
+            return Boolean.TRUE.equals(redisTemplate.opsForValue().getBit(buildSignKey(uid, date), offset));
+        }
+
+        /**
+         * 获取用户签到次数
+         *
+         * @param uid
+         * @param date
+         * @return
+         */
+        @Override
+        public long getSignCount(int uid, LocalDate date) {
+            return redisTemplate.execute((RedisCallback<Long>) conn ->
+                    conn.bitCount(buildSignKey(uid, date).getBytes()));
+        }
+
+        /**
+         * 获取当月首次签到日期
+         *
+         * @param uid
+         * @param date
+         * @return
+         */
+        @Override
+        public LocalDate getFirstSignDate(int uid, LocalDate date) {
+            long pos = redisTemplate.execute((RedisCallback<Long>) conn ->
+                    conn.bitPos(buildSignKey(uid, date).getBytes(), true));
+            return pos < 0 ? null : date.withDayOfMonth((int) (pos + 1));
+        }
+
+        /**
+         * 获取当月连续签到次数（中断一次则重新计算）
+         *
+         * @param uid
+         * @param date
+         * @return
+         */
+        @Override
+        public long getContinuousSignCount(int uid, LocalDate date) {
+            int signCount = 0;
+            List<Long> list = redisTemplate.opsForValue().bitField(buildSignKey(uid, date),
+                    BitFieldSubCommands.create().get(BitFieldSubCommands.BitFieldType.unsigned(date.getDayOfMonth())).valueAt(0L));
+            if (list != null && list.size() > 0) {
+                // 取低位连续不为0的个数即为连续签到次数，当天尚未签到则忽略
+                long v = list.get(0) == null ? 0 : list.get(0);
+                for (int i = 0; i < date.getDayOfMonth(); i++) {
+                    if (v >> 1 << 1 == v) {
+                        // 低位为0且非当天说明连续签到中断
+                        if (i > 0) {
+                            break;
+                        }
+                    } else {
+                        signCount += 1;
+                    }
+                    v >>= 1;
+                }
+            }
+            return signCount;
+
+        }
+
+        /**
+         * 获取当月签到情况
+         *
+         * @param uid
+         * @param date
+         * @return
+         */
+        @Override
+        public Map<String, Boolean> getSignInfo(int uid, LocalDate date) {
+            Map<String, Boolean> signMap = new HashMap<>();
+            List<Long> list = redisTemplate.opsForValue().bitField(buildSignKey(uid, date),
+                    BitFieldSubCommands.create().get(BitFieldSubCommands.BitFieldType.unsigned(date.lengthOfMonth())).valueAt(0L));
+            if (list != null && list.size() > 0) {
+                // 由低位到高位，为0表示未签，为1表示已签
+                long v = list.get(0) == null ? 0 : list.get(0);
+                for (int i = date.lengthOfMonth(); i > 0; i--) {
+                    LocalDate d = date.withDayOfMonth(i);
+                    signMap.put(formatDate(d, "yyyy-MM-dd"), v >> 1 << 1 != v);
+                    v >>= 1;
+                }
+            }
+            return signMap;
+        }
+
+        public static String formatDate(LocalDate date) {
+            return formatDate(date, "yyyyMM");
+        }
+
+        public static String formatDate(LocalDate date, String pattern) {
+            return date.format(DateTimeFormatter.ofPattern(pattern));
+        }
+
+        public static String buildSignKey(int uid, LocalDate date) {
+            return String.format("u:sign:%d:%s", uid, formatDate(date));
+        }
+
+    }
+    ```
+
+  * 编写测试```API```：
+
+    ```bash
+    @GetMapping("/redisBitmapSign")
+    public String redisBitmapSign(@RequestParam Integer uid, @RequestParam String d) {
+        LocalDate today = LocalDate.parse(d, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+
+        {   // doSign
+            boolean signed = userSignService.doSign(uid, today);
+            if (signed) {
+                log.info("您已签到：" + today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+            } else {
+                log.info("签到完成：" + today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+            }
+        }
+
+        {   // checkSign
+            boolean signed = userSignService.checkSign(uid, today);
+            if (signed) {
+                log.info("您已签到：" + today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+            } else {
+                log.info("尚未签到：" + today.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+            }
+        }
+
+        {   // getSignCount
+            long count = userSignService.getSignCount(uid, today);
+            log.info("本月签到次数：" + count);
+        }
+
+        {   // getContinuousSignCount
+            long count = userSignService.getContinuousSignCount(uid, today);
+            log.info("连续签到次数：" + count);
+        }
+
+        {   // getFirstSignDate
+            LocalDate date = userSignService.getFirstSignDate(uid, today);
+            log.info("本月首次签到：" + date.format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
+        }
+
+        {   // getSignInfo
+            log.info("当月签到情况：");
+            Map<String, Boolean> signInfo = new TreeMap<>(userSignService.getSignInfo(uid, today));
+            for (Map.Entry<String, Boolean> entry : signInfo.entrySet()) {
+                log.info(entry.getKey() + ": " + (entry.getValue() ? "√" : "-"));
+            }
+        }
+        return "success";
+    }
+    ```  
+
 > 参考文献
 
 * [5 分钟搞懂布隆过滤器，亿级数据过滤算法你值得拥有！](https://juejin.cn/post/6844904007790673933)
