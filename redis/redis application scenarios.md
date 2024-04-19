@@ -863,7 +863,7 @@
                 // 取低位连续不为0的个数即为连续签到次数，当天尚未签到则忽略
                 long v = list.get(0) == null ? 0 : list.get(0);
                 for (int i = 0; i < date.getDayOfMonth(); i++) {
-                    if (v >> 1 << 1 == v) {
+                    if (v \>> 1 \<< 1 == v) {
                         // 低位为0且非当天说明连续签到中断
                         if (i > 0) {
                             break;
