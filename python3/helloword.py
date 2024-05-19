@@ -116,4 +116,17 @@ print(var_dict3)
 print(var_dict1.update({"name": "garden1"})) # 更新字典
 print(var_dict1["name"]) # 索引字典
 # bytes
+print("-- bytes --")
+  # 用于存储二进制数据。
+  # 写在前缀b或B后面，后面跟着字符串表示的字节数据或使用bytes()函数构造。
+  # bytes支持索引、切片、拼接、查找以及替换等操作。
+var_bytes1 = b"hello, world!"
+var_bytes2 = bytes("hello, world!", "utf-8")
+print(var_bytes1)
+print(var_bytes2)
+print(var_bytes1[0]) # 索引字节(ascii码)
+print(var_bytes1[1:5]) # 切片字节
+print(var_bytes1 + var_bytes2) # 拼接字节
+print(var_bytes1.find(b"l")) # 查找字节
+print(var_bytes1.replace(b"l", b"L")) # 替换字节
 
