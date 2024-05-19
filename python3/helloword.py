@@ -75,7 +75,7 @@ print(var_list[1:4:2]) # 步长为2列表
 print(var_list[-1::-1]) # 逆序列表
 # Tuple（不可变）
 print("-- Tuple --")
-  # 与列表类似，但元素写在小括号之间且元素不能修改。
+  # 与列表类似，但元素写在小括号()之间且元素不能修改。
   # 构造 tuple 时，如果元素只有一个，则需要在元素后面添加逗号。
 var_tuple = (1, 2, 3.0, "4", True)
 print(var_tuple) # 完整元组
@@ -90,7 +90,18 @@ print(var_tuple[1:4:2]) # 步长为2元组
 print(var_tuple[-1::-1]) # 逆序元组
 print((20,)) # 只有一个元素的元组需要在元素后面添加逗号
 # Set（可变）
-
+print("-- Set --")
+  # 用于存储无序不重复元素。
+  # 元素写在花括号{}之间或使用set()函数构造，创建空集合必须使用set()函数。
+  # 支持交集、并集、差集、对称差运算。
+var_set1 = {"Google", "Taobao"}
+var_set2 = set(["Facebook", "Baidu", "Google"])
+print(var_set1)
+print(var_set2)
+print(var_set1 & var_set2) # 交集
+print(var_set1 | var_set2) # 并集
+print(var_set1 - var_set2) # 差集
+print(var_set1 ^ var_set2) # 对称差
 # Dictionary（可变）
 
 # bytes
