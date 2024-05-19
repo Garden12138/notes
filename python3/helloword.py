@@ -103,6 +103,17 @@ print(var_set1 | var_set2) # 并集
 print(var_set1 - var_set2) # 差集
 print(var_set1 ^ var_set2) # 对称差
 # Dictionary（可变）
-
+print("-- Dictionary --")
+  # 用于存储键值对，键必须是不可变类型，值可以是任意类型。
+  # 字典写在花括号{}之间，键值对之间用冒号:隔开，键值对之间用逗号隔开或使用dict()函数构造。
+  # 字典支持索引，索引值以键为开始值。
+var_dict1 = {"name": "garden", "age": 18, "gender": "male", "score": 90.5}
+var_dict2 = dict(name="garden", age=18, gender="male", score=90.5)
+var_dict3 = dict([("name", "garden"), ("age", 18), ("gender", "male"), ("score", 90.5)])
+print(var_dict1)
+print(var_dict2)
+print(var_dict3)
+print(var_dict1.update({"name": "garden1"})) # 更新字典
+print(var_dict1["name"]) # 索引字典
 # bytes
 
