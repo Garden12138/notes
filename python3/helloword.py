@@ -74,7 +74,21 @@ print(var_list)
 print(var_list[1:4:2]) # 步长为2列表
 print(var_list[-1::-1]) # 逆序列表
 # Tuple（不可变）
-
+print("-- Tuple --")
+  # 与列表类似，但元素写在小括号之间且元素不能修改。
+  # 构造 tuple 时，如果元素只有一个，则需要在元素后面添加逗号。
+var_tuple = (1, 2, 3.0, "4", True)
+print(var_tuple) # 完整元组
+print(var_tuple[0]) # 截取元组第一个元素
+print(var_tuple[-1]) # 截取元组最后一个元素
+print(var_tuple[1:-1]) # 截取元组第二个到最后第二个元素
+print(var_tuple[1:]) # 截取元组第二个到最后一个元素
+print(var_tuple[1:3]) # 截取元组第二个到第三个元素
+print(var_tuple * 3) # 复制元组三次
+print(var_tuple + (6, 7, 8)) # 元组拼接
+print(var_tuple[1:4:2]) # 步长为2元组
+print(var_tuple[-1::-1]) # 逆序元组
+print((20,)) # 只有一个元素的元组需要在元素后面添加逗号
 # Set（可变）
 
 # Dictionary（可变）
