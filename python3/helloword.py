@@ -157,3 +157,29 @@ print(ord("a")) # 字符转整数
 print(hex(10)) # 整数转十六进制字符串
 print(oct(10)) # 整数转八进制字符串
 
+# 运算符
+# 算术运算符：+、-、*、/、//、%、**
+print("-- 算术运算符 --")
+print(20 / 3)
+print(20 // 3)
+print(2 ** 3)
+# 位运算符：&、|、^、~、<<、>>
+print("-- 位运算符 --")
+# 赋值运算符：=、+=、-=、*=、/=、//=、%=、**=、&=、|=、^=、<<=、>>=
+print("-- 赋值运算符 --")
+# print((var_hx := 10) > 1) 海象运算符，Python 3.8 新特性
+# 关系运算符：==、!=、>、<、>=、<=
+print("-- 关系运算符 --")
+# 逻辑运算符：and、or、not
+print("-- 逻辑运算符 --")
+# 成员运算符：in、not in
+print("-- 成员运算符 --")
+print("g" in "hello, world!")
+print("g" not in "hello, world!")
+# 身份运算符：is、is not
+print("-- 身份运算符 --")
+print(var_convert1 is var_convert2)
+print(var_convert1 is not var_convert2)
+# 运算符优先级：**、~、*、/、//、%、+、-、<<、>>、&、^、|、<、<=、>、>=、==、!=、is、is not、in、not in、not、and、or
+print("-- 运算符优先级 --")
+
