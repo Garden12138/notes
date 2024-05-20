@@ -1,5 +1,8 @@
 #!/usr/bin/python3
 
+import math
+import random
+
 print("hello, world!")
 
 # 基本数据类型
@@ -34,6 +37,35 @@ print(5 | 4) # 按位或，二进制位上为1则为1，否则为0
 print(5 & 4) # 按位与，二进制位上都为1则为1，否则为0
 print(5 >> 1) # 右移，二进制位向右移动一位，符号位不变
 print(5 << 1) # 左移，二进制位向左移动一位，符号位不变
+print(abs(-5)) # 取绝对值
+print(math.fabs(-5)) # 取绝对值，返回浮点型
+print(math.ceil(3.14)) # 向上取整
+print(math.floor(3.94)) # 向下取整
+print(round(3.1415926, 2)) # 小数点四舍五入
+print(math.log(100, 10)) # 计算以10为基数的100的对数
+print(math.log10(100)) # 计算以10为基数的100的对数
+print(max(1, 2, 3, 4, 5)) # 取最大值
+print(min(1, 2, 3, 4, 5)) # 取最小值
+print(math.pow(2, 3)) # 计算2的3次方
+print(math.exp(2)) # 计算自然常数e的2次方
+print(math.sqrt(16)) # 计算16的平方根
+print(math.modf(3.14)) # 取整数部分和小数部分
+print(random.random()) # 随机生成0-1之间的浮点数
+print(random.uniform(1, 100)) # 随机生成1-100之间的浮点数
+print(random.choice([1, 2, 3, 4, 5])) # 从列表中随机选择一个元素
+print(random.randrange(1, 100, 2)) # 随机生成1-100间的奇数
+print(random.shuffle([1, 2, 3, 4, 5])) # 随机打乱列表
+print(random.seed(100)) # 设置随机数种子
+print(math.sin(math.pi/2)) # 计算正弦值
+print(math.cos(math.pi/2)) # 计算余弦值
+print(math.tan(math.pi/4)) # 计算正切值
+print(math.asin(1)) # 计算反正弦值
+print(math.acos(1)) # 计算反余弦值      
+print(math.atan(1)) # 计算反正切值
+print(math.atan2(1, 1)) # 计算坐标x，y的反正切值
+print(math.degrees(math.pi/2)) # 角度转换为弧度
+print(math.radians(180)) # 弧度转换为角度
+print(math.hypot(3, 4)) # 计算斜边长度
 # String（不可变）：
 print("-- String --")
   # 用单引号或双引号括起来，支持使用\转义字符（字符串前使用r表示不转义）。
