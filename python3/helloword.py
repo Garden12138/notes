@@ -130,3 +130,30 @@ print(var_bytes1 + var_bytes2) # 拼接字节
 print(var_bytes1.find(b"l")) # 查找字节
 print(var_bytes1.replace(b"l", b"L")) # 替换字节
 
+# 数据类型转换
+# 隐式转换，自动完成，由低数据类型自动转换到高数据类型
+print("-- 隐式转换 --")
+var_convert1 = 10
+var_convert2 = 3.14
+var_convert3 = var_convert1 + var_convert2
+print(var_convert1, type(var_convert1))
+print(var_convert2, type(var_convert2))
+print(var_convert3, type(var_convert3))
+# 显式转换
+print("-- 显式转换 --")
+print(int("123")) # 字符串转整数
+print(float("3.14")) # 字符串转浮点数
+print(complex("1+2j")) # 字符串转复数
+print(str(123)) # 整数转字符串
+print(repr(123)) # 整数转字符串，带有单引号
+print(eval("1+2")) # 字符串转表达式并求值
+print(tuple(["1", "2"])) # 列表转元组
+print(list(("1", "2"))) # 元组转列表
+print(set(["1", "2"])) # 列表转集合
+print(dict([("name", "garden"), ("age", 18), ("gender", "male"), ("score", 90.5)])) # 列表转字典
+print(frozenset(["1", "2"])) # 列表转不可变集合
+print(chr(97)) # 整数转字符
+print(ord("a")) # 字符转整数
+print(hex(10)) # 整数转十六进制字符串
+print(oct(10)) # 整数转八进制字符串
+
