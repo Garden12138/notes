@@ -84,6 +84,52 @@ print(var_str[1:3]) # 截取字符串第二个到第三个字符
 print(var_str * 3) # 复制字符串三次
 print(var_str + " hello\n") # 字符串拼接包含转义符字符串
 print(var_str + r" hello\n") # 字符串拼包含转义符但不转义字符串
+print("Hello\nWorld") # 换行符
+print("Hello\rWorld~") # 回车符
+print("My name is %s, %d years old. My favorite letter is %c." % ("garden", 18, "g")) # 格式化字符串
+var_fname = "garden"
+var_fage = 18
+var_fletter = "g"
+print(f"My name is {var_fname}, {var_fage} years old. My favorite letter is {var_fletter}.") # f-string格式化字符串
+var_sentence = "my favorite letter is G"
+print(var_sentence.capitalize()) # 首字母大写，其他字母小写
+print(var_sentence.upper()) # 全部大写
+print(var_sentence.lower()) # 全部小写
+print(var_sentence.swapcase()) # 大小写互换
+print(var_sentence.title()) # 每个单词的首字母大写，其他字母小写
+print(var_sentence.center(40, "*")) # 字符串居中，包含字符串总宽度为40，填充字符为*
+print(var_sentence.ljust(40, "*")) # 字符串左对齐，包含字符串总宽度为40，填充字符为*
+print(var_sentence.rjust(40, "*")) # 字符串右对齐，包含字符串总宽度为40，填充字符为*
+print(var_sentence.zfill(40)) # 字符串右边对齐，包含字符串总宽度为40，填充字符为0
+print(len(var_sentence)) # 字符串长度
+print(var_sentence.count("G", 22, 23)) # 统计字符串中指定范围内[22, 23)出现的字符G的次数
+print(max(var_sentence)) # 字符串中最大字符
+print(min(var_sentence)) # 字符串中最小字符
+print(var_sentence.isalnum()) # 字符串是否全为字母或数字
+print(var_sentence.isalpha()) # 字符串是否全为字母或中文
+print("½:","½".isdigit()) # 字符串是否全为数字
+print(var_sentence.islower()) # 字符串是否全为小写字母
+print(var_sentence.isupper()) # 字符串是否全为大写字母
+print(var_sentence.istitle()) # 字符串是否每个单词的首字母大写，其他字母小写
+print("½:","½".isnumeric()) # 字符串是否全为数字（Unicode 数字，全角数字（双字节），罗马数字，汉字数字）
+print(var_sentence.isspace()) # 字符串是否全为空白字符（包括空格、制表符、换行符等）
+print(var_sentence.isdecimal()) # 字符串是否全为十进制数字
+print(var_sentence.startswith("my", 0, 23)) # 字符串是否以指定字符串开头，[0, 23)指定范围
+print(var_sentence.endswith("letter", 0, 23)) # 字符串是否以指定字符串结尾，[0, 23)指定范围
+print(var_sentence.find("G", 0, 23)) # 字符串中第一个出现的字符G的索引，找不到返回-1，[0, 23)指定范围
+print(var_sentence.index("G", 0, 23)) # 字符串中第一个出现的字符G的索引，找不到报错，[0, 23)指定范围
+print(var_sentence.rfind("G", 0, 23)) # 字符串中最后一个出现的字符G的索引，找不到返回-1，[0, 23)指定范围
+print(var_sentence.rindex("G", 0, 23)) # 字符串中最后一个出现的字符G的索引，找不到报错，[0, 23)指定范围
+print(var_sentence.split(" ", 2)) # 字符串按照指定字符分割，分割次数为2，返回长度为3的列表
+print("ab c\n\nde fg\rkl\r\n".splitlines(True)) # 字符串按照换行符（包括\r、\n、\r\n）分割，参数为True时保留换行符，返回列表
+print(var_sentence.lstrip("my")) # 去除字符串左边空白字符或指定字符
+print(var_sentence.rstrip("G")) # 去除字符串右边空白字符或指定字符
+print(var_sentence.strip("my G")) # 去除字符串两边空白字符或指定字符
+print(var_sentence.replace("G", "g", 1)) # 字符串替换指定字符, 最多替换一次
+print("my\tfavorite\tletter \ts\tG".expandtabs(4)) # 字符串替换制表符为指定宽度（包含前置字符串长度）的空格
+var_sentence_trans = var_sentence.maketrans("aeiou", "12345") # 创建字符映射表
+print(var_sentence.translate(var_sentence_trans)) # 使用字符映射表转换字符串
+print(var_sentence.join(("Hi! ", "!"))) # 指定序列由字符串连接成新的字符串
 # List（可变）
 print("-- List --")
   # 列表写在括号之间，元素可以为不同类型，元素之间用逗号隔开。
