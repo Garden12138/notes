@@ -2,6 +2,7 @@
 
 import math
 import random
+import operator
 
 print("hello, world!")
 
@@ -151,6 +152,47 @@ var_list[0] = 100 # 修改列表第一个元素
 print(var_list)
 print(var_list[1:4:2]) # 步长为2列表
 print(var_list[-1::-1]) # 逆序列表
+var_list[4] = False # 修改列表最后一个元素
+print(var_list)
+del var_list[4] # 删除列表最后一个元素
+print(var_list)
+var_list.append(True) # 追加元素
+print(var_list)
+print(3.0 in var_list) # 元素是否存在列表中
+print(3.0 not in var_list) # 元素是否不存在列表中
+for i in var_list:
+    print(i, end=" ") # 遍历列表
+print("\n")
+var_list.append(["7"]) # 嵌套列表
+print(var_list)
+print(operator.eq(var_list, [100, 2, 3.0, "4", True, ["7"]])) # 列表是否相等
+print(list((1, 2, "3"))) # 元组转列表
+print(len(var_list)) # 列表长度
+print(max(list((1, 2, 3, 4, 5)))) # 列表中最大元素，元素为可表示大小的number类型
+print(min(list((1, 2, 3, 4, 5)))) # 列表中最小元素，元素为可表示大小的number类型
+var_list.remove(["7"]) # 删除列表中第一个指定元素，不存在则报错
+print(var_list)
+var_list2 = [1, 2, 3, 4, 5]
+var_list.extend(var_list2) # 列表拼接
+print(var_list)
+var_list.insert(0, "garden") # 插入元素到列表指定位置
+print(var_list)
+print(var_list.pop()) # 删除列表最后一个元素，返回该元素
+print(var_list.count("garden")) # 统计列表中指定元素出现的次数
+print(var_list.index("garden")) # 列表中第一个指定元素的索引，不存在则报错
+var_list.reverse() # 列表反转
+print(var_list)
+var_list2.sort() # 列表排序
+print(var_list2)
+# 获取列表的第二个元素
+def takeSecond(elem):
+    return elem[1]
+random = [(2, 2), (3, 4), (4, 1), (1, 3)]
+random.sort(key=takeSecond, reverse=True) # 指定第二个元素倒序排序
+print(random)
+print(var_list.copy()) # 复制列表
+var_list.clear() # 清空列表
+print(var_list)
 # Tuple（不可变）
 print("-- Tuple --")
   # 与列表类似，但元素写在小括号()之间且元素不能修改。
