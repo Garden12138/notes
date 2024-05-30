@@ -212,6 +212,7 @@ print((20,)) # 只有一个元素的元组需要在元素后面添加逗号
 print(3 in var_tuple) # 元素是否存在元组中
 for e in var_tuple:
     print(e, end=" ") # 遍历元组
+print("\n")
 var_tuple1 = tuple([1, 2, 3, 4]) # 列表转元组
 print(len(var_tuple1)) # 元组长度
 print(max(var_tuple1)) # 元组中最大元素
@@ -223,12 +224,42 @@ print("-- Set --")
   # 支持交集、并集、差集、对称差运算。
 var_set1 = {"Google", "Taobao"}
 var_set2 = set(["Facebook", "Baidu", "Google"])
+var_set3 = set(("Souhu", "Bing") )
 print(var_set1)
 print(var_set2)
+print(var_set3, len(var_set3), "Bing" in var_set3) # 集合元素、集合长度、元素是否存在集合中
 print(var_set1 & var_set2) # 交集
 print(var_set1 | var_set2) # 并集
 print(var_set1 - var_set2) # 差集
 print(var_set1 ^ var_set2) # 对称差
+var_set3.add("Sina") # 添加元素
+print(var_set3)
+var_set3.update(["Zhihu", "Tencent"]) # 列表拼接
+var_set3.update(("Pdd",)) # 元组拼接
+var_set3.update({"JD": "Tiktok"}) # 字典拼接
+print(var_set3)
+var_set3.remove("Sina") # 删除元素，元素不在集合中则报错
+print(var_set3)
+var_set3.discard("Sina") # 删除元素，元素不在集合中则忽略
+print(var_set3)
+var_set3.pop() # 随机删除集合中任一元素并返回该元素
+print(var_set3)
+var_set3.clear() # 清空集合
+print(var_set3)
+var_set4 = var_set2.copy() # 复制集合
+print(var_set1.union(var_set4)) # 并集
+print(var_set1.intersection(var_set4)) # 交集
+print(var_set1.difference(var_set4)) # 差集
+print(var_set1.symmetric_difference(var_set4)) # 对称差
+print(set([1, 2, 3, 4, 5]).isdisjoint(set([4, 5, 6]))) # 两个集合是否不交集
+print(set([1, 2, 3, 4, 5]).issubset(set([1, 2, 3, 4, 5, 6]))) # 集合是否为子集
+print(set([1, 2, 3, 4, 5]).issuperset(set([1, 2, 3]))) # 集合是否为超集
+var_set1.intersection_update(var_set4) # 更新交集
+print(var_set1)
+var_set1.difference_update(var_set4) # 更新差集
+print(var_set1)
+var_set1.symmetric_difference_update(var_set4) # 更新对称差
+print(var_set1)
 # Dictionary（可变）
 print("-- Dictionary --")
   # 用于存储键值对，键必须是不可变类型，值可以是任意类型。
