@@ -265,14 +265,38 @@ print("-- Dictionary --")
   # 用于存储键值对，键必须是不可变类型，值可以是任意类型。
   # 字典写在花括号{}之间，键值对之间用冒号:隔开，键值对之间用逗号隔开或使用dict()函数构造。
   # 字典支持索引，索引值以键为开始值。
-var_dict1 = {"name": "garden", "age": 18, "gender": "male", "score": 90.5}
-var_dict2 = dict(name="garden", age=18, gender="male", score=90.5)
-var_dict3 = dict([("name", "garden"), ("age", 18), ("gender", "male"), ("score", 90.5)])
+var_dict1 = {"name": "garden", "age": 18, "gender": "male", "score": 90.5} # 字典构造-键值对
+var_dict2 = dict(name="garden", age=18, gender="male", score=90.5) # 字典构造-关键字参数
+var_dict3 = dict([("name", "garden"), ("age", 18), ("gender", "male"), ("score", 90.5)]) # 字典构造-列表嵌套元组
 print(var_dict1)
 print(var_dict2)
 print(var_dict3)
-print(var_dict1.update({"name": "garden1"})) # 更新字典
-print(var_dict1["name"]) # 索引字典
+print(var_dict1["name"], var_dict1["age"]) # 索引字典
+print(var_dict1.get("score")) # 获取字典值
+print(var_dict1.setdefault("class", "class 1")) # 获取字典值，不存在则添加默认值
+var_dict1["class"] = "class 3" # 添加键值对
+print(var_dict1)
+var_dict1.update({"name": "garden1"}) # 更新字典-键值对
+var_dict1["age"] = 28 # 更新字典-键值对
+print(var_dict1)
+del var_dict1["class"] # 删除键值对
+print(var_dict1)
+var_dict1.pop("age") # 删除键值对
+print(var_dict1)
+var_dict1.popitem() # 随机删除字典中任一键值对并返回该键值对
+print(var_dict1)
+var_dict1.clear # 清空字典
+print(var_dict1)
+del var_dict1 # 删除字典
+#print(var_dict1)
+var_dict4 = var_dict2.copy() # 复制字典
+print(var_dict4)
+var_dict5 = dict.fromkeys(["name", "age", "gender", "score"], "default") # 字典构造-指定值
+print(var_dict5)
+print(var_dict5.keys()) # 字典键
+print(var_dict5.values()) # 字典值
+print(var_dict5.items()) # 字典键值对
+print("name" in var_dict5) # 键是否存在字典中
 # bytes
 print("-- bytes --")
   # 用于存储二进制数据。
@@ -287,7 +311,6 @@ print(var_bytes1[1:5]) # 切片字节
 print(var_bytes1 + var_bytes2) # 拼接字节
 print(var_bytes1.find(b"l")) # 查找字节
 print(var_bytes1.replace(b"l", b"L")) # 替换字节
-
 # 数据类型转换
 # 隐式转换，自动完成，由低数据类型自动转换到高数据类型
 print("-- 隐式转换 --")
