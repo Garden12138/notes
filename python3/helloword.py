@@ -209,6 +209,13 @@ print(var_tuple + (6, 7, 8)) # 元组拼接
 print(var_tuple[1:4:2]) # 步长为2元组
 print(var_tuple[-1::-1]) # 逆序元组
 print((20,)) # 只有一个元素的元组需要在元素后面添加逗号
+print(3 in var_tuple) # 元素是否存在元组中
+for e in var_tuple:
+    print(e, end=" ") # 遍历元组
+var_tuple1 = tuple([1, 2, 3, 4]) # 列表转元组
+print(len(var_tuple1)) # 元组长度
+print(max(var_tuple1)) # 元组中最大元素
+print(min(var_tuple1)) # 元组中最小元素
 # Set（可变）
 print("-- Set --")
   # 用于存储无序不重复元素。
