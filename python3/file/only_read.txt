@@ -1,0 +1,2 @@
+this is a file only for reading!
+you can't write anything in it.
