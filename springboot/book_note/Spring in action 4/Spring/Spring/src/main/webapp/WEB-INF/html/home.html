@@ -1,0 +1,16 @@
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>Thymeleaf应用</title>
+</head>
+<body>
+    <h1>Thymeleaf应用</h1>
+    <a th:href="@{/home/showTestPage}" >跳转至测试页面</a>
+    <form th:action="@{/home/getFormParams}" method="POST" th:object="${params}">
+             id:<input type="text" th:field="*{id}" /><br/>
+             message:<input type="text" th:field="*{message}"  /><br/>
+             time:<input type="text" th:field="*{time}"  /><br/>
+             <input type="submit" value="commit" />
+    </form>
+</body>
+</html>
