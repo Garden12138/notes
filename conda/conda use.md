@@ -45,6 +45,16 @@
 
 * 使用
 
+  * 配置默认通道源：
+
+    ```bash
+    conda config --show channels
+    conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main
+    conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free
+    conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/
+    conda config --set show_channel_urls yes
+    ```
+
   * 创建环境，如创建一个名为```py3-8```的python3.8环境：
 
     ```bash
@@ -99,6 +109,21 @@
   
     ```bash
     conda deactivate
+    ```
+
+  * 若需设置当前激活环境变量，则执行：
+
+    ```bash
+    # 查看当前激活环境变量
+    conda env config vars list
+    # 设置当前激活环境变量，设置后需重新激活环境（activate）
+    conda env config vars set PY_VERSION=3.12
+    ```
+
+  * 登录终端后默认环境为```base```，若需取消，则执行：
+
+    ```bash
+    conda config --set auto_activate_base false
     ```
 
 > 总结
