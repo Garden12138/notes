@@ -1,0 +1,12 @@
+groups:
+- name: order-service-alert-rule
+  rules:
+  - alert: order-error-rate-high # 10分钟内下单失败率是否大于10%
+    expr: sum(rate(order_error_count_total{status="error",}[10m])) / sum(rate(order_count_total{order="order_tpl",}[10m])) > 0.1
+    for: 1m
+    labels:
+      severity: major
+      team: garden
+    annotations:
+      summary: "订单服务响应异常！！"
+      description: "10分钟订单错误率已经超过10% (当前值: {{ $value }} ！！！"
