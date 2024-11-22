@@ -21,7 +21,6 @@
 * Kong
 * Zuul
 * Shenyu
-
 * SprngCloud Sleuth + Zipkin
 * Skywalking N2
 
@@ -49,6 +48,7 @@
 > 提升
 * Go实战
 * K8S实战
+* AI
 
 > 当前
 
