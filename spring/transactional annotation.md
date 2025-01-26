@@ -525,6 +525,25 @@
 
 > 剖析@Transactional注解的实现原理
 
+![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/spring-transaction/Snipaste_2025-01-26_15-02-38.png)
+
+  * 通过使用导入```bean```选择器的@EnableTransactionManagement注解来定义```EnableTransactionManagementConfiguration```配置类，使用的选择器```TransactionManagementConfigurationSelector```定义了两个重要的```bean```：
+    
+    * ```ProxyTransactionManagementConfiguration```是代理事务管理配置类，定义了```transactionAdvisor```切面、```transactionAttributeSource```切点以及```transactionInterceptor```通知：
+
+      *  ```transactionAttributeSource```切点，维护了事务注解解析器，负责解析注解上的事务属性，并将其转换为```TransactionAttribute```对象。但它不是真正的切点，真正的切点维护在切面里。
+      * ```transactionAdvisor```切面，维护了真正的切点```TransactionAttributeSourcePointcut```，其使用```transactionAttributeSource```切点解析事务属性来匹配目标方法。
+      * ```transactionInterceptor```通知，继承了父类```TransactionAspectSupport```使用```invokeWithinTransaction```方法定义事务的运行逻辑，包括事务的创建、提交、回滚等。
+
+    * ```AutoProxyRegistrar```，自动代理注册类定义了```bean```的后置处理器```InfrastructureAdvisorAutoProxyCreator```，遍历所有类型为```Advisor```的```bean```，匹配返回满足切点条件的切面列表，选择代理方法生成代理。
+
+  * 执行```@Transactiona```标记的方法时，会进入代理对象```CglibAopProxy$DynamicAdvisedInterceptor```逻辑，会在```ReflectiveMethodInvocation```通过方法```proceed```执行```transactionInterceptor```定义的```invokeWithinTransaction```方法，其主要逻辑如下：
+
+    * 获取连接，开启事务
+    * 调用原生方法
+    * 发生异常，回滚事务
+    * 提交事务
+
 > 项目代码
 
 * [springboot-transactional](https://gitee.com/FSDGarden/springboot/tree/spring-transactional/)
@@ -534,3 +553,4 @@
 * [拜托，不要在问我@Transactional注解了](https://juejin.cn/post/6844904137927163912)
 * [SpringTransaction](https://github.com/hechaoqi123/SpringTransaction/tree/master)
 * [你必须懂也可以懂的@Transactional原理](https://juejin.cn/post/6968384376824561671)
+* [面试官：说一说Transactional注解实现原理](https://juejin.cn/post/7346763303458947123)
