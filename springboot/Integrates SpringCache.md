@@ -67,6 +67,37 @@
   }
   ```
 
+> 使用Guava实现
+
+* 集成```Guava```
+
+  ```xml
+  <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+  </dependency>
+  ```
+
+* 配置缓存管理器
+
+  ```java
+  @Configuration
+  @EnableCaching
+  public class GuavaCacheConfig {
+
+      @Bean
+      public CacheManager cacheManager() {
+          GuavaCacheManager cacheManager = new GuavaCacheManager();
+          cacheManager.setCacheBuilder(
+                  CacheBuilder.newBuilder().
+                          expireAfterWrite(10, TimeUnit.SECONDS).
+                          maximumSize(1000));
+          return cacheManager;
+      }
+  }
+  ```
+
 > 使用注解
 
   ```bash
@@ -116,3 +147,4 @@
 
 * [Springboot 整合 SpringCache 使用 Redis 作为缓存](https://www.cnblogs.com/hanzhe/p/16935954.html#)
 * [SpringCache整合Redis](https://blog.hackyle.com/article/java-demo/springcache-redis)
+* [https://segmentfault.com/a/1190000017802222](https://segmentfault.com/a/1190000017802222)
