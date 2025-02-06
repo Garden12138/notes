@@ -93,7 +93,6 @@
 * [ubuntu安装gcc和gcc c++的命令](https://blog.csdn.net/qq_39034148/article/details/132657823)
 * [ShardingSphere](https://shardingsphere.apache.org/document/5.0.0/cn/overview/)
 * [聊聊select for update到底加了什么锁](https://ost.51cto.com/posts/20956)
-* [查看Linux端口占用，并kill掉相关进程](https://blog.csdn.net/whdxjbw/article/details/80681191)
 * [如何使用Git LFS?](https://help.aliyun.com/zh/yunxiao/user-guide/how-to-use-git-lfs)
 * [不获取子查询的属性就不会触发子查询](https://www.cnblogs.com/lzghyh/p/14926663.html)
 * [mysql 查询树类型的层级数据(父子，层层递归)](https://blog.csdn.net/k0307x1990y/article/details/122669184)
@@ -116,9 +115,7 @@
 * [rdr安装使用(redis内存分析工具)](https://www.cnblogs.com/nanxiang/p/16773477.html)
 * [Either the node already knows other nodes (check with CLUSTER NODES) error message on joining a cluster #3154
 ](https://github.com/redis/redis/issues/3154)
-* [Mybatis plus并发更新时的问题](https://blog.csdn.net/weixin_39973810/article/details/134535908)
 * [Docker环境下安装部署Redis Sentinel](https://luckyxue.github.io/2020/04/20/Docker%E7%8E%AF%E5%A2%83%E4%B8%8B%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2Redis-Sentinel/)
-* [Linux 查看日志常用命令](https://maoyunfei.github.io/linux/e6c0563c/)
 * [springboot无法注入公共模块类的问题](https://juejin.cn/post/6844903764529250317)
 * [SpringBoot2.x是怎样只初始化LettuceConnectionFactory的呢](https://somersames.xyz/2020/01/05/SpringBoot2-x%E6%98%AF%E6%80%8E%E6%A0%B7%E5%8F%AA%E5%88%9D%E5%A7%8B%E5%8C%96LettuceConnectionFactory%E7%9A%84%E5%91%A2/)
 * [CentOS常见问题应对，升级make和gcc版本](https://blog.csdn.net/sinat_32873711/article/details/126882390)
