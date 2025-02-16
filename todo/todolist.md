@@ -61,7 +61,7 @@
 * [Spring Cloud Security：Oauth2使用入门](https://juejin.cn/post/6844903987137740813)
 * [GitHub OAuth 第三方登录示例教程](https://www.ruanyifeng.com/blog/2019/04/github-oauth.html)
 * [OAuth 2.0 的四种方式](https://www.ruanyifeng.com/blog/2019/04/oauth-grant-types.html)
-* [OAuth 2.0 的一个简单解释](https://www.ruanyifeng.com/blog/2019/04/oauth_design.html])
+* [OAuth 2.0 的一个简单解释](https://www.ruanyifeng.com/blog/2019/04/oauth_design.html)
 * [理解OAuth 2.0](https://www.ruanyifeng.com/blog/2014/05/oauth_2_0.html)
 * [面试题：rm 删除文件之后，空间就被释放了吗？你知道答案吗？](https://juejin.cn/post/6903044406291464200)
 * [2024 美团技术团队热门技术文章汇总](https://juejin.cn/post/7452935566839922723)
