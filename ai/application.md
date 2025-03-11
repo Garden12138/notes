@@ -22,10 +22,10 @@
 
 > todo  
 * deepseek + ps 批量处理海报图片
-* deepseek + execl 自动处理表格信息
+* deepseek + execl 自动处理表格信息（https://www.office-ai.cn/static/introductions/officeai/introduction.html）
 * deepseek + mj 设计师的超级助手
 * deepseek + cursor ai编程助手
-* deepseek + notion 自动生成文本知识库
+* deepseek + notion 自动生成文本知识库 ❌
 * deepseek + otter 一键转会议记录
 * deepseek + 即梦 + 剪映 一键爆款视频
 * deepseek + 即梦 + tripo 3D模型秒创建 https://m.hupu.com/bbs-share/630587015.html?share=share&euid=134094451833050&cid=67664034
@@ -36,3 +36,4 @@
 * deepseek + 讯飞听见 + 飞书
 * deepseek + durable 自动生成网站 https://m.hupu.com/bbs-share/630587015.html?share=share&euid=134094451833050&cid=67664034
 * deepseek + 蝉镜 批量制作视频 https://m.hupu.com/bbs-share/630587015.html?share=share&euid=134094451833050&cid=67664034
+* https://github.com/deepseek-ai/awesome-deepseek-integration/blob/main/README_cn.md
