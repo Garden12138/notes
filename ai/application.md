@@ -80,3 +80,76 @@ https://codeium.com/windsurf | Windsurf Editor by Codeium
 https://github.com/djcopley/ShellOracle/ | djcopley/ShellOracle: A terminal utility for intelligent shell command generation
 https://github.com/AIDC-AI/ComfyUI-Copilot | AIDC-AI/ComfyUI-Copilot: An AI-powered custom node for ComfyUI designed to enhance workflow automation and provide intelligent assistance
 https://github.com/deepseek-ai/awesome-deepseek-integration/blob/main/README_cn.md | awesome-deepseek-integration/README_cn.md at main · deepseek-ai/awesome-deepseek-integration
+
+AI写作工具
+豆包（火山写作）-> 活动策划内容生成 -> https://www.doubao.com/chat/2322909353459714
+kimi -> 办公室写作助手 -> https://kimi.moonshot.cn/chat/cvjsfkeqvl78v7dj7r0g
+AI图像工具
+通义万相 -> 文字生成图片、图片生成视频 -> https://tongyi.aliyun.com/wanxiang/creation、https://tongyi.aliyun.com/wanxiang/videoCreation
+可灵AI -> 文字生成图片、图片生成视频、文字生成音频、图片合成、配音音频 -> https://app.klingai.com/cn/text-to-image/new、https://app.klingai.com/cn/image-to-video/frame-mode/new、https://app.klingai.com/cn/text-to-audio/new、https://app.klingai.com/cn/try-on/model/new、https://app.klingai.com/cn/video-to-lip/new
+万相营造 https://agi.taobao.com/
+icongen https://www.icongen.io/
+hitems https://zaohaowu.com/
+tripo ai https://www.tripo3d.ai/
+webshop https://www.weshop.com/
+羚珑 https://ling.jd.com/
+AI视频工具
+通义万相
+可灵AI
+即创 https://aic.oceanengine.com/
+Humva https://humva.ai/avatar/home
+noisee ai https://noisee.com.cn/#/
+必剪 https://member.bilibili.com/
+opusclip https://www.opus.pro/
+descript https://www.descript.com/
+蝉镜 https://www.chanjing.cc/
+AI办公工具
+apippt https://www.aippt.cn/
+gamma https://gamma.app/
+kimi https://kimi.moonshot.cn/
+wps https://ai.wps.cn/
+wps灵犀 https://lingxi.wps.cn/
+通义智文 https://tongyi.aliyun.com/
+processon https://www.processon.com/
+xmindai https://xmind.ai/
+通义听悟 https://tingwu.aliyun.com/
+飞书多维表格 https://www.feishu.cn/
+Raycast AI https://www.raycast.com/
+Hoarder https://hoarder.app/
+qimi https://qimi.com/
+glif https://glif.app/
+通义晓蜜 https://tongyi.aliyun.com/xiaomi
+
+AI设计工具
+
+AI对话聊天
+
+AI编程工具
+
+AI搜索引擎
+
+AI音频工具
+
+AI开发平台
+
+AI训练模型
+
+AI内容检测
+
+AI语言翻译
+
+AI法律助手
+
+AI提示指令
+
+AI模型评测
+
+uv sync --all-packages -i https://mirrors.aliyun.com/pypi/simple/ --frozen \
+--extra "base" \
+--extra "proxy_openai" \
+--extra "hf" \
+--extra "llama_cpp" \
+--extra "rag" \
+--extra "storage_chromadb" \
+--extra "dbgpts" \
+--extra "quant_bnb"
