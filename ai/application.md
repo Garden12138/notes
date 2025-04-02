@@ -118,12 +118,24 @@ Raycast AI https://www.raycast.com/
 Hoarder https://hoarder.app/
 qimi https://qimi.com/
 glif https://glif.app/
-通义晓蜜 https://tongyi.aliyun.com/xiaomi
-
+通义晓蜜 https://tongy
+钉钉个人版 https://workspace.dingtalk.com/
 AI设计工具
-
-AI对话聊天
-
+Recraft AI https://www.recraft.ai/
+墨刀 https://modao.cc/feature/ai.html
+AI对话工具
+deepseek https://www.deepseek.com/
+chatgpt https://www.chatgpt.com/
+通义千问 https://tongyi.aliyun.com/qianwen/
+qwenchat https://chat.qwen.ai/
+豆包 https://www.doubao.com/
+kimi https://kimi.moonshot.cn/
+通义星尘 https://tongyi.aliyun.com/xingchen/
+grok https://x.ai/grok
+claude https://claude.ai/
+gemini https://gemini.google.com/
+huggingchat https://huggingface.co/chat/
+koko ai https://www.seeles.ai/
 AI编程工具
 
 AI搜索引擎
