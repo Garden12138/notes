@@ -137,6 +137,20 @@ gemini https://gemini.google.com/
 huggingchat https://huggingface.co/chat/
 koko ai https://www.seeles.ai/
 AI编程工具
+trae https://www.trae.com.cn/
+cursor https://www.cursor.com/
+windsurf https://codeium.com/windsurf
+github copilot https://github.com/features/copilot
+通义灵码 https://lingma.aliyun.com/lingma
+junie https://www.jetbrains.com/junie/
+jetbrains ai https://www.jetbrains.com/ai/
+codium ai https://www.qodo.ai/
+tabby https://www.tabbyml.com/
+fitten code https://code.fittentech.com/
+deco https://ling-deco.jd.com/
+httpie ai https://httpie.io/ai
+hocoos https://hocoos.com/
+heycli https://www.heycli.com/
 
 AI搜索引擎
 
