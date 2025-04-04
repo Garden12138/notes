@@ -84,6 +84,7 @@ https://github.com/deepseek-ai/awesome-deepseek-integration/blob/main/README_cn.
 AI写作工具
 豆包（火山写作）-> 活动策划内容生成 -> https://www.doubao.com/chat/2322909353459714
 kimi -> 办公室写作助手 -> https://kimi.moonshot.cn/chat/cvjsfkeqvl78v7dj7r0g
+
 AI图像工具
 通义万相 -> 文字生成图片、图片生成视频 -> https://tongyi.aliyun.com/wanxiang/creation、https://tongyi.aliyun.com/wanxiang/videoCreation
 可灵AI -> 文字生成图片、图片生成视频、文字生成音频、图片合成、配音音频 -> https://app.klingai.com/cn/text-to-image/new、https://app.klingai.com/cn/image-to-video/frame-mode/new、https://app.klingai.com/cn/text-to-audio/new、https://app.klingai.com/cn/try-on/model/new、https://app.klingai.com/cn/video-to-lip/new
@@ -93,6 +94,7 @@ hitems https://zaohaowu.com/
 tripo ai https://www.tripo3d.ai/
 webshop https://www.weshop.com/
 羚珑 https://ling.jd.com/
+
 AI视频工具
 通义万相
 可灵AI
@@ -103,6 +105,7 @@ noisee ai https://noisee.com.cn/#/
 opusclip https://www.opus.pro/
 descript https://www.descript.com/
 蝉镜 https://www.chanjing.cc/
+
 AI办公工具
 apippt https://www.aippt.cn/
 gamma https://gamma.app/
@@ -120,9 +123,11 @@ qimi https://qimi.com/
 glif https://glif.app/
 通义晓蜜 https://tongy
 钉钉个人版 https://workspace.dingtalk.com/
+
 AI设计工具
 Recraft AI https://www.recraft.ai/
 墨刀 https://modao.cc/feature/ai.html
+
 AI对话工具
 deepseek https://www.deepseek.com/
 chatgpt https://www.chatgpt.com/
@@ -136,6 +141,7 @@ claude https://claude.ai/
 gemini https://gemini.google.com/
 huggingchat https://huggingface.co/chat/
 koko ai https://www.seeles.ai/
+
 AI编程工具
 trae https://www.trae.com.cn/
 cursor https://www.cursor.com/
@@ -153,22 +159,52 @@ hocoos https://hocoos.com/
 heycli https://www.heycli.com/
 
 AI搜索引擎
+心流 https://iflow.cn/
+devv https://devv.ai/
+phind https://www.phind.com/
+xanswer https://www.xanswer.com
 
 AI音频工具
+通义听唔 https://tingwu.aliyun.com/
+suno https://suno.com/
+minimax audio https://www.minimax.io/
 
-AI开发平台
+AI开发平台/框架
+dify https://dify.ai/
+coze https://www.coze.cn/
+chatdev https://chatdev.modelbest.cn
+langchain https://python.langchain.com/docs/introduction/
+文心智能体平台 https://agents.baidu.com/
+pytorch https://pytorch.org/
+mlx https://ml-explore.github.io/mlx/build/html/index.html
+numpy https://numpy.org/
+dl4j https://deeplearning4j.konduit.ai/
+jax https://docs.jax.dev/en/latest/
+nltk https://www.nltk.org/
 
 AI训练模型
-
-AI内容检测
-
-AI语言翻译
+魔塔社区 https://www.modelscope.cn/home
+huggingface https://huggingface.co/
+ollama https://ollama.com/
+cherry studio https://cherry-ai.com/
+chatbot https://chatboxai.app/
+jan https://jan.ai/
+anythingllm https://anythingllm.com/
 
 AI法律助手
+通义法睿 https://tongyi.aliyun.com/farui/home
 
-AI提示指令
+AI提示指令（学习参考）
+langgpt https://github.com/langgptai/LangGPT
+ai short https://www.aishort.top/
+snack prompt https://snackprompt.com/
+提示工程指南 https://www.promptingguide.ai/zh
 
 AI模型评测
+openllmleaderboard https://huggingface.co/spaces/open-llm-leaderboard/open_llm_leaderboard#/
+
+AI学习网站
+阿里云AI学习路线 https://developer.aliyun.com/learning/roadmap/ai
 
 uv sync --all-packages -i https://mirrors.aliyun.com/pypi/simple/ --frozen \
 --extra "base" \
