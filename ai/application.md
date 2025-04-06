@@ -23,21 +23,6 @@
 > todo
 * 经测试目前硅基流动(siliconflow)提供的deepSeek api 服务比较稳定，注册即送2000万Tokens https://account.siliconflow.cn/zh/login?redirect=https%3A%2F%2Fcloud.siliconflow.cn&invitation=foufCerk
 * 火山方舟：每个模型注册即送50万tokens https://www.volcengine.com/experience/ark?utm_term=202502dsinvite&ac=DSASUQY5&rc=IJSE43PZ
-* deepseek + ps 批量处理海报图片
-* deepseek + execl 自动处理表格信息（https://www.office-ai.cn/static/introductions/officeai/introduction.html）
-* deepseek + mj 设计师的超级助手
-* deepseek + cursor ai编程助手
-* deepseek + notion 自动生成文本知识库 ❌
-* deepseek + otter 一键转会议记录
-* deepseek + 即梦 + 剪映 一键爆款视频
-* deepseek + 即梦 + tripo 3D模型秒创建 https://m.hupu.com/bbs-share/630587015.html?share=share&euid=134094451833050&cid=67664034
-* deepseek + heygen/闪剪 自动生成数字人口播
-* deepseek + canva/创可贴 一键生成爆款图文
-* deepseek + sunoai 原创音乐制作好帮手
-* deepseek + xmind 思维导图制作
-* deepseek + 讯飞听见 + 飞书
-* deepseek + durable 自动生成网站 https://m.hupu.com/bbs-share/630587015.html?share=share&euid=134094451833050&cid=67664034
-* deepseek + 蝉镜 批量制作视频 https://m.hupu.com/bbs-share/630587015.html?share=share&euid=134094451833050&cid=67664034
 * https://github.com/deepseek-ai/awesome-deepseek-integration/blob/main/README_cn.md
 https://huggingface.co/spaces | Spaces - Hugging Face
 https://chat.deepseek.com/a/chat/s/f605396e-322a-4c58-a2dc-d5e39f1f5bfa | DeepSeek - 探索未至之境
@@ -205,6 +190,65 @@ openllmleaderboard https://huggingface.co/spaces/open-llm-leaderboard/open_llm_l
 
 AI学习网站
 阿里云AI学习路线 https://developer.aliyun.com/learning/roadmap/ai
+
+模型任务分类
+多模态：
+Audio-Text-to-Text -> 音频+文本 to 文本 -> Qwen/Qwen2-Audio-7B-Instruct
+Image-Text-to-Text -> 图像+文本 to 文本 -> Qwen/Qwen2.5-VL-32B-Instruct
+Video-Text-to-Text -> 视频+文本 to 文本 -> llava-hf/LLaVA-NeXT-Video-7B-hf
+Visual Question Answering -> 视觉问答（图像/视频 + 文本 to 文本）-> DAMO-NLP-SG/VideoLLaMA3-7B 
+Document Question Answering -> 文档问答（文档（本质上也是文本）+文本 to 文本）-> naver-clova-ix/donut-base-finetuned-docvqa
+Visual Document Retrieval -> 视觉文档检索（图像 + 文档（本） -> 文档（本）） -> vidore/colpali-v1.2
+Any-to-Any -> 任意模态（文本/图像/视频/音频）+任意模态（文本/图像/视频/音频） -> Qwen/Qwen2.5-Omni-7B
+视觉：
+Depth Estimation -> 深度估计 -> depth-anything/Depth-Anything-V2-Small-hf
+Image Classification -> 图像分类（图像 -> 文本（类别）） -> nvidia/MambaVision-L3-512-21K
+Zero-Shot Image Classification -> 零样本图像分类（图像 -> 文本（未知类别））-> google/siglip2-so400m-patch14-384
+Object Detection -> 实体检测（图像 -> 文本（类别 + 位置）） -> lewiswatson/yolov8x-tuned-hand-gestures
+Zero-Shot Object Detection -> 零样本实体检测（图像 -> 文本（未知类别 + 位置）） -> jameslahm/yoloe-v8l-seg
+Image Segmentation -> 图像分割（图像 -> 图像（分割）） -> briaai/RMBG-2.0
+Text-to-Image -> 文本转图像（文本 -> 图像） -> Shakker-Labs/AWPortraitCN2
+Image-to-Text -> 图像转文本（图像 -> 文本） -> Salesforce/blip-image-captioning-base
+Image-to-Image -> 图像转图像（图像 -> 图像）->fotographerai/zenctrl_tools
+Image-to-Video -> 图像转视频（图像 -> 视频） -> Wan-AI/Wan2.1-I2V-14B-720P
+Text-to-Video -> 文本转视频（文本 -> 视频） -> Wan-AI/Wan2.1-T2V-14B
+Text-to-3D -> 文本转三维（文本 -> 三维） -> JeffreyXiang/TRELLIS-text-xlarge
+Image-to-3D -> 图像转三维（图像 -> 三维） -> JeffreyXiang/TRELLIS-image-large
+Unconditional Image Generation -> 无条件图像生成（文本 -> 图像（随机）） -> qualcomm/Stable-Diffusion-v2.1
+Video Classification -> 视频分类（视频 -> 文本（类别）） -> MCG-NJU/videomae-base-finetuned-kinetics
+Mask Generation ->  ->Xenova/sam-vit-base
+Image Feature Extraction -> -> MahmoodLab/UNI2-h
+Keypoint Detection -> -> magic-leap-community/superpoint
+自然语言处理：
+Text Classification ->  -> BAAI/bge-reranker-v2-m3 
+Token Classification -> -> iiiorg/piiranha-v1-detect-personal-information
+Table Question Answering -> -> microsoft/tapex-large-finetuned-wtq
+Question Answering -> -> distilbert/distilbert-base-cased-distilled-squad
+Zero-Shot Classification -> -> knowledgator/comprehend_it-base
+Translation -> -> ModelSpace/GemmaX2-28-9B-v0.1
+Summarization ->  -> facebook/bart-large-cnn
+Feature Extraction -> -> BAAI/bge-large-zh-v1.5
+Text Generation -> -> Qwen/QwQ-32B deepseek-ai/DeepSeek-R1 deepseek-ai/DeepSeek-V3-0324
+Text2Text Generation -> -> teapotai/teapotllm
+Fill Mask -> -> answerdotai/ModernBERT-base
+Sentence Similarity -> -> sentence-transformers/all-MiniLM-L6-v2
+Text Ranking -> -> sentence-transformers/all-MiniLM-L6-v2
+音频：
+Text-to-Speech -> 文本转语音（文本 -> 语音） -> hexgrad/Kokoro-82M
+Text-to-Audio -> 文本转音频（文本 -> 音频） -> stabilityai/stable-audio-open-1.0
+Audio-to-Audio -> 音频转音频（音频 -> 音频） -> HKUSTAudio/xcodec2
+Automatic Speech Recognition -> -> openai/whisper-large-v3
+Audio Classification -> -> speechbrain/lang-id-voxlingua107-ecapa
+Voice Activity Detection -> -> pyannote/segmentation-3.0
+表格：
+Tabular Classification -> -> Prior-Labs/TabPFN-v2-clf
+Tabular Regression -> -> Prior-Labs/TabPFN-v2-reg
+Time Series Forecasting -> -> amazon/chronos-t5-small
+强化学习：
+Reinforcemen Learning -> -> ValueFX9507/Tifa-DeepsexV2-7b-MGRPO-GGUF-Q8
+Robotics -> -> Robotics
+其他：
+Graph Machine Learning -> -> ibm-research/materials.pos-egnn
 
 uv sync --all-packages -i https://mirrors.aliyun.com/pypi/simple/ --frozen \
 --extra "base" \
