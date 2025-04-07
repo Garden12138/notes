@@ -231,25 +231,25 @@ Summarization -> 摘要总结（文本 -> 文本（摘要）） -> facebook/bart
 Feature Extraction -> 特征提取（文本 -> 向量特征） -> BAAI/bge-large-zh-v1.5
 Text Generation -> 文本生成（对话） -> Qwen/QwQ-32B deepseek-ai/DeepSeek-R1 deepseek-ai/DeepSeek-V3-0324
 Text2Text Generation -> 文本到文本生成（翻译、文本摘要、问答生成、文本修复） -> teapotai/teapotllm
-Fill Mask -> -> answerdotai/ModernBERT-base
-Sentence Similarity -> -> sentence-transformers/all-MiniLM-L6-v2
-Text Ranking -> -> sentence-transformers/all-MiniLM-L6-v2
+Fill Mask -> 填充掩码（文本（掩码）-> 文本（填充）） -> answerdotai/ModernBERT-base
+Sentence Similarity -> 句子相似度 -> sentence-transformers/all-MiniLM-L6-v2
+Text Ranking -> 文本排序（一组文本根据相关性排序） -> sentence-transformers/all-MiniLM-L6-v2
 音频：
 Text-to-Speech -> 文本转语音（文本 -> 语音） -> hexgrad/Kokoro-82M
 Text-to-Audio -> 文本转音频（文本 -> 音频） -> stabilityai/stable-audio-open-1.0
 Audio-to-Audio -> 音频转音频（音频 -> 音频） -> HKUSTAudio/xcodec2
-Automatic Speech Recognition -> -> openai/whisper-large-v3
-Audio Classification -> -> speechbrain/lang-id-voxlingua107-ecapa
-Voice Activity Detection -> -> pyannote/segmentation-3.0
+Automatic Speech Recognition -> 自动语音识别（语言 -> 文本） -> openai/whisper-large-v3
+Audio Classification -> 音频分类 -> speechbrain/lang-id-voxlingua107-ecapa
+Voice Activity Detection -> 语音活动检测（检测人声，区分静音/噪音） -> pyannote/segmentation-3.0
 表格：
-Tabular Classification -> -> Prior-Labs/TabPFN-v2-clf
-Tabular Regression -> -> Prior-Labs/TabPFN-v2-reg
-Time Series Forecasting -> -> amazon/chronos-t5-small
+Tabular Classification -> 表格分类 -> Prior-Labs/TabPFN-v2-clf
+Tabular Regression -> 表格回归（基于表格预测连续值） -> Prior-Labs/TabPFN-v2-reg
+Time Series Forecasting -> 时间序列预测（基于历史数据预测未来值） -> amazon/chronos-t5-small
 强化学习：
-Reinforcemen Learning -> -> ValueFX9507/Tifa-DeepsexV2-7b-MGRPO-GGUF-Q8
-Robotics -> -> Robotics
+Reinforcemen Learning -> 强化学习（学习最优测策略） -> ValueFX9507/Tifa-DeepsexV2-7b-MGRPO-GGUF-Q8
+Robotics -> 机器人学 -> Robotics
 其他：
-Graph Machine Learning -> -> ibm-research/materials.pos-egnn
+Graph Machine Learning -> 图机器学习（处理图数据） ->  -> ibm-research/materials.pos-egnn
 
 uv sync --all-packages -i https://mirrors.aliyun.com/pypi/simple/ --frozen \
 --extra "base" \
@@ -260,20 +260,3 @@ uv sync --all-packages -i https://mirrors.aliyun.com/pypi/simple/ --frozen \
 --extra "storage_chromadb" \
 --extra "dbgpts" \
 --extra "quant_bnb"
-
-ai模型中的Text2Text Generation指的是什么？能不能介绍一下。
-ai模型中的Fill Mask指的是什么？能不能介绍一下。
-ai模型中的Sentence Similarity指的是什么？能不能介绍一下。
-ai模型中的Text Ranking指的是什么？能不能介绍一下。
-ai模型中的Text-to-Speech指的是什么？能不能介绍一下。
-ai模型中的Text-to-Audio指的是什么？能不能介绍一下。
-ai模型中的Audio-to-Audio指的是什么？能不能介绍一下。
-ai模型中的Automatic Speech Recognition指的是什么？能不能介绍一下。
-ai模型中的Audio Classification指的是什么？能不能介绍一下。
-ai模型中的Voice Activity Detection指的是什么？能不能介绍一下。
-ai模型中的Tabular Classification指的是什么？能不能介绍一下。
-ai模型中的Tabular Regression指的是什么？能不能介绍一下。
-ai模型中的Time Series Forecasting指的是什么？能不能介绍一下。
-ai模型中的Reinforcemen Learning 指的是什么？能不能介绍一下。
-ai模型中的Robotics指的是什么？能不能介绍一下。
-ai模型中的Graph Machine Learning指的是什么？能不能介绍一下。
