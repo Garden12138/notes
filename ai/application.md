@@ -67,16 +67,16 @@ https://github.com/AIDC-AI/ComfyUI-Copilot | AIDC-AI/ComfyUI-Copilot: An AI-powe
 https://github.com/deepseek-ai/awesome-deepseek-integration/blob/main/README_cn.md | awesome-deepseek-integration/README_cn.md at main · deepseek-ai/awesome-deepseek-integration
 
 AI写作工具
-豆包（火山写作）-> 活动策划内容生成 -> https://www.doubao.com/chat/2322909353459714
-kimi -> 办公室写作助手 -> https://kimi.moonshot.cn/chat/cvjsfkeqvl78v7dj7r0g
+豆包（火山写作）-> 活动策划内容生成 -> https://www.doubao.com/chat/2322909353459714 ✅
+kimi -> 办公室写作助手 -> https://kimi.moonshot.cn/chat/cvjsfkeqvl78v7dj7r0g ✅
 
 AI图像工具
-通义万相 -> 文字生成图片、图片生成视频 -> https://tongyi.aliyun.com/wanxiang/creation、https://tongyi.aliyun.com/wanxiang/videoCreation
-可灵AI -> 文字生成图片、图片生成视频、文字生成音频、图片合成、配音音频 -> https://app.klingai.com/cn/text-to-image/new、https://app.klingai.com/cn/image-to-video/frame-mode/new、https://app.klingai.com/cn/text-to-audio/new、https://app.klingai.com/cn/try-on/model/new、https://app.klingai.com/cn/video-to-lip/new
-万相营造 https://agi.taobao.com/
-icongen https://www.icongen.io/
+通义万相 -> 文字生成图片、图片生成视频 -> https://tongyi.aliyun.com/wanxiang/creation、https://tongyi.aliyun.com/wanxiang/videoCreation ✅
+可灵AI -> 文字生成图片、图片生成视频、文字生成音频、图片合成、配音音频 -> https://app.klingai.com/cn/text-to-image/new、https://app.klingai.com/cn/image-to-video/frame-mode/new、https://app.klingai.com/cn/text-to-audio/new、https://app.klingai.com/cn/try-on/model/new、https://app.klingai.com/cn/video-to-lip/new ✅
+万相营造 https://agi.taobao.com/ ✅
+icongen https://www.icongen.io/ ✅
 hitems https://zaohaowu.com/
-tripo ai https://www.tripo3d.ai/
+tripo ai https://www.tripo3d.ai/ ✅
 webshop https://www.weshop.com/
 羚珑 https://ling.jd.com/
 
@@ -84,21 +84,20 @@ AI视频工具
 通义万相
 可灵AI
 即创 https://aic.oceanengine.com/
-Humva https://humva.ai/avatar/home
+Humva https://humva.ai/avatar/home 
 noisee ai https://noisee.com.cn/#/
-必剪 https://member.bilibili.com/
-opusclip https://www.opus.pro/
-descript https://www.descript.com/
+opusclip https://www.opus.pro/ ✅
+descript https://www.descript.com/ ✅
 蝉镜 https://www.chanjing.cc/
 
 AI办公工具
 apippt https://www.aippt.cn/
-gamma https://gamma.app/
+gamma https://gamma.app/ ✅
 kimi https://kimi.moonshot.cn/
 wps https://ai.wps.cn/
-wps灵犀 https://lingxi.wps.cn/
-通义智文 https://tongyi.aliyun.com/
-processon https://www.processon.com/
+wps灵犀 https://lingxi.wps.cn/ ✅
+通义智文 https://tongyi.aliyun.com/ ✅
+processon https://www.processon.com/ ✅
 xmindai https://xmind.ai/
 通义听悟 https://tingwu.aliyun.com/
 飞书多维表格 https://www.feishu.cn/
@@ -106,42 +105,44 @@ Raycast AI https://www.raycast.com/
 Hoarder https://hoarder.app/
 qimi https://qimi.com/
 glif https://glif.app/
-通义晓蜜 https://tongy
-钉钉个人版 https://workspace.dingtalk.com/
+通义晓蜜 https://tongyi.aliyun.com/xiaomi
+钉钉个人版 https://workspace.dingtalk.com/ 
+钉钉闪记 https://alidocs.dingtalk.com/i/p/Y7kmbokZp3pgGLq2/docs/lDZEN6or0dp8Z4dl316qVaPYQK91xzy3 ✅
 
 AI设计工具
 Recraft AI https://www.recraft.ai/
 墨刀 https://modao.cc/feature/ai.html
 
 AI对话工具
-deepseek https://www.deepseek.com/
+deepseek https://www.deepseek.com/ ✅
 chatgpt https://www.chatgpt.com/
 通义千问 https://tongyi.aliyun.com/qianwen/
-qwenchat https://chat.qwen.ai/
+qwenchat https://chat.qwen.ai/ ✅
 豆包 https://www.doubao.com/
 kimi https://kimi.moonshot.cn/
 通义星尘 https://tongyi.aliyun.com/xingchen/
-grok https://x.ai/grok
+grok https://x.ai/grok ✅
 claude https://claude.ai/
 gemini https://gemini.google.com/
 huggingchat https://huggingface.co/chat/
 koko ai https://www.seeles.ai/
 
 AI编程工具
-trae https://www.trae.com.cn/
-cursor https://www.cursor.com/
-windsurf https://codeium.com/windsurf
-github copilot https://github.com/features/copilot
-通义灵码 https://lingma.aliyun.com/lingma
+trae https://www.trae.com.cn/ ✅
+cursor https://www.cursor.com/ ✅
+windsurf https://codeium.com/windsurf ✅
+github copilot https://github.com/features/copilot ✅
+通义灵码 https://lingma.aliyun.com/lingma ✅
 junie https://www.jetbrains.com/junie/
 jetbrains ai https://www.jetbrains.com/ai/
-codium ai https://www.qodo.ai/
-tabby https://www.tabbyml.com/
-fitten code https://code.fittentech.com/
-deco https://ling-deco.jd.com/
+codium ai https://www.qodo.ai/ ✅
+tabby https://www.tabbyml.com/  ✅
+fitten code https://code.fittentech.com/ ✅
+deco https://ling-deco.jd.com/ ✅
 httpie ai https://httpie.io/ai
 hocoos https://hocoos.com/
-heycli https://www.heycli.com/
+heycli https://www.heycli.com/ ✅
+javaAI https://www.feisuanyz.com/home ✅
 
 AI搜索引擎
 心流 https://iflow.cn/
@@ -151,12 +152,12 @@ xanswer https://www.xanswer.com
 
 AI音频工具
 通义听唔 https://tingwu.aliyun.com/
-suno https://suno.com/
+suno https://suno.com/ ✅
 minimax audio https://www.minimax.io/
 
 AI开发平台/框架
-dify https://dify.ai/
-coze https://www.coze.cn/
+dify https://dify.ai/ ✅
+coze https://www.coze.cn/✅
 chatdev https://chatdev.modelbest.cn
 langchain https://python.langchain.com/docs/introduction/
 文心智能体平台 https://agents.baidu.com/
@@ -170,19 +171,19 @@ nltk https://www.nltk.org/
 AI训练模型
 魔塔社区 https://www.modelscope.cn/home
 huggingface https://huggingface.co/
-ollama https://ollama.com/
-cherry studio https://cherry-ai.com/
-chatbot https://chatboxai.app/
+ollama https://ollama.com/ ✅
+cherry studio https://cherry-ai.com/ ✅
+chatbot https://chatboxai.app/ ✅
 jan https://jan.ai/
 anythingllm https://anythingllm.com/
 
 AI法律助手
-通义法睿 https://tongyi.aliyun.com/farui/home
+通义法睿 https://tongyi.aliyun.com/farui/home ✅
 
 AI提示指令（学习参考）
 langgpt https://github.com/langgptai/LangGPT
-ai short https://www.aishort.top/
-snack prompt https://snackprompt.com/
+ai short https://www.aishort.top/ ✅
+snack prompt https://snackprompt.com/ ✅
 提示工程指南 https://www.promptingguide.ai/zh
 
 AI模型评测
@@ -216,20 +217,20 @@ Text-to-3D -> 文本转三维（文本 -> 三维） -> JeffreyXiang/TRELLIS-text
 Image-to-3D -> 图像转三维（图像 -> 三维） -> JeffreyXiang/TRELLIS-image-large
 Unconditional Image Generation -> 无条件图像生成（文本 -> 图像（随机）） -> qualcomm/Stable-Diffusion-v2.1
 Video Classification -> 视频分类（视频 -> 文本（类别）） -> MCG-NJU/videomae-base-finetuned-kinetics
-Mask Generation ->  ->Xenova/sam-vit-base
-Image Feature Extraction -> -> MahmoodLab/UNI2-h
-Keypoint Detection -> -> magic-leap-community/superpoint
+Mask Generation -> 掩模生成（图像 -> 掩模（二值淹模，其中掩模值为1代表目标区域，0代表背景区域）） ->  ->Xenova/sam-vit-base
+Image Feature Extraction -> 图像特征提取（代表图片内容的特征） -> MahmoodLab/UNI2-h
+Keypoint Detection -> 关键点检测（检测图片中物体的显著特征并赋予语义） -> magic-leap-community/superpoint
 自然语言处理：
-Text Classification ->  -> BAAI/bge-reranker-v2-m3 
-Token Classification -> -> iiiorg/piiranha-v1-detect-personal-information
-Table Question Answering -> -> microsoft/tapex-large-finetuned-wtq
-Question Answering -> -> distilbert/distilbert-base-cased-distilled-squad
-Zero-Shot Classification -> -> knowledgator/comprehend_it-base
-Translation -> -> ModelSpace/GemmaX2-28-9B-v0.1
-Summarization ->  -> facebook/bart-large-cnn
-Feature Extraction -> -> BAAI/bge-large-zh-v1.5
-Text Generation -> -> Qwen/QwQ-32B deepseek-ai/DeepSeek-R1 deepseek-ai/DeepSeek-V3-0324
-Text2Text Generation -> -> teapotai/teapotllm
+Text Classification -> 文本分类（句子、段落以及文档等文本数据自动分配到一个或多个预定类别中） -> BAAI/bge-reranker-v2-m3 
+Zero-Shot Classification -> 零样本分类（句子、段落以及文档等文本数据配推断未知类别） -> knowledgator/comprehend_it-base
+Token Classification -> 令牌分类（文本中字符、单词以及子句自动分配到一个或多个预定类别中） -> iiiorg/piiranha-v1-detect-personal-information
+Table Question Answering -> 表格问答（表格 + 文本（问题）-> 文本（答案）） -> microsoft/tapex-large-finetuned-wtq
+Question Answering -> 问答（文本 + 数据源（文本、表格、知识库以及互联网文档）） -> distilbert/distilbert-base-cased-distilled-squad
+Translation -> 翻译（文本（语言） -> 文本（另一语言）） -> ModelSpace/GemmaX2-28-9B-v0.1
+Summarization -> 摘要总结（文本 -> 文本（摘要）） -> facebook/bart-large-cnn
+Feature Extraction -> 特征提取（文本 -> 向量特征） -> BAAI/bge-large-zh-v1.5
+Text Generation -> 文本生成（对话） -> Qwen/QwQ-32B deepseek-ai/DeepSeek-R1 deepseek-ai/DeepSeek-V3-0324
+Text2Text Generation -> 文本到文本生成（翻译、文本摘要、问答生成、文本修复） -> teapotai/teapotllm
 Fill Mask -> -> answerdotai/ModernBERT-base
 Sentence Similarity -> -> sentence-transformers/all-MiniLM-L6-v2
 Text Ranking -> -> sentence-transformers/all-MiniLM-L6-v2
@@ -259,3 +260,20 @@ uv sync --all-packages -i https://mirrors.aliyun.com/pypi/simple/ --frozen \
 --extra "storage_chromadb" \
 --extra "dbgpts" \
 --extra "quant_bnb"
+
+ai模型中的Text2Text Generation指的是什么？能不能介绍一下。
+ai模型中的Fill Mask指的是什么？能不能介绍一下。
+ai模型中的Sentence Similarity指的是什么？能不能介绍一下。
+ai模型中的Text Ranking指的是什么？能不能介绍一下。
+ai模型中的Text-to-Speech指的是什么？能不能介绍一下。
+ai模型中的Text-to-Audio指的是什么？能不能介绍一下。
+ai模型中的Audio-to-Audio指的是什么？能不能介绍一下。
+ai模型中的Automatic Speech Recognition指的是什么？能不能介绍一下。
+ai模型中的Audio Classification指的是什么？能不能介绍一下。
+ai模型中的Voice Activity Detection指的是什么？能不能介绍一下。
+ai模型中的Tabular Classification指的是什么？能不能介绍一下。
+ai模型中的Tabular Regression指的是什么？能不能介绍一下。
+ai模型中的Time Series Forecasting指的是什么？能不能介绍一下。
+ai模型中的Reinforcemen Learning 指的是什么？能不能介绍一下。
+ai模型中的Robotics指的是什么？能不能介绍一下。
+ai模型中的Graph Machine Learning指的是什么？能不能介绍一下。
