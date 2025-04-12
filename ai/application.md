@@ -130,7 +130,7 @@ koko ai https://www.seeles.ai/
 AI编程工具
 trae https://www.trae.com.cn/ ✅
 cursor https://www.cursor.com/ ✅
-windsurf https://codeium.com/windsurf ✅
+windsurf https://codeium.com/windsurf
 github copilot https://github.com/features/copilot ✅
 通义灵码 https://lingma.aliyun.com/lingma ✅
 junie https://www.jetbrains.com/junie/
@@ -262,4 +262,7 @@ uv sync --all-packages -i https://mirrors.aliyun.com/pypi/simple/ --frozen \
 --extra "quant_bnb"
 
 https://github.com/Devo919/Gewechat/issues/217
-docker run -itd --network langbot-network -v ./data/temp:/root/temp -p 2531:2531 -p 2532:2532 --privileged=true --restart=always --name=gewe gewe
+docker run -d --network langbot-network -v ./data/temp:/root/temp -p 2531:2531 -p 2532:2532 --privileged=true --restart=always --name=gewe gewe
+
+docker compose up -d
+https://github.com/hanfangyuan4396/dify-on-wechat/issues/196 每次配置完最后删除容器重新运行，不然容易获取登录验证码失败，所以建议刚开始部署直接更改/data/config.yaml文件，然后启动。
