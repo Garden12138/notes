@@ -260,3 +260,6 @@ uv sync --all-packages -i https://mirrors.aliyun.com/pypi/simple/ --frozen \
 --extra "storage_chromadb" \
 --extra "dbgpts" \
 --extra "quant_bnb"
+
+https://github.com/Devo919/Gewechat/issues/217
+docker run -itd --network langbot-network -v ./data/temp:/root/temp -p 2531:2531 -p 2532:2532 --privileged=true --restart=always --name=gewe gewe
