@@ -1,3 +1,11 @@
+> 介绍点
+* 是什么
+* 怎么用
+* 优点
+* 缺点
+* 推荐指数
+* 使用模型
+
 > 一键自动生成PPT
   * deepseek + kimi（https://kimi.moonshot.cn/）+ gamma（https://gamma.app/）
   * deepseek输入所需ppt内容提示语，如：请给我输出一份未来国产AI发展展望的大纲和细节，我要用来做PPT，注意要以markdown的格式输出
@@ -67,16 +75,58 @@ https://github.com/AIDC-AI/ComfyUI-Copilot | AIDC-AI/ComfyUI-Copilot: An AI-powe
 https://github.com/deepseek-ai/awesome-deepseek-integration/blob/main/README_cn.md | awesome-deepseek-integration/README_cn.md at main · deepseek-ai/awesome-deepseek-integration
 
 AI写作工具
-豆包（火山写作）-> 活动策划内容生成 -> https://www.doubao.com/chat/2322909353459714 ✅
-kimi -> 办公室写作助手 -> https://kimi.moonshot.cn/chat/cvjsfkeqvl78v7dj7r0g ✅
+✅豆包（火山写作），豆包可智能生成工作报告、方案策划及商业文案，通过深度思考功能优化专业写作，支持多轮搜索与框架生成，提升职场效率。
+活动策划内容生成 -> https://www.doubao.com/chat/2322909353459714
+广告创意文案 -> https://www.doubao.com/chat/2910562500974850
+优点：免费，智能，专业，可作为职场写作的起草或框架。
+缺点：客户端广告多。
+推荐指数：★★★★
+
+✅Kimi，可自动生成PPT框架，支持办公室文档等写作功能。
+办公室写作助手 -> https://kimi.moonshot.cn/chat/cvjsfkeqvl78v7dj7r0g
+ds(请给我输出一份Desigual服装品牌介绍的大纲和细节，我要用来做PPT，注意要以markdown的格式输出) -> PPT助手 -> https://kimi.moonshot.cn/chat/cvt4jc76rtpb6c2kkmbg
+优点：写作速度快，内容自动丰富，效果佳。
+缺点：PPT模板固定、颜值一般。
+推荐指数：★★★★
 
 AI图像工具
-通义万相 -> 文字生成图片、图片生成视频 -> https://tongyi.aliyun.com/wanxiang/creation、https://tongyi.aliyun.com/wanxiang/videoCreation ✅
-可灵AI -> 文字生成图片、图片生成视频、文字生成音频、图片合成、配音音频 -> https://app.klingai.com/cn/text-to-image/new、https://app.klingai.com/cn/image-to-video/frame-mode/new、https://app.klingai.com/cn/text-to-audio/new、https://app.klingai.com/cn/try-on/model/new、https://app.klingai.com/cn/video-to-lip/new ✅
-万相营造 https://agi.taobao.com/ ✅
-icongen https://www.icongen.io/ ✅
+✅通义万相，可快速生成设计素材和营销视觉内容，提升职场创作效率。
+文字生成图片 -> https://tongyi.aliyun.com/wanxiang/creation
+文字生成视频 -> https://tongyi.aliyun.com/wanxiang/videoCreation
+图片生成视频 -> https://tongyi.aliyun.com/wanxiang/videoCreation
+优点：生成速度快，内容丰富真实，可快速制作视觉素材。
+缺点：功能比较单一。
+推荐指数：★★★★★
+
+✅可灵AI，支持通过DeepSeek优化提示词，生成多种营销视觉素材，提升创作效率。
+文字生成图片 -> https://app.klingai.com/cn/text-to-image/new
+文字生成视频 -> https://app.klingai.com/cn/text-to-video/new
+图片生成视频 -> https://app.klingai.com/cn/image-to-video/frame-mode/new
+文字生成音频 -> https://app.klingai.com/cn/text-to-audio/new
+图片合成 -> https://app.klingai.com/cn/try-on/model/new
+配音音频 -> https://app.klingai.com/cn/video-to-lip/new
+优点：功能丰富，支持参考图，已集成deepseek，可快速生成提示词，方便制作视觉素材；产品使用体验好，可快速上手。
+缺点：视频生成速度慢。
+推荐指数：★★★★★
+
+✅万相营造，支持AI生成商业设计图和营销素材，智能优化视觉内容，提升商品营销效率。
+https://detail.tmall.com/item.htm?abbucket=13&detail_redpacket_pop=true&id=581209981328&ltk2=1744522639646iclhigc76387v0wrn9iia&ns=1&pisk=g5IrEYtFAHfbkkAJritE7U2wRNKJdHP_4MOBK9XHFQAkN9vHYsfQeQ63w6Sei9Q7eeN-LYIV_Di7wzBnYHt315Z_fT3JvHV15w-LIbp6pbqBtUYD2pT8G-GbfTBJ9d_vrrrsT8jbDv0Ht6xDod9HxLmkrx22LdRHxQYniqvMiHxHr0q0md9otXxHK-oDepJHt40onnvHdXxHx6X03pdDKHxnaNdHZmJ9rJ_a2J60NR8JsTAqxcD9UUqhU2iIAiJyz66kgK9f0L8y_E3_0XjNITj9LMei8B5dr_9ATlP2jNCVYFxUYmK5QZfyuaPE0EQcBMYVk5uOB9XO-ESEZ81Giw5HHZFE8C7hFNIXlv0DrNC5SESbamdGotWBuZeKPB_9K6LOA5nJZ9XOXNta4fpPoO-V4ZlpnZLFvaln8Uvv3Cw43LaB9Uaf8Xs-J2LckKR_F8gKJUf93Cw4323podp218w5.&priceTId=2147800817445226064077568e1859&query=%E9%A9%AC%E7%88%B9%E5%88%A9&skuId=5937518291412&spm=a21n57.1.hoverItem.2&utparam=%7B%22aplus_abtest%22%3A%220aa0fc3456ba32844fa6f6875ca6cee9%22%7D&xxc=taobaoSearch
+商品图 -> https://www.wanxiang.art/image/goods?id=5178385
+解说视频 -> https://www.wanxiang.art/video/meditorMix/history?
+优点：功能丰富，能够快速生成商品营销设计图和营销广告视频，支持淘宝、天猫链接智能生成。
+缺点：无
+推荐指数：★★★★★
+
+icongen https://www.icongen.io/
+
 hitems https://zaohaowu.com/
-tripo ai https://www.tripo3d.ai/ ✅
+
+✅tripo ai，可将图像快速转为3D模型，适用于游戏、影视设计，AI驱动高效生成
+3d模型制作 -> https://www.tripo3d.ai/app/my
+优点：生成效果精美，支持多种风格，可快速制作3D模型。
+缺点：价格高。
+推荐指数：★★★★★
+
 webshop https://www.weshop.com/
 羚珑 https://ling.jd.com/
 
@@ -86,18 +136,39 @@ AI视频工具
 即创 https://aic.oceanengine.com/
 Humva https://humva.ai/avatar/home 
 noisee ai https://noisee.com.cn/#/
-opusclip https://www.opus.pro/ ✅
-descript https://www.descript.com/ ✅
+
+opusclip（https://www.opus.pro/），可自动将长视频剪辑为短视频，支持字幕添加、布局优化及多平台发布，提升传播效率。
+
+descript（https://www.descript.com/）AI驱动的视频/音频编辑工具，支持文本转录、语音克隆及多人协作，提升制作效率。
+
 蝉镜 https://www.chanjing.cc/
 
 AI办公工具
 apippt https://www.aippt.cn/
-gamma https://gamma.app/ ✅
+
+✅Gamma，快速生成专业PPT/文档，支持智能排版与编辑。
+PPT内容导入生成 ->https://gamma.app/docs/Desigual-08pr9e3p762yvfs?mode=doc
+优点：生成方式灵活，支持多种主题模版，颜值高，可灵活编辑调整。
+缺点：价格贵。
+推荐指数：★★★★★
+
 kimi https://kimi.moonshot.cn/
 wps https://ai.wps.cn/
-wps灵犀 https://lingxi.wps.cn/ ✅
-通义智文 https://tongyi.aliyun.com/ ✅
-processon https://www.processon.com/ ✅
+
+✅wps灵犀，可快速生成PPT和各类文档，支持智能排版与wps编辑。
+AI写作 -> https://lingxi.wps.cn/creative
+AIPPT -> https://lingxi.wps.cn/ppt
+AI文书 -> https://lingxi.wps.cn/official
+AI搜索 -> https://lingxi.wps.cn/search
+AI阅读 -> https://lingxi.wps.cn/read
+优点：目前内测免费，功能丰富，支持写作、PPT、文书、搜索、阅读等多种场景，生成速度快且内容质量高，可进入wps编辑，文档分析准确。
+缺点：数据分析时无法生成直观图表。
+推荐指数：★★★★★
+
+通义智文（https://tongyi.aliyun.com/）
+
+processon（https://www.processon.com/）
+
 xmindai https://xmind.ai/
 通义听悟 https://tingwu.aliyun.com/
 飞书多维表格 https://www.feishu.cn/
@@ -107,42 +178,76 @@ qimi https://qimi.com/
 glif https://glif.app/
 通义晓蜜 https://tongyi.aliyun.com/xiaomi
 钉钉个人版 https://workspace.dingtalk.com/ 
-钉钉闪记 https://alidocs.dingtalk.com/i/p/Y7kmbokZp3pgGLq2/docs/lDZEN6or0dp8Z4dl316qVaPYQK91xzy3 ✅
+
+✅钉钉闪记，可实时语音转文字
+https://alidocs.dingtalk.com/i/p/Y7kmbokZp3pgGLq2/docs/lDZEN6or0dp8Z4dl316qVaPYQK91xzy3 
+优点：钉钉会议无缝衔接，语音转文字实时，可快速记录会议内容。
+缺点：无
+推荐指数：★★★★★
 
 AI设计工具
 Recraft AI https://www.recraft.ai/
 墨刀 https://modao.cc/feature/ai.html
 
 AI对话工具
-deepseek https://www.deepseek.com/ ✅
+✅DeepSeek，是一个高效的模型，适用于对话和内容生成等通用应用。
+深度思考对话 -> https://chat.deepseek.com/
+优点：对话内容生成质量高，生成的内容涵盖广泛。
+缺点：官网对话使用容易奔溃，无法持续使用。
+推荐指数：★★★★★
+
 chatgpt https://www.chatgpt.com/
 通义千问 https://tongyi.aliyun.com/qianwen/
-qwenchat https://chat.qwen.ai/ ✅
+
+✅Qwen Chat，基于开源的Open Web UI，能同时支持开源和闭源的Qwen模型
+文本、图像、视频、音频多种对话：https://chat.qwen.ai/
+优点：支持当前最新、效果最佳的Qwen模型，支持多模态对话。
+缺点：无
+推荐指数：★★★★★
+
 豆包 https://www.doubao.com/
 kimi https://kimi.moonshot.cn/
 通义星尘 https://tongyi.aliyun.com/xingchen/
-grok https://x.ai/grok ✅
+
+✅Grok，是xAI基于大型语言模型开发的生成式人工智能聊天机器人，它能够实时回答用户的问题，并利用X社交媒体平台的数据进行回应。
+深度思考对话 -> https://grok.com/
+优点：支持结合全球性的社交媒体数据进行回答，可快速回答用户各种问题。
+缺点：对话内容可能存在敏感。
+推荐指数：★★★★★
+
 claude https://claude.ai/
 gemini https://gemini.google.com/
 huggingchat https://huggingface.co/chat/
 koko ai https://www.seeles.ai/
 
 AI编程工具
-trae https://www.trae.com.cn/ ✅
-cursor https://www.cursor.com/ ✅
+trae https://www.trae.com.cn/
+
+✅cursor https://www.cursor.com/
+
 windsurf https://codeium.com/windsurf
-github copilot https://github.com/features/copilot ✅
-通义灵码 https://lingma.aliyun.com/lingma ✅
+
+✅github copilot https://github.com/features/copilot
+
+通义灵码 https://lingma.aliyun.com/lingma
+
 junie https://www.jetbrains.com/junie/
 jetbrains ai https://www.jetbrains.com/ai/
-codium ai https://www.qodo.ai/ ✅
-tabby https://www.tabbyml.com/  ✅
-fitten code https://code.fittentech.com/ ✅
-deco https://ling-deco.jd.com/ ✅
+
+✅codium ai https://www.qodo.ai/
+
+✅tabby https://www.tabbyml.com/
+
+✅fitten code https://code.fittentech.com/
+
+✅deco https://ling-deco.jd.com/
+
 httpie ai https://httpie.io/ai
 hocoos https://hocoos.com/
-heycli https://www.heycli.com/ ✅
-javaAI https://www.feisuanyz.com/home ✅
+
+✅heycli https://www.heycli.com/
+
+✅javaAI https://www.feisuanyz.com/home
 
 AI搜索引擎
 心流 https://iflow.cn/
@@ -152,12 +257,24 @@ xanswer https://www.xanswer.com
 
 AI音频工具
 通义听唔 https://tingwu.aliyun.com/
-suno https://suno.com/ ✅
+
+✅Suno，支持文本输入创作多风格的音乐及歌词，提供音质优化。
+create -> https://suno.com/create
+优点：能够快速生成质量非常高的音乐。
+缺点：无
+推荐指数：★★★★★
+
 minimax audio https://www.minimax.io/
 
 AI开发平台/框架
-dify https://dify.ai/ ✅
-coze https://www.coze.cn/✅
+✅dify，是一款开源的大语言模型（LLM）应用开发平台。它融合了后端即服务（Backend as Service）和LLMOps 的理念，使开发者可以快速搭建生产级的生成式AI 应用，它支持多种大型语言模型。
+应该开发：https://cloud.dify.ai/apps
+优点：可本地化部署，低代码开发，可视化构建AI应用，支持多模型集成，开源灵活，社区资源丰富。
+缺点：需基础编程知识，学习门槛中高，依赖第三方模型，性能受接口限制。
+推荐指数：★★★★★
+
+coze（https://www.coze.cn/）
+
 chatdev https://chatdev.modelbest.cn
 langchain https://python.langchain.com/docs/introduction/
 文心智能体平台 https://agents.baidu.com/
@@ -171,19 +288,52 @@ nltk https://www.nltk.org/
 AI训练模型
 魔塔社区 https://www.modelscope.cn/home
 huggingface https://huggingface.co/
-ollama https://ollama.com/ ✅
-cherry studio https://cherry-ai.com/ ✅
-chatbot https://chatboxai.app/ ✅
+
+✅ollama，是一个开源的大型语言模型服务工具，可快速在本地运行大模型，通过简单的安装指令轻松启动和运行开源的大型语言模型。
+https://ollama.com/
+优点：本地部署LLM框架，支持多模型运行，隐私安全性高。
+缺点：需较高配置，模型加载耗资源，调试复杂。
+推荐指数：★★★★★
+
+✅cherry studio，是一款功能强大的国产开源AI工具，支持本地部署、知识库管理、多模型聚合和联网搜索等特性。
+https://cherry-ai.com/
+优点：AI生成3D/视频内容高效，模板丰富，协作便捷。
+缺点：输出依赖外部模型，高清渲染成本高，版权限制多。
+推荐指数：★★★★★
+
+✅chatbot，是一款AI客户端应用和智能助手，支持众多先进的AI模型和API。
+https://chatboxai.app/
+优点：快速搭建对话流，支持多平台接入，成本低。
+缺点：复杂逻辑处理弱，依赖训练数据质量，定制性有限。
+推荐指数：★★★★★
+
 jan https://jan.ai/
 anythingllm https://anythingllm.com/
 
 AI法律助手
-通义法睿 https://tongyi.aliyun.com/farui/home ✅
+✅通义法睿，拥有法律领域理解和推理能力，能够基于自然语言与人对话、回答法律问题、推送裁判类案、辅助案情分析、生成法律文书、检索法律知识。 通过问题理解，正确引用法规和案例进行问题回答。 根据案情描述，自动总结法律诉求并撰写法律文书。 提供法律法规、类案检索，自带法律法规和裁判案例库。
+法律咨询：https://tongyi.aliyun.com/farui/chat
+法律检索：https://tongyi.aliyun.com/farui/search
+合同检索：https://tongyi.aliyun.com/farui/review
+优点：法律条文解析精准，合同审查自动化，合规风险预警。
+缺点：仅限法律垂直领域，需专业术语输入，更新延迟。
+推荐指数：★★★★★
 
 AI提示指令（学习参考）
 langgpt https://github.com/langgptai/LangGPT
-ai short https://www.aishort.top/ ✅
-snack prompt https://snackprompt.com/ ✅
+
+✅ai short，一款专为提升工作和学习效率设计的AI 指令管理工具。
+https://www.aishort.top/
+优点：聚合主流AI快捷指令，一键调用，节省提示词设计时间。
+缺点：场景适配僵化，无法深度定制，高阶功能缺失。
+推荐指数：★★★★★
+
+✅snack prompt，一个采用的Prompts诱导填空式的社区，它提供了一种简单的prompt修改方式，你只需要输入关键信息，就可以将他人的优秀用例转换成自己想生成的内容。
+https://snackprompt.com/
+优点：提供结构化提示模板，新手友好，支持多模型适配。
+缺点：复杂任务覆盖不足，创意性输出有限，依赖模板更新。
+推荐指数：★★★★★
+
 提示工程指南 https://www.promptingguide.ai/zh
 
 AI模型评测
