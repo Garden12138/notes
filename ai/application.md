@@ -224,6 +224,11 @@ AI编程工具
 trae https://www.trae.com.cn/
 
 ✅cursor https://www.cursor.com/
+Implement this Figma frame.
+https://www.figma.com/design/IlzQi0MiOXPcZgqwdLPlQW/%E5%95%86%E5%93%81%E5%90%8E%E5%8F%B0%E7%AE%A1%E7%90%86%E5%8E%9F%E5%9E%8B-%E6%96%87%E4%BB%B6--Community-?node-id=0-325&t=Dt88zDvcDW1nQun5-4
+Implement this Figma frame.
+https://www.figma.com/design/IlzQi0MiOXPcZgqwdLPlQW/%E5%95%86%E5%93%81%E5%90%8E%E5%8F%B0%E7%AE%A1%E7%90%86%E5%8E%9F%E5%9E%8B-%E6%96%87%E4%BB%B6--Community-?node-id=0-228&t=Dt88zDvcDW1nQun5-4
+
 
 windsurf https://codeium.com/windsurf
 
@@ -234,18 +239,18 @@ windsurf https://codeium.com/windsurf
 junie https://www.jetbrains.com/junie/
 jetbrains ai https://www.jetbrains.com/ai/
 
-✅codium ai https://www.qodo.ai/
+codium ai https://www.qodo.ai/
 
-✅tabby https://www.tabbyml.com/
+tabby https://www.tabbyml.com/
 
 ✅fitten code https://code.fittentech.com/
 
-✅deco https://ling-deco.jd.com/
+deco https://ling-deco.jd.com/
 
 httpie ai https://httpie.io/ai
 hocoos https://hocoos.com/
 
-✅heycli https://www.heycli.com/
+heycli https://www.heycli.com/
 
 ✅javaAI https://www.feisuanyz.com/home
 
@@ -301,7 +306,7 @@ https://cherry-ai.com/
 缺点：输出依赖外部模型，高清渲染成本高，版权限制多。
 推荐指数：★★★★★
 
-✅chatbot，是一款AI客户端应用和智能助手，支持众多先进的AI模型和API。
+chatbot，是一款AI客户端应用和智能助手，支持众多先进的AI模型和API。
 https://chatboxai.app/
 优点：快速搭建对话流，支持多平台接入，成本低。
 缺点：复杂逻辑处理弱，依赖训练数据质量，定制性有限。
