@@ -223,16 +223,23 @@ koko ai https://www.seeles.ai/
 AI编程工具
 trae https://www.trae.com.cn/
 
-✅cursor https://www.cursor.com/
+✅cursor，AI驱动的代码编辑器，集成GPT模型，支持代码生成/修复/对话。
+https://www.cursor.com/
 Implement this Figma frame.
 https://www.figma.com/design/IlzQi0MiOXPcZgqwdLPlQW/%E5%95%86%E5%93%81%E5%90%8E%E5%8F%B0%E7%AE%A1%E7%90%86%E5%8E%9F%E5%9E%8B-%E6%96%87%E4%BB%B6--Community-?node-id=0-325&t=Dt88zDvcDW1nQun5-4
 Implement this Figma frame.
 https://www.figma.com/design/IlzQi0MiOXPcZgqwdLPlQW/%E5%95%86%E5%93%81%E5%90%8E%E5%8F%B0%E7%AE%A1%E7%90%86%E5%8E%9F%E5%9E%8B-%E6%96%87%E4%BB%B6--Community-?node-id=0-228&t=Dt88zDvcDW1nQun5-4
-
+优点：智能代码补全与重构建议；跨平台支持（Win/Mac/Linux）；支持多语言（Python/JS/Go 等）
+缺点：依赖网络响应速度。
+推荐指数：★★★★★
 
 windsurf https://codeium.com/windsurf
 
-✅github copilot https://github.com/features/copilot
+✅github copilot，微软与OpenAI合作的AI编程助手，IDE插件形式。
+https://github.com/features/copilot
+优点：代码生成准确率高（基于海量开源库）；无缝适配VS Code/JetBrains等主流 IDE；支持GitHub私有代码库训练。
+缺点：订阅费用较高。
+推荐指数：★★★★★
 
 通义灵码 https://lingma.aliyun.com/lingma
 
@@ -243,7 +250,11 @@ codium ai https://www.qodo.ai/
 
 tabby https://www.tabbyml.com/
 
-✅fitten code https://code.fittentech.com/
+✅fitten code，专注代码优化的AI工具，提供性能/安全建议。
+https://code.fittentech.com/
+优点：针对性优化提示。
+缺点：功能单一（仅优化分析）
+推荐指数：★★★★
 
 deco https://ling-deco.jd.com/
 
@@ -252,7 +263,11 @@ hocoos https://hocoos.com/
 
 heycli https://www.heycli.com/
 
-✅javaAI https://www.feisuanyz.com/home
+✅javaAI，针对Java生态的AI工具，覆盖Spring/Hibernate等框架。
+https://www.feisuanyz.com/home
+优点：深度支持Java语法及框架特性；自动化生成单元测试代码；集成Maven/Gradle依赖管理。
+缺点：仅限Java开发者使用。
+推荐指数：★★★★★
 
 AI搜索引擎
 心流 https://iflow.cn/
@@ -346,6 +361,9 @@ openllmleaderboard https://huggingface.co/spaces/open-llm-leaderboard/open_llm_l
 
 AI学习网站
 阿里云AI学习路线 https://developer.aliyun.com/learning/roadmap/ai
+
+✅langbot+gewechat
+✅dbgpt
 
 模型任务分类
 多模态：
