@@ -362,8 +362,22 @@ openllmleaderboard https://huggingface.co/spaces/open-llm-leaderboard/open_llm_l
 AI学习网站
 阿里云AI学习路线 https://developer.aliyun.com/learning/roadmap/ai
 
-✅langbot+gewechat
-✅dbgpt
+✅Langbot，高稳定、支持插件、多模态的大模型原生即时通信机器人平台
+https://github.com/Devo919/Gewechat/issues/217
+docker run -d --network langbot-network -v ./data/temp:/root/temp -p 2531:2531 -p 2532:2532 --privileged=true --restart=always --name=gewe gewe
+docker compose up -d
+https://github.com/hanfangyuan4396/dify-on-wechat/issues/196 每次配置完最后删除容器重新运行，不然容易获取登录验证码失败，所以建议刚开始部署直接更改/data/config.yaml文件，然后启动。
+http://127.0.0.1:5300/#/
+优点：支持多种模型、支持多消息平台、可本地部署、支持插件扩展。
+缺点：平台搭建复杂。
+推荐指数：★★★★★
+
+
+✅DB-GPT，是一个开源的AI原生数据应用开发框架，通过开发多模型管理(SMMF)、Text2SQL效果优化、RAG框架以及优化、Multi-Agents框架协作、AWEL(智能体工作流编排)等多种技术能力，让围绕数据库构建大模型应用更简单，更方便。支持知识库对话、数据对话、Excel对话、数据库对话以及报表分析对话。
+http://localhost:5670/chat -> uv run python packages/dbgpt-app/src/dbgpt_app/dbgpt_server.py --config configs/dbgpt-proxy-openai.toml
+优点：可本地部署，可与多种数据源对话，能够分析且生成报表。
+缺点：开源项目bug较多，部署或者二次开发需要一定编程能力。
+推荐指数：★★★★★
 
 模型任务分类
 多模态：
@@ -433,9 +447,3 @@ uv sync --all-packages -i https://mirrors.aliyun.com/pypi/simple/ --frozen \
 --extra "storage_chromadb" \
 --extra "dbgpts" \
 --extra "quant_bnb"
-
-https://github.com/Devo919/Gewechat/issues/217
-docker run -d --network langbot-network -v ./data/temp:/root/temp -p 2531:2531 -p 2532:2532 --privileged=true --restart=always --name=gewe gewe
-
-docker compose up -d
-https://github.com/hanfangyuan4396/dify-on-wechat/issues/196 每次配置完最后删除容器重新运行，不然容易获取登录验证码失败，所以建议刚开始部署直接更改/data/config.yaml文件，然后启动。
