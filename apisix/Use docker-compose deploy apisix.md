@@ -20,4 +20,4 @@ curl "http://127.0.0.1:9080/apisix/admin/services/" -H 'X-API-KEY: edd1c9f034335
 
 > 参考文献
 
-* [官方文档](https://apisix.apache.org/zh/docs/apisix/getting-started))
+* [官方文档](https://apisix.apache.org/zh/docs/apisix/getting-started)
