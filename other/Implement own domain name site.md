@@ -20,7 +20,11 @@
 
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/other/Snipaste_2025-04-30_15-01-03.png)
 
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/other/Snipaste_2025-04-30_16-52-21.png)
+
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/other/Snipaste_2025-04-30_15-05-27.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/other/Snipaste_2025-04-30_16-52-41.png)
 
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/other/Snipaste_2025-04-30_15-06-12.png)
 
