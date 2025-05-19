@@ -62,3 +62,5 @@
 * [GoCD 整行记（五）：部署应用](https://www.jianshu.com/p/79e829fdb2a1)
 
 * [Step-by-step guide to your first pipeline](https://www.gocd.org/getting-started/part-1/)
+
+* [script-executor-task](https://github.com/gocd-contrib/script-executor-task)
