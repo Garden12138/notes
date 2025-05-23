@@ -94,3 +94,6 @@
 
 * [Harbor Core packaged by Bitnami](https://hub.docker.com/r/bitnami/harbor-core)
 * [docker login 登录 Harbor](https://randyou.github.io/2020/06/16/docker-login-harbor/index.html)
+* [超详细的harbor私有仓库搭建并使用域名登录](https://blog.csdn.net/weixin_45231541/article/details/125556143)
+* [Authenticate Docker to Harbor Image Registry with a Robot Account](https://veducate.co.uk/authenticate-docker-harbor-robot/)
+* [【Docker】Maven打包SpringBoot项目成Docker镜像并上传到Harbor仓库（Eclipse、STS、IDEA、Maven通用）](https://www.cnblogs.com/binghe001/p/12810675.html)
