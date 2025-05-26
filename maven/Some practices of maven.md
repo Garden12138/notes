@@ -77,6 +77,39 @@
   </build>
   ```
 
+### 引入本地jar包
+
+* 在项目根目录新增```lib```文件夹，将本地jar包放入该文件夹。
+
+* 在```pom.xml```文件中添加依赖：
+
+  ```xml
+  <dependency>
+      <groupId>com.example</groupId>
+      <artifactId>local-jar</artifactId>
+      <version>1.0-SNAPSHOT</version>
+      <scope>system</scope>
+      <systemPath>${project.basedir}/lib/local-jar-1.0-SNAPSHOT.jar</systemPath>
+  </dependency>
+  ```
+
+  其中```scope```属性设置为```system```，表示该依赖是系统路径，```systemPath```属性设置为本地jar包的路径。
+
+* ```springboot```打包时，需添加```resource```配置：
+  
+  ```xml
+  <resources>
+      <resource>
+	      <directory>${project.basedir}/lib</directory>
+		  <targetPath>BOOT-INF/lib/</targetPath>
+		  <includes>
+		      <include>*.jar</include>
+		  </includes>
+      </resource>
+  </resources>
+  ```
+  
+
 ### 参考文献
 
 * [Maven打包使用代码版本号和时间戳](https://qinguan.github.io/2018/03/11/maven-package-with-version-and-timestamp/)
