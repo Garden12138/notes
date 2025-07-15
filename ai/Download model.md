@@ -53,7 +53,6 @@
   ```bash
   git clone https://modelscope.cn/<model_name>
   ```
-  ```
 
 * 下载模型
 
