@@ -66,3 +66,7 @@
   ```bash
   nvm uninstall <version>
   ```
+
+### 注意实现
+
+* ```npx```命令执行会将源文件缓存在```~/.npm/_npx/xxxx/node_modules/``目录下。
