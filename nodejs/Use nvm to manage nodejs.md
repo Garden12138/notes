@@ -21,7 +21,7 @@
   brew install nvm
   ```
 
-* 配置环境变量：
+* ```vim ~/.zshrc```配置环境变量：
 
   ```bash
   export NVM_DIR="$HOME/.nvm"
@@ -69,4 +69,4 @@
 
 ### 注意实现
 
-* ```npx```命令执行会将源文件缓存在```~/.npm/_npx/xxxx/node_modules/``目录下。
+* ```npx```命令执行会将源文件缓存在```~/.npm/_npx/xxxx/node_modules/```目录下。
