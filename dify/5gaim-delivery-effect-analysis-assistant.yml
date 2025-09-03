@@ -1,0 +1,2126 @@
+app:
+  description: AI助手机器人
+  icon: face_with_monocle
+  icon_background: '#FFE4E8'
+  mode: advanced-chat
+  name: 京准通AI助手
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/tongyi:0.0.27@4bb3f3eb6149b01f92aa6038a6bb074cc4224b8c015f54c888e5c5a30fc1ab50
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        sourceType: start
+        targetType: question-classifier
+      id: 1711528708197-1711528709608
+      selected: false
+      source: '1711528708197'
+      sourceHandle: source
+      target: '1711528709608'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: 1711528768556-1711528802931
+      selected: false
+      source: '1711528768556'
+      sourceHandle: source
+      target: '1711528802931'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: 1711528770201-1711528815414
+      selected: false
+      source: '1711528770201'
+      sourceHandle: source
+      target: '1711528815414'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: answer
+      id: 1711528802931-1711528833796
+      selected: false
+      source: '1711528802931'
+      sourceHandle: source
+      target: '1711528833796'
+      targetHandle: target
+      type: custom
+    - data:
+        sourceType: llm
+        targetType: answer
+      id: 1711528815414-1711528835179
+      selected: false
+      source: '1711528815414'
+      sourceHandle: source
+      target: '1711528835179'
+      targetHandle: target
+      type: custom
+    - data:
+        isInIteration: false
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: 1734924139779-source-1734924564610-target
+      selected: false
+      source: '1734924139779'
+      sourceHandle: source
+      target: '1734924564610'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: 1734924150811-source-1734924567951-target
+      selected: false
+      source: '1734924150811'
+      sourceHandle: source
+      target: '1734924567951'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 1734924564610-source-1734924691240-target
+      selected: false
+      source: '1734924564610'
+      sourceHandle: source
+      target: '1734924691240'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 1734924567951-source-1734924693871-target
+      selected: false
+      source: '1734924567951'
+      sourceHandle: source
+      target: '1734924693871'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 1734924570450-source-1734924696179-target
+      selected: false
+      source: '1734924570450'
+      sourceHandle: source
+      target: '1734924696179'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: question-classifier
+        targetType: llm
+      id: 1711528709608-1735004383755-1735004751097-target
+      selected: false
+      source: '1711528709608'
+      sourceHandle: '1735004383755'
+      target: '1735004751097'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 1735004751097-source-1735004940205-target
+      selected: false
+      source: '1735004751097'
+      sourceHandle: source
+      target: '1735004940205'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: question-classifier
+        targetType: code
+      id: 1711528709608-1734924104225-1735023602791-target
+      selected: false
+      source: '1711528709608'
+      sourceHandle: '1734924104225'
+      target: '1735023602791'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: question-classifier
+        targetType: code
+      id: 1711528709608-1711528736036-17350279787200-target
+      selected: false
+      source: '1711528709608'
+      sourceHandle: '1711528736036'
+      target: '17350279787200'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: question-classifier
+        targetType: code
+      id: 1711528709608-1711528737066-17350283195050-target
+      selected: false
+      source: '1711528709608'
+      sourceHandle: '1711528737066'
+      target: '17350283195050'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: question-classifier
+        targetType: code
+      id: 1711528709608-1734924095708-17350289620260-target
+      selected: false
+      source: '1711528709608'
+      sourceHandle: '1734924095708'
+      target: '17350289620260'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: question-classifier
+        targetType: code
+      id: 1711528709608-1711528736549-17350304057410-target
+      selected: false
+      source: '1711528709608'
+      sourceHandle: '1711528736549'
+      target: '17350304057410'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: if-else
+      id: 1735023602791-source-1735098324816-target
+      selected: false
+      source: '1735023602791'
+      sourceHandle: source
+      target: '1735098324816'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: knowledge-retrieval
+      id: 1735098324816-false-1734924175845-target
+      selected: false
+      source: '1735098324816'
+      sourceHandle: 'false'
+      target: '1734924175845'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: knowledge-retrieval
+        targetType: llm
+      id: 1734924175845-source-1734924570450-target
+      selected: false
+      source: '1734924175845'
+      sourceHandle: source
+      target: '1734924570450'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 17351047124280-source-17351047190540-target
+      selected: false
+      source: '17351047124280'
+      sourceHandle: source
+      target: '17351047190540'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: 1735098324816-true-1735114923297-target
+      selected: false
+      source: '1735098324816'
+      sourceHandle: 'true'
+      target: '1735114923297'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: llm
+      id: 1735114923297-source-17351047124280-target
+      selected: false
+      source: '1735114923297'
+      sourceHandle: source
+      target: '17351047124280'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: if-else
+      id: 17350279787200-source-1735176204060-target
+      selected: false
+      source: '17350279787200'
+      sourceHandle: source
+      target: '1735176204060'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: knowledge-retrieval
+      id: 1735176204060-false-1711528768556-target
+      selected: false
+      source: '1735176204060'
+      sourceHandle: 'false'
+      target: '1711528768556'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: 1735176204060-true-1735176287156-target
+      selected: false
+      source: '1735176204060'
+      sourceHandle: 'true'
+      target: '1735176287156'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: llm
+      id: 1735176287156-source-1735176356296-target
+      selected: false
+      source: '1735176287156'
+      sourceHandle: source
+      target: '1735176356296'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 1735176356296-source-1735176361831-target
+      selected: false
+      source: '1735176356296'
+      sourceHandle: source
+      target: '1735176361831'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: if-else
+      id: 17350283195050-source-17351769320770-target
+      selected: false
+      source: '17350283195050'
+      sourceHandle: source
+      target: '17351769320770'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: knowledge-retrieval
+      id: 17351769320770-false-1734924139779-target
+      selected: false
+      source: '17351769320770'
+      sourceHandle: 'false'
+      target: '1734924139779'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: 17351769320770-true-17351769614620-target
+      selected: false
+      source: '17351769320770'
+      sourceHandle: 'true'
+      target: '17351769614620'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: llm
+      id: 17351769614620-source-17351769866170-target
+      selected: false
+      source: '17351769614620'
+      sourceHandle: source
+      target: '17351769866170'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 17351769866170-source-17351770165830-target
+      selected: false
+      source: '17351769866170'
+      sourceHandle: source
+      target: '17351770165830'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: if-else
+      id: 17350289620260-source-17351773133450-target
+      selected: false
+      source: '17350289620260'
+      sourceHandle: source
+      target: '17351773133450'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: knowledge-retrieval
+      id: 17351773133450-false-1734924150811-target
+      selected: false
+      source: '17351773133450'
+      sourceHandle: 'false'
+      target: '1734924150811'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: 17351773133450-true-17351773534400-target
+      selected: false
+      source: '17351773133450'
+      sourceHandle: 'true'
+      target: '17351773534400'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: llm
+      id: 17351773534400-source-17351773730260-target
+      selected: false
+      source: '17351773534400'
+      sourceHandle: source
+      target: '17351773730260'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 17351773730260-source-17351773872580-target
+      selected: false
+      source: '17351773730260'
+      sourceHandle: source
+      target: '17351773872580'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: if-else
+      id: 17350304057410-source-17351776902470-target
+      source: '17350304057410'
+      sourceHandle: source
+      target: '17351776902470'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: knowledge-retrieval
+      id: 17351776902470-false-1711528770201-target
+      source: '17351776902470'
+      sourceHandle: 'false'
+      target: '1711528770201'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: if-else
+        targetType: http-request
+      id: 17351776902470-true-17351777155830-target
+      source: '17351776902470'
+      sourceHandle: 'true'
+      target: '17351777155830'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: http-request
+        targetType: llm
+      id: 17351777155830-source-17351777216990-target
+      source: '17351777155830'
+      sourceHandle: source
+      target: '17351777216990'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: answer
+      id: 17351777216990-source-17351777272480-target
+      source: '17351777216990'
+      sourceHandle: source
+      target: '17351777272480'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: 开始
+        type: start
+        variables: []
+      height: 54
+      id: '1711528708197'
+      position:
+        x: 30
+        y: 430
+      positionAbsolute:
+        x: 30
+        y: 430
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        classes:
+        - id: '1711528736036'
+          name: 用户询问5G超信投放的最佳版式相关问题
+        - id: '1711528736549'
+          name: 用户询问5G超信投放的效果最优模板相关问题
+        - id: '1711528737066'
+          name: 用户询问5G超信投放的曝光最高文案相关问题
+        - id: '1734924095708'
+          name: 用户询问5G超信投放的最优人群标签相关问题
+        - id: '1734924104225'
+          name: 用户询问5G超信投放的黄金时段相关问题
+        - id: '1735004383755'
+          name: 用户询问5G超信投放无关的问题
+        desc: 我们可以设定用户问题的分类条件，然后大语言模型就能根据这些分类描述来决定对话的发展方向。
+        instructions: ''
+        model:
+          completion_params:
+            frequency_penalty: 0
+            max_tokens: 512
+            presence_penalty: 0
+            temperature: 0.7
+            top_p: 1
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        query_variable_selector:
+        - '1711528708197'
+        - sys.query
+        selected: false
+        title: 问题分类
+        topics: []
+        type: question-classifier
+        vision:
+          enabled: false
+      height: 464
+      id: '1711528709608'
+      position:
+        x: 335.5041735665361
+        y: 430
+      positionAbsolute:
+        x: 335.5041735665361
+        y: 430
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        dataset_ids:
+        - BL4FKGwbDX9dEsKv9sGULONZQjQwsqziwLF6R6SN7bnLCDsT61hO9VBDOag+T0Wz
+        desc: 获取最佳版式的相关知识
+        multiple_retrieval_config:
+          reranking_enable: true
+          reranking_mode: reranking_model
+          reranking_model:
+            model: gte-rerank
+            provider: langgenius/tongyi/tongyi
+          top_k: 4
+          weights:
+            keyword_setting:
+              keyword_weight: 0.3
+            vector_setting:
+              embedding_model_name: text-embedding-3-large
+              embedding_provider_name: openai
+              vector_weight: 0.7
+        query_variable_selector:
+        - '17350279787200'
+        - result
+        retrieval_mode: multiple
+        selected: false
+        single_retrieval_config:
+          model:
+            completion_params: {}
+            mode: chat
+            name: gpt-3.5-turbo
+            provider: openai
+        title: 最佳版式知识检索
+        type: knowledge-retrieval
+      dragging: false
+      height: 120
+      id: '1711528768556'
+      position:
+        x: 1246
+        y: 882.5
+      positionAbsolute:
+        x: 1246
+        y: 882.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        dataset_ids:
+        - BL4FKGwbDX9dEsKv9sGULONZQjQwsqziwLF6R6SN7bnLCDsT61hO9VBDOag+T0Wz
+        desc: 检索最佳版式相关的知识
+        multiple_retrieval_config:
+          reranking_enable: true
+          reranking_mode: reranking_model
+          reranking_model:
+            model: gte-rerank
+            provider: langgenius/tongyi/tongyi
+          top_k: 4
+          weights:
+            keyword_setting:
+              keyword_weight: 0.3
+            vector_setting:
+              embedding_model_name: text-embedding-3-large
+              embedding_provider_name: openai
+              vector_weight: 0.7
+        query_variable_selector:
+        - '1711528708197'
+        - sys.query
+        retrieval_mode: multiple
+        selected: false
+        single_retrieval_config:
+          model:
+            completion_params: {}
+            mode: chat
+            name: gpt-3.5-turbo
+            provider: openai
+        title: 效果最优模板知识检索
+        type: knowledge-retrieval
+      dragging: false
+      height: 120
+      id: '1711528770201'
+      position:
+        x: 1246
+        y: 1776.5
+      positionAbsolute:
+        x: 1246
+        y: 1776.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1711528768556'
+          - result
+        desc: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 50
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: 5782a21d-ddc5-4253-b795-59896df5ac5f
+          role: system
+          text: '根据用户提出的问题，从{{#context#}}中获取的信息结合5G超信相关知识进行回答。
+
+            如果你不知道，就说你不知道。如果你不确定时，寻求澄清'
+        - id: d136bf20-6ce4-4c16-9445-baf48291a2de
+          role: user
+          text: '{{#17350279787200.result#}}'
+        selected: false
+        title: 最佳版式知识检索模型分析
+        type: llm
+        variables: []
+        vision:
+          configs:
+            detail: high
+            variable_selector: []
+          enabled: false
+      dragging: false
+      height: 90
+      id: '1711528802931'
+      position:
+        x: 1550
+        y: 882.5
+      positionAbsolute:
+        x: 1550
+        y: 882.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1711528770201'
+          - result
+        desc: ''
+        memory:
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 50
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: da447dc4-8141-4ea1-aa92-96cc3e99c58b
+          role: system
+          text: '根据用户提出的问题，从{{#context#}}中获取的信息结合5G超信相关知识进行回答。
+
+            如果你不知道，就说你不知道。如果你不确定时，寻求澄清'
+        - id: 6ac30178-a2f7-45cf-8735-b4e41ba223e9
+          role: user
+          text: '{{#17350304057410.result#}}'
+        selected: false
+        title: 效果最优模板知识检索模型分析
+        type: llm
+        variables: []
+        vision:
+          configs:
+            detail: high
+            variable_selector: []
+          enabled: false
+      dragging: false
+      height: 90
+      id: '1711528815414'
+      position:
+        x: 1550
+        y: 1776.5
+      positionAbsolute:
+        x: 1550
+        y: 1776.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1711528802931.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复
+        type: answer
+        variables:
+        - value_selector:
+          - '1711528802931'
+          - text
+          variable: text
+      dragging: false
+      height: 105
+      id: '1711528833796'
+      position:
+        x: 1854
+        y: 882.5
+      positionAbsolute:
+        x: 1854
+        y: 882.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1711528815414.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复
+        type: answer
+        variables:
+        - value_selector:
+          - '1711528815414'
+          - text
+          variable: text
+      dragging: false
+      height: 105
+      id: '1711528835179'
+      position:
+        x: 1854
+        y: 1776.5
+      positionAbsolute:
+        x: 1854
+        y: 1776.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        dataset_ids:
+        - BL4FKGwbDX9dEsKv9sGULONZQjQwsqziwLF6R6SN7bnLCDsT61hO9VBDOag+T0Wz
+        desc: 检索曝光最高文案相关的知识
+        multiple_retrieval_config:
+          reranking_enable: true
+          reranking_mode: reranking_model
+          reranking_model:
+            model: gte-rerank
+            provider: langgenius/tongyi/tongyi
+          top_k: 4
+          weights:
+            keyword_setting:
+              keyword_weight: 0.3
+            vector_setting:
+              embedding_model_name: text-embedding-3-large
+              embedding_provider_name: openai
+              vector_weight: 0.7
+        query_variable_selector:
+        - '17350283195050'
+        - result
+        retrieval_mode: multiple
+        selected: false
+        title: 曝光最高文案知识检索
+        type: knowledge-retrieval
+      height: 120
+      id: '1734924139779'
+      position:
+        x: 1246
+        y: 1180.5
+      positionAbsolute:
+        x: 1246
+        y: 1180.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        dataset_ids:
+        - BL4FKGwbDX9dEsKv9sGULONZQjQwsqziwLF6R6SN7bnLCDsT61hO9VBDOag+T0Wz
+        desc: 检索最优人群标签相关的知识
+        multiple_retrieval_config:
+          reranking_enable: true
+          reranking_mode: reranking_model
+          reranking_model:
+            model: gte-rerank
+            provider: langgenius/tongyi/tongyi
+          top_k: 4
+          weights:
+            keyword_setting:
+              keyword_weight: 0.3
+            vector_setting:
+              embedding_model_name: text-embedding-3-large
+              embedding_provider_name: openai
+              vector_weight: 0.7
+        query_variable_selector:
+        - '17350289620260'
+        - result
+        retrieval_mode: multiple
+        selected: false
+        title: 最优人群标签知识检索
+        type: knowledge-retrieval
+      height: 120
+      id: '1734924150811'
+      position:
+        x: 1246
+        y: 1478.5
+      positionAbsolute:
+        x: 1246
+        y: 1478.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        dataset_ids:
+        - BL4FKGwbDX9dEsKv9sGULONZQjQwsqziwLF6R6SN7bnLCDsT61hO9VBDOag+T0Wz
+        desc: 检索黄金时段相关的知识
+        multiple_retrieval_config:
+          reranking_enable: true
+          reranking_mode: reranking_model
+          reranking_model:
+            model: gte-rerank
+            provider: langgenius/tongyi/tongyi
+          score_threshold: null
+          top_k: 10
+          weights:
+            keyword_setting:
+              keyword_weight: 0.3
+            vector_setting:
+              embedding_model_name: text-embedding-3-large
+              embedding_provider_name: openai
+              vector_weight: 0.7
+        query_variable_selector:
+        - '1735023602791'
+        - result
+        retrieval_mode: multiple
+        selected: false
+        title: 黄金时段知识检索
+        type: knowledge-retrieval
+      height: 120
+      id: '1734924175845'
+      position:
+        x: 1246
+        y: 574.504173566536
+      positionAbsolute:
+        x: 1246
+        y: 574.504173566536
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1734924139779'
+          - result
+        desc: ''
+        memory:
+          query_prompt_template: ''
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 50
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: 5b5d895d-9e6d-4fe4-851c-7d9960f6a566
+          role: system
+          text: '根据用户提出的问题，从{{#context#}}中获取的信息结合5G超信相关知识进行回答。
+
+            如果你不知道，就说你不知道。如果你不确定时，寻求澄清'
+        - id: 20416bcf-a0ca-4f3f-93e2-ddbb02d188af
+          role: user
+          text: '{{#17350283195050.result#}}'
+        selected: false
+        title: 曝光最高文案知识检索模型分析
+        type: llm
+        variables: []
+        vision:
+          configs:
+            detail: high
+          enabled: false
+      height: 90
+      id: '1734924564610'
+      position:
+        x: 1550
+        y: 1180.5
+      positionAbsolute:
+        x: 1550
+        y: 1180.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1734924150811'
+          - result
+        desc: ''
+        memory:
+          query_prompt_template: ''
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 50
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: 39037bba-077e-4c94-8ad3-b4c79cf31697
+          role: system
+          text: '根据用户提出的问题，从{{#context#}}中获取的信息结合5G超信相关知识进行回答。
+
+            如果你不知道，就说你不知道。如果你不确定时，寻求澄清'
+        - id: cf6782bf-270b-497c-806e-e95637a7ba86
+          role: user
+          text: '{{#17350289620260.result#}}'
+        selected: false
+        title: 最优人群标签知识检索模型分析
+        type: llm
+        variables: []
+        vision:
+          configs:
+            detail: high
+          enabled: false
+      height: 90
+      id: '1734924567951'
+      position:
+        x: 1550
+        y: 1478.5
+      positionAbsolute:
+        x: 1550
+        y: 1478.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1734924175845'
+          - result
+        desc: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 50
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: c71cfa6c-a0f5-4fcd-a9f0-485cbe9a4415
+          role: system
+          text: '根据用户提出的问题，从{{#context#}}中获取的信息结合5G超信相关知识进行回答。
+
+            如果你不知道，就说你不知道。如果你不确定时，寻求澄清。'
+        - id: f8a99fd6-59b5-4229-85a0-edc96f530052
+          role: user
+          text: '{{#1735023602791.result#}}'
+        selected: false
+        title: 黄金时段知识检索模型分析
+        type: llm
+        variables: []
+        vision:
+          configs:
+            detail: high
+            variable_selector:
+            - sys
+            - files
+          enabled: false
+      height: 90
+      id: '1734924570450'
+      position:
+        x: 1550
+        y: 584.5
+      positionAbsolute:
+        x: 1550
+        y: 584.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1734924564610.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 105
+      id: '1734924691240'
+      position:
+        x: 1854
+        y: 1180.5
+      positionAbsolute:
+        x: 1854
+        y: 1180.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1734924567951.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 105
+      id: '1734924693871'
+      position:
+        x: 1854
+        y: 1478.5
+      positionAbsolute:
+        x: 1854
+        y: 1478.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1734924570450.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 105
+      id: '1734924696179'
+      position:
+        x: 1854
+        y: 584.5
+      positionAbsolute:
+        x: 1854
+        y: 584.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: false
+            size: 50
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: a67c4127-f807-43e9-af74-8d2ca9b7a23f
+          role: system
+          text: '你是一个对话机器人，对于提出的问题{{#sys.query#}}直接回答。
+
+            如果你不知道，就说你不知道。
+
+            如果你不确定时，寻求澄清。'
+        selected: false
+        title: 无关问题模型分析
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 90
+      id: '1735004751097'
+      position:
+        x: 638
+        y: 423.5484082526475
+      positionAbsolute:
+        x: 638
+        y: 423.5484082526475
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1735004751097.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 105
+      id: '1735004940205'
+      position:
+        x: 942
+        y: 430
+      positionAbsolute:
+        x: 942
+        y: 430
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "\ndef main(arg1: str) -> dict:\n    if arg1 == '黄金时段':\n        return\
+          \ {\n            \"result\": \"SYSINIT请帮我分析曝光率最高的发送时间\"\n        }\n   \
+          \ return {\n        \"result\": arg1,\n    }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 黄金时段知识检索前置
+        type: code
+        variables:
+        - value_selector:
+          - sys
+          - query
+          variable: arg1
+      height: 54
+      id: '1735023602791'
+      position:
+        x: 638
+        y: 607.8351215108785
+      positionAbsolute:
+        x: 638
+        y: 607.8351215108785
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "\ndef main(arg1: str) -> dict:\n    if arg1 == '最佳版式':\n        return\
+          \ {\n            \"result\": \"SYSINIT请帮我分析点击率最高的版式\"\n        }\n    return\
+          \ {\n        \"result\": arg1,\n    }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: '最佳版式知识检索前置 '
+        type: code
+        variables:
+        - value_selector:
+          - sys
+          - query
+          variable: arg1
+      height: 54
+      id: '17350279787200'
+      position:
+        x: 638
+        y: 904.5
+      positionAbsolute:
+        x: 638
+        y: 904.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "\ndef main(arg1: str) -> dict:\n    if arg1 == '曝光最高文案':\n        return\
+          \ {\n            \"result\": \"SYSINIT请帮我分析曝光率最高的短信文案\"\n        }\n   \
+          \ return {\n        \"result\": arg1,\n    }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 曝光最高文案知识检索前置
+        type: code
+        variables:
+        - value_selector:
+          - sys
+          - query
+          variable: arg1
+      height: 54
+      id: '17350283195050'
+      position:
+        x: 638
+        y: 1202.5
+      positionAbsolute:
+        x: 638
+        y: 1202.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "\ndef main(arg1: str) -> dict:\n    if arg1 == '最优人群标签':\n        return\
+          \ {\n            \"result\": \"SYSINIT请帮我分析点击率最高的人群标签\"\n        }\n   \
+          \ return {\n        \"result\": arg1,\n    }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 最优人群标签知识检索前置
+        type: code
+        variables:
+        - value_selector:
+          - sys
+          - query
+          variable: arg1
+      height: 54
+      id: '17350289620260'
+      position:
+        x: 638
+        y: 1500.5
+      positionAbsolute:
+        x: 638
+        y: 1500.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "\ndef main(arg1: str) -> dict:\n    if arg1 == '效果最优模板':\n        return\
+          \ {\n            \"result\": \"SYSINIT请帮我分析点击率最高的模板\"\n        }\n    return\
+          \ {\n        \"result\": arg1,\n    }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 效果最优模板知识检索前置
+        type: code
+        variables:
+        - value_selector:
+          - sys
+          - query
+          variable: arg1
+      height: 54
+      id: '17350304057410'
+      position:
+        x: 638
+        y: 1798.5
+      positionAbsolute:
+        x: 638
+        y: 1798.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: 9eae4ea6-523c-4a73-a51c-758938bc8a21
+            value: SYSINIT
+            varType: string
+            variable_selector:
+            - '1735023602791'
+            - result
+          id: 'true'
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 初始化问题判断
+        type: if-else
+      height: 126
+      id: '1735098324816'
+      position:
+        x: 942
+        y: 574.504173566536
+      positionAbsolute:
+        x: 942
+        y: 574.504173566536
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 50
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: c71cfa6c-a0f5-4fcd-a9f0-485cbe9a4415
+          role: system
+          text: '根据用户提出的问题，从{{#1735114923297.body#}}中获取的信息结合5G超信相关知识进行回答。
+
+            回答时请简洁，篇幅不超过256个字。
+
+            如果你不知道，就说你不知道。如果你不确定时，寻求澄清。'
+        - id: 714c7673-1c61-4c30-9f2f-f5edd098293b
+          role: user
+          text: '{{#1735023602791.result#}}'
+        selected: false
+        title: 黄金时段API检索模型分析
+        type: llm
+        variables: []
+        vision:
+          configs:
+            detail: high
+            variable_selector:
+            - sys
+            - files
+          enabled: false
+      height: 90
+      id: '17351047124280'
+      position:
+        x: 1550
+        y: 733.5
+      positionAbsolute:
+        x: 1550
+        y: 733.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#17351047124280.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 105
+      id: '17351047190540'
+      position:
+        x: 1854
+        y: 733.5
+      positionAbsolute:
+        x: 1854
+        y: 733.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - type: text
+            value: '{"sort": "exposureDesc"}'
+          type: raw-text
+        desc: ''
+        headers: Content-Type:application/json
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: 黄金时段API检索
+        type: http-request
+        url: http://host.docker.internal:5009/data
+        variables: []
+      height: 140
+      id: '1735114923297'
+      position:
+        x: 1246
+        y: 708.0041735665361
+      positionAbsolute:
+        x: 1246
+        y: 708.0041735665361
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: 6d355093-16b4-4b84-b812-ca086281a1f0
+            value: SYSINIT
+            varType: string
+            variable_selector:
+            - '17350279787200'
+            - result
+          id: 'true'
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 初始化问题判断
+        type: if-else
+      height: 126
+      id: '1735176204060'
+      position:
+        x: 942
+        y: 871
+      positionAbsolute:
+        x: 942
+        y: 871
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - type: text
+            value: '{"sort": "clickRateDesc"}'
+          type: raw-text
+        desc: ''
+        headers: Content-Type:application/json
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: 最佳版式API检索
+        type: http-request
+        url: http://host.docker.internal:5009/data
+        variables: []
+      height: 140
+      id: '1735176287156'
+      position:
+        x: 1246
+        y: 1007.7332185929313
+      positionAbsolute:
+        x: 1246
+        y: 1007.7332185929313
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 50
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: af9b6cca-969b-4933-926b-f7c3bd94d2cf
+          role: system
+          text: '根据用户提出的问题，从{{#1735176287156.body#}}中获取的信息结合5G超信相关知识进行回答。
+
+            回答时请简洁，篇幅不超过256个字。
+
+            如果你不知道，就说你不知道。如果你不确定时，寻求澄清。'
+        - id: 2041f964-ab1f-4605-a91a-b10f590b673f
+          role: user
+          text: '{{#17350279787200.result#}}'
+        selected: false
+        title: 最佳版式API检索模型分析
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 90
+      id: '1735176356296'
+      position:
+        x: 1550
+        y: 1031.5
+      positionAbsolute:
+        x: 1550
+        y: 1031.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#1735176356296.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 105
+      id: '1735176361831'
+      position:
+        x: 1854
+        y: 1031.5
+      positionAbsolute:
+        x: 1854
+        y: 1031.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: 9eae4ea6-523c-4a73-a51c-758938bc8a21
+            value: SYSINIT
+            varType: string
+            variable_selector:
+            - '17350283195050'
+            - result
+          id: 'true'
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 初始化问题判断
+        type: if-else
+      height: 126
+      id: '17351769320770'
+      position:
+        x: 942
+        y: 1169
+      positionAbsolute:
+        x: 942
+        y: 1169
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - type: text
+            value: '{"sort": "exposureDesc"}'
+          type: raw-text
+        desc: ''
+        headers: Content-Type:application/json
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: true
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: 曝光最高文案API检索
+        type: http-request
+        url: http://host.docker.internal:5009/data
+        variables: []
+      height: 140
+      id: '17351769614620'
+      position:
+        x: 1246
+        y: 1304.1166092964659
+      positionAbsolute:
+        x: 1246
+        y: 1304.1166092964659
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 50
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: c71cfa6c-a0f5-4fcd-a9f0-485cbe9a4415
+          role: system
+          text: '根据用户提出的问题，从{{#17351769614620.body#}}中获取的信息结合5G超信相关知识进行回答。
+
+            回答时请简洁，篇幅不要太长。
+
+            如果你不知道，就说你不知道。如果你不确定时，寻求澄清。'
+        - id: 714c7673-1c61-4c30-9f2f-f5edd098293b
+          role: user
+          text: '{{#17350283195050.result#}}'
+        selected: false
+        title: 曝光最高文案API检索模型分析
+        type: llm
+        variables: []
+        vision:
+          configs:
+            detail: high
+            variable_selector:
+            - sys
+            - files
+          enabled: false
+      height: 90
+      id: '17351769866170'
+      position:
+        x: 1550
+        y: 1329.5
+      positionAbsolute:
+        x: 1550
+        y: 1329.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#17351769866170.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 105
+      id: '17351770165830'
+      position:
+        x: 1854
+        y: 1329.5
+      positionAbsolute:
+        x: 1854
+        y: 1329.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: 9eae4ea6-523c-4a73-a51c-758938bc8a21
+            value: SYSINIT
+            varType: string
+            variable_selector:
+            - '17350289620260'
+            - result
+          id: 'true'
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 初始化问题判断
+        type: if-else
+      height: 126
+      id: '17351773133450'
+      position:
+        x: 942
+        y: 1465.2318406095544
+      positionAbsolute:
+        x: 942
+        y: 1465.2318406095544
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - type: text
+            value: '{"sort": "clickRateDesc"}'
+          type: raw-text
+        desc: ''
+        headers: Content-Type:application/json
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: 最优人群标签API检索
+        type: http-request
+        url: http://host.docker.internal:5009/data
+        variables: []
+      height: 140
+      id: '17351773534400'
+      position:
+        x: 1246
+        y: 1600.5
+      positionAbsolute:
+        x: 1246
+        y: 1600.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 50
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: af9b6cca-969b-4933-926b-f7c3bd94d2cf
+          role: system
+          text: '根据用户提出的问题，从{{#17351773534400.body#}}中获取的信息结合5G超信相关知识进行回答。
+
+            回答时请简洁，篇幅不要太长。
+
+            如果你不知道，就说你不知道。如果你不确定时，寻求澄清。'
+        - id: 2041f964-ab1f-4605-a91a-b10f590b673f
+          role: user
+          text: '{{#17350289620260.result#}}'
+        selected: false
+        title: 最优人群标签API检索模型分析
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 90
+      id: '17351773730260'
+      position:
+        x: 1550
+        y: 1627.5
+      positionAbsolute:
+        x: 1550
+        y: 1627.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#17351773730260.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 105
+      id: '17351773872580'
+      position:
+        x: 1854
+        y: 1627.5
+      positionAbsolute:
+        x: 1854
+        y: 1627.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        cases:
+        - case_id: 'true'
+          conditions:
+          - comparison_operator: contains
+            id: 9eae4ea6-523c-4a73-a51c-758938bc8a21
+            value: SYSINIT
+            varType: string
+            variable_selector:
+            - '17350304057410'
+            - result
+          id: 'true'
+          logical_operator: and
+        desc: ''
+        selected: false
+        title: 初始化问题判断
+        type: if-else
+      height: 126
+      id: '17351776902470'
+      position:
+        x: 942
+        y: 1765
+      positionAbsolute:
+        x: 942
+        y: 1765
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - type: text
+            value: '{"sort": "clickRateDesc"}'
+          type: raw-text
+        desc: ''
+        headers: Content-Type:application/json
+        method: post
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: 效果最优模板API检索
+        type: http-request
+        url: http://host.docker.internal:5009/data
+        variables: []
+      height: 140
+      id: '17351777155830'
+      position:
+        x: 1246
+        y: 1900.2604408981351
+      positionAbsolute:
+        x: 1246
+        y: 1900.2604408981351
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        memory:
+          query_prompt_template: '{{#sys.query#}}'
+          role_prefix:
+            assistant: ''
+            user: ''
+          window:
+            enabled: true
+            size: 50
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: af9b6cca-969b-4933-926b-f7c3bd94d2cf
+          role: system
+          text: '根据用户提出的问题，从{{#17351777155830.body#}}中获取的信息结合5G超信相关知识进行回答。
+
+            回答时请简洁，篇幅不超过256个字。
+
+            如果你不知道，就说你不知道。如果你不确定时，寻求澄清。'
+        - id: 2041f964-ab1f-4605-a91a-b10f590b673f
+          role: user
+          text: '{{#17350304057410.result#}}'
+        selected: false
+        title: 效果最优模板API检索模型分析
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 90
+      id: '17351777216990'
+      position:
+        x: 1550
+        y: 1925.5
+      positionAbsolute:
+        x: 1550
+        y: 1925.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        answer: '{{#17351777216990.text#}}'
+        desc: ''
+        selected: false
+        title: 直接回复
+        type: answer
+        variables: []
+      height: 105
+      id: '17351777272480'
+      position:
+        x: 1854
+        y: 1925.5
+      positionAbsolute:
+        x: 1854
+        y: 1925.5
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: 73.14302547384432
+      y: -145.87533164911656
+      zoom: 0.6700186301716176
