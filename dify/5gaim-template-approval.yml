@@ -1,0 +1,681 @@
+app:
+  description: 审核超信模版中的图片和文案是否符合要求
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: workflow
+  name: 超信模板图片和文案审核
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/tongyi:0.0.27@4bb3f3eb6149b01f92aa6038a6bb074cc4224b8c015f54c888e5c5a30fc1ab50
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: true
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_size_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: variable-aggregator
+      id: 1726801220711-source-1727419569801-target
+      selected: false
+      source: '1726801220711'
+      sourceHandle: source
+      target: '1727419569801'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: variable-aggregator
+        targetType: template-transform
+      id: 1727419569801-source-1727426247688-target
+      selected: false
+      source: '1727419569801'
+      sourceHandle: source
+      target: '1727426247688'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: template-transform
+        targetType: llm
+      id: 1727426247688-source-1727084411122-target
+      selected: false
+      source: '1727426247688'
+      sourceHandle: source
+      target: '1727084411122'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: llm
+      id: 1726797531042-source-1726801220711-target
+      source: '1726797531042'
+      sourceHandle: source
+      target: '1726801220711'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: start
+        targetType: code
+      id: 1726797531042-source-1730966510605-target
+      source: '1726797531042'
+      sourceHandle: source
+      target: '1730966510605'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: llm
+      id: 1730966510605-source-1730966580991-target
+      source: '1730966510605'
+      sourceHandle: source
+      target: '1730966580991'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: code
+      id: 1730966580991-source-1730966664347-target
+      source: '1730966580991'
+      sourceHandle: source
+      target: '1730966664347'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: code
+      id: 1730966664347-source-1730966708550-target
+      source: '1730966664347'
+      sourceHandle: source
+      target: '1730966708550'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: variable-aggregator
+      id: 1730966708550-source-1730966772700-target
+      source: '1730966708550'
+      sourceHandle: source
+      target: '1730966772700'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: variable-aggregator
+        targetType: code
+      id: 1730966772700-source-1730966892290-target
+      source: '1730966772700'
+      sourceHandle: source
+      target: '1730966892290'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: llm
+        targetType: variable-aggregator
+      id: 1727084411122-source-1730966772700-target
+      source: '1727084411122'
+      sourceHandle: source
+      target: '1730966772700'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        sourceType: code
+        targetType: end
+      id: 1730966892290-source-1730966947241-target
+      source: '1730966892290'
+      sourceHandle: source
+      target: '1730966947241'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        desc: ''
+        selected: false
+        title: 开始
+        type: start
+        variables:
+        - label: 文案内容
+          max_length: 1000
+          options: []
+          required: false
+          type: paragraph
+          variable: input
+      height: 90
+      id: '1726797531042'
+      position:
+        x: 30
+        y: 284
+      positionAbsolute:
+        x: 30
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: true
+          variable_selector:
+          - '1726797531042'
+          - input
+        desc: ''
+        model:
+          completion_params: {}
+          mode: chat
+          name: qwen2.5-vl-72b-instruct
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: 9bbd2392-db67-494e-9159-0adfa10749e9
+          role: system
+          text: 你是一个图文内容审核专家，所有的回答都是基于专业知识和专业分析判断，不会出现跟图文审核无关的回答。
+        - id: deff76be-513d-4a2b-afb0-03a561fa7181
+          role: user
+          text: '请判断图片和输入的文案【{{#1726797531042.input#}}】有没有出现以下几种情况，若出现一种或多种，则审核结果为不通过；若没有出现任何一种情况，则审核结果为通过，具体要判断的情况为：
+
+            1、图片或输入的文案出现了类似“约炮”、”嫖娼“、”一夜情“等非法的色情词语描述；
+
+            2、图片或输入的文案出现了类似“麻将”、“荷官“等非法的赌博词语描述；
+
+            3、图片或输入的文案出现了类似“摇头丸”、“大麻”、“吗啡”、“冰毒“等非法的毒品词语描述；
+
+            4、输入的文案出现了如”最好”、“最棒”、“国家级”、“世界级”、“最高级”、“最佳”、“最大”、“第一品牌”、“TOP“等过于绝对化、夸大其词或无法验证的词语；
+
+            5、图片中出现了如”最好”、“最棒”、“国家级”、“世界级”、“最高级”、“最佳”、“最大”、“第一品牌”、“TOP“等过于绝对化、夸大其词或无法验证的词语；
+
+            6、图片出现了使用线条将价格划掉的情况；
+
+            7、图片出现了手机号码的联系方式；
+
+            8、图片出现了QQ号码的联系方式；
+
+            9、图片出现微信二维码信息；
+
+            10、图片出现了不清晰的情况；
+
+            11、图片与输入的文案的相关性不高；
+
+            请一步一步进行分析，若出现以上一种，则审核结果为不通过并且给出不通过的原因，最后停止分析。'
+        selected: false
+        title: 审核图片和文案
+        type: llm
+        variables: []
+        vision:
+          configs:
+            detail: high
+            variable_selector:
+            - sys
+            - files
+          enabled: true
+      height: 90
+      id: '1726801220711'
+      position:
+        x: 334
+        y: 417.7365478584155
+      positionAbsolute:
+        x: 334
+        y: 417.7365478584155
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        model:
+          completion_params: {}
+          mode: chat
+          name: deepseek-v3
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: e0667c9c-527a-4895-ae97-fae1ed343ad7
+          role: system
+          text: ''
+        - edition_type: basic
+          id: 9c011a3e-bfb0-4e5f-b7ed-bcc31caef0ec
+          jinja2_text: ''
+          role: user
+          text: '{{#1727426247688.output#}}'
+        selected: false
+        title: 将审核结果转成json
+        type: llm
+        variables: []
+        vision:
+          enabled: false
+      height: 90
+      id: '1727084411122'
+      position:
+        x: 1246
+        y: 417.7365478584155
+      positionAbsolute:
+        x: 1246
+        y: 417.7365478584155
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        advanced_settings:
+          group_enabled: true
+          groups:
+          - groupId: 90d1797d-8b42-4804-bab0-ec22102a5b20
+            group_name: Group2
+            output_type: string
+            variables:
+            - - '1726801220711'
+              - text
+        desc: ''
+        output_type: string
+        selected: false
+        title: 变量聚合器
+        type: variable-aggregator
+        variables:
+        - - '1727419152028'
+          - text
+        - - '1726801220711'
+          - text
+      height: 108
+      id: '1727419569801'
+      position:
+        x: 638
+        y: 417.7365478584155
+      positionAbsolute:
+        x: 638
+        y: 417.7365478584155
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        selected: false
+        template: '请将下面的分析结果
+
+          {% if content_output %}
+
+          【{{ content_output }}】
+
+          {% endif %}
+
+          转成json输出，若分析结果均是审核通过的，则输出：{"result": "1"}；若存在有审核不通过的，则输出：{"result": "0","reason":
+          ""}，其中"reason"字段填充分析结果审核不通过的原因；'
+        title: 数据聚合转换
+        type: template-transform
+        variables:
+        - value_selector:
+          - '1727419569801'
+          - Group2
+          - output
+          variable: content_output
+      height: 54
+      id: '1727426247688'
+      position:
+        x: 942
+        y: 429.6092314637167
+      positionAbsolute:
+        x: 942
+        y: 429.6092314637167
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "from datetime import datetime\n\ndef main() -> dict:\n    now = datetime.now()\n\
+          \    curr_y = now.year\n    return {\n        \"result\": str(curr_y),\n\
+          \    }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 获取今年年份
+        type: code
+        variables: []
+      height: 54
+      id: '1730966510605'
+      position:
+        x: 334
+        y: 284
+      positionAbsolute:
+        x: 334
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        desc: ''
+        model:
+          completion_params: {}
+          mode: chat
+          name: qwen2.5-vl-72b-instruct
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: 5b1f6c90-0234-4a15-80cd-97a12fb26d5e
+          role: system
+          text: 你是一个图文内容提取专家，首先你会识别图片里出现的常见广告推广中所使用的节日简称活动内容，然后你会根据今年已有的日历，输出活动内容所代表的日期。
+        - id: 880840e6-b07b-446d-9066-67827df138ea
+          role: user
+          text: '分析图片中的内容，提取广告推广中所使用的节日简称活动内容，根据今年已有的日历，输出活动内容所代表的日期。其中常见的新历活动内容示例：
+
+            1、情人节 ：“情人节特惠”、“情人节献礼”；
+
+            2、妇女节 ：“三八节活动”、“女神节优惠”；
+
+            3、清明节： “清明踏青季”、“清明出行特惠”；
+
+            4、劳动节：“五一特惠”、“五一黄金周”；
+
+            5、母亲节：“母亲节感恩回馈”、“妈妈专属优惠”；
+
+            6、父亲节：“父亲节献礼”、“老爸专属优惠”；
+
+            7、教师节：“教师节感恩”、“老师专属优惠”；
+
+            8、国庆节：“国庆大促”、“十一黄金周”；
+
+            9、双十一：“双11狂欢”、“双十一购物节”；
+
+            10、圣诞节：“圣诞狂欢”、“圣诞特惠”；
+
+            11、新年：“跨年狂欢”、“元旦特惠”；
+
+            常见的农历活动内容示例：
+
+            1、春节：“新春特惠”、“迎春大促”，农历1月1日；
+
+            2、端午节：“端午粽香”、“端午特惠”，农历5月5日；
+
+            3、七夕节：“七夕鹊桥相会”、“七夕甜蜜特惠”，农历7月7日；
+
+            4、中秋节：“中秋团圆”、“中秋月饼礼盒”，农历8月15日；
+
+            若没有提取到日期，请以json格式输出，如：{"result": ""}；若提取的内容属于新历活动内容，则以json格式输出，如：{"result":
+            "yyyy-MM-dd", "lunar": "0"}，其中"yyyy"代表{{#1730966510605.result#}}、"MM"代表月份和"dd"代表日期；若提取的内容属于农历活动内容，以json格式输出，如：{"result":
+            "农历1月1日", "lunar": "1"}，其中"result"字段填充输出农历日。'
+        selected: false
+        title: 图片日期提取
+        type: llm
+        variables: []
+        vision:
+          configs:
+            detail: high
+            variable_selector:
+            - sys
+            - files
+          enabled: true
+      height: 90
+      id: '1730966580991'
+      position:
+        x: 638
+        y: 284
+      positionAbsolute:
+        x: 638
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "import json\nimport re\nfrom zhdate import ZhDate as lunar_date\n\n\
+          def main(arg1: str, year: str) -> dict:\n    # 参数arg1为模型提取的日期，可能出现格式不对，对于格式不正确的日期进行下面逻辑处理会发生异常，暂时先补货异常，返回{\"\
+          result\": \"\"}\n    try:\n      s1 = arg1.replace('\\n', '').replace('\\\
+          r', '').replace('json', '').replace('```', '')\n      js = json.loads(s1)\n\
+          \      rs = js['result']\n      # 图中没有提取到日期\n      if rs == '': \n     \
+          \     return {\n            \"result\": \"\",\n          }\n      else:\n\
+          \          lu = js['lunar']\n          # 图中提取到的是新历日期，直接返回\n          if\
+          \ lu == '0':\n            return {\n              \"result\": js['result']\n\
+          \            }\n          # 图中提取到的是农历日期，转换为新历日期返回\n          else:\n   \
+          \         match = re.search(r'农历(\\d+)月(\\d+)日', js['result'])\n       \
+          \     month = match.group(1)\n            day = match.group(2)\n       \
+          \     lda = lunar_date(int(year), int(month), int(day))\n            return\
+          \ {\n              \"result\": lda.to_datetime().strftime('%Y-%m-%d')\n\
+          \            }\n    except:\n      return {\n        \"result\": \"\"\n\
+          \      }        \n\n\n\n     \n"
+        code_language: python3
+        desc: ''
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 处理图中提取的日期
+        type: code
+        variables:
+        - value_selector:
+          - '1730966580991'
+          - text
+          variable: arg1
+        - value_selector:
+          - '1730966510605'
+          - result
+          variable: year
+      height: 54
+      id: '1730966664347'
+      position:
+        x: 942
+        y: 284
+      positionAbsolute:
+        x: 942
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "from datetime import datetime\n\ndef main(arg1: str) -> dict:\n   \
+          \ # 提取日期为空，直接判断通过即未过期\n    if not arg1:\n        return {\n            \"\
+          result\": \"1\"\n        }\n    try:\n      input_date = datetime.strptime(arg1,\
+          \ \"%Y-%m-%d\")\n      current_date = datetime.now()\n      # 提取日期小于当前日期，判断未通过即过期，否则判断通过即未过期\n\
+          \      if input_date < current_date:\n          return {\n             \
+          \ \"result\": \"0\"\n          }\n      else:\n          return {\n    \
+          \          \"result\": \"1\"\n          }\n    #出现异常，直接判断通过即未过期\n    except:\n\
+          \        return {\n              \"result\": \"1\"\n        }\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 判断提取日期是否过期
+        type: code
+        variables:
+        - value_selector:
+          - '1730966664347'
+          - result
+          variable: arg1
+      height: 54
+      id: '1730966708550'
+      position:
+        x: 1246
+        y: 284
+      positionAbsolute:
+        x: 1246
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        output_type: string
+        selected: false
+        title: 审核结果聚合
+        type: variable-aggregator
+        variables:
+        - - '1727084411122'
+          - text
+        - - '1730966708550'
+          - result
+      height: 130
+      id: '1730966772700'
+      position:
+        x: 1550
+        y: 284
+      positionAbsolute:
+        x: 1550
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        code: "import json\nimport time\n\ndef main(arg1: str, arg2: str) -> dict:\n\
+          \    # 流程1推断的结果可能存在参数不正确，进行json序列化时会发生异常，此时直接返回通过\n    try: \n      s1 =\
+          \ arg1.replace('\\n', '').replace('\\r', '').replace('json', '').replace('```',\
+          \ '')\n      j1 = json.loads(s1)\n      r1 = j1['result']\n    except:\n\
+          \        dic = {\"result\": \"1\", \"auditTime\": time.strftime(\"%Y-%m-%d\
+          \ %H:%M:%S\", time.localtime())}\n        return {\n            \"result\"\
+          : json.dumps(dic, ensure_ascii=False)\n        }\n    # 流程1、2都通过\n    if\
+          \ r1 == '1' and arg2 == '1':\n        dic = {\"result\": \"1\", \"auditTime\"\
+          : time.strftime(\"%Y-%m-%d %H:%M:%S\", time.localtime())}\n        return\
+          \ {\n            \"result\": json.dumps(dic, ensure_ascii=False)\n     \
+          \   }\n    # 流程1不通过、流程2通过\n    elif r1 == '0' and arg2 == '1':\n       \
+          \ dic = {\"result\": \"0\", \"reason\": j1['reason'], \"auditTime\": time.strftime(\"\
+          %Y-%m-%d %H:%M:%S\", time.localtime())}\n        return {\n            \"\
+          result\": json.dumps(dic, ensure_ascii=False)\n        }\n    # 流程1通过、流程2不通过\n\
+          \    elif r1 == '1' and arg2 == '0':\n        dic = {\"result\": \"0\",\
+          \ \"reason\": \"活动日期失效。\", \"auditTime\": time.strftime(\"%Y-%m-%d %H:%M:%S\"\
+          , time.localtime())}\n        return {\n            \"result\": json.dumps(dic,\
+          \ ensure_ascii=False)\n        }\n    # 流程1、2不通过\n    else:\n        rs\
+          \ = j1['reason'] + \"以及\" + \"活动日期失效。\";\n        dic = {\"result\": \"\
+          0\", \"reason\": rs, \"auditTime\": time.strftime(\"%Y-%m-%d %H:%M:%S\"\
+          , time.localtime())}\n        return {\n            \"result\": json.dumps(dic,\
+          \ ensure_ascii=False)\n        }\n\n"
+        code_language: python3
+        desc: ''
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: true
+        title: 审核聚合结果判断
+        type: code
+        variables:
+        - value_selector:
+          - '1727084411122'
+          - text
+          variable: arg1
+        - value_selector:
+          - '1730966708550'
+          - result
+          variable: arg2
+      height: 54
+      id: '1730966892290'
+      position:
+        x: 1855.3046157318586
+        y: 284
+      positionAbsolute:
+        x: 1855.3046157318586
+        y: 284
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    - data:
+        desc: ''
+        outputs:
+        - value_selector:
+          - '1730966892290'
+          - result
+          variable: output
+        selected: false
+        title: 结束
+        type: end
+      height: 90
+      id: '1730966947241'
+      position:
+        x: 2158
+        y: 284
+      positionAbsolute:
+        x: 2158
+        y: 284
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 244
+    viewport:
+      x: 90.95073001074434
+      y: 330.25208066510936
+      zoom: 0.7312188004882545
