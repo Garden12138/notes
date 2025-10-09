@@ -48,7 +48,7 @@
 
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/广告分镜2.png) 
 
-* 高清图片，将分辨率较低的图片（如1688、淘宝的供应商图）进行高清化处理，智能提升图片质感、优化光影、增强纹理细节，使其达到高端跨境电商或品牌官网的主图标准。
+* 高清商品图，将分辨率较低的图片（如1688、淘宝的供应商图）进行高清化处理，智能提升图片质感、优化光影、增强纹理细节，使其达到高端跨境电商或品牌官网的主图标准。
 
   ```bash
   Improve the clarity, lighting, and textures of this image to make it look like a professional DSLR product shot.
