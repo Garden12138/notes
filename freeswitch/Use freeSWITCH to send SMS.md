@@ -1,4 +1,4 @@
-## 使用freeSWITCH实现短信发送
+## 使用freeSWITCH实现短信发送（未整理完成）
 
 ## 介绍
 freeSWITCH是一个强大的开源通信平台，本质上是一个电话的软交换解决方案包括一个软件电话和软交换机，用以提供语音、视频、IM等通信服务；它也可以作为交换机引擎、PBX以及多媒体网关使用。
@@ -231,6 +231,94 @@ freeSWITCH是一个强大的开源通信平台，本质上是一个电话的软�
     ```bash
     python3 client-web.py &
     ```
+
+## 注意事项：
+要修改FreeSWITCH的Event Socket模块默认配置（包括监听地址、端口和密码），需编辑其配置文件并重启服务。以下是详细步骤：
+
+1. 定位配置文件
+配置文件路径通常为：
+
+bash
+复制
+/usr/local/freeswitch/conf/autoload_configs/event_socket.conf.xml
+（根据实际安装路径可能略有不同）
+
+2. 修改配置内容
+用文本编辑器打开文件，找到以下关键参数并修改：
+
+xml
+复制
+<configuration name="event_socket.conf">
+  <settings>
+    <!-- 修改监听地址（默认localhost，改为0.0.0.0允许所有IP） -->
+    <param name="listen-ip" value="0.0.0.0"/> 
+
+    <!-- 修改监听端口（默认8021） -->
+    <param name="listen-port" value="8021"/>
+
+    <!-- 修改连接密码（默认ClueCon） -->
+    <param name="password" value="YourSecurePassword"/>
+  </settings>
+</configuration>
+运行 HTML
+3. 保存并应用配置
+重启FreeSWITCH服务（彻底生效）：
+
+bash
+复制
+systemctl restart freeswitch
+# 或
+freeswitch -stop
+freeswitch -nc
+或仅重新加载Event Socket模块（无需完全重启）：
+
+bash
+复制
+fs_cli -x "reload mod_event_socket"
+4. 验证配置
+检查端口监听状态：
+
+bash
+复制
+netstat -tuln | grep 8021
+应显示0.0.0.0:8021或指定IP。
+
+使用fs_cli测试连接：
+
+bash
+复制
+fs_cli -p YourSecurePassword -P 8021
+5. 安全注意事项
+监听地址：
+
+0.0.0.0允许所有IP连接，仅在可信网络中使用。
+
+若仅本地访问，保留127.0.0.1。
+
+密码强度：
+
+避免使用默认ClueCon，建议使用复杂密码（如MySecurePass123!@#）。
+
+防火墙规则：
+
+如果开放到公网，需限制访问IP：
+
+bash
+复制
+iptables -A INPUT -p tcp --dport 8021 -s 192.168.1.0/24 -j ACCEPT
+iptables -A INPUT -p tcp --dport 8021 -j DROP
+附：Docker部署的特殊处理
+若使用Docker，需在启动容器时映射端口：
+
+bash
+复制
+docker run -d \
+  -p 8021:8021/tcp \
+  -v /path/to/custom/event_socket.conf.xml:/usr/local/freeswitch/conf/autoload_configs/event_socket.conf.xml \
+  freeswitch/freeswitch
+通过以上步骤，您已成功修改了FreeSWITCH Event Socket的默认配置。
+
+
 
 ## 仓库地址
 http://gitlab.bojin-tech.com/thrid_biz/biz-dingdingzt-cloud.git
