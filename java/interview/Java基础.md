@@ -84,6 +84,8 @@
 
       @enduml
       ```
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/java/uml1.png)
+
     * 实现关系。用来描述实现接口，在```Java```中使用```implements```关键字。
       ```
       @startuml
@@ -99,6 +101,8 @@
       
       @enduml
       ```
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/java/uml2.png)
+
     * 聚合关系。用来描述整体与部分的关系，整体和部分不是强依赖，整体不存在，部分仍存在。如电脑由主机、鼠标以及键盘等聚合而成。
       ```
       @startuml
@@ -116,6 +120,8 @@
       
       @enduml
       ```
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/java/uml3.png)
+
     * 组合关系。用来描述整体与部分的关系，整体和部分是强依赖，整体不存在，部分则不存在。如公司由多个部门组成，公司不存在则部门不存在。
       ```
       @startuml
@@ -131,6 +137,8 @@
       
       @enduml
       ```
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/java/uml4.png)
+
     * 关联关系。用来描述不同类对象之间的静态关系，与运行过程的状态无关。如一个班级有多个学生的1对```n```关系。
       ```
       @startuml
@@ -144,6 +152,8 @@
       
       @enduml
       ```
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/java/uml5.png)
+
     * 依赖关系。用来描述不同类对象之间在运行过程的作用关系。如```A```类和```B```类是依赖关系的主要三种形式：
       * ```A```类是```B```类方法中的一个参数。
       * ```A```类是```B```类某方法的局部变量。
@@ -169,6 +179,7 @@
 
       @enduml
       ```
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/java/uml6.png)
 
 > 语言基础
   * 数据类型
