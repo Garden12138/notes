@@ -654,3 +654,7 @@ if __name__ == "__main__":
     
     print("\n🎉 程序执行完成！")
 ```
+
+### 参考文献
+
+* [【爬虫】Python爬取微博关键词相关帖子](https://www.heywhale.com/mw/project/65f1978693f67e9a14b3c836)
