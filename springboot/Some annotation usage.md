@@ -355,9 +355,54 @@
   - 合理设置```search```，避免父子容器重复定义导致的误判
   - 若存在多个候选默认实现，建议再配合属性开关或显式名称区分
 
+### @ConditionalOnClass
+
+* 当指定类在类路径（```classpath```）中存在时，条件匹配为真，才装配对应配置/```Bean```。常用于自动配置中“按依赖存在与否启用模块”。
+
+* 作用：
+  - 仅在相关依赖存在时启用自动配置，避免无依赖时报错
+  - 与```@ConditionalOnMissingBean```、```@ConditionalOnProperty```组合，形成依赖存在 + 无用户自定义 + 功能开关的装配策略
+
+* 常用属性：
+  - ```value```：按类型判断（```Class<?>[]```）
+  - ```name```：按类型名判断（```String[]```，用于避免直接依赖对应类）
+
+* 基本用法：
+
+  ```java
+  @Configuration
+  @ConditionalOnClass(name = {
+    "org.springframework.data.redis.core.RedisTemplate",
+    "io.lettuce.core.RedisClient"
+  })
+  public class RedisAutoConfiguration {
+    
+    @Bean
+    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
+      RedisTemplate<String, Object> template = new RedisTemplate<>();
+      template.setConnectionFactory(factory);
+      return template;
+    }
+  }
+  ```
+
+  ```java
+  @Configuration
+  @ConditionalOnClass(javax.sql.DataSource.class) // 直接按类型判断
+  public class DataSourceRelatedConfiguration {
+    // ...
+  }
+  ```
+  
+* 注意事项：
+  - 使用```name```属性可避免在编译期引入可选依赖
+  - 仅判断类是否可加载，不负责校验版本/方法存在性；涉及版本适配时需额外判断
+  - 建议与```@ConditionalOnProperty```、```@ConditionalOnMissingBean```搭配，控制行为更精确
+
 ### 参考文献
 
 * [注解 @AutoConfigureBefore 和 @AutoConfigureAfter 的用途](https://www.cnblogs.com/lvjingying/p/14289589.html)
 * [Spring中@Import注解详细讲解及示例](https://blog.csdn.net/zouliping123456/article/details/114096248)
 * [Spring 中的 @ConditionalOnProperty 注解](https://springdoc.cn/spring-conditionalonproperty/)
 * [@ConditionalOnMissingBean 注解](https://www.hxstrive.com/subject/spring_boot/480.htm)
+* [springboot的@ConditionalOnClass注解](https://www.cnblogs.com/teach/p/16519087.html)
