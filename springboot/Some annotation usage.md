@@ -284,8 +284,80 @@
   - 在```@Configuration```类上使用时，会影响整个配置类的加载；在```@Bean```方法上使用时，只影响该方法的执行
   - 属性值匹配是区分大小写的，注意大小写匹配
 
+### @ConditionalOnMissingBean
+
+* 当容器中缺少指定类型/名称/注解的```Bean```时，才进行装配。常用于```Starter```提供“默认实现”，允许应用方通过自定义```Bean```进行覆盖。
+
+* 作用：
+  - 提供“默认```Bean```”，且允许用户按需覆盖
+  - 避免重复注册，保证容器中同类```Bean```唯一性（或按名称唯一）
+  - 与自动配置配合，增强可插拔性
+
+* 主要属性：
+  - ```value```：按类型判断是否缺失（```Class<?>[]```）
+  - ```type```：按类型名判断是否缺失（```String[]```，避免类在编译期不可达）
+  - ```name```：按```Bean```名称判断是否缺失
+  - ```annotation```：按```Bean```上是否存在某注解判断
+  - ```search```：搜索策略，是否在父容器中查找（```SearchStrategy.ALL/ CURRENT/ ANCESTORS```）
+  - ```ignored```/```ignoredType```：判断缺失时需要忽略的类型/类型名
+
+* 基本用法：
+
+  ```java
+  // 类型判断
+  @Configuration
+  public class JacksonConfiguration {
+    
+    @Bean
+    @ConditionalOnMissingBean(ObjectMapper.class)
+    public ObjectMapper objectMapper() {
+      return new ObjectMapper().findAndRegisterModules();
+    }
+  }
+  ```
+
+  ```java
+  // 类型名称判断
+  @Configuration
+  public class CacheConfiguration {
+    
+    @Bean
+    @ConditionalOnMissingBean(type = "org.springframework.cache.CacheManager")
+    public CacheManager simpleCacheManager() {
+      return new ConcurrentMapCacheManager();
+    }
+  }
+  ```
+
+  ```java
+  // 名称判断 
+  @Configuration
+  public class MailConfiguration {
+    
+    @Bean("mailSender")
+    @ConditionalOnMissingBean(name = "mailSender")
+    public JavaMailSender mailSender() {
+      JavaMailSenderImpl sender = new JavaMailSenderImpl();
+      sender.setDefaultEncoding("UTF-8");
+      return sender;
+    }
+  }
+  ```
+
+* 在自动配置中的典型场景：
+  - 提供默认的```DataSource/CacheManager/ObjectMapper```等
+  - 当用户自定义同类型```Bean```后，自动配置的```Bean```不再生效
+  - 搭配```@ConditionalOnClass```、```@ConditionalOnProperty```形成“类存在 + 无用户自定义 + 属性开启”的三重门槛
+
+* 注意事项：
+  - 判断“是否缺失”基于```BeanDefinition```级别而非实例；```FactoryBean```场景需留意实际暴露的```Bean```类型
+  - 与```@Primary```/```@Qualifier```不冲突：该注解只负责“是否创建”，不负责“注入选择”
+  - 合理设置```search```，避免父子容器重复定义导致的误判
+  - 若存在多个候选默认实现，建议再配合属性开关或显式名称区分
+
 ### 参考文献
 
 * [注解 @AutoConfigureBefore 和 @AutoConfigureAfter 的用途](https://www.cnblogs.com/lvjingying/p/14289589.html)
 * [Spring中@Import注解详细讲解及示例](https://blog.csdn.net/zouliping123456/article/details/114096248)
 * [Spring 中的 @ConditionalOnProperty 注解](https://springdoc.cn/spring-conditionalonproperty/)
+* [@ConditionalOnMissingBean 注解](https://www.hxstrive.com/subject/spring_boot/480.htm)
