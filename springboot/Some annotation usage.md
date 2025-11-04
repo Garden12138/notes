@@ -393,11 +393,59 @@
     // ...
   }
   ```
-  
+
 * 注意事项：
   - 使用```name```属性可避免在编译期引入可选依赖
   - 仅判断类是否可加载，不负责校验版本/方法存在性；涉及版本适配时需额外判断
   - 建议与```@ConditionalOnProperty```、```@ConditionalOnMissingBean```搭配，控制行为更精确
+
+### @EnableConfigurationProperties
+
+* 启用并注册一个或多个标注了```@ConfigurationProperties```的配置属性类到容器中，实现将```application.yml/properties```中的外部配置绑定为可注入的```Bean```。
+
+* 作用：
+  - 将配置文件中的属性按前缀绑定到```POJO```上
+  - 将属性类注册为容器```Bean```，可在其他组件中直接注入
+  - 与自动配置配合，为模块暴露类型安全的配置入口
+
+* 基本用法（单类）：
+
+  ```java
+  @Data
+  @ConfigurationProperties(prefix = "app.feature")
+  public class FeatureProperties {
+    private boolean enabled = false;
+    private String mode = "simple";
+  }
+
+  @Configuration
+  @EnableConfigurationProperties(FeatureProperties.class)
+  public class FeatureAutoConfiguration {
+    @Bean
+    public FeatureService featureService(FeatureProperties props) {
+      return new FeatureService(props.getMode(), props.isEnabled());
+    }
+  }
+
+  // application.yml
+  app:
+    feature:
+      enabled: true
+      mode: advanced
+  ```
+
+* 与主应用类配合：
+
+  ```java
+  @SpringBootApplication
+  @EnableConfigurationProperties
+  public class Application {}
+  ```
+
+* 注意事项：
+  - 属性名支持中划线（kebab-case），会自动转换为驼峰属性名
+  - 建议在```starter```中使用```@EnableConfigurationProperties```注册属性类，而不要给属性类加```@Component```
+  - 在主应用类仅添加```@EnableConfigurationProperties```且未指定类时，并不会自动注册所有```@ConfigurationProperties```；只有已注册为```Bean```的属性类（如使用```@Component```）、在注解中显式声明的类，或通过```@ConfigurationPropertiesScan```扫描到的类才会生效
 
 ### 参考文献
 
@@ -406,3 +454,4 @@
 * [Spring 中的 @ConditionalOnProperty 注解](https://springdoc.cn/spring-conditionalonproperty/)
 * [@ConditionalOnMissingBean 注解](https://www.hxstrive.com/subject/spring_boot/480.htm)
 * [springboot的@ConditionalOnClass注解](https://www.cnblogs.com/teach/p/16519087.html)
+* [SpringBoot - @EnableConfigurationProperties注解使用详解](https://blog.csdn.net/goodjava2007/article/details/122876462)
