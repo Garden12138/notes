@@ -210,8 +210,82 @@
   - 更底层、更灵活；适合框架/组件做批量、动态注册（如```MyBatis/Spring Data```）
   - 小心与组件扫描、```@Bean```重复注册；注册前可通过```registry.containsBeanDefinition```检查
   - 与```ImportSelector```相比，```Registrar```负责“如何注册”，```Selector```负责“选哪些”
+
+### @ConditionalOnProperty
+
+* ```@ConditionalOnProperty```注解用于根据配置属性（```properties```或```yml```）的值来决定是否启用某个配置类或```Bean```。这是```Spring Boot```中最常用的条件注解之一。
+
+* 作用：
+  - 根据配置属性的值来控制```Bean```的创建和配置类的加载
+  - 实现配置驱动的功能开关
+  - 支持多环境配置切换
+
+* 主要属性：
+  - ```prefix```：配置属性的前缀
+  - ```name```：配置属性的名称（与```prefix```组合成完整属性名）
+  - ```havingValue```：配置属性的期望值（匹配时启用）
+  - ```matchIfMissing```：当配置属性不存在时是否匹配（默认```false```）
+  - ```value```：配置属性的完整名称（可替代```prefix + name```）
+
+* 基本用法：
+
+  ```java
+  @Configuration
+  @ConditionalOnProperty(prefix = "app.feature", name = "enabled", havingValue = "true")
+  public class FeatureConfiguration {
+      
+      @Bean
+      public FeatureService featureService() {
+          return new FeatureService();
+      }
+  }
   
+  // application.yml
+  app:
+    feature:
+      enabled: true
+  ```
+
+* 简写形式（使用```value```）：
+
+  ```java
+  @Configuration
+  @ConditionalOnProperty(value = "app.feature.enabled", havingValue = "true")
+  public class FeatureConfiguration {
+      // ...
+  }
+  ```
+
+* 在方法上使用：
+
+  ```java
+  @Configuration
+  public class FeatureConfiguration {
+      
+      @Bean
+      @ConditionalOnProperty(prefix = "app.feature", name = "enabled", havingValue = "true")
+      public FeatureService featureService() {
+          return new FeatureService();
+      }
+  }
+  ```
+
+* 实际应用场景：
+  - **功能开关**：根据配置启用/禁用某个功能模块
+  - **多数据源切换**：根据配置选择不同的数据源实现
+  - **中间件选择**：根据配置选择使用```Redis```或```Caffeine```作为缓存
+  - **环境适配**：不同环境使用不同的配置实现
+  - **自动配置**：在```Spring Boot Starter```中根据用户配置决定是否启用某些功能
+
+* 注意事项：
+  - ```havingValue```默认匹配任何非空值，如果设置为```""```则要求属性值为空字符串
+  - ```matchIfMissing = true```时，即使属性不存在也会启用配置，常用于默认启用场景
+  - 可以与其他条件注解（如```@ConditionalOnClass```、```@ConditionalOnBean```）组合使用
+  - 在```@Configuration```类上使用时，会影响整个配置类的加载；在```@Bean```方法上使用时，只影响该方法的执行
+  - 属性值匹配是区分大小写的，注意大小写匹配
+
 ### 参考文献
 
 * [注解 @AutoConfigureBefore 和 @AutoConfigureAfter 的用途](https://www.cnblogs.com/lvjingying/p/14289589.html)
 * [Spring中@Import注解详细讲解及示例](https://blog.csdn.net/zouliping123456/article/details/114096248)
+* [Spring 中的 @ConditionalOnProperty 注解](https://springdoc.cn/spring-conditionalonproperty/)
