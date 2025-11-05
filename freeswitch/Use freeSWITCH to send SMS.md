@@ -1,25 +1,29 @@
-## 使用freeSWITCH实现短信发送（未整理完成）
+## 使用freeSWITCH实现短信发送
 
-## 介绍
-freeSWITCH是一个强大的开源通信平台，本质上是一个电话的软交换解决方案包括一个软件电话和软交换机，用以提供语音、视频、IM等通信服务；它也可以作为交换机引擎、PBX以及多媒体网关使用。
+### 什么是freeSWITCH
 
-## 特点
-跨平台、开源、高性能（C）、模块化（扩展功能）、多协议
+* ```freeSWITCH```是一个强大的开源通信平台，本质上是一个电话的软交换解决方案包括一个软件电话和软交换机，用以提供语音、视频、IM等通信服务；它也可以作为交换机引擎、```PBX```以及多媒体网关使用。
 
-## 针对短信发送场景，有以下实现方式：
-* 对接物理语音网关设备，如AIO100（SIM卡）
-  * 部署freeSWITCH
-  * 网关设备注册SIP（freeSWITCH服务）
+* 特点：跨平台、开源、高性能、模块化（扩展功能）、多协议。
+
+### 针对短信发送场景，有以下实现方式
+
+* 对接物理语音网关设备，如```AIO100```（```SIM``卡）：
+
+  * 部署```freeSWITCH```
+  * 网关设备注册```SIP```（```freeSWITCH```服务）
   * 网关设备配置短信路由
-  * freeSWITCH配置网关设备信息，重启或重新加载配置
-  * freeSWITCH客户端命令发送短信
+  * ```freeSWITCH```配置网关设备信息，重启或重新加载配置
+  * ```freeSWITCH```客户端命令发送短信
+
     ```bash
     fs_cli --execute="chat sip|noreply@mydomain|external/sip:${手机号码}@${网关设备IP}:${网关设备端口}|${短信文本内容}"
     ```
   
   此种方式发送能力在网关设备。
 
-* 使用freeSWITCH的拨号计划（Dialplan）或其他机制触发扩展模块的调用，比如使用mod_xml_rpc或mod_xml_curl模块对短信服务平台进行接口调用、使用socket对于已实现短信对接的flask web应用进行接口调用：
+* 使用```freeSWITCH```的拨号计划（```Dialplan```）或其他机制触发扩展模块的调用，比如使用```mod_xml_rpc```或```mod_xml_curl```模块对短信服务平台进行接口调用、使用```socket```对于已实现短信对接的```flask web```应用进行接口调用：
+
   ```bash
   <extension name="send_sms_via_curl">
     <condition field="destination_number" expression="^1001$">
@@ -35,15 +39,18 @@ freeSWITCH是一个强大的开源通信平台，本质上是一个电话的软�
   </extension>
   ```
 
-  此种方式发送能力在于提供的接口服务（通道服务），理论上是传递http协议的请求，所以发送号码应该都能在提供的接口服务（通道服务）上获取。但这种方式依赖于拨号计划或者嵌套字触发，没法直接调用。
+  此种方式发送能力在于提供的接口服务（通道服务），理论上是传递```http```协议的请求，所以发送号码应该都能在提供的接口服务（通道服务）上获取。但这种方式依赖于拨号计划或者嵌套字触发，没法直接调用。
 
-* 使用基于freeSWITCH实现的signalwire产品平台，只需要在平台上注册项目以及对应TOKEN，就可以使用其产品特性，Relay.Messaging，有对应的SDK，如python：
+* 使用基于```freeSWITCH```实现的```signalwire```产品平台，只需要在平台上注册项目以及对应```TOKEN```，就可以使用其产品特性，```Relay.Messaging```，有对应的```SDK```，如```python```：
+
   ```bash
   result = await client.messaging.send(context='office', from_number='+1XXXXXXXXXX', to_number='+1YYYYYYYYYY', body='Welcome at SignalWire!')
   if result.successful:
     print(f'Message ID: {result.message_id}')
   ```
-  此种方式发送能力在于signalwire平台。如果使用Relay Task以及Relay Consumer则可实现消息的发送与接收，在接收方实现通道服务的调用即可：
+
+  此种方式发送能力在于```signalwire```平台。如果使用```Relay Task```以及```Relay Consumer```则可实现消息的发送与接收，在接收方实现通道服务的调用即可：
+  
   ```bash
   # 发送方
   # create-task.py
@@ -61,6 +68,7 @@ freeSWITCH是一个强大的开源通信平台，本质上是一个电话的软�
   else:
     print('Error delivering task..')
   ```
+  
   ```bash
   # 接收方
   from signalwire.relay.consumer import Consumer
@@ -80,11 +88,23 @@ freeSWITCH是一个强大的开源通信平台，本质上是一个电话的软�
   consumer = CustomConsumer()
   consumer.run()
   ```
+  
   此种方式发送能力在于通道服务。
   
-## 使用freeSWITCH实现短信发送思路
-  * 部署freeSWITCH
-  * 编写自定义发送短信事件（Python ESL脚本）
+* 使用freeSWITCH Event事件机制实现短信发送
+
+  * 部署```freeSWITCH```，可使用第三方提供的Docker镜像，如```safarov/freeswitch```
+
+    ```bash
+    docker run -d \
+             -p 8021:8021/tcp \
+             --net=host \
+             --name freeswitch \
+             -v ./conf/:/etc/freeswitch \
+             safarov/freeswitch
+    ```
+  
+  * 编写自定义发送短信事件（```Python ESL```脚本）
     
     ```python
     # -*- coding: utf-8 -*-
@@ -107,8 +127,6 @@ freeSWITCH是一个强大的开源通信平台，本质上是一个电话的软�
     
     text = sys.argv[1]
     mobile = sys.argv[2]
-
-    #logger.info(f"输入的参数text:{text}，mobile:{mobile}") 
        
     try:
         con = ESL.ESLconnection("localhost", "8021", "ClueCon")
@@ -125,8 +143,11 @@ freeSWITCH是一个强大的开源通信平台，本质上是一个电话的软�
         errorMsg = 'send event occur unexpected error:' + sys.exc_info()[0] 
         logger.error(json.dumps({'result': 1, 'message': errorMsg}))
     ```
+
+    执行方式：
+
     ```bash
-    python3 client.py 【博今网络】测试文本短信发送 13710385821
+    python3 client.py 【签名】发送内容 13111111111
     ```
 
   * 编写监听发送事件（Python ESL脚本），事件执行逻辑包含发送短信的操作
@@ -155,41 +176,13 @@ freeSWITCH是一个强大的开源通信平台，本质上是一个电话的软�
     # 获取日志记录器
     logger = logging.getLogger(__name__)
 
-    def calculate_md5(text):
-        md5_hash = hashlib.md5()
-        md5_hash.update(text.encode('utf-8'))
-        return md5_hash.hexdigest()
-
-    def url_code(text):
-        return urllib.parse.quote(text)
-
-    def text_send_single(text, mobile):
-        account = 'JG8347'
-        http_sign_Key = "202013"
-
-        input_text = str(account) + "00000000" + http_sign_Key + str(time := datetime.now().strftime("%m%d%H%M%S"))
-        url = ''
-        headers = {
-            'Content-Type': 'application/json'
-        }
-
-        response = requests.post(
-            url,
-            data=json.dumps(
-                {"userid": f"{account}", "pwd": f"{calculate_md5(input_text)}", "mobile": mobile,
-                 "content": f"{url_code(text)}",
-                 "timestamp": f"{time}"}),
-            headers=headers
-        )
-        logger.info(response.json())
-
     def on_event(event):
         if event.getHeader('Event-Name') == 'API':
             args = event.getHeader('API-Command-Argument')
-            logger.info(f'{args}')
+            logger.info(f'Received API event: {args}')
             logger.info('Call ended, here is your test SMS!')
             send_args = json.loads(args)
-            text_send_single(send_args['text'], send_args['mobile'])
+            #text_send_single(send_args['text'], send_args['mobile'])
 
     con = ESL.ESLconnection('localhost', '8021', 'ClueCon')
 
@@ -201,127 +194,65 @@ freeSWITCH是一个强大的开源通信平台，本质上是一个电话的软�
                 #logger.info(e.serialize())
                 on_event(e)
     ```
+
+    启动方式：
+    
     ```bash
     python3 listener.py &
-    ps -ef | grep 'python3'
-    kill -9 pid
     ```
-  
-  * 编写自定义发送短信事件web服务
 
-    ```python
-    # -*- coding: utf-8 -*-
-    from flask import Flask, request, jsonify
-    import subprocess
+    关闭方式；
 
-    app = Flask(__name__)
-
-    @app.route('/execute-client', methods=['POST'])
-    def execute_client():
-        text = request.json.get('text')
-        #mobile = request.json.get('mobile')
-        mobiles = request.json.get('mobiles')
-        mobile = ','.join(mobiles)
-        result = subprocess.run(['python3', 'client.py', text, mobile], capture_output=True, text=True)
-        return jsonify(result.stderr)
-
-    if __name__ == '__main__':
-        app.run(host='0.0.0.0', port=5000)
-    ```
     ```bash
-    python3 client-web.py &
-    ```
+    kill -9 $(ps -ef | grep 'listener.py' | awk '{print $2}')
+    ``` 
 
-## 注意事项：
-要修改FreeSWITCH的Event Socket模块默认配置（包括监听地址、端口和密码），需编辑其配置文件并重启服务。以下是详细步骤：
+  * 效果如下：
 
-1. 定位配置文件
-配置文件路径通常为：
+    * 执行发送：
+      
+      ```bash
+      python3 client.py 【签名】发送内容 13111111111
+      ```
 
-bash
-复制
-/usr/local/freeswitch/conf/autoload_configs/event_socket.conf.xml
-（根据实际安装路径可能略有不同）
+    * 接收方：
 
-2. 修改配置内容
-用文本编辑器打开文件，找到以下关键参数并修改：
+      ```bash
+      2025-11-05 16:17:33 - __main__ - INFO - Received API event: {"text": "【签名】发送内容", "mobile": "13111111111"}
+      2025-11-05 16:17:33 - __main__ - INFO - Call ended, here is your test SMS!
+      ```
 
-xml
-复制
-<configuration name="event_socket.conf">
-  <settings>
-    <!-- 修改监听地址（默认localhost，改为0.0.0.0允许所有IP） -->
-    <param name="listen-ip" value="0.0.0.0"/> 
+### 注意事项
 
-    <!-- 修改监听端口（默认8021） -->
-    <param name="listen-port" value="8021"/>
+* 安装```ESL```模块，使用```pip3 install ESL```命令安装前，需要更新```swig```到旧版本如```swig==3.0.12```：
 
-    <!-- 修改连接密码（默认ClueCon） -->
-    <param name="password" value="YourSecurePassword"/>
-  </settings>
-</configuration>
-运行 HTML
-3. 保存并应用配置
-重启FreeSWITCH服务（彻底生效）：
+  ```bash
+  # 卸载当前版本swig
+  sudo dnf remove -y swig
+  
+  # 安装旧版本swig=3.0.12
+  cd /usr/local/src
+  sudo curl -LO https://github.com/swig/swig/archive/refs/tags/v3.0.12.tar.gz
+  sudo tar xvf v3.0.12.tar.gz
+  cd swig-3.0.12
+  sudo ./autogen.sh
+  sudo ./configure
+  sudo make -j$(nproc)
+  sudo make install
 
-bash
-复制
-systemctl restart freeswitch
-# 或
-freeswitch -stop
-freeswitch -nc
-或仅重新加载Event Socket模块（无需完全重启）：
+  # 确认版本
+  swig -version
 
-bash
-复制
-fs_cli -x "reload mod_event_socket"
-4. 验证配置
-检查端口监听状态：
-
-bash
-复制
-netstat -tuln | grep 8021
-应显示0.0.0.0:8021或指定IP。
-
-使用fs_cli测试连接：
-
-bash
-复制
-fs_cli -p YourSecurePassword -P 8021
-5. 安全注意事项
-监听地址：
-
-0.0.0.0允许所有IP连接，仅在可信网络中使用。
-
-若仅本地访问，保留127.0.0.1。
-
-密码强度：
-
-避免使用默认ClueCon，建议使用复杂密码（如MySecurePass123!@#）。
-
-防火墙规则：
-
-如果开放到公网，需限制访问IP：
-
-bash
-复制
-iptables -A INPUT -p tcp --dport 8021 -s 192.168.1.0/24 -j ACCEPT
-iptables -A INPUT -p tcp --dport 8021 -j DROP
-附：Docker部署的特殊处理
-若使用Docker，需在启动容器时映射端口：
-
-bash
-复制
-docker run -d \
-  -p 8021:8021/tcp \
-  -v /path/to/custom/event_socket.conf.xml:/usr/local/freeswitch/conf/autoload_configs/event_socket.conf.xml \
-  freeswitch/freeswitch
-通过以上步骤，您已成功修改了FreeSWITCH Event Socket的默认配置。
+  # 安装ESL模块
+  pip3 install python-ESL
+  ```
 
 
-
-## 仓库地址
-http://gitlab.bojin-tech.com/thrid_biz/biz-dingdingzt-cloud.git
-
-## 参考文献
-[官方开发者文档](https://developer.signalwire.com/freeswitch/FreeSWITCH-Explained/)
+### 参考文献
+* [官方开发者文档](https://developer.signalwire.com/freeswitch/FreeSWITCH-Explained/)
+* [官方仓库](https://github.com/signalwire/freeswitch/tree/master)
+* [Freeswitch的Docker镜像构建](https://www.cnblogs.com/fortuneju/p/18777204)
+* [freeswitch笔记(3)-esl入门](https://cloud.tencent.com/developer/article/1585511)
+* [Freeswitch服务+语音网关设备发送短信功能](https://blog.csdn.net/giscong/article/details/124155466)
+* [最全FreeSwitch 1.10.9 Linux通用编译部署教程](https://blog.csdn.net/qq_36369267/article/details/131564019)
+* [Python ESL](https://developer.signalwire.com/freeswitch/FreeSWITCH-Explained/Client-and-Developer-Interfaces/Python-ESL/)
