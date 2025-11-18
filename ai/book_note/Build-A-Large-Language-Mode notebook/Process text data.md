@@ -30,6 +30,29 @@
 
 ### 文本分词
 
+* 输入文本到创建嵌入向量的第一步是文本分词，将长文本分割成单个单词或特殊字符，包括标点符号，分割后的单位称为```token```：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm3.png)
+
+* 我们使用正则表达式进行文本分词，但在第一步我们应该是获取输入文本：
+
+  ```python
+  with open("the-verdict.txt", "r", encoding="utf-8") as f:
+          raw_text = f.read()
+  print("Total number of character:", len(raw_text))
+  print(raw_text[:99])
+  ```
+
+  其中```the-verdict.txt```是一部由[```Edith Wharton```创作的短篇小说《判决》](https://en.wikisource.org/wiki/The_Verdict)，我们可以点击下载到本地。
+
+  下一步，我们使用正则表达式，用空格、标点符号、换行符等进行分割，并且对分割结果进行去除空字符串的操作（去除操作按需进行）：
+
+  ```python
+  preprocessed = re.split(r'([,.:;?_!"()\']|--|\s)', raw_text)
+  preprocessed = [item.strip() for item in preprocessed if item.strip()]
+  print(len(preprocessed))
+  ```
+
 ### 将 tokens 转换为 token IDs
 
 ### 字节对编码（Byte Pair Encoding，BPE）
