@@ -10,7 +10,6 @@
 
   不同的数据格式需要使用不同的嵌入模型，原因在于它们的数据结构、特征和处理方式各不相同：
 
-  |:--:|:--|:--|:--|
   |数据类型|数据特征|嵌入模型|主要特征|
   |:--:|:--|:--|:--|
   |文本|离散的、序列化的符号数据|Word2Vec、BERT、GPT等|语义关系、上下文理解|
@@ -54,6 +53,64 @@
   ```
 
 ### 将 tokens 转换为 token IDs
+
+* 在文本分词之后，我们需要将生成的```token```从字符串转换为整形以创建```token ID```，这个转换过程依赖预先定义的词汇表：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm4.png)
+
+* 定义词汇表：
+
+  ```python
+  vocab = sorted(set(preprocessed))
+  ```
+
+* 创建分词器：
+
+  ```python
+  class SimpleTokenizerV1:
+        def __init__(self, vocab):
+            self.str_to_int = vocab                                                   
+            self.int_to_str = {i:s for s,i in vocab.items()}                          
+
+      def encode(self, text):                                                       
+            preprocessed = re.split(r'([,.?_!"()\']|--|\s)', text)
+            preprocessed = [item.strip() for item in preprocessed if item.strip()]
+            ids = [self.str_to_int[s] for s in preprocessed]
+            return ids
+
+      def decode(self, ids):                                                        
+            text = " ".join([self.int_to_str[i] for i in ids])
+            text = re.sub(r'\s+([,.?!"()\'])', r'\1', text) # 去掉标点符号前面多余的空格："Hello , world !" -> "Hello, world!"                         
+            return text
+  ```
+
+  ```str_to_int```维护词汇表，用于```encode```方法中，将```token```转换为```token ID```；```int_to_str```维护反词汇表，用于```decode```方法中，将```token ID```转换为```token```：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm5.png)
+
+* 实例化分词器，对艾迪丝·华顿的短篇小说中的一段文本进行分词：
+
+  ```python
+  tokenizer = SimpleTokenizerV1(vocab)
+  text = """"It's the last he painted, you know," Mrs. Gisburn said with pardonable pride."""
+  ids = tokenizer.encode(text)
+  print(ids)
+  ```
+
+  根据```token ID```找回文本：
+
+  ```python
+  raw_text = tokenizer.decode(ids)
+  print(raw_text)
+  ```     
+
+  若使用文本```"Hello, do you like tea?"```，则会报错，因为词汇表不存在```Hello```：
+
+  ```bash
+  KeyError: 'Hello'
+  ```
+
+  这需要我们在分词过程中对于未知词汇应当有额外特殊处理。
 
 ### 字节对编码（Byte Pair Encoding，BPE）
 
