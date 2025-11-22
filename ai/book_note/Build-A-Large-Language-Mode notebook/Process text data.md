@@ -61,7 +61,8 @@
 * 定义词汇表：
 
   ```python
-  vocab = sorted(set(preprocessed))
+  all_tokens = sorted(set(preprocessed))
+  vocab = {token:integer for integer,token in enumerate(all_tokens)}
   ```
 
 * 创建分词器：
@@ -111,6 +112,65 @@
   ```
 
   这需要我们在分词过程中对于未知词汇应当有额外特殊处理。
+
+### 添加特殊上下文token
+
+* 未了解决未知词汇不在单词表导致无法将```Token```转为```Token ID```的问题，可添加特殊的上下文```Token```，如```<|unk|>```代表未知词汇，还加入```<|endoftext|>```代表文档结束位置，一般用于文档之间，这样可以让大模型更好的理解上下文：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm6.png)
+
+* 修改词汇表，加入特殊上下文```Token```：
+
+  ```python
+  all_tokens = sorted(list(set(preprocessed)))
+  all_tokens.extend(["<|endoftext|>", "<|unk|>"])
+  vocab = {token:integer for integer,token in enumerate(all_tokens)}
+  ```
+
+* 修改分词器，当出现未知词汇时，使用特殊上下文```Token <|unk|>```代替：
+
+  ```python
+  class SimpleTokenizerV2:
+        def __init__(self, vocab):
+            self.str_to_int = vocab                                                   
+            self.int_to_str = {i:s for s,i in vocab.items()}                          
+
+      def encode(self, text):                                                       
+            preprocessed = re.split(r'([,.?_!"()\']|--|\s)', text)
+            preprocessed = [item.strip() for item in preprocessed if item.strip()]
+            preprocessed = [item if item in self.str_to_int else "<|unk|>" for item in preprocessed]
+            ids = [self.str_to_int[s] for s in preprocessed]
+            return ids
+
+      def decode(self, ids):                                                        
+            text = " ".join([self.int_to_str[i] for i in ids])
+            text = re.sub(r'\s+([,.?!"()\'])', r'\1', text) # 去掉标点符号前面多余的空格："Hello , world !" -> "Hello, world!"                         
+            return text
+  ```
+
+* 实例化分词器，使用两个用特殊上下文```Token```（如```<|endoftext|>```）连接的文本：
+
+  ```python
+  text1 = "Hello, do you like tea?"
+  text2 = "In the sunlit terraces of the palace."
+  text = " <|endoftext|> ".join((text1, text2))
+  tokenizer = SimpleTokenizerV2(vocab)
+  ids = tokenizer.encode(text)
+  print(ids)
+  ```
+
+  根据```token ID```找回文本：
+
+  ```python
+  raw_text = tokenizer.decode(ids)
+  print(raw_text)
+  ```  
+
+* 实际应用我们并不会用此方法，对于```|<unk>|```，一般使用```BPE```算法代替，对于```|<endoftext>|```，一般使用掩码矩阵来代替：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm7.png)
+
+  在训练神经网络时，通常会将不同长度的句子或文本批处理为一个```batch```进行并行训练，这时需要将不同长度的句子齐到同一长度（基于矩阵运算要求形状一致），这时就需要填充特殊上下文```Token```（如```<|endoftext|>```） 来对齐所有序列的长度，使得模型能够有效处理不同长度的输入。但我们使用掩码矩阵，用掩码标识哪个```Token```是有效的，哪个是```Token```是无效的，无需填充特殊上下文```Token```。
 
 ### 字节对编码（Byte Pair Encoding，BPE）
 
