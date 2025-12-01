@@ -40,15 +40,15 @@
 
 * AI模型训练
 
-  * Ollama✅
+  * Ollama👌
 
 * AI提示工程
 
-  * PromptPilot⚠️
+  * PromptPilot👌
 
 * AI开源产品
 
-  * lobe-chat⚠️
+  * lobe-chat👌
 
 ### 注意事项
 ✅表示已完成 
