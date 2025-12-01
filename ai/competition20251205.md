@@ -201,3 +201,25 @@
 * 缺点：
 
   - 需要一定的学习成本。
+
+### Ollama（https://ollama.com/）
+
+* 是一个开源的大型语言模型服务工具，可快速在本地运行大模型，通过简单的安装指令轻松启动和运行开源的大型语言模型。
+
+* 适用人群：公司所有同事，可本机运行开源的大型语言模型。
+
+* 功能使用：
+
+  - 官网上搜索模型，拷贝运行命令，在本地运行：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_17-31-31.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/c2f4edc88dde2151070e34a40ed8f611.JPG)
+
+* 优点：
+
+  - 本地部署LLM框架，支持多模型运行，隐私安全性高。
+
+* 缺点：
+
+  - 本地机器需较高配置，模型加载耗资源。
