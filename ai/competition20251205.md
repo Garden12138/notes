@@ -223,3 +223,129 @@
 * 缺点：
 
   - 本地机器需较高配置，模型加载耗资源。
+
+### Nanobanana Pro（https://gemini.google.com/app）
+
+* 是建立在 Gemini 3 Pro 基础上的最新图像模型，它结合了先进的推理能力与世界知识，不仅能生成精准的图像与清晰文字，更提供专业级的设计一致性与光影控制，协助你将脑中的创意完美具象化。
+
+* 适用人群：公司所有同事，我们可以实现各种创意图片。
+
+* 功能使用：
+
+  - 论文总结，上传论文文件，输入以下提示词，点击生成：
+
+    ```txt
+    把这篇论文转换成教授板书照片的样子：包含图表、箭头、方框和说明文字，从视觉上阐释核心思想。同时笔迹使用多种颜色。[文字使用英文]
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-27_21-37-37.png)
+
+  - 服装结构拆解，上传模特照片，输入以下提示词，点击生成：
+
+    ```txt
+    用宫格图拆解图片中人物穿戴的所有衣物和配饰
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_19-44-30.png)
+
+  - 简笔画，输入以下简笔画步骤提示词，点击生成：
+
+    ```txt
+    简笔画教程，如何画皮卡丘，九宫格分步图解，第一步画圆形脑袋，第二步画长耳朵，第三步画五官，逐步添加闪电尾巴，最后一步上色，明亮的黄色，红色脸颊，粗线条，儿童教学风格，白色背景。   
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_19-58-27.png)
+
+  - 品牌物料，上传品牌形象图片，输入以下提示词，点击生成：
+
+    ```txt
+    根据上传的图片，设计完整的视觉物料及周边产品方案，包括logo、色卡、字体排版和至少10种品牌物料周边设计（如包装盒、服饰、杯子、手提袋、贴纸）。每个物料需有清晰创意及标准使用说明，整体风格统一、有识别性
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_21-08-13.png)
+
+  - 电商页面，上传商品图片，输入以下提示词，点击生成：
+
+    ```txt
+    为这款衣服创建一个网店页面，风格类似于GUCCI
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_21-11-38.png)
+
+  - 杂志排版，输入带杂志主题内容的提示词，点击生成：
+
+    ```txt
+    根据给出的文字生成一份打开的光面杂志。图文并茂、排版精美。光面纸张反光，桌面背景，景深虚化，电影级真实感：Start building with Gemini 3，Introducing Nano Banana Pro
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_21-16-54.png)
+
+  - 视频/图文封面，上传封面人物图片，输入封面描述的提示词，点击生成：
+
+    ```txt
+    制作一张16:9的YouTube缩略图，以给出的图片人物为男主角，他很吃惊站在富有戏剧性且光线柔和的环境中，背景中有发光粒子。他双手拿着一根明亮发光的黄色香蕉，仿佛对其感到惊叹。光线呈现电影感，带有冷色调。男子的嘴因敬畏而张开。右侧有醒目的黄色粗体文字“Nano Banana Pro”，其上方有较小的白色文字“这难道是？”。一个白色虚线箭头指向那根发光的香蕉。
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_21-20-59.png)
+
+  - 漫画创作，输入漫画主题以及分镜内容的提示词，点击生成：
+
+     ```txt
+     四格漫画，钢琴美女鼓起勇气追求我，浪漫又温柔的四格漫画。
+     1、漂亮钢琴女生在舞台上弹琴，温柔侧脸。
+     2、她在人群中看到我，脸红心动。
+     3、她追到我身边，紧张递出信件。
+     4、她害羞告白，我惊讶又开心的表情。
+     黑白线条，手绘草图，真实表情。
+     ```
+
+     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_21-23-42.png)
+
+  - 电影海报，上传电影人物图片，输入电影主题的提示词，点击生成：
+
+    ```txt
+    制作一个好莱坞级别的围殴哥斯拉的海报，这三个人都在海报封面上
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_21-24-42.png)
+
+  - 分镜推测，上传推测的图片，输入以下提示词，点击生成：
+
+    ```txt
+    分析这张图片，推测并创作一个可能导致该场景的事件时间线。以电影分镜方式，把推测的系列事件按发生顺序制作成9格分镜网格的图片，每个分镜展现事件的连续发展过程。
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_21-29-44.png)
+
+  - 工业工程制图，上传平面设计图，输入以下提示词，点击生成：
+
+    ```txt
+    根据这张平面设计图生成对应的3D设计图
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_21-32-24.png)
+
+  - 室内设计，上传室内毛坯图以及各种家具图，输入以下提示词，点击生成：
+
+    ```txt
+    请将我上传的这些物件按照真实生活场景，放置到毛胚房里面，毛胚房刷成米白色的墙
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_21-36-25.png)
+
+  - 修复还原，上传损坏的图片，输入以下修复方法的提示词，点击生成：
+
+    ```txt
+    把这个公仔熊的头接上去
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_21-39-22.png)
+
+* 优点：
+
+  - 可生成符合品牌风格、高分辨率、排版清晰的商业/社媒图像。
+  - 具有推理能力，能够实现各种创意图片。
+
+* 缺点：
+
+  - 价格贵。
