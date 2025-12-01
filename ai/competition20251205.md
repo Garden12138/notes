@@ -121,4 +121,52 @@
 
   - 仅限法律垂直领域，需专业术语输入，更新延迟。
 
+### LobeChat（http://localhost:3210/chat）
+
+* 开源多模型对话平台，支持本地与云端模型，可自建AI助手的可视化对话框架。
+
+* 适用人群：公司所有同事，我们可以用于打造智能客服、办公效率助手。
+
+* 功能使用：
+
+  - 设置模型 API KEY：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_15-32-19.png)
+
+  - 知识库创建：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_15-44-27.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_15-44-37.png)
+
+  - 聊天，点击随便聊聊，选择模型，输入对话：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_15-38-35.png)
+
+  - 生图，选择模型，输入生成内容：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_16-01-25.png)
+
+  - 使用内置助手，点击发现，搜索内置助手，点击添加助手并会话：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_15-39-47.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_15-39-59.png)
+
+  - 自定义助手，点击创建助手，选择模型，设置角色设定，输入对话：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_15-43-47.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_15-45-16.png)
+
+* 优点：
+
+  - 支持多模型接入。
+  - 可扩展插件与自定义能力。
+
+* 缺点：
+
+  - 需自行维护环境。
+  - 部分功能需手动配置。
+
 
