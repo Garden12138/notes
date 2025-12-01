@@ -441,3 +441,31 @@
 * 缺点：
 
   - 免费版有水印、AI功能和导出分辨率受限。
+
+### Suno（https://suno.com/）
+
+* 是一款生成式人工智能音乐创作程序，旨在产生人声与乐器相结合的逼真歌曲。
+
+* 适用人群：公司所有同事，我们可以创造动听的音乐。
+
+* 功能使用：
+
+  - 普通创造，输入提示词，选择风格，点击生成：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-23_19-41-10.png)
+
+  - 自定义创建，输入提示词，自动生成歌词，选择风格，点击生成：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-23_20-22-03.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-23_20-22-34.png)
+
+* 优点：
+
+  - 操作简单，几分钟内即可生成音乐。
+  - 支持多种风格 + 自动歌词 + 人声，适合快速试验。
+  - 无需音乐基础，普通人也能生成“可听”歌曲。
+
+* 缺点：
+
+  - 可控性和可编辑性差，细节难以调整。
