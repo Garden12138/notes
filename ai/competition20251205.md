@@ -349,3 +349,29 @@
 * 缺点：
 
   - 价格贵。
+
+### RunnigHub（https://www.runninghub.cn/）
+
+* 是一个在线ComfyUI平台，旨在简化和加速AI图像和视频生成工作流程。
+
+* 适用人群：公司所有同事，我们可以手动编排生成图片或者视频的工作流。
+
+* 功能使用：
+
+  - 点击工作流，查找发布的工作流，点击运行工作流，进入工作流编辑页面，编辑工作流，点击运行，最后在右侧任务栏即可查看生成的结果：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_22-09-59.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_22-10-32.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_22-11-27.png)
+
+* 优点：
+  
+  - 无需本地部署，浏览器即可使用。
+  - 内置大量模型与节点，可快速上手。
+  - 支持图／视频／多模态生成，灵活多样。
+
+* 缺点：
+
+  - 高级需求可能仍需手动调参与调试。
