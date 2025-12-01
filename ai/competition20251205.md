@@ -409,3 +409,35 @@
 * 缺点：
 
   - 价格贵。
+
+
+### VEED（https://veed.io/）
+
+* 云端视频制作平台，一站式剪辑／字幕／配音工具。
+
+* 适用人群：公司所有同事，我们可以在线编辑视频。
+
+* 功能使用：
+
+  - 上传视频，选择视频编辑，裁剪视频：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-23_23-11-29.png)
+
+  - 选择自动字幕，生成字幕后，修改字幕及其样式，最后保存视频：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-23_23-13-34.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-23_23-15-08.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-23_23-19-34.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-23_23-18-29.png)
+
+* 优点：
+
+  - 操作简便，拖拽即用，新手友好，适合快速产出编辑视频。
+  - 内置 AI 自动字幕、降噪、语音合成等智能功能。
+
+* 缺点：
+
+  - 免费版有水印、AI功能和导出分辨率受限。
