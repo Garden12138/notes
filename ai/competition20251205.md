@@ -169,4 +169,35 @@
   - 需自行维护环境。
   - 部分功能需手动配置。
 
+### PromptPilot（https://promptpilot.volcengine.com/）
 
+* 统一管理与调试提示词的工作台。
+
+* 适用人群：公司所有同事，我们在工作流编排中可使用调试优化提示词。
+
+* 功能使用：
+
+  - 提示词生成，点击 Prompt 生成，输入需求描述，点击生成：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_16-52-03.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_16-53-32.png)
+
+  - 提示词调试，点击前往验证或 Prompt 调试，使用“优化您的Prompt”功能，选择模型后，点击生成模型回答，查看效果：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-24_09-49-11.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-24_09-50-35.png)
+
+    在工作流上覆盖新的提示词，查看效果：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-24_09-59-54.png)
+
+* 优点：
+
+  - 提示词管理集中化。
+  - 多模型可切换方便，可对比效果。
+
+* 缺点：
+
+  - 需要一定的学习成本。
