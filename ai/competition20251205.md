@@ -375,3 +375,37 @@
 * 缺点：
 
   - 高级需求可能仍需手动调参与调试。
+
+### Sora2（https://sora.chatgpt.com）
+
+* 是 OpenAI 于2025年推出的最新 AI 影片生成模型，能从简单的文字提示（prompt）生成具电影质感的短片，包含人物对话、背景音效与环境音等。
+
+* 使用人群：公司所有同事，我们可以生成各种想法影片。
+
+* 功能使用：
+
+  - 上传角色线稿，生成视频，在这个视频内创建自定义角色：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/aimyon_guitar_create_character1.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/aimyon_guitar_create_character2.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/aimyon_guitar_create_character3.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/aimyon_guitar_create_character4.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/aimyon_guitar_create_character4.png)
+
+  - 艾特自定义角色，输入视频内容提示词，点击创建：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/aimyon_video_create1.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-01_22-44-03.png)
+
+* 优点：
+
+  - 可创造自定义角色的影片。
+
+* 缺点：
+
+  - 价格贵。
