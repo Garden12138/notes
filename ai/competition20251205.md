@@ -607,3 +607,47 @@
 * 缺点：
 
   - 移动端商品链接不可用，只能使用网页端。
+
+### Google Stitch（https://stitch.withgoogle.com/）
+
+* 是由 Google 开发的 AI 设计工具，目的是简化使用者介面（UI）设计流程，帮助非设计背景的使用者也能轻鬆产出高品质的画面，只要输入文字、或是上传图片或草图，Stitch 就能帮你把想法变成视觉设计，还能输出对应的HTML/CSS 程式码。
+
+* 适用人群：公司需求分析师、UI设计师。
+
+* 功能使用：
+
+  - 生成WEB UI设计，输入文字描述，点击生成：
+
+    ```txt
+    full fashion e-commerce website UI kit, Shopee-inspired orange-white theme, including homepage, product listing page, product detail page, shopping cart, checkout, order detail, user profile center, modern e-commerce components, clean layout, responsive design, high-quality web UI mockup, Figma style
+    ```
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-29_23-32-15.png)
+
+  - 生成APP UI设计，输入文字描述，点击生成：
+
+    ```txt
+    complete mobile e-commerce app UI kit, Shopee-inspired style, including home screen, category screen, product list, product detail, shopping cart, checkout, order detail, user profile center, clean orange-white theme, modern mobile UI mockup set, Figma style
+    ``` 
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_23-18-13.png)
+
+  - 复刻已存在的设计，上传复刻素材图片，输入文字描述，点击生成：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-30_13-50-35.png)
+
+  - 导入figma进行专业的优化设计：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-30_15-04-13.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-30_15-32-13.png)
+
+* 优点：
+
+  - 可以快速从想法到原型的实现。
+  - 支持生成前端静态代码。
+  - 支持导入Figma进一步专业设计。
+
+* 缺点：
+
+  - 目前还是BETA版本，功能使用随时存在变化。
