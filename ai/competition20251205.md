@@ -579,3 +579,31 @@
 
   - 需要一定的学习成本。
   - 部署维护需要一定的技术能力。
+
+### 万相营造（https://www.wanxiang.art/）
+
+* 支持AI生成商业设计图和营销素材，智能优化视觉内容，提升商品营销效率。
+
+* 适用人群：公司所有同事，我们可以快速生成广告营销图文、视频素材。
+
+* 功能使用：
+
+  - 商品图生成，点击商品图，输入商品链接，输入创意描述，启用智能营销文案，点击立即生成：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/%E5%9B%BE%E7%89%873.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/%E5%9B%BE%E7%89%874.png)
+
+  - 商品营销视频生成，点击即刻成片，输入商品链接自动生成卖点，设置视频配置，点击生成：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_22-26-03.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_22-48-45.png)
+
+* 优点：
+
+  - 功能丰富，能够快速生成商品营销设计图和营销广告视频，支持淘宝、天猫链接智能生成。
+
+* 缺点：
+
+  - 移动端商品链接不可用，只能使用网页端。
