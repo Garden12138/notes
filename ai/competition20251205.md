@@ -469,3 +469,31 @@
 * 缺点：
 
   - 可控性和可编辑性差，细节难以调整。
+
+### Cherry Studio（https://www.cherry-ai.com/）
+
+* 是一款功能强大的国产开源AI工具，支持本地部署、知识库管理、多模型聚合和联网搜索等特性。
+
+* 适用人群：公司所有同事，我们可以打造AI小助手。
+
+* 功能使用：
+
+  - 配置模型：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_16-04-35.png)
+
+  - 选择智能体，添加到助手，输入对话内容，点击发送：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_16-02-38.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_16-02-55.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_16-03-32.png)
+
+* 优点：
+
+  - 功能丰富度、交互体验等方面有着明显的优势，其部署安装过程较为友好。
+
+* 缺点：
+
+  - 系统BUG多。
