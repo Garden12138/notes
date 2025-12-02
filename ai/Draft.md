@@ -36,7 +36,7 @@
 * AI智能体
 
   * Dify✅
-  * Cherry Studio✅
+  * Cherry Studio👌
 
 * AI模型训练
 
