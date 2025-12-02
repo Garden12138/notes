@@ -14,7 +14,7 @@
   * RunnigHub👌
   * Sora2：真实人物线稿上传生成视频 -> 在视频里创建角色 -> 后续@创建的角色就可自由创作真实人物的视频了。👌
   * VEED👌
-  * 万相营造/羚珑✅
+  * 万相营造/羚珑👌
 
 * AI音频与对话工具
 
@@ -25,17 +25,16 @@
 
 * AI编程开发
 
-  * Antigravity（Gemini3）
-  * Claude Code：1.编程 -> https://www.youtube.com/watch?v=e5O8A5pcVgg2.助理团队 -> https://www.youtube.com/watch?v=J83BFDHeut0
-  * Codex -> https://www.youtube.com/watch?v=BhOF-7--bhA 【不建议】
-  * Cursor✅ 实现发票导出Excel：mcp -> wuyonghui0810/invoice_ocr 
+  * Antigravity（Gemini3）【不建议】
+  * Claude Code：1.编程 -> https://www.youtube.com/watch?v=e5O8A5pcVgg2.助理团队 -> https://www.youtube.com/watch?v=J83BFDHeut0 【不建议】
+  * Codex -> https://www.youtube.com/watch?v=BhOF-7--bhA 【不建议】 
   * Warp Code -> https://www.youtube.com/watch?v=V7DutxOuhDM 与 Claude Code 类似 【不建议】
-  * Cursor✅
-  * Google stitch -> Figma ⚠️
+  * Cursor【Figma MCP】👌
+  * Google Stitch 👌
 
 * AI智能体
 
-  * Dify✅
+  * Dify👌
   * Cherry Studio👌
 
 * AI模型训练
