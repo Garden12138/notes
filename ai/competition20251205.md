@@ -506,11 +506,17 @@
 
 * 功能使用：
 
-  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_17-47-17.png)
+  - 编写代码，自动联想补齐：
 
-  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_17-48-53.png)
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_17-47-17.png)
 
-  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_17-49-45.png)
+  - 对话式编程，输入实现需求，生成功能代码、分析代码以及优化代码：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_17-48-53.png)
+
+  - 配置MCP，实现自动调用工具，如配置Figma MCP，实现UI设计自动生成前端项目代码：
+  
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_17-49-45.png)
 
 * 优点：
 
