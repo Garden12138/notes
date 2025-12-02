@@ -515,7 +515,7 @@
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_17-48-53.png)
 
   - 配置MCP，实现自动调用工具，如配置Figma MCP，实现UI设计自动生成前端项目代码：
-  
+
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_17-49-45.png)
 
 * 优点：
@@ -526,3 +526,56 @@
 * 缺点：
 
   - 价格贵。
+
+### Dify（https://cloud.dify.ai/apps）
+
+* 是一个用于构建AI 工作流的开源平台。 通过在可视化画布上编排AI 模型、连接数据源、定义处理流程，直接将你的领域知识转化为可运行的软件。
+
+* 适用人群：公司所有同事，我们可以快速搭建 AI 工作流应用。
+
+* 功能使用，以发票识别总结为例：
+
+  - 创建工作流：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_21-30-48.png)
+
+  - 创建“PDF转PNG转换器”节点：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_21-34-45.png)
+
+  - 创建“识别发票信息”节点，设置模型以及提示词：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_21-35-48.png)
+
+  - 创建“获取发票信息”节点，编写代码实现数据提取：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_21-38-12.png)
+
+  - 创建“转换Json Excel格式”节点，编写代码实现数据格式转换：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_21-39-31.png)
+
+  - 创建“Json转Excel”节点：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_21-40-34.png)
+
+  - 创建“输出Excel文件”节点：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_21-41-27.png)
+
+  - 点击预览，上传发票PDF文件，点击运行，即生成可下载的Excel文件：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_21-43-41.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_21-43-41.png)
+
+* 优点：
+
+  - 可视化配置，操作简单。
+  - 多模型支持，支持多种工具插件，扩展性强。
+  - 开源免费，可自行内网部署。
+
+* 缺点：
+
+  - 需要一定的学习成本。
+  - 部署维护需要一定的技术能力。
