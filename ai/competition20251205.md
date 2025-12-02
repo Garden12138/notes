@@ -497,3 +497,26 @@
 * 缺点：
 
   - 系统BUG多。
+
+### Cursor（https://cursor.com/）
+
+* 是一个 AI 驱动的集成开发环境（IDE），旨在通过自然语言指令辅助程序员更高效地编写、编辑和调试代码
+
+* 适用人群：公司技术岗位同事，我们可以使用chat的方式编码。
+
+* 功能使用：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_17-47-17.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_17-48-53.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-02_17-49-45.png)
+
+* 优点：
+
+  - 自动补全与多行生成，提高编程效率。
+  - 可通过对话进行思考推理，自动生成或修改代码，提高编程能力。
+
+* 缺点：
+
+  - 价格贵。
