@@ -19,9 +19,9 @@
 * AI音频与对话工具
 
   * Suno👌
-  * ChatGPT
-  * Grok✅
-  * Qwen
+  * ChatGPT👌
+  * Grok👌
+  * Qwen👌
 
 * AI编程开发
 
