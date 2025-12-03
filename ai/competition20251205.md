@@ -651,3 +651,47 @@
 * 缺点：
 
   - 目前还是BETA版本，功能使用随时存在变化。
+
+### 对话平台
+
+* 国内外各种智能对话平台，支持自然语音理解、推理以及生成。
+
+* 适用人群：公司所有同事，我们可以进行智能对话。
+
+* 功能使用：
+
+  - Deepseek对话（https://chat.deepseek.com），输入对话内容，点击发送：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-03_11-11-31.png)
+
+    优点：生成响应速度快，可快速处理复杂查询和多领域问题，在日常、工作中都有比较好的效果。
+    
+    缺点：几乎没有多模态功能，只能提取文件中的文字。
+
+  - Grok对话（https://grok.com），输入对话内容，点击发送：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-03_11-13-02.png)
+
+    优点：可以对话各种问题，内容分析比较深入。
+    
+    缺点：多模态功能效果一般。
+
+  - ChatGPT（https://chatgpt.com），输入对话内容，点击发送：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-03_11-12-55.png)
+
+    优点：强大的对话生成模型，支持多任务的自然语言理解；支持对话生成与代码编写。
+
+    缺点：无。
+
+  - Qwen（https://www.qianwen.com）：输入对话内容，点击发送：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-03_11-11-52.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-03_11-12-24.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-03_12-47-11.png)
+
+    优点：集成Qwen生态模型，可第一时间体验新模型效果；支持多种任务对话，包括生成研究报告、PPT。
+
+    缺点：特定领域的精度稍差。
