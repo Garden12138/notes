@@ -72,6 +72,8 @@
 
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-11-30_22-15-15.png)
 
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-03_19-59-03.png)
+
 * 优点：
 
   - 灵活生成，支持多种主题模板，视觉效果精美，编辑调整自由。
