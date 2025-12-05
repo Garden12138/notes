@@ -8,7 +8,7 @@
 
 * 功能使用：
 
-  - Deepseek对话（https://chat.deepseek.com）：输入对话内容，点击发送。
+  - Deepseek（https://chat.deepseek.com）：输入对话内容，点击发送。
 
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-03_11-11-31.png)
 
@@ -16,7 +16,7 @@
     
     缺点：仅支持文本，不具备多模态能力。
 
-  - Grok对话（https://grok.com 需翻墙）：输入对话内容，点击发送。
+  - Grok（https://grok.com 需翻墙）：输入对话内容，点击发送。
 
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2025-12-03_11-13-02.png)
 
