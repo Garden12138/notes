@@ -169,7 +169,109 @@
     * 频控限制，如每次用户输入验证码后，需要限制用户在一段时间内不能重复提交指定次数，可以使用```Redis```的```SET```命令和```INCR```命令实现。
 
 
-* 哈希（```Hash```）
+* 哈希（```Hash```），是键值对结构如```value={{field1, value1}, ...{fieldN, valueN}}```，这种映射关系被称为```field-value```。合理使用哈希（即控制哈希在```ziplist```和```hashtable```这两种内部编码之间的转换），可以降低内存占用提高性能（```hashtable```会消耗更多的内存）。
+
+* 常用命令：
+
+  * 设置字段值```HSET```命令：
+
+    ```bash
+    HSET key field value
+    ```
+
+    还有```NX```命令，```HSETNX```命令，表示只有字段不存在时，才设置值：
+
+    ```bash
+    HSETNX key field value
+    ```
+
+  * 获取字段值```HGET```命令：
+
+    ```bash
+    HGET key field
+    ```
+
+  * 删除字段```HDEL```命令：
+
+    ```bash
+    HDEL key field [field...]
+    ```
+
+  * 统计字段数量```HLEN```命令：
+
+    ```bash
+    HLEN key
+    ```
+
+  * 批量设置字段值```HMSET```命令：
+
+    ```bash
+    HMSET key field1 value1 [field2 value2...]
+    ```
+
+  * 批量获取字段值```HMGET```命令：
+
+    ```bash
+    HMGET key field [field...]
+    ```
+
+  * 字段是否存在```HEXISTS```命令：
+
+    ```bash
+    HEXISTS key field
+    ```
+
+  * 获取所有字段```HKEYS```命令：
+
+    ```bash
+    HKEYS key
+    ```
+
+  * 获取所有字段值```HVALS```命令：
+
+    ```bash
+    HVALS key
+    ```
+
+  * 获取所有字段对```HGETALL```命令：
+
+    ```bash
+    HGETALL key
+    ```
+
+    当元素数量较多时，使用该命令可能导致阻塞。若一定要获取所有字段对，建议使用```HSCAN```命令进行迭代：
+
+    ```bash
+    HSCAN key cursor [MATCH pattern] [COUNT count]
+    ```
+
+  * 字段值整型自增```HINCRBY```命令：
+
+    ```bash
+    HINCRBY key field increment
+    ```
+
+  * 字段值浮点型自增```HINCRBYFLOAT```命令：
+
+    ```bash
+    HINCRBYFLOAT key field increment
+    ```
+
+  * 获取字段值字符串长度```HSTRLEN```命令：
+
+    ```bash
+    HSTRLEN key field
+    ```
+
+* 内部结构：
+
+  * ```ziplist```：当哈希表中哈希类型元素个数小于```hash-max-ziplist-entries```配置（默认 512 个），并且 所有值都小于```hash-max-ziplist-value```配置（默认 64 字节）时，使用```ziplist```作为哈希表的底层实现。```ziplist```是一块连续的内存，保存着哈希表的键值对，键和值都以字符串的形式保存。```ziplist```的优点是内存使用效率高，但是当元素数量较多时，操作速度会降低。
+
+  * ```hashtable```：当哈希表中哈希类型元素个数大于等于```hash-max-ziplist-entries```配置，或者 任意一个值都大于等于```hash-max-ziplist-value```配置时，使用```hashtable```作为哈希表的底层实现。```hashtable```是一张哈希表，保存着哈希表的键值对，键和值都以字符串的形式保存。```hashtable```的优点是操作速度快，缺点是内存使用效率低。
+
+* 应用场景：
+
+  * 最经典的是用于缓存结构化数据，如用户信息，通过将用户```ID```作为键后缀，多对```field-value```对应每个用户的属性，可以将关系型数据库表中的记录缓存到```Redis```哈希中。相比于将整个对象序列化为字符串存储，哈希类型更直观，并且在更新单个属性时更加便捷。如果使用```ziplist```编码，还能减少内存空间使用。但是哈希类型是稀疏的（每个键可以有不同的字段），而关系型数据库是完全结构化的。此外，关系型数据库可以执行复杂的查询，而```Redis```难以模拟。  
 
 * 列表（```List```）
 
