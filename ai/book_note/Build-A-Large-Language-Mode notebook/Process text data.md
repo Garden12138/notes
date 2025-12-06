@@ -174,6 +174,43 @@
 
 ### 字节对编码（Byte Pair Encoding，BPE）
 
+* 从上述的按分割线符号进行文本分词，将分词结果```token```转换为```token ID```，其中在转换过程中添加特殊上下文```token```以达到处理未知词汇的目的，但这种方法存在问题，如分词没有语义概念，很多未知词汇共用一个```token ID```，用于训练模型意义不大，我们将使用曾用于训练大语言模型，如```GPT-2```、```GPT-3```以及最初用于```ChatGPT```的```LLM```的```BPE```分词器进行分词。
+
+* ```BPE```（```Byte Pair Encoding```字节对编码）是一种基于统计的方法，它会先从整个语料库中找出最常见的字节对（```byte pair```），然后把这些字节对合并成一个新的单元。对于这个算法的理解可参考[这篇文章](../../BPE%20algorithm%20analysis.md)：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm8.png)
+
+* 使用```BPE```分词器：
+
+  * 安装```tiktoken```库：
+
+    ```bash
+    pip install tiktoken
+    ```
+
+  * 实例化分词器：
+
+    ```python
+    import tiktoken
+
+    tokenizer = tiktoken.get_encoding("gpt2")
+    ```
+
+  * 分词编码：
+
+    ```python
+    text = "Hello, do you like tea? <|endoftext|> In the sunlit terraces of someunknownPlace."
+    integers = tokenizer.encode(text, allowed_special={"<|endoftext|>"})
+    print(integers)
+    ```
+
+  * 分词解码：
+
+    ```python
+    strings = tokenizer.decode(integers)
+    print(strings)
+    ```
+
 ### 使用滑动窗口进行数据采样
 
 ### 构建词嵌入层
