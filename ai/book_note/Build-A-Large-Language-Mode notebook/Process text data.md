@@ -213,6 +213,151 @@
 
 ### 使用滑动窗口进行数据采样
 
+* 在使用```BPE```分词后，我们成功将文本转换为```Token IDS```，接下来我们要为```Token IDS```之间构建关系"输入（块）-目标（预测的下一个词） 对"：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm9.png)
+
+  通过代码了解"输入-目标对"，首先准备数据，创建变量```x```和```y```：
+
+  ```python
+  # 分词
+  with open("the-verdict.txt", "r", encoding="utf-8") as f:
+      raw_text = f.read()
+      enc_text = tokenizer.encode(raw_text)
+  # 移除前50个token，以方便演示
+  enc_sample = enc_text[50:]
+  # 创建变量x和y
+  context_size = 4                    #A
+  x = enc_sample[:context_size]
+  y = enc_sample[1:context_size+1]
+  print(f"x: {x}")
+  print(f"y:    {y}")
+  ``` 
+  
+  输出：
+
+  ```bash
+  x: [290, 4920, 2241, 287]
+  y:       [4920, 2241, 287, 257]
+  ```
+
+  构建"输入-目标对"：
+
+  ```python
+  for i in range(1, context_size+1):
+  context = enc_sample[:i]
+  desired = enc_sample[i]
+  print(context, "---->", desired)
+  ```
+
+  输出：
+
+  ```bash
+  [290] ----> 4920
+  [290, 4920] ----> 2241
+  [290, 4920, 2241] ----> 287
+  [290, 4920, 2241, 287] ----> 257
+  ```
+
+* 构建张量```x```和```y```数据集：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm10.png)
+
+  张量```x```中的每一行代表一个输入上下文，对应着张量```y```中的每一行预测目标，按照上述例子说明，这两行数据就可以生成4行```（max_length```）"输入-目标对"。张量```x```的第二行代表使用滑动窗口进行1步（```stride```）移动后的输入上下文，但这容易导致这两批次之间出现重叠，过多的重叠可能会导致过拟合。代码实现如下：
+
+  ```python
+  import torch
+  from torch.utils.data import Dataset, DataLoader
+
+  class GPTDatasetV1(Dataset):
+      def __init__(self, txt, tokenizer, max_length, stride):
+          self.input_ids = [] # 张量x
+          self.target_ids = [] # 张量y
+          #A 将整个文本进行分词
+          token_ids = tokenizer.encode(txt)                                
+          # 使用滑动窗口将书籍分块为最大长度的重叠序列
+          # 以stride为步长，从文本头开始切长度为max_length的覆盖窗口，一直切到不能再切完整窗口为止，否则会越界
+          # 因为chunk是：[i : i + max_length]
+          # 所以i最大只能是：len(token_ids) - max_length
+          for i in range(0, len(token_ids) - max_length, stride):          
+              input_chunk = token_ids[i:i + max_length] # 张量x的一行
+              target_chunk = token_ids[i + 1: i + max_length + 1] # 张量y的一行
+              self.input_ids.append(torch.tensor(input_chunk))
+              self.target_ids.append(torch.tensor(target_chunk))
+
+      # 返回数据集的总行数
+      def __len__(self):                                                     
+          return len(self.input_ids)
+          
+      # 从数据集中返回指定行
+      def __getitem__(self, idx):                                            
+          return self.input_ids[idx], self.target_ids[idx]
+  ```
+
+* 实现数据加载器：
+
+  ```python
+  def create_dataloader_v1(txt, batch_size=4, max_length=256,
+                         stride=128, shuffle=True, drop_last=True, num_workers=0):
+      # 初始化分词器
+      tokenizer = tiktoken.get_encoding("gpt2")
+      # 创建张量x和y数据集                       
+      dataset = GPTDatasetV1(txt, tokenizer, max_length, stride)
+      # 创建数据加载器
+      dataloader = DataLoader(
+          dataset,
+          batch_size=batch_size,
+          shuffle=shuffle,
+          drop_last=drop_last,                                
+          num_workers=0                                       
+      )
+  return dataloader
+  ```
+
+  参数```txt```为文本内容，```batch_size```为每次加载的样本数（即从张量x和y中取出多少行数据），```max_length```为输入序列的最大长度，```stride```为滑动窗口的步长，```shuffle```为是否打乱数据集顺序，```drop_last```为是否丢弃最后一个不完整的样本，```num_workers```为加载数据时的进程数。使用数据加载器：
+
+  ```python
+  with open("the-verdict.txt", "r", encoding="utf-8") as f:
+        raw_text = f.read()
+
+  dataloader = create_dataloader_v1(
+      raw_text, batch_size=1, max_length=4, stride=1, shuffle=False)
+  # 将数据加载器转换为Python迭代器，通过next()函数获取下一批数据。
+  data_iter = iter(dataloader)
+  first_batch = next(data_iter)
+  print(first_batch)
+  ```
+
+  输出：
+  
+  ```bash
+  [tensor([[ 40, 367, 2885, 1464]]), tensor([[ 367, 2885, 1464, 1807]])]
+  ```
+
+  ```first_batch```变量包含两个张量：第一个张量存储输入```token ID```，第二个张量存储目标```token ID```。由于```max_length```设置为4，因此这两个张量各包含4个```token ID```。
+
+  继续获取第二批数据，可看出```stride=1```的含义：
+
+  ```python
+  second_batch = next(data_iter)
+  print(second_batch)
+  ```
+
+  输出：
+
+  ```bash
+  [tensor([[ 367, 2885, 1464, 1807]]), tensor([[2885, 1464, 1807, 3619]])]
+  ```
+
+  将第一个批次与第二个批次进行比较，可以看到第二个批次的```token ID```相较于第一个批次右移了一个位置（例如，第一个批次输入中的第二个```ID``` 是367，而它是第二个批次输入的第一个```ID```）。若想分别输出```Input```和```Target```，可：
+
+  ```python
+  inputs, targets = next(data_iter)
+  print("Inputs:\n", inputs)
+  print("\nTargets:\n", targets)
+  ```
+
+
 ### 构建词嵌入层
 
 ### 位置编码
