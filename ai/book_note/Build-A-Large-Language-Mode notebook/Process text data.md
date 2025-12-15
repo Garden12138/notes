@@ -357,7 +357,65 @@
   print("\nTargets:\n", targets)
   ```
 
-
 ### 构建词嵌入层
+
+* 在准备好张量```x```和```y```数据集以及对应数据加载器后，我们可以构建词嵌入层，将```token ID```转换为嵌入向量，这是为```LLM```准备训练集的最后一步：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm11.png)
+
+  嵌入向量这种连续向量的表示方式，对于```GPT```类的大语音模型是非常重要的：
+
+    * 这类模型使用的深度神经网络结构只能对数值数据进行有效计算，离散文字数据（如单词、句子）是无法处理的，而连续向量可在高维空间中表示文本的语义关系，适用于神经网络的计算。
+
+    * 深度神经网络通过反向传播算法进行训练，反向传播的本质是利用梯度下降法来更新网络的权重，以最小化损失函数（```loss function```）。反向传播要求每一层的输入、输出和权重都能够参与梯度计算、更新，要求输入的数据为数值（即向量）。关于反向传播算法可参考[这里]()。
+
+* 实现嵌入向量层：
+
+  * 创建权重矩阵：
+
+    ```python
+    # 假设词汇表大小为6，嵌入向量维度为3
+    vocab_size = 6
+    output_dim = 3
+    # 随机种子设置123
+    torch.manual_seed(123)
+    # 创建权重矩阵
+    embedding_layer = torch.nn.Embedding(vocab_size, output_dim)
+    print(embedding_layer.weight)
+    ```
+
+    输出：
+
+    ```bash
+    Parameter containing:
+    tensor([[ 0.3374, -0.1778, -0.1690],
+                 [ 0.9178, 1.5810, 1.3010],
+                 [ 1.2753, -0.2010, -0.1606],
+                 [-0.4015, 0.9666, -1.1481],
+                 [-1.1589, 0.3255, -0.6315],
+                 [-2.8400, -0.7849, -1.4096]], requires_grad=True)
+    ```
+
+    从输出结果我们可以看出，3个数组元素代表1个```token ID```，并且```token ID```实际上为数组索引（本质上```token ID```是词表中的索引，而我们使用了词表的大小构建了权重矩阵），如```[ 0.3374, -0.1778, -0.1690]```代表```token ID=0```的嵌入向量。
+
+  * 实现嵌入矩阵：
+
+    ```python
+    input_ids = torch.tensor([2, 3, 5, 1])
+
+    print(embedding_layer(input_ids))
+    ```
+
+    输出：
+
+    ```bash
+    tensor([[ 1.2753, -0.2010, -0.1606],     # token ID=2
+                [-0.4015, 0.9666, -1.1481],  # token ID=3
+                [-2.8400, -0.7849, -1.4096], # token ID=5
+                [ 0.9178, 1.5810, 1.3010]],  # token ID=1
+                grad_fn=<EmbeddingBackward0>)
+    ``` 
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm12.png)
 
 ### 位置编码
