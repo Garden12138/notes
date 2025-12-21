@@ -419,3 +419,95 @@
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm12.png)
 
 ### 位置编码
+
+* 现在的嵌入层，无论```token ID```在输入序列中的位置如何，相同的```token ID```始终映射到相同的向量表示，它序列中```token```的位置或顺序没有概念：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm13.png)
+
+* 使用绝对位置嵌入，对于输入序列中的每个位置，都会将一个唯一的绝对位置嵌入向量添加到```token```的嵌入向量中，以传达其确切位置：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm14.png)
+
+  与绝对位置不同，相对位置嵌入强调的是```token```之间的相对位置或距离。这样的优势在于模型在训练时可以更好地适应各种长度的序列。这两种类型的位置嵌入方式都在增强```LLM```理解```token```顺序与关系的能力，从而确保在预测时能对上下文具有更准确的感知。位置嵌入方式的选择通常取决于特定的应用和所处理数据的性质，```OpenAI```的 早期```GPT```模型使用绝对位置嵌入。
+
+* 实现绝对位置的嵌入层：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm15.png)
+
+  * 构建词表为50257，维度为256的权重矩阵：
+
+    ```python
+    vocab_size = 50257
+    output_dim = 256
+    token_embedding_layer = torch.nn.Embedding(vocab_size, output_dim)
+    ```
+
+  * 创建的数据加载器，使用滑动窗口进行数据集（```x```张量）采样：
+
+    ```python
+    max_length = 4
+    dataloader = create_dataloader_v1(raw_text, batch_size=8, max_length=max_length, stride=max_length, shuffle=False)
+    data_iter = iter(dataloader)
+    inputs, targets = next(data_iter)
+    print("Token IDs:\n", inputs)
+    print("\nInputs shape:\n", inputs.shape)
+    ```
+
+    输出 8 x 4 的向量：
+
+    ```bash
+    Token IDs:
+    tensor([[   40,   367,  2885,  1464],
+                    [ 1807,  3619,   402,   271],
+                    [10899,  2138,   257,  7026],
+                    [15632,   438,  2016,   257],
+                    [  922,  5891,  1576,   438],
+                    [  568,   340,   373,   645],
+                    [ 1049,  5975,   284,   502],
+                    [  284,  3285,   326,    11]])
+
+
+    Inputs shape:
+        torch.Size([8, 4])
+    ```
+
+  * 生成 8 x 4 x 256 的嵌入向量：
+
+    ```python
+    token_embedding = token_embedding_layer(inputs)
+    print(token_embedding.shape)
+    ```
+
+    输出：
+
+    ```bash
+    torch.Size([8, 4, 256])
+    ```
+
+  * 创建 4 x 256 的位置向量：
+
+    ```python
+    context_length = max_length
+    pos_embedding_layer = torch.nn.Embedding(context_length, output_dim)
+    pos_embeddings = pos_embedding_layer(torch.arange(context_length))
+    print(pos_embeddings.shape)
+    ```
+
+    输出：
+
+    ```bash
+    torch.Size([4, 256])
+    ```
+
+  * 将位置向量添加到嵌入向量生成最终的输入嵌入向量：
+
+    ```python
+    input_embeddings = token_embeddings + pos_embeddings
+    print(input_embeddings.shape)
+    ```
+
+    输出：
+
+    ```bash
+    torch.Size([8, 4, 256])
+    ```
