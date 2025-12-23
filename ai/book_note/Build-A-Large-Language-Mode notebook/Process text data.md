@@ -174,8 +174,340 @@
 
 ### 字节对编码（Byte Pair Encoding，BPE）
 
+* 从上述的按分割线符号进行文本分词，将分词结果```token```转换为```token ID```，其中在转换过程中添加特殊上下文```token```以达到处理未知词汇的目的，但这种方法存在问题，如分词没有语义概念，很多未知词汇共用一个```token ID```，用于训练模型意义不大，我们将使用曾用于训练大语言模型，如```GPT-2```、```GPT-3```以及最初用于```ChatGPT```的```LLM```的```BPE```分词器进行分词。
+
+* ```BPE```（```Byte Pair Encoding```字节对编码）是一种基于统计的方法，它会先从整个语料库中找出最常见的字节对（```byte pair```），然后把这些字节对合并成一个新的单元。对于这个算法的理解可参考[这篇文章](../../BPE%20algorithm%20analysis.md)：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm8.png)
+
+* 使用```BPE```分词器：
+
+  * 安装```tiktoken```库：
+
+    ```bash
+    pip install tiktoken
+    ```
+
+  * 实例化分词器：
+
+    ```python
+    import tiktoken
+
+    tokenizer = tiktoken.get_encoding("gpt2")
+    ```
+
+  * 分词编码：
+
+    ```python
+    text = "Hello, do you like tea? <|endoftext|> In the sunlit terraces of someunknownPlace."
+    integers = tokenizer.encode(text, allowed_special={"<|endoftext|>"})
+    print(integers)
+    ```
+
+  * 分词解码：
+
+    ```python
+    strings = tokenizer.decode(integers)
+    print(strings)
+    ```
+
 ### 使用滑动窗口进行数据采样
+
+* 在使用```BPE```分词后，我们成功将文本转换为```Token IDS```，接下来我们要为```Token IDS```之间构建关系"输入（块）-目标（预测的下一个词） 对"：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm9.png)
+
+  通过代码了解"输入-目标对"，首先准备数据，创建变量```x```和```y```：
+
+  ```python
+  # 分词
+  with open("the-verdict.txt", "r", encoding="utf-8") as f:
+      raw_text = f.read()
+      enc_text = tokenizer.encode(raw_text)
+  # 移除前50个token，以方便演示
+  enc_sample = enc_text[50:]
+  # 创建变量x和y
+  context_size = 4                    #A
+  x = enc_sample[:context_size]
+  y = enc_sample[1:context_size+1]
+  print(f"x: {x}")
+  print(f"y:    {y}")
+  ``` 
+  
+  输出：
+
+  ```bash
+  x: [290, 4920, 2241, 287]
+  y:       [4920, 2241, 287, 257]
+  ```
+
+  构建"输入-目标对"：
+
+  ```python
+  for i in range(1, context_size+1):
+  context = enc_sample[:i]
+  desired = enc_sample[i]
+  print(context, "---->", desired)
+  ```
+
+  输出：
+
+  ```bash
+  [290] ----> 4920
+  [290, 4920] ----> 2241
+  [290, 4920, 2241] ----> 287
+  [290, 4920, 2241, 287] ----> 257
+  ```
+
+* 构建张量```x```和```y```数据集：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm10.png)
+
+  张量```x```中的每一行代表一个输入上下文，对应着张量```y```中的每一行预测目标，按照上述例子说明，这两行数据就可以生成4行```（max_length```）"输入-目标对"。张量```x```的第二行代表使用滑动窗口进行1步（```stride```）移动后的输入上下文，但这容易导致这两批次之间出现重叠，过多的重叠可能会导致过拟合。代码实现如下：
+
+  ```python
+  import torch
+  from torch.utils.data import Dataset, DataLoader
+
+  class GPTDatasetV1(Dataset):
+      def __init__(self, txt, tokenizer, max_length, stride):
+          self.input_ids = [] # 张量x
+          self.target_ids = [] # 张量y
+          #A 将整个文本进行分词
+          token_ids = tokenizer.encode(txt)                                
+          # 使用滑动窗口将书籍分块为最大长度的重叠序列
+          # 以stride为步长，从文本头开始切长度为max_length的覆盖窗口，一直切到不能再切完整窗口为止，否则会越界
+          # 因为chunk是：[i : i + max_length]
+          # 所以i最大只能是：len(token_ids) - max_length
+          for i in range(0, len(token_ids) - max_length, stride):          
+              input_chunk = token_ids[i:i + max_length] # 张量x的一行
+              target_chunk = token_ids[i + 1: i + max_length + 1] # 张量y的一行
+              self.input_ids.append(torch.tensor(input_chunk))
+              self.target_ids.append(torch.tensor(target_chunk))
+
+      # 返回数据集的总行数
+      def __len__(self):                                                     
+          return len(self.input_ids)
+          
+      # 从数据集中返回指定行
+      def __getitem__(self, idx):                                            
+          return self.input_ids[idx], self.target_ids[idx]
+  ```
+
+* 实现数据加载器：
+
+  ```python
+  def create_dataloader_v1(txt, batch_size=4, max_length=256,
+                         stride=128, shuffle=True, drop_last=True, num_workers=0):
+      # 初始化分词器
+      tokenizer = tiktoken.get_encoding("gpt2")
+      # 创建张量x和y数据集                       
+      dataset = GPTDatasetV1(txt, tokenizer, max_length, stride)
+      # 创建数据加载器
+      dataloader = DataLoader(
+          dataset,
+          batch_size=batch_size,
+          shuffle=shuffle,
+          drop_last=drop_last,                                
+          num_workers=0                                       
+      )
+  return dataloader
+  ```
+
+  参数```txt```为文本内容，```batch_size```为每次加载的样本数（即从张量x和y中取出多少行数据），```max_length```为输入序列的最大长度，```stride```为滑动窗口的步长，```shuffle```为是否打乱数据集顺序，```drop_last```为是否丢弃最后一个不完整的样本，```num_workers```为加载数据时的进程数。使用数据加载器：
+
+  ```python
+  with open("the-verdict.txt", "r", encoding="utf-8") as f:
+        raw_text = f.read()
+
+  dataloader = create_dataloader_v1(
+      raw_text, batch_size=1, max_length=4, stride=1, shuffle=False)
+  # 将数据加载器转换为Python迭代器，通过next()函数获取下一批数据。
+  data_iter = iter(dataloader)
+  first_batch = next(data_iter)
+  print(first_batch)
+  ```
+
+  输出：
+  
+  ```bash
+  [tensor([[ 40, 367, 2885, 1464]]), tensor([[ 367, 2885, 1464, 1807]])]
+  ```
+
+  ```first_batch```变量包含两个张量：第一个张量存储输入```token ID```，第二个张量存储目标```token ID```。由于```max_length```设置为4，因此这两个张量各包含4个```token ID```。
+
+  继续获取第二批数据，可看出```stride=1```的含义：
+
+  ```python
+  second_batch = next(data_iter)
+  print(second_batch)
+  ```
+
+  输出：
+
+  ```bash
+  [tensor([[ 367, 2885, 1464, 1807]]), tensor([[2885, 1464, 1807, 3619]])]
+  ```
+
+  将第一个批次与第二个批次进行比较，可以看到第二个批次的```token ID```相较于第一个批次右移了一个位置（例如，第一个批次输入中的第二个```ID``` 是367，而它是第二个批次输入的第一个```ID```）。若想分别输出```Input```和```Target```，可：
+
+  ```python
+  inputs, targets = next(data_iter)
+  print("Inputs:\n", inputs)
+  print("\nTargets:\n", targets)
+  ```
 
 ### 构建词嵌入层
 
+* 在准备好张量```x```和```y```数据集以及对应数据加载器后，我们可以构建词嵌入层，将```token ID```转换为嵌入向量，这是为```LLM```准备训练集的最后一步：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm11.png)
+
+  嵌入向量这种连续向量的表示方式，对于```GPT```类的大语音模型是非常重要的：
+
+    * 这类模型使用的深度神经网络结构只能对数值数据进行有效计算，离散文字数据（如单词、句子）是无法处理的，而连续向量可在高维空间中表示文本的语义关系，适用于神经网络的计算。
+
+    * 深度神经网络通过反向传播算法进行训练，反向传播的本质是利用梯度下降法来更新网络的权重，以最小化损失函数（```loss function```）。反向传播要求每一层的输入、输出和权重都能够参与梯度计算、更新，要求输入的数据为数值（即向量）。关于反向传播算法可参考[这里]()。
+
+* 实现嵌入向量层：
+
+  * 创建权重矩阵：
+
+    ```python
+    # 假设词汇表大小为6，嵌入向量维度为3
+    vocab_size = 6
+    output_dim = 3
+    # 随机种子设置123
+    torch.manual_seed(123)
+    # 创建权重矩阵
+    embedding_layer = torch.nn.Embedding(vocab_size, output_dim)
+    print(embedding_layer.weight)
+    ```
+
+    输出：
+
+    ```bash
+    Parameter containing:
+    tensor([[ 0.3374, -0.1778, -0.1690],
+                 [ 0.9178, 1.5810, 1.3010],
+                 [ 1.2753, -0.2010, -0.1606],
+                 [-0.4015, 0.9666, -1.1481],
+                 [-1.1589, 0.3255, -0.6315],
+                 [-2.8400, -0.7849, -1.4096]], requires_grad=True)
+    ```
+
+    从输出结果我们可以看出，3个数组元素代表1个```token ID```，并且```token ID```实际上为数组索引（本质上```token ID```是词表中的索引，而我们使用了词表的大小构建了权重矩阵），如```[ 0.3374, -0.1778, -0.1690]```代表```token ID=0```的嵌入向量。
+
+  * 实现嵌入矩阵：
+
+    ```python
+    input_ids = torch.tensor([2, 3, 5, 1])
+
+    print(embedding_layer(input_ids))
+    ```
+
+    输出：
+
+    ```bash
+    tensor([[ 1.2753, -0.2010, -0.1606],     # token ID=2
+                [-0.4015, 0.9666, -1.1481],  # token ID=3
+                [-2.8400, -0.7849, -1.4096], # token ID=5
+                [ 0.9178, 1.5810, 1.3010]],  # token ID=1
+                grad_fn=<EmbeddingBackward0>)
+    ``` 
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm12.png)
+
 ### 位置编码
+
+* 现在的嵌入层，无论```token ID```在输入序列中的位置如何，相同的```token ID```始终映射到相同的向量表示，它序列中```token```的位置或顺序没有概念：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm13.png)
+
+* 使用绝对位置嵌入，对于输入序列中的每个位置，都会将一个唯一的绝对位置嵌入向量添加到```token```的嵌入向量中，以传达其确切位置：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm14.png)
+
+  与绝对位置不同，相对位置嵌入强调的是```token```之间的相对位置或距离。这样的优势在于模型在训练时可以更好地适应各种长度的序列。这两种类型的位置嵌入方式都在增强```LLM```理解```token```顺序与关系的能力，从而确保在预测时能对上下文具有更准确的感知。位置嵌入方式的选择通常取决于特定的应用和所处理数据的性质，```OpenAI```的 早期```GPT```模型使用绝对位置嵌入。
+
+* 实现绝对位置的嵌入层：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm15.png)
+
+  * 构建词表为50257，维度为256的权重矩阵：
+
+    ```python
+    vocab_size = 50257
+    output_dim = 256
+    token_embedding_layer = torch.nn.Embedding(vocab_size, output_dim)
+    ```
+
+  * 创建的数据加载器，使用滑动窗口进行数据集（```x```张量）采样：
+
+    ```python
+    max_length = 4
+    dataloader = create_dataloader_v1(raw_text, batch_size=8, max_length=max_length, stride=max_length, shuffle=False)
+    data_iter = iter(dataloader)
+    inputs, targets = next(data_iter)
+    print("Token IDs:\n", inputs)
+    print("\nInputs shape:\n", inputs.shape)
+    ```
+
+    输出 8 x 4 的向量：
+
+    ```bash
+    Token IDs:
+    tensor([[   40,   367,  2885,  1464],
+                    [ 1807,  3619,   402,   271],
+                    [10899,  2138,   257,  7026],
+                    [15632,   438,  2016,   257],
+                    [  922,  5891,  1576,   438],
+                    [  568,   340,   373,   645],
+                    [ 1049,  5975,   284,   502],
+                    [  284,  3285,   326,    11]])
+
+
+    Inputs shape:
+        torch.Size([8, 4])
+    ```
+
+  * 生成 8 x 4 x 256 的嵌入向量：
+
+    ```python
+    token_embedding = token_embedding_layer(inputs)
+    print(token_embedding.shape)
+    ```
+
+    输出：
+
+    ```bash
+    torch.Size([8, 4, 256])
+    ```
+
+  * 创建 4 x 256 的位置向量：
+
+    ```python
+    context_length = max_length
+    pos_embedding_layer = torch.nn.Embedding(context_length, output_dim)
+    pos_embeddings = pos_embedding_layer(torch.arange(context_length))
+    print(pos_embeddings.shape)
+    ```
+
+    输出：
+
+    ```bash
+    torch.Size([4, 256])
+    ```
+
+  * 将位置向量添加到嵌入向量生成最终的输入嵌入向量：
+
+    ```python
+    input_embeddings = token_embeddings + pos_embeddings
+    print(input_embeddings.shape)
+    ```
+
+    输出：
+
+    ```bash
+    torch.Size([8, 4, 256])
+    ```

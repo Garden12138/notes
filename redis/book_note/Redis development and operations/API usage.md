@@ -169,9 +169,211 @@
     * 频控限制，如每次用户输入验证码后，需要限制用户在一段时间内不能重复提交指定次数，可以使用```Redis```的```SET```命令和```INCR```命令实现。
 
 
-* 哈希（```Hash```）
+* 哈希（```Hash```），是键值对结构如```value={{field1, value1}, ...{fieldN, valueN}}```，这种映射关系被称为```field-value```。合理使用哈希（即控制哈希在```ziplist```和```hashtable```这两种内部编码之间的转换），可以降低内存占用提高性能（```hashtable```会消耗更多的内存）。
 
-* 列表（```List```）
+  * 常用命令：
+
+    * 设置字段值```HSET```命令：
+
+      ```bash
+      HSET key field value
+      ```
+
+      还有```NX```命令，```HSETNX```命令，表示只有字段不存在时，才设置值：
+
+      ```bash
+      HSETNX key field value
+      ```
+
+    * 获取字段值```HGET```命令：
+
+      ```bash
+      HGET key field
+      ```
+
+    * 删除字段```HDEL```命令：
+
+      ```bash
+      HDEL key field [field...]
+      ```
+
+    * 统计字段数量```HLEN```命令：
+
+      ```bash
+      HLEN key
+      ```
+
+    * 批量设置字段值```HMSET```命令：
+
+      ```bash
+      HMSET key field1 value1 [field2 value2...]
+      ```
+
+    * 批量获取字段值```HMGET```命令：
+
+      ```bash
+      HMGET key field [field...]
+      ```
+
+    * 字段是否存在```HEXISTS```命令：
+
+      ```bash
+      HEXISTS key field
+      ```
+
+    * 获取所有字段```HKEYS```命令：
+
+      ```bash
+      HKEYS key
+      ```
+
+    * 获取所有字段值```HVALS```命令：
+
+      ```bash
+      HVALS key
+      ```
+
+    * 获取所有字段对```HGETALL```命令：
+
+      ```bash
+      HGETALL key
+      ```
+
+      当元素数量较多时，使用该命令可能导致阻塞。若一定要获取所有字段对，建议使用```HSCAN```命令进行迭代：
+
+      ```bash
+      HSCAN key cursor [MATCH pattern] [COUNT count]
+      ```
+
+    * 字段值整型自增```HINCRBY```命令：
+
+      ```bash
+      HINCRBY key field increment
+      ```
+
+    * 字段值浮点型自增```HINCRBYFLOAT```命令：
+
+      ```bash
+      HINCRBYFLOAT key field increment
+      ```
+
+    * 获取字段值字符串长度```HSTRLEN```命令：
+
+      ```bash
+      HSTRLEN key field
+      ```
+
+  * 内部结构：
+
+    * ```ziplist```：当哈希表中哈希类型元素个数小于```hash-max-ziplist-entries```配置（默认 512 个），并且 所有值都小于```hash-max-ziplist-value```配置（默认 64 字节）时，使用```ziplist```作为哈希表的底层实现。```ziplist```是一块连续的内存，保存着哈希表的键值对，键和值都以字符串的形式保存。```ziplist```的优点是内存使用效率高，但是当元素数量较多时，操作速度会降低。
+
+    * ```hashtable```：当哈希表中哈希类型元素个数大于等于```hash-max-ziplist-entries```配置，或者 任意一个值都大于等于```hash-max-ziplist-value```配置时，使用```hashtable```作为哈希表的底层实现。```hashtable```是一张哈希表，保存着哈希表的键值对，键和值都以字符串的形式保存。```hashtable```的优点是操作速度快，缺点是内存使用效率低。
+
+  * 应用场景：
+
+    * 最经典的是用于缓存结构化数据，如用户信息，通过将用户```ID```作为键后缀，多对```field-value```对应每个用户的属性，可以将关系型数据库表中的记录缓存到```Redis```哈希中。相比于将整个对象序列化为字符串存储，哈希类型更直观，并且在更新单个属性时更加便捷。如果使用```ziplist```编码，还能减少内存空间使用。但是哈希类型是稀疏的（每个键可以有不同的字段），而关系型数据库是完全结构化的。此外，关系型数据库可以执行复杂的查询，而```Redis```难以模拟。  
+
+* 列表（```List```），是用来存储多个有序的字符串的数据结构。一个列表最多可以存储 2 ^ 32 −1 个元素。列表是一种非常灵活的数据结构，元素是有序的，可以通过索引下标获取某个元素或某个范围内的元素列表，支持从两端推入和弹出元素，且列表中的元素是可以重复的，所以在```Redis```中，它可以充当栈（```Stack```）、队列（```Queue```）、阻塞队列等角色。
+
+  * 常用命令：
+
+    * 在左侧推入元素```LPUSH```命令：
+      
+      ```bash
+      LPUSH key value [value...]
+      ```
+
+    * 在右侧推入元素```RPUSH```命令：
+
+      ```bash
+      RPUSH key value [value...]
+      ```
+
+    * 向某个指定元素前或后添加元素```LINSERT```命令：
+
+      ```bash
+      LINSERT key BEFORE|AFTER pivot value
+      ```
+
+    * 获取指定索引范围内元素```LRANGE```命令：
+
+      ```bash
+      LRANGE key start stop
+      ```
+
+    * 获取指定索引元素```LINDEX```命令：
+
+      ```bash
+      LINDEX key index
+      ```
+
+    * 获取列表长度```LLEN```命令：
+
+      ```bash
+      LLEN key
+      ```
+
+    * 在左侧弹出元素```LPOP```命令：
+
+      ```bash
+      LPOP key
+      ```
+
+    * 在右侧弹出元素```RPOP```命令：
+
+      ```bash
+      RPOP key
+      ```
+
+    * 删除指定元素```LREM```命令：
+
+      ```bash
+      LREM key count value
+      ```
+
+      当```count```为0时，删除所有```value```元素；当```count```大于0时，删除最多```count```个```value```元素；当```count```小于0时，删除最少```-count```个```value```元素。
+
+    * 按索引范围修剪```LTRIM```命令：
+
+      ```bash
+      LTRIM key start stop
+      ```
+
+      只保留索引范围内的元素。
+
+    * 修改指定索引下元素```LSET```命令：
+
+      ```bash
+      LSET key index value
+      ```
+
+    * 在左侧阻塞弹出元素```BLPOP```命令：
+
+      ```bash
+      BLPOP key [key...] timeout
+      ```
+
+      在右侧阻塞弹出元素```BRPOP```命令：
+
+      ```bash
+      BRPOP key [key...] timeout
+      ``` 
+
+      若列表为空，则客户端会被阻塞，直到有元素被推入或超时（```timeout```秒，若```timeout```为0，则一直等待），客户端返回。
+
+      若同时指定多个键进行阻塞弹出，会从左到右依次检查各键，一旦有一个键能弹出元素，客户端就会立即返回。
+
+      若多个客户端同时对同一个键进行阻塞弹出，最先执行命令的客户端可优先获取弹出的值。
+
+  * 内部编码：
+
+    * ```ziplist```，列表元素个数小于```list-max-ziplist-entries```（默认 512 个），且每个元素的值都小于```list-max-ziplist-value```（默认 64 字节）。紧凑结构存储，节省内存。
+
+    * ```linkedlist```，当无法满足```ziplist```的条件时（元素过多或元素过大），```Redis```会将内部实现转换为```linkedlist```。在```Redis 3.2```版本提供了```quicklist```内部编码，它结合了```ziplist```和```linkedlist```的优势（本质是以```ziplist```为节点的```linkedlist```），为列表类型提供了一种更为优秀的内部编码实现。
+
+  * 应用场景：
+
+    * 消息队列，使用```lpush + brpop```命令组合可以实现阻塞队列。生产者使用```lpush```从左侧插入元素，多个消费者使用```brpop```阻塞式地消费（弹出）列表尾部的元素。
 
 * 集合（```Set```）
 
