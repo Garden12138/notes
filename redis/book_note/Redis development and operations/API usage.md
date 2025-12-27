@@ -375,6 +375,98 @@
 
     * 消息队列，使用```lpush + brpop```命令组合可以实现阻塞队列。生产者使用```lpush```从左侧插入元素，多个消费者使用```brpop```阻塞式地消费（弹出）列表尾部的元素。
 
-* 集合（```Set```）
+* 集合（```Set```），是用来存储多个不重复且无序字符串元素的数据结构。多个集合之间可进行交集、并集、差集等运算，解决复杂的逻辑问题。
+
+  * 常用命令：
+
+    * 添加元素```SADD```命令（集合内）：
+
+      ```bash
+      SADD key element [element...]
+      ```
+
+    * 删除元素```SREM```命令（集合内）：
+
+      ```bash
+      SREM key element [element...]
+      ```
+
+    * 计算元素数量```SCARD```命令（集合内）：
+
+      ```bash
+      SCARD key
+      ```
+
+    * 判断元素是否存在```SISMEMBER```命令（集合内）：
+
+      ```bash
+      SISMEMBER key element
+      ```
+
+    * 随机获取指定个数元素```SRANDMEMBER```命令（集合内）：
+
+      ```bash
+      SRANDMEMBER key [count]
+      ```
+
+    * 随机弹出元素```SPOP```命令（集合内）：
+
+      ```bash
+      SPOP key [count]
+      ```
+
+    * 获取所有元素```SMEMBERS```命令（集合内）：
+
+      ```bash
+      SMEMBERS key
+      ```
+
+    * 多个集合交集```SINTER```命令（集合间）：
+
+      ```bash
+      SINTER key [key...]
+      ```
+
+    * 多个集合并集```SUNION```命令（集合间）：
+
+      ```bash
+      SUNION key [key...]
+      ```
+
+    * 多个集合差集```SDIFF```命令（集合间）：
+
+      ```bash
+      SDIFF key [key...]
+      ```
+
+      此时结果是第一个集合中独有的元素。
+
+    * 将多个集合交集并保存到新集合（```destination```）```SINTERSTORE```命令（集合间）：
+
+      ```bash
+      SINTERSTORE destination key [key...]
+      ```
+
+    * 将多个集合并集并保存到新集合（```destination```）```SUNIONSTORE```命令（集合间）：
+
+      ```bash
+      SUNIONSTORE destination key [key...]
+      ```
+
+    * 将多个集合差集并保存到新集合（```destination```）```SDIFFSTORE```命令（集合间）：
+
+      ```bash
+      SDIFFSTORE destination key [key...]
+      ```
+
+  * 内部编码：
+
+    * ```intset```，元素值都是整数，且元素个数小于```set-max-intset-entries```（默认 512 个），使用整数集合。使用更加紧凑的结构存储，可以有效减少内存的使用。
+
+    * ```hashtable```，元素值不是整数，或者元素个数大于等于```set-max-intset-entries```，使用哈希表。
+
+  * 应用场景：
+
+    * 打标使用，如使用```sadd user:1:tags tag1 tag2```为用户添加标签。又可使用```sinter```、```sunion```、```sdiff```等命令实现标签的交集、并集、差集等操作。
 
 * 有序集合（```Sorted Set```）
