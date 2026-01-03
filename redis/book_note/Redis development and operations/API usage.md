@@ -469,4 +469,137 @@
 
     * 打标使用，如使用```sadd user:1:tags tag1 tag2```为用户添加标签。又可使用```sinter```、```sunion```、```sdiff```等命令实现标签的交集、并集、差集等操作。
 
-* 有序集合（```Sorted Set```）
+* 有序集合（```Sorted Set```），也叫```ZSet```，保留了集合（```Set```）不能有重复成员的特性，但不同的是，有序集合中的每个元素都可以设置一个分数（```score```）作为排序的依据。
+
+  * 常用命令：
+
+    * 添加元素```ZADD```命令（有序集合内）：
+
+      ```bash
+      ZADD key score1 member1 [score2 member2]
+      ```
+
+      ```Redis3.2```为```zadd```命令添加了```nx、xx、ch、incr```四个选项：
+
+      ```-nx```，表示只当```member```不存在时，才添加；
+      ```-xx```，表示只当```member```存在时，才更新；
+      ```-ch```，返回集合内元素和分数发生变化的个数；
+      ```-incr```，表示对```score```进行增量更新。
+
+    * 计算元素数量```ZCARD```命令（有序集合内）：
+
+      ```bash
+      ZCARD key
+      ```
+
+    * 计算元素分数```ZSCORE```命令（有序集合内）：
+
+      ```bash
+      ZSCORE key member
+      ```
+
+    * 计算元素排名（低 -> 高）```ZRANK```命令（有序集合内）：
+
+      ```bash
+      ZRANK key member
+      ```
+
+    * 计算元素排名（高 -> 低）```ZREVRANK```命令（有序集合内）：
+
+      ```bash
+      ZREVRANK key member
+      ```
+
+    * 删除元素```ZREM```命令（有序集合内）：
+     
+      ```bash
+      ZREM key member [member...]
+      ```
+
+    * 增加元素分数```ZINCRBY```命令（有序集合内）：
+
+      ```bash
+      ZINCRBY key increment member
+      ```
+
+    * 获取指定排名范围内（低 -> 高）元素```ZRANGEBYSCORE```命令（有序集合内）：
+
+      ```bash
+      ZRANGE key start stop [WITHSCORES]
+      ```
+
+    * 获取指定排名范围内（高 -> 低）元素```ZREVRANGEBYSCORE```命令（有序集合内）：
+
+      ```bash
+      ZREVRANGE key start stop [WITHSCORES]
+      ```
+
+    * 获取指定分数范围内（低 -> 高）元素```ZRANGEBYSCORE```命令（有序集合内）：
+
+      ```bash
+      ZRANGEBYSCORE key min max [WITHSCORES] [LIMIT offset count]
+      ```
+
+    * 获取指定分数范围内（高 -> 低）元素```ZREVRANGEBYSCORE```命令（有序集合内）：
+
+      ```bash
+      ZREVRANGEBYSCORE key max min [WITHSCORES] [LIMIT offset count]
+      ```
+
+    * 获取指定分数范围成员数量```ZCOUNT```命令（有序集合内）：
+
+      ```bash
+      ZCOUNT key min max
+      ```
+
+    * 删除指定排名内的升序元素```ZREMRANGEBYRANK```命令（有序集合内）：
+
+      ```bash
+      ZREMRANGEBYRANK key start stop
+      ```
+
+    * 删除指定分数范围内的升序元素```ZREMRANGEBYSCORE```命令（有序集合内）：
+
+      ```bash
+      ZREMRANGEBYSCORE key min max
+      ```
+
+    * 交集```ZINTERSTORE```命令（有序集合间）：
+
+      ```bash
+      ZINTERSTORE destination numkeys key [key...] [WEIGHTS weight [weight...]] [AGGREGATE SUM|MIN|MAX]
+      ```
+
+      ```destination```，新集合的键名；
+      ```numkeys```，参与计算的有序集合个数；
+      ```key```，参与计算的有序集合键名；
+      ```WEIGHTS```，分数权重；
+      ```AGGREGATE```，聚合方式，交集后分数可按照```SUM```、```MIN```、```MAX```方式计算。
+
+    * 并集```ZUNIONSTORE```命令（有序集合间）：
+
+      ```bash
+      ZUNIONSTORE destination numkeys key [key...] [WEIGHTS weight [weight...]] [AGGREGATE SUM|MIN|MAX]
+      ```
+
+  * 内部编码：
+
+    * ```ziplist```，有序集合元素个数小于```zset-max-ziplist-entries```（默认 128 个），并且每个元素的值都小于```zset-max-ziplist-value```（默认 64 字节）。使用更加紧凑的结构存储，有效减少内存使用。
+
+    * ```skiplist```，当不满足```ziplist```条件时（元素过多或过大），会使用```skiplist```作为内部实现。
+
+  * 应用场景：
+
+    * 适用于排行榜实现，以用户赞数排行榜为例：
+
+     * 添加用户赞数：```zadd user:ranking:2016_03_15 3 mike```
+
+     * 当用户获得新的赞时增加分数：```zincrby user:ranking:2016_03_15 1 mike```
+
+     * 取消用户赞：```zrem user:ranking:2016_03_15 mike```
+
+     * 展示赞数最多的前10个用户排行：```zrevrange user:ranking:2016_03_15 0 9```
+
+     * 展示个人排名：```zrank user:ranking:2016_03_15 mike```
+
+     * 展示用户赞数：```zscore user:ranking:2016_03_15 mike```
