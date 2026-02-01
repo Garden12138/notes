@@ -69,5 +69,143 @@
 
   * 可使用可视化界面（如```CacheCloud```）进行监控分析。
 
+### Redis Shell
+
+* ```Redis Shell``` 是 ```Redis``` 安装目录下```src``` 或 ````/usr/local/bin``` 的可执行文件。在 ```Redis``` 的日常开发、调试和运维中起着至关重要的作用，能够完成启动/停止 ```Redis```、检测和修复持久化文件、以及检测 ```Redis``` 性能等任务。
+
+* ```redis-cli```，是 ```Redis```的命令行客户端：
+
+  * 重复与间隔执行：
+
+    ```bash
+    ## 重复执行多次命令
+    redis-cli -r [times] [cmd]
+    ## 每隔 interval 秒执行一次命令，总共重复执行多次命令。
+    redis-cli -r [times] -i [interval] [cmd]
+    ```
+
+  * 标准输入读取：
+
+    ```bash
+    ## 将标准输入（stdin）读取数据作为最后一个参数，如echo "hello" | redis-cli -x set key
+    redis-cli -x [cmd] [stdin]
+    ```
+
+  * 集群模式：
+
+    ```bash
+    ## 连接 Redis 集群节点
+    redis-cli -c -h [host] -p [port]
+    ```
+
+  * 密码验证：
+
+    ```bash
+    ## 连接 Redis 节点并验证密码
+    redis-cli -a [password] -h [host] -p [port]
+    ```
+
+  * 扫描与采样：
+
+    ```bash
+    ## 扫描指定模式的键，如：redis-cli --scan --pattern "user:*"
+    redis-cli --scan --pattern [pattern]
+    ## 扫描指定模式中内存占用大的的键，如：redis-cli --scan --pattern "session:*" | xargs redis-cli --bigkeys
+    redis-cli --scan --pattern [pattern] | xargs redis-cli --bigkeys
+    ```
+
+  * 运维监控：
+
+    ```bash
+    ## 将客户端模拟成从节点，记录主节点的更新操作
+    redis-cli --slave
+    ## 请求生成并发送 RDB 持久化文件保存在本地，用于备份
+    redis-cli --rdb /path/to/backup.rdb
+    ## 实时获取 Redis 的重要增量统计信息
+    redis-cli --stat
+    ## 测量网络延迟
+    redis-cli --latency
+    ## 查看历史延迟
+    redis-cli --latency-history
+    ## 查看延迟分布
+    redis-cli --latency-dist
+    ```
+
+  * 批量执行与脚本：
+
+    ```bash
+    ## 批量执行命令
+    redis-cli --pipe
+
+    SET key1 value1
+    SET key2 value2
+    SET key3 value3
+
+    ## 使用文件批量执行命令
+    cat commands.txt | redis-cli --pipe
+
+    ## 使用lua脚本，如 
+    ## redis-cli --eval "return redis.call('get', 'key1') + redis.call('get', 'key2')"
+    ## redis-cli --eval "return redis.call('set', KEYS[1], ARGV[1])" key1 "new_value"
+    redis-cli --eval [script] [param1] [param2]
+    ```
+
+  * 输出格式化：
+
+    ```bash
+    ## 原始字符格式输出
+    redis-cli --raw [getcmd]
+    ## 原始字节格式输出
+    redis-cli --no-raw [getcmd]
+    ```
+
+* ```redis-server```：
+
+  * 调试：
+
+    ```bash
+    ## 检测当前操作系统能否稳定地分配指定容量的内存，如：redis-server --test-memory 1024
+    redis-server --test-memory [megabytes]
+    ```
+
+* ```redis-benchmark```，用于 ```Redis``` 基准性能测试：
+
+  * 并发与总量：
+
+    ```bash
+    ## 并发连接数，如：redis-benchmark -c 100 -n 100000
+    redis-benchmark -c [connections] -n [requests]
+    ```
+
+  * 精简输出：
+
+    ```bash
+    ## 显示每秒查询数（RPS
+    redis-benchmark -q
+    ```
+
+  * 随机键测试：
+
+    ```bash
+    ## 插入随机后缀的键后测试，如：redis-benchmark -r 100000 -n 100000
+    redis-benchmark -r [randomkeys] -n [requests]
+    ```
+
+  * 流水线优化：
+
+    ```bash
+    ## 流水线优化，每个请求包含多个命令，如：redis-benchmark -P 10
+    redis-benchmark -P [pipeline]
+    ```
+
+  * 特定测试：
+
+    ```bash
+    ## 指定对某个 Redis 命令进行基准测试，如：redis-benchmark -t set,lpush,lpop
+    redis-benchmark -t [command]
+    ## 将基准测试结果保存到csv文件，如：redis-benchmar --csv > benchmark.csv
+    redis-benchmark --csv > [filename]
+    ```
+
 
   
