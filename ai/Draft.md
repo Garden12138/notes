@@ -53,3 +53,11 @@
 ✅表示已完成 
 ⚠️表示已准备
 👌表示已记录
+
+
+### 个人助理agent
+1、dify agent
+2、模型层（llm） + 调度层（langgraph）+ 记忆层（memory）+ 工具层（function call、mcp）+ 运维治理
+3、阿里云的agent bay
+4、agent skills
+5、openclaw
