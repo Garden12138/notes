@@ -207,5 +207,23 @@
     redis-benchmark --csv > [filename]
     ```
 
+### Pipeline
 
-  
+* ```Redis``` 客户端执行一条命令通常分为四个过程：发送命令 -> 命令排队 -> 命令执行 ->返回结果。其中第1步和第4步的时间总和被称为往返时间（```Round Trip Time```，简称```RTT```）。我们可以发现 ```Redis``` 的性能瓶颈往往在于网络而非命令执行本身。当需要执行多条命令时，可以使用 ```Redis``` 提供了 ```mget```、```mset``` 等原生批量操作命令来节约 ```RTT```，或者使用 ```Pipeline``` 机制来一次性发送多条命令。 ```Pipeline``` 机制能将一组 ```Redis``` 命令进行组装，通过一次 ```RTT``` 传输给 ```Redis```，最后将这组命令的执行结果按顺序返回给客户端：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_6.png)
+
+* 性能测试，使用 ```Pipeline``` 执行 10000 次 ```set``` 操作在不同网络延迟下的提升效果非常显著：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_7.png)
+
+* 原生批量命令与 ```Pipeline``` 对比：
+
+  * 原子性： 原生批量命令（如 ```mget```、```mset```）是原子的，而 ```Pipeline``` 是非原子的。
+  * 命令支持： 原生批量命令通常是一个命令对应多个 ```key```，而 ```Pipeline``` 支持组装多个不同的命令。
+  * 实现位置： 原生批量命令是由 ```Redis``` 服务端支持实现的，而 ```Pipeline``` 需要服务端和客户端共同实现。
+
+* 最佳实践：
+
+  * 适度组装：```Pipeline``` 组装的命令个数不能没有节制。如果一次组装的数据量过大，一方面会增加客户端的等待时间，另一方面会造成网络阻塞。建议将大批量命令拆分成多次较小的 ```Pipeline``` 来完成。
+  * 单实例限制： ```Pipeline``` 通常只能操作 一个 ```Redis``` 实例。但在 ```Redis Cluster``` 等分布式场景中，仍可通过 ```hash_tag``` 等方式将 ```key``` 分配到相同节点，从而进行 ```IO``` 优化。 
