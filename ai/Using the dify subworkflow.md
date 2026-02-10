@@ -211,9 +211,9 @@
 
   * 点击预览，运行测试，上传发票文件，输出文件名：
 
-    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2026-02-09_17-46-07.png)
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2026-02-09_17-48-36.png)
 
-    
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/Snipaste_2026-02-10_10-02-41.png)
 
 ### 参考文献
 
