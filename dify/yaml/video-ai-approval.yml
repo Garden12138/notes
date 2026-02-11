@@ -1,0 +1,492 @@
+app:
+  description: 'xxxx.mp4'
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: workflow
+  name: video-ai-approval
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/tongyi:0.1.19@12ddda76bb473f9beb52d2ea2a67412d54924f93a29465fffb8635ba62b409c3
+    version: null
+kind: app
+version: 0.5.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: http-request
+      id: 1770623196080-source-1770624059125-target
+      source: '1770623196080'
+      sourceHandle: source
+      target: '1770624059125'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: http-request
+      id: 1770623196080-source-1770624132413-target
+      source: '1770623196080'
+      sourceHandle: source
+      target: '1770624132413'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      id: 1770624059125-source-1770624375605-target
+      source: '1770624059125'
+      sourceHandle: source
+      target: '1770624375605'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      id: 1770624132413-source-1770624383051-target
+      source: '1770624132413'
+      sourceHandle: source
+      target: '1770624383051'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: code
+        targetType: variable-aggregator
+      id: 1770624375605-source-1770624388958-target
+      source: '1770624375605'
+      sourceHandle: source
+      target: '1770624388958'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: variable-aggregator
+      id: 1770624383051-source-1770624388958-target
+      source: '1770624383051'
+      sourceHandle: source
+      target: '1770624388958'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: http-request
+        targetType: code
+      id: 1770624132413-source-1770624412443-target
+      source: '1770624132413'
+      sourceHandle: source
+      target: '1770624412443'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: variable-aggregator
+      id: 1770624412443-source-1770624388958-target
+      source: '1770624412443'
+      sourceHandle: source
+      target: '1770624388958'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: variable-aggregator
+        targetType: llm
+      id: 1770624388958-source-1770624779891-target
+      source: '1770624388958'
+      sourceHandle: source
+      target: '1770624779891'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+      id: 1770624779891-source-1770626103428-target
+      source: '1770624779891'
+      sourceHandle: source
+      target: '1770626103428'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: 输入视频
+        type: start
+        variables:
+        - default: ''
+          hint: ''
+          label: 视频链接
+          max_length: 1024
+          options: []
+          placeholder: ''
+          required: true
+          type: paragraph
+          variable: video_url
+      height: 109
+      id: '1770623196080'
+      position:
+        x: 0
+        y: 33
+      positionAbsolute:
+        x: 0
+        y: 33
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - type: text
+            value: '{"url":"{{#1770623196080.video_url#}}"}'
+          type: raw-text
+        headers: Content-Type:application/json
+        method: POST
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: 获取音频内容描述
+        type: http-request
+        url: http://192.168.10.104:8004/process_video/
+        variables: []
+      height: 138
+      id: '1770624059125'
+      position:
+        x: 402
+        y: 0
+      positionAbsolute:
+        x: 402
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        authorization:
+          config: null
+          type: no-auth
+        body:
+          data:
+          - type: text
+            value: '{"video_url":"{{#1770623196080.video_url#}}"}'
+          type: raw-text
+        headers: Content-Type:application/json
+        method: POST
+        params: ''
+        retry_config:
+          max_retries: 3
+          retry_enabled: true
+          retry_interval: 100
+        selected: false
+        ssl_verify: true
+        timeout:
+          max_connect_timeout: 0
+          max_read_timeout: 0
+          max_write_timeout: 0
+        title: 获取画面以及字幕内容描述
+        type: http-request
+        url: http://192.168.10.104:8005/analyze
+        variables: []
+      height: 138
+      id: '1770624132413'
+      position:
+        x: 362
+        y: 218
+      positionAbsolute:
+        x: 362
+        y: 218
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "def main(arg1: str):\n    try:\n        data: Dict[str, Any] = json.loads(arg1)\n\
+          \        return {\n        \"result\": data.get(\"audio_content\")\n   \
+          \ }\n    except json.JSONDecodeError:\n        return None"
+        code_language: python3
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 获取音频内容描述字段值
+        type: code
+        variables:
+        - value_selector:
+          - '1770624059125'
+          - body
+          value_type: string
+          variable: arg1
+      height: 52
+      id: '1770624375605'
+      position:
+        x: 744
+        y: 43
+      positionAbsolute:
+        x: 744
+        y: 43
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "def main(arg1: str):\n    try:\n        data: Dict[str, Any] = json.loads(arg1)\n\
+          \        return {\n        \"result\": data.get(\"screen_content\")\n  \
+          \  }\n    except json.JSONDecodeError:\n        return None"
+        code_language: python3
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 获取画面内容描述字段值
+        type: code
+        variables:
+        - value_selector:
+          - '1770624132413'
+          - body
+          value_type: string
+          variable: arg1
+      height: 52
+      id: '1770624383051'
+      position:
+        x: 724
+        y: 175
+      positionAbsolute:
+        x: 724
+        y: 175
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        advanced_settings:
+          group_enabled: true
+          groups:
+          - groupId: 00d06736-d455-43da-a975-ad67e9a89a3c
+            group_name: Group1
+            output_type: string
+            variables:
+            - - '1770624375605'
+              - result
+          - groupId: cabf8ed8-d7d4-4a84-898d-e7b8fa91a262
+            group_name: Group2
+            output_type: string
+            variables:
+            - - '1770624383051'
+              - result
+          - groupId: 5e4435c9-2f3c-4758-8215-a38d03b0eb05
+            group_name: Group3
+            output_type: string
+            variables:
+            - - '1770624412443'
+              - result
+        output_type: any
+        selected: false
+        title: 聚合内容描述字段值
+        type: variable-aggregator
+        variables: []
+      height: 216
+      id: '1770624388958'
+      position:
+        x: 1086
+        y: 15
+      positionAbsolute:
+        x: 1086
+        y: 15
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "def main(arg1: str):\n    try:\n        data: Dict[str, Any] = json.loads(arg1)\n\
+          \        return {\n        \"result\": data.get(\"subtitle_content\")\n\
+          \    }\n    except json.JSONDecodeError:\n        return None"
+        code_language: python3
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 获取字幕内容描述字段值
+        type: code
+        variables:
+        - value_selector:
+          - '1770624132413'
+          - body
+          value_type: string
+          variable: arg1
+      height: 52
+      id: '1770624412443'
+      position:
+        x: 724
+        y: 307
+      positionAbsolute:
+        x: 724
+        y: 307
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        model:
+          completion_params:
+            temperature: 0.7
+          mode: chat
+          name: qwen3-max
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: a33587d9-7afa-4ac0-8d3b-8dc3b4fc8696
+          role: system
+          text: "你现在需要担任“视频安全审核专员”，核心目标是根据3类校验结果（音频内容【{{#1770624388958.Group1.output#}}】、画面内容【{{#1770624388958.Group2.output#}}】、字幕内容【{{#1770624388958.Group3.output#}}】）结合审核结论规则，输出唯一的审核结论及问题说明，交付物为符合固定格式的JSON。\n\
+            \n## 审核维度及标准\n### 1. 视觉违规内容识别\n- 敏感场景：是否包含暴力、血腥、色情、恐怖等违法违规场景\n- 不当人物：是否包含涉政人物、违法犯罪人员、低俗形象等\n\
+            - 不良标志：是否包含纳粹标志、邪教符号、违法组织标识等\n\n### 2. 版权风险检测\n- 水印：是否包含非授权的商业水印、平台水印\n\
+            - 知名IP元素：是否包含迪士尼、漫威、热门动漫等未授权知名IP\n- 疑似未授权素材：是否包含明显受版权保护的图片、插画等\n- 个人社交媒体账号标识：是否包含未授权的个人社交媒体账号标识\n\
+            \n### 3. 技术质量评估\n- 清晰度：是否模糊不清\n- 尺寸/格式：是否符合常用模板尺寸\n- 色彩模式：是否存在明显色彩失真\n\
+            \n## 审核结论规则\n- 通过：无任何风险项，所有违规/风险置信度＜60%\n- 可优化：存在技术质量问题（如轻微模糊、色彩失真），置信度60%-70%\n\
+            - 建议修改：存在疑似版权风险或低置信度违规，置信度70%-80%\n- 明确违规：检测到明确视觉违规或高置信度版权侵权，置信度＞80%\n\
+            \n### 输出格式要求\n必须严格按照以下JSON格式输出，review_comment为字符串类型，分点说明的问题用符号\"；\"分割：\n\
+            {\n  \"review_result\": \"通过\",\n  \"review_comment\": \"\"\n}\n或\n{\n\
+            \  \"review_result\": \"明确违规\",\n  \"review_comment\": \"1、图片包含暴力场景，置信度90%；2、存在未授权迪士尼IP元素，置信度85%\"\
+            \n}\n"
+        selected: true
+        title: 校验总结
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '1770624779891'
+      position:
+        x: 1428
+        y: 79
+      positionAbsolute:
+        x: 1428
+        y: 79
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        outputs:
+        - value_selector:
+          - '1770624779891'
+          - text
+          value_type: string
+          variable: data
+        selected: false
+        title: 输出结果
+        type: end
+      height: 88
+      id: '1770626103428'
+      position:
+        x: 1770
+        y: 79
+      positionAbsolute:
+        x: 1770
+        y: 79
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    viewport:
+      x: -20.699998678426482
+      y: 515.5462168816116
+      zoom: 0.7266188370997075
+  rag_pipeline_variables: []

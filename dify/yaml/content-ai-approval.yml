@@ -1,0 +1,223 @@
+app:
+  description: ''
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: workflow
+  name: content-ai-approval
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/tongyi:0.1.19@12ddda76bb473f9beb52d2ea2a67412d54924f93a29465fffb8635ba62b409c3
+    version: null
+kind: app
+version: 0.5.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+      id: 1768791362854-source-1768791447420-target
+      source: '1768791362854'
+      sourceHandle: source
+      target: '1768791447420'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: code
+      id: 1768787140033-source-1770365832026-target
+      source: '1768787140033'
+      sourceHandle: source
+      target: '1770365832026'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: code
+        targetType: llm
+      id: 1770365832026-source-1768791362854-target
+      source: '1770365832026'
+      sourceHandle: source
+      target: '1768791362854'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: 输入文案
+        type: start
+        variables:
+        - default: ''
+          hint: ''
+          label: 文案
+          max_length: 70
+          options: []
+          placeholder: ''
+          required: true
+          type: text-input
+          variable: content
+      height: 109
+      id: '1768787140033'
+      position:
+        x: -119.68492431894055
+        y: -172.02784062786415
+      positionAbsolute:
+        x: -119.68492431894055
+        y: -172.02784062786415
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        model:
+          completion_params: {}
+          mode: chat
+          name: qwen-plus
+          provider: langgenius/tongyi/tongyi
+        prompt_template:
+        - id: c5476c9d-2047-424c-8015-29fe10d5c2ee
+          role: system
+          text: "现在请你扮演「文案合规审核专员」，核心目标是对用户输入文案【{{#1768787140033.content#}}】进行多维度合规审核与质量评估，输出结构化审核结果。具体执行要求如下：\n\
+            \n### 一、审核范围与规则（必做项，无优先级冲突）\n1. 违禁词/敏感词检测：全面排查文案中涉及政治、色情、暴力、毒品、违禁广告用语的内容，需覆盖《广告法》明确禁止的敏感表述；\n\
+            2. 虚假/夸大宣传识别：重点识别“最”系列（如“最好”“最优”）、绝对化用语（如“绝对有效”“100%治愈”）、无法证实的承诺（如“无效退款”无具体依据）；\n\
+            3. 行业特定合规检查：针对医疗、金融、教育等特殊行业，严格遵循对应行业监管规范（如医疗文案禁止提及“治疗效果”“治愈率”）；\n4. 基础文案质量评估：检查文案可读性（如语句通顺度）、语法错误、拼写错误。\n\
+            5. 诱导性文案校验：排查文案中通过利益诱惑、情感胁迫、误导操作等方式诱导用户行为的内容（如“限时3分钟，不抢就没了”“不转发就会倒霉”“点击领取100元，实则需完成复杂任务”）。\n\
+            6. 允许“拒收请回复R”等用语。\n\n### 二、审核结果输出规则\n1. 输出格式：必须为JSON格式，包含2个字段：\n   - `review_result`：审核结论，仅限以下4种取值（需匹配置信度）：\n\
+            \     - 通过：无任何风险项，违规置信度＜60%；\n     - 可优化：有可改进项（如语法小错误）但无硬性违规，置信度60%-70%；\n\
+            \     - 建议修改：AI判断置信度低或涉及灰色地带（如模糊承诺），置信度70%-80%；\n     - 明确违规：检测到明确违规内容（如违禁词、绝对化用语），置信度＞80%；\n\
+            \   - `review_comment`：修改建议，需分点明确指出具体问题（如“1、文案中‘最有效的产品’属于绝对化用语，需修改；2、存在‘治愈糖尿病’的医疗违规表述，需删除”）；若审核结论为“通过”，则该字段填写为空字符串。\n\
+            \n### 三、边界约束\n- 禁止遗漏任何审核维度；\n- 禁止输出JSON格式以外的内容；\n- 若文案涉及多行业合规要求，需优先遵循监管最严格的行业规范。\n\
+            - 时间判断以{{#1770365832026.result#}}为基准"
+        selected: true
+        title: 文案合规审核
+        type: llm
+        vision:
+          enabled: false
+      height: 88
+      id: '1768791362854'
+      position:
+        x: 600.5714285714286
+        y: -61.85714285714286
+      positionAbsolute:
+        x: 600.5714285714286
+        y: -61.85714285714286
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        outputs:
+        - value_selector:
+          - '1768791362854'
+          - text
+          value_type: string
+          variable: data
+        selected: false
+        title: 输出结果
+        type: end
+      height: 88
+      id: '1768791447420'
+      position:
+        x: 996.8571428571429
+        y: -87.57142857142858
+      positionAbsolute:
+        x: 996.8571428571429
+        y: -87.57142857142858
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        code: "from datetime import datetime\n\ndef main():\n    current_time = datetime.now().strftime(\"\
+          %Y-%m-%d %H:%M:%S\")  # 获取当前时间的字符串\n    return {\n        \"result\": current_time,\n\
+          \    }\n"
+        code_language: python3
+        outputs:
+          result:
+            children: null
+            type: string
+        selected: false
+        title: 获取当前时间
+        type: code
+        variables: []
+      height: 52
+      id: '1770365832026'
+      position:
+        x: 233.42857142857144
+        y: -194.85714285714286
+      positionAbsolute:
+        x: 233.42857142857144
+        y: -194.85714285714286
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    viewport:
+      x: 361.87003158353696
+      y: 520.4075001133904
+      zoom: 0.5765137120873002
+  rag_pipeline_variables: []

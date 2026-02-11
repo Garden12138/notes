@@ -1,0 +1,276 @@
+app:
+  description: ''
+  icon: 🤖
+  icon_background: '#FFEAD5'
+  mode: workflow
+  name: image-ai-approval
+  use_icon_as_answer_icon: false
+dependencies:
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: langgenius/openai_api_compatible:0.0.30@065d5a0ef2af4f50887dbb245113a9754eec8ea7f0d753fa4102395f52fdfed8
+    version: null
+- current_identifier: null
+  type: marketplace
+  value:
+    marketplace_plugin_unique_identifier: lzfxxx/image-downloader:0.0.1@ed870936bc915d620df8cbcdecf992cb22e5790bfddc73fe828d7db711bcc074
+    version: null
+kind: app
+version: 0.5.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions:
+      - .JPG
+      - .JPEG
+      - .PNG
+      - .GIF
+      - .WEBP
+      - .SVG
+      allowed_file_types:
+      - image
+      allowed_file_upload_methods:
+      - local_file
+      - remote_url
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 50
+        batch_count_limit: 5
+        file_size_limit: 15
+        image_file_batch_limit: 10
+        image_file_size_limit: 10
+        single_chunk_attachment_limit: 10
+        video_file_size_limit: 100
+        workflow_file_upload_limit: 10
+      image:
+        enabled: false
+        number_limits: 3
+        transfer_methods:
+        - local_file
+        - remote_url
+      number_limits: 3
+    opening_statement: ''
+    retriever_resource:
+      enabled: true
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: llm
+        targetType: end
+      id: 1768876192039-source-1768876194692-target
+      source: '1768876192039'
+      sourceHandle: source
+      target: '1768876194692'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInIteration: false
+        isInLoop: false
+        sourceType: start
+        targetType: tool
+      id: 1768876189038-source-1769581056766-target
+      source: '1768876189038'
+      sourceHandle: source
+      target: '1769581056766'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    - data:
+        isInLoop: false
+        sourceType: tool
+        targetType: llm
+      id: 1769581056766-source-1768876192039-target
+      source: '1769581056766'
+      sourceHandle: source
+      target: '1768876192039'
+      targetHandle: target
+      type: custom
+      zIndex: 0
+    nodes:
+    - data:
+        selected: false
+        title: 上传图像
+        type: start
+        variables:
+        - allowed_file_extensions: []
+          allowed_file_types:
+          - image
+          allowed_file_upload_methods:
+          - local_file
+          - remote_url
+          default: ''
+          hint: ''
+          label: 图像
+          max_length: 1024
+          options: []
+          placeholder: ''
+          required: true
+          type: paragraph
+          variable: picture
+      height: 109
+      id: '1768876189038'
+      position:
+        x: 0
+        y: 0
+      positionAbsolute:
+        x: 0
+        y: 0
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        context:
+          enabled: false
+          variable_selector: []
+        model:
+          completion_params:
+            enable_thinking: true
+            temperature: 1
+            top_p: 0.7
+          mode: chat
+          name: Step3-VL-10B
+          provider: langgenius/openai_api_compatible/openai_api_compatible
+        prompt_template:
+        - id: c0430d7f-aa72-4e4d-a0c9-8bd0985b3138
+          role: system
+          text: "你是一名专业的模板内容审核员，需按照以下规则对模板图片进行全面审核，并输出结构化结果。\n\n## 审核维度及标准\n### 1.\
+            \ 视觉违规内容识别\n- 敏感场景：是否包含暴力、血腥、色情、恐怖等违法违规场景\n- 不当人物：是否包含涉政人物、违法犯罪人员、低俗形象等\n\
+            - 不良标志：是否包含纳粹标志、邪教符号、违法组织标识等\n\n### 2. 版权风险检测\n- 水印：是否包含非授权的商业水印、平台水印\n\
+            - 知名IP元素：是否包含迪士尼、漫威、热门动漫等未授权知名IP\n- 疑似未授权素材：是否包含明显受版权保护的图片、插画等\n- 个人社交媒体账号标识：是否包含未授权的个人社交媒体账号标识\n\
+            \n### 3. 技术质量评估\n- 清晰度：是否模糊不清\n- 尺寸/格式：是否符合常用模板尺寸\n- 色彩模式：是否存在明显色彩失真\n\
+            \n## 审核结论规则\n- 通过：无任何风险项，所有违规/风险置信度＜60%\n- 可优化：存在技术质量问题（如轻微模糊、色彩失真），置信度60%-70%\n\
+            - 建议修改：存在疑似版权风险或低置信度违规，置信度70%-80%\n- 明确违规：检测到明确视觉违规或高置信度版权侵权，置信度＞80%\n\
+            \n## 输出格式要求\n必须严格按照以下JSON格式输出，review_comment为字符串类型，分点说明的问题用符号\"；\"分割：\n\
+            {\n  \"review_result\": \"通过\",\n  \"review_comment\": \"\"\n}\n或\n{\n\
+            \  \"review_result\": \"明确违规\",\n  \"review_comment\": \"1、图片包含暴力场景，置信度90%；2、存在未授权迪士尼IP元素，置信度85%\"\
+            \n}"
+        selected: true
+        title: 图像合规审核
+        type: llm
+        vision:
+          configs:
+            detail: high
+            variable_selector:
+            - '1769581056766'
+            - files
+          enabled: true
+      height: 88
+      id: '1768876192039'
+      position:
+        x: 684
+        y: 11
+      positionAbsolute:
+        x: 684
+        y: 11
+      selected: true
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        outputs:
+        - value_selector:
+          - '1768876192039'
+          - text
+          value_type: string
+          variable: data
+        selected: false
+        title: 输出结果
+        type: end
+      height: 88
+      id: '1768876194692'
+      position:
+        x: 1026
+        y: 11
+      positionAbsolute:
+        x: 1026
+        y: 11
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    - data:
+        is_team_authorization: true
+        paramSchemas:
+        - auto_generate: null
+          default: null
+          form: llm
+          human_description:
+            en_US: The URL of the image to download
+            ja_JP: ダウンロードする画像のURL
+            pt_BR: A URL da imagem para baixar
+            zh_Hans: 要下载的图片URL
+          label:
+            en_US: Image URL
+            ja_JP: 画像URL
+            pt_BR: URL da Imagem
+            zh_Hans: 图片URL
+          llm_description: The URL of the image to be downloaded
+          max: null
+          min: null
+          name: image_url
+          options: []
+          placeholder: null
+          precision: null
+          required: true
+          scope: null
+          template: null
+          type: string
+        params:
+          image_url: ''
+        plugin_id: lzfxxx/image-downloader
+        plugin_unique_identifier: lzfxxx/image-downloader:0.0.1@ed870936bc915d620df8cbcdecf992cb22e5790bfddc73fe828d7db711bcc074
+        provider_icon: /console/api/workspaces/current/plugin/icon?tenant_id=62087e1d-c776-4926-83ce-cc45db63b9bd&filename=b18d1ad2a2e32e757d4358b272f24a47e34d6c7b00857cba49ec164eb38058bb.svg
+        provider_id: lzfxxx/image-downloader/image-downloader
+        provider_name: lzfxxx/image-downloader/image-downloader
+        provider_type: builtin
+        selected: false
+        title: 图像下载
+        tool_configurations: {}
+        tool_description: 从URL下载图片
+        tool_label: 图片下载器
+        tool_name: image_downloader
+        tool_node_version: '2'
+        tool_parameters:
+          image_url:
+            type: mixed
+            value: '{{#1768876189038.picture#}}'
+        type: tool
+      height: 52
+      id: '1769581056766'
+      position:
+        x: 342
+        y: 29
+      positionAbsolute:
+        x: 342
+        y: 29
+      selected: false
+      sourcePosition: right
+      targetPosition: left
+      type: custom
+      width: 242
+    viewport:
+      x: -150.89999999999998
+      y: 429.5
+      zoom: 0.7
+  rag_pipeline_variables: []
