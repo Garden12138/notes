@@ -28,13 +28,13 @@ https://www.youtube.com/watch?v=L8vXmlBWVfU&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpV
 
 https://www.youtube.com/watch?v=bhuGrjuCM_g&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=5 -> 应用场景：使用memory-lancedb-pro记忆插件，增强长期记忆、智能提取；
 
-https://www.youtube.com/watch?v=Smk5nisOZC0&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=4
+https://www.youtube.com/watch?v=Smk5nisOZC0&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=4 -> 应用场景：使用Chrome DevTools MCP Attach Mode自动接管Chrome浏览器；
 
-https://www.youtube.com/watch?v=aZT9d8qrirY&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=3
+https://www.youtube.com/watch?v=aZT9d8qrirY&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=3 -> 应用场景：使用ClawTeam自动组建AI智能体团队，！自动拆分任务、并行执行、实时协调全流程。
 
-https://www.youtube.com/watch?v=KZKT27Gk9lA&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=2
+https://www.youtube.com/watch?v=KZKT27Gk9lA&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=2 -> 应用场景：微信接入OpenClaw
 
-https://www.youtube.com/watch?v=py9amdqYfQM&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=1
+https://www.youtube.com/watch?v=py9amdqYfQM&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=1 -> 桌面版Cowork+Code支持Computer Use功能
 
 《第一性原理看AI》
 1、表面是Token、本质是竞争力
