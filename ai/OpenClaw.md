@@ -1,10 +1,40 @@
-https://www.youtube.com/watch?v=daXOXSSyudM&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=17 -> 应用场景：新闻博客每日推送；调研CC、CX编写代码
+https://www.youtube.com/watch?v=daXOXSSyudM&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=19 -> 应用场景：新闻简报每日推送；调研CC、CX编写代码
 
-https://www.youtube.com/watch?v=masJoPqT-6A&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=15 -> 应用场景：不同任务创建不同的agent，分配不同模型，独立Session、独立记忆，独立工作空间，彻底解决记忆污染和上下文混乱问题；群聊的agent默认是记忆和工作空间是主agent的，需要为群组创建独立的记忆和工作空间。
+https://www.youtube.com/watch?v=1qkQEffNacQ&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=18 -> 应用场景：直接开发项目；Github Codespace安装OpenClaw；
 
-https://www.youtube.com/watch?v=Veoin_nqfOE&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=14 -> 应用场景：Opus4.6与GPT-5.3-Codex的对比，Opus4.6适合代码生成，GPT-5.3-Codex适合复杂问题解决。
+https://www.youtube.com/watch?v=c5LKNO4YptM&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=17-> 应用场景：定时生成英文博客；使用SpecKit/OpenSpec调用Claude Code开发项目；通过多轮对话实现应用，将经验保存为skills并不断优化。
 
-https://www.youtube.com/watch?v=pvlPkUauHis&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=13 -> 应用场景：模型容灾；模型服务商多账号认证与轮寻；为每个agent分别独立模型；配置记忆搜索功能（embedding）；云端OpenClaw连接本地电脑（node模式）；多Agent模式协作（以开发 - 测试 - 文档 - 监控为例子）
+https://www.youtube.com/watch?v=masJoPqT-6A&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=16 -> 应用场景：不同任务创建不同的agent，分配不同模型，独立Session、独立记忆，独立工作空间，彻底解决记忆污染和上下文混乱问题；群聊的agent默认是记忆和工作空间是主agent的，需要为群组创建独立的记忆和工作空间。
+
+https://www.youtube.com/watch?v=Veoin_nqfOE&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=15 -> 应用场景：Opus4.6与GPT-5.3-Codex的对比，Opus4.6适合代码生成，GPT-5.3-Codex适合复杂问题解决。
+
+https://www.youtube.com/watch?v=pvlPkUauHis&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=14 -> 应用场景：模型容灾；模型服务商多账号认证与轮寻；为每个agent分别独立模型；配置记忆搜索功能（embedding）；云端OpenClaw连接本地电脑（node模式）；多Agent模式协作（以开发 - 测试 - 文档 - 监控为例子）
+
+https://www.youtube.com/watch?v=iJEfIc1mrsc&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=13 -> 应用场景：Claude Code节省Token开发方式：Claude Code Hooks，使用 Claude Code Agent Teams开发游戏；
+
+https://www.youtube.com/watch?v=7n9qbuzwS-U&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=12 -> 应用场景：按topic主题拆分记忆文件；codex-deep- search增强搜索功能；Gateway重启防护机制；
+
+https://www.youtube.com/watch?v=MtukF1C8epQ&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=11 -> 应用场景：记忆系统重构为LanceDB的记忆系统；
+
+https://www.youtube.com/watch?v=EycFl6QvxVk&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=10 -> 应用场景：使用Claude Code、Codex、Antigravity编程工具更新或回滚ClawCode版本；记忆蒸馏减少使用时token消耗：提取专门主题的记忆赋予新的agent使其能够完成特定任务，最好生成skills，能够更好地利用记忆实现任务；
+
+https://www.youtube.com/watch?v=9K7YMuuo77M&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=9 -> 应用场景：SkyClaw云端；
+
+https://www.youtube.com/watch?v=axCk4eJjzW4&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=8 -> 应用场景：使用GPT-5.4处理复杂场景，在另外机器创建新的OpenClaw
+
+https://www.youtube.com/watch?v=aI77F7vVodE&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=7 -> 应用场景：基于a2a协议实现的OpenClaw A2A Gateway，能够让不同OpenClaw之间互相访问，解决群组多Agent回答以及上下文混乱等各种问题；
+
+https://www.youtube.com/watch?v=L8vXmlBWVfU&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=6 -> 应用场景：工作区优化；Persistent Agent、Sub Agent、ACP Agent；
+
+https://www.youtube.com/watch?v=bhuGrjuCM_g&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=5 -> 应用场景：使用memory-lancedb-pro记忆插件，增强长期记忆、智能提取；
+
+https://www.youtube.com/watch?v=Smk5nisOZC0&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=4
+
+https://www.youtube.com/watch?v=aZT9d8qrirY&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=3
+
+https://www.youtube.com/watch?v=KZKT27Gk9lA&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=2
+
+https://www.youtube.com/watch?v=py9amdqYfQM&list=PL6T8hqO5VU3_Zk85o7_ZPZOZMKRwpVJRy&index=1
 
 《第一性原理看AI》
 1、表面是Token、本质是竞争力
