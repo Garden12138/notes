@@ -41,6 +41,17 @@ Use the `playwright` skill for browser-session setup and browser automation prim
   - `single?offset=20&count=10` returned 8 unique aweme items.
 - `single` responses included `cursor` and `has_more` fields, so continue pagination there instead of trying to paginate `stream`.
 - Batch detail crawling must tolerate per-item failures and continue.
+- Anti-risk pacing should be deliberate and human-like:
+  - visible browser
+  - fixed viewport / stable layout
+  - randomized waits between search, scroll, and detail actions
+  - moderate batch sizes instead of aggressive long runs
+  - pause or slow down when verification / empty results / unusual timeouts appear
+- For dedup, keep it simple first: use `awemeId` as the primary dedup key across batches.
+- Recommended batch rule:
+  - collect candidates
+  - filter out historical `awemeId`s before detail crawling
+  - only crawl comments for new content
 
 ## Scripts
 
@@ -84,7 +95,10 @@ Prefer this final shape:
 
 - Keep requests low-volume and human-paced.
 - Prefer visible browser automation over aggressive headless crawling.
+- Use randomized waits rather than a rigid fixed rhythm.
+- Keep per-run batch size moderate and leave gaps between larger runs.
 - Treat comment extraction as best-effort; some videos may yield zero comments and should be marked, not crash the run.
+- Use `awemeId` as the first dedup gate before entering detail-page crawling.
 - For operator delivery, export two CSVs linked by `contentId`:
   - `contents.csv`
   - `comments.csv`

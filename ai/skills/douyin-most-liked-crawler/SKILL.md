@@ -50,6 +50,16 @@ Use the `playwright` skill for browser-session setup and browser automation prim
 - Use one browser instance for “open sort mode” and “collect data”. Do not hand off to a second instance using the same profile during the same run.
 - Do not hard-code click coordinates. The stable part is the node identity pattern; the unstable part is its on-screen position.
 - Fix the browser layout first, then measure the target node at runtime with `getBoundingClientRect()`.
+- The most-liked flow was revalidated beyond a one-off success:
+  - a verified 3-item run succeeded end-to-end
+  - an 11-item candidate run also succeeded, showing the UI interaction can be reused
+- Anti-risk pacing should still be applied even when the interaction works:
+  - visible browser
+  - fixed viewport / stable layout
+  - randomized waits around search, hover, click, scroll, and detail-page steps
+  - moderate batch sizes
+  - slow down or pause when verification / empty filtered results / unusual timeouts appear
+- For cross-batch dedup, keep the first version simple: use `awemeId` as the primary dedup key and skip historical ids before detail crawling.
 
 ## Scripts
 
@@ -90,7 +100,10 @@ Prefer this final shape:
 
 - Keep requests low-volume and human-paced.
 - Prefer visible browser automation over aggressive headless crawling.
+- Use randomized waits rather than a rigid fixed rhythm.
+- Keep per-run batch size moderate and leave gaps between larger runs.
 - Treat comment extraction as best-effort; some videos may yield zero comments and should be marked, not crash the run.
+- Use `awemeId` as the first dedup gate before entering detail-page crawling.
 - For operator delivery, export two CSVs linked by `contentId`:
   - `contents.csv`
   - `comments.csv`
