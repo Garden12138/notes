@@ -375,3 +375,39 @@
   *   **命令限制**：客户端在进入订阅状态后，只能接收 `subscribe`、`psubscribe`、`unsubscribe` 和 `punsubscribe` 这四种命令。
   *   **消息积压**：与 ```Kafka``` 或 ```RocketMQ``` 等专业消息队列相比，```Redis``` 的发布订阅功能较弱，**不具备消息堆积（无法存储历史消息）和回溯能力**。
   *   **集群环境下的影响**：在 ```Redis Cluster``` 模式下，`publish` 命令会向所有节点进行广播，如果频繁使用会严重消耗集群内的网络带宽。对于此类高频需求，建议使用 Sentinel 架构专门处理。
+
+### GEO
+
+* **GEO（地理信息定位）功能**，该功能支持存储地理位置信息，常用于实现诸如“附近位置”、“摇一摇”等依赖于 ```LBS``` （基于位置服务）的功能。
+
+* 核心命令
+  *   **增加地理位置信息 (`geoadd`)**：
+      *   语法：`geoadd key longitude latitude member [longitude latitude member ...]`。
+      *   它将经度（```longitude```）、纬度（```latitude```）和成员（```member```）添加到指定的集合中。
+      *   如果成员已存在，执行该命令会更新其地理位置信息，返回结果表示成功添加的新成员个数。
+  *   **获取地理位置信息 (`geopos`)**：
+      *   语法：`geopos key member [member ...]`。
+      *   可以获取指定成员的经纬度坐标。
+  *   **计算距离 (`geodist`)**：
+      *   语法：`geodist key member1 member2 [unit]`。
+      *   用于计算两个成员之间的距离，支持的单位包括：`m`（米）、`km`（公里）、`mi`（英里）、`ft`（尺）。
+  *   **获取指定范围内的地理信息集合 (`georadius` / `georadiusbymember`)**：
+      *   语法1：`georadius key longitude latitude radius m|km|ft|mi [withcoord] [withdist] [withhash] [count count] [asc|desc]`。
+      *   语法2：`georadiusbymember key member radius m|km|ft|mi [withcoord] [withdist] [withhash] [count count] [asc|desc]`。
+      *   这两个命令用于以一个地理位置（经纬度或已存在的成员）为中心，计算指定半径内的其他成员。不同的是，第一种命令以经纬度为中心，第二种命令以已存在的成员为中心。
+      *   **可选参数**包括：`withcoord`（包含经纬度）、`withdist`（包含距离）、`withhash`（包含```geohash```）、`COUNT`（限制数量）、`asc|desc`（按距离排序）等。
+  *   **获取 geohash (`geohash`)**：
+      *   语法：`geohash key member [member ...]`。
+      *   ```Redis```使用```geohash```算法将二维经纬度转换为一维字符串。字符串越长，表示的位置越精确。
+
+* 实现原理与特点
+  *   **底层数据结构**：```GEO```功能的底层实现是 **`zset`（有序集合）**。
+  *   **数据转换**：```Redis```将地理位置信息的```geohash```值存放在`zset`中。
+  *   **删除操作**：由于```GEO```没有专门的删除命令，删除成员时需借用`zset`的命令，如 **`zrem`**。
+  *   **geohash特性**：
+      *   两个字符串越相似，它们之间的距离通常越近。
+      *   ```geohash```编码与经纬度之间可以相互转换。
+
+* 运维提示
+  *   在进行数据统计或监控时，可以通过 `info memory` 查看```GEO```（通过`zset`实现）所占用的内存情况。
+  *   在集群环境下，```GEO```相关的操作也需要注意键的分布，尽管其底层是`zset`，但在大规模应用时仍需考虑节点性能和数据倾斜问题。
