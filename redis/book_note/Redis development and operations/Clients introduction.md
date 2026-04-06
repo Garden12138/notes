@@ -250,3 +250,96 @@
 
   jedis.close();
   ```
+
+### Python客户端redis-py
+
+* 获取```redis-py```，通常有以下三种方法：
+  *   **使用pip安装**：执行 `pip install redis`。
+  *   **使用easy_install安装**：执行 `easy_install redis`。
+  *   **源码安装**：通过 `wget` 下载压缩包，解压后进入目录执行 `python setup.py install`。
+
+* ```redis-py```的基本使用方法
+
+  * 核心步骤与```String```操作示例：
+    ```python
+    import redis
+
+    # 1. 生成客户端连接，需要指定Redis实例的IP和端口
+    client = redis.StrictRedis(host='127.0.0.1', port=6379)
+
+    # 2. 执行String命令
+    key = "hello"
+    setResult = client.set(key, "python-redis") # 返回 True
+    print(setResult)
+
+    value = client.get(key) # 返回 "python-redis"
+    print("key:" + key + ", value:" + value)
+
+    # 计数操作
+    client.incr("counter") # 返回 1
+    ```
+
+  * 其他四种数据结构操作示例：
+    ```python
+    # Hash操作
+    client.hset("myhash", "f1", "v1")
+    client.hset("myhash", "f2", "v2")
+    print(client.hgetall("myhash")) # 输出: {'f1': 'v1', 'f2': 'v2'}
+
+    # List操作
+    client.rpush("mylist", "1", "2", "3")
+    print(client.lrange("mylist", 0, -1)) # 输出: ['1', '2', '3']
+
+    # Set操作
+    client.sadd("myset", "a", "b", "a")
+    print(client.smembers("myset")) # 输出: set(['a', 'b'])
+
+    # Zset操作
+    client.zadd("myzset", 99, "tom", 66, "peter", 33, "james")
+    # 输出: [('james', 33.0), ('peter', 66.0), ('tom', 99.0)]
+    print(client.zrange("myzset", 0, -1, withscores=True))
+    ```
+
+* ```Pipeline```的使用方法：
+
+  * 代码示例：使用```Pipeline```模拟批量删除（```mdel```）
+    ```python
+    import redis
+
+    def mdel(keys):
+        client = redis.StrictRedis(host='127.0.0.1', port=6379)
+        # 生成Pipeline对象，通过 `transaction=False` 参数指定不使用事务。
+        pipeline = client.pipeline(transaction=False)
+        # 将命令封装到Pipeline中，此时命令并未真正执行
+        for key in keys:
+            pipeline.delete(key)
+        # 执行Pipeline
+        return pipeline.execute() # 返回每条命令的结果列表
+    ```
+
+* ```Lua```脚本的使用方法，```redis-py```提供了 `eval`、`script_load` 和 `evalsha` 三个重要函数来执行```Lua```脚本：
+
+  * 使用```eval```执行脚本，`eval` 函数需要脚本内容、键的个数以及相关参数（```KEYS```和```ARGV```）：
+    ```python
+    import redis
+
+    client = redis.StrictRedis(host='127.0.0.1', port=6379)
+    script = "return redis.call('get', KEYS)"
+    # 输出结果为对应key的值，例如 "world"
+    print(client.eval(script, 1, "hello"))
+    ```
+
+  * 使用```evalsha```执行脚本，为了提高效率，通常先使用 `script_load` 将脚本加载到```Redis```并获取```SHA1```校验和，之后使用 `evalsha` 调用：
+    ```python
+    import redis
+
+    client = redis.StrictRedis(host='127.0.0.1', port=6379)
+    script = "return redis.call('get', KEYS)"
+
+    # 1. 加载脚本获取SHA1
+    scriptSha = client.script_load(script)
+
+    # 2. 使用SHA1执行脚本
+    # 参数：SHA1值, KEYS个数, KEYS列表...
+    print(client.evalsha(scriptSha, 1, "hello"))
+    ```
