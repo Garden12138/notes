@@ -60,6 +60,17 @@ Use the `playwright` skill for browser-session setup and browser automation prim
   - moderate batch sizes
   - slow down or pause when verification / empty filtered results / unusual timeouts appear
 - For cross-batch dedup, keep the first version simple: use `awemeId` as the primary dedup key and skip historical ids before detail crawling.
+- When a single main keyword cannot grow enough under `最多点赞`, switch from single-keyword hard-scrolling to a `主词 + 近义相关词补池` strategy.
+- Recommended pattern:
+  - start with the main keyword (for example `异宠`)
+  - exhaust the obvious candidate growth for that keyword
+  - expand with closely related terms only
+  - merge all results with `awemeId` dedup
+- Proven useful related-keyword directions include:
+  - species terms such as `玉米蛇`, `鬃狮蜥`, `睫角守宫`, `豹纹守宫`, `蓝舌石龙子`
+  - niche cluster terms such as `爬宠`, `守宫`, `宠物蛇`, `宠物蜥蜴`, `捕鸟蛛`
+  - care / feeding / store terms such as `异宠饲养`, `守宫饲养`, `异宠店`, `爬宠店`, `守宫店`
+- Keep semantic distance tight. The point is to enlarge the same topic pool, not to drift into unrelated pet content.
 
 ## Scripts
 
@@ -104,6 +115,7 @@ Prefer this final shape:
 - Keep per-run batch size moderate and leave gaps between larger runs.
 - Treat comment extraction as best-effort; some videos may yield zero comments and should be marked, not crash the run.
 - Use `awemeId` as the first dedup gate before entering detail-page crawling.
+- When using related-keyword expansion, keep the pool close to the main topic and prefer staged expansion over random keyword sprawl.
 - For operator delivery, export two CSVs linked by `contentId`:
   - `contents.csv`
   - `comments.csv`

@@ -52,6 +52,17 @@ Use the `playwright` skill for browser-session setup and browser automation prim
   - collect candidates
   - filter out historical `awemeId`s before detail crawling
   - only crawl comments for new content
+- When a single main keyword runs out of candidate growth, do not keep hard-scrolling forever.
+- Prefer a `主词 + 近义相关词补池` strategy:
+  - start from the main keyword (for example `异宠`)
+  - when growth stalls, expand with closely related keywords
+  - keep semantic distance tight; do not drift too far away from the original topic
+  - merge cross-keyword results with `awemeId` dedup
+- Good related-keyword directions include:
+  - species terms
+  - care / feeding terms
+  - store / experience / shop terms
+  - close niche synonyms already used by the target audience
 
 ## Scripts
 
@@ -99,6 +110,7 @@ Prefer this final shape:
 - Keep per-run batch size moderate and leave gaps between larger runs.
 - Treat comment extraction as best-effort; some videos may yield zero comments and should be marked, not crash the run.
 - Use `awemeId` as the first dedup gate before entering detail-page crawling.
+- When doing related-keyword expansion, keep the keyword pool close to the main topic instead of widening blindly.
 - For operator delivery, export two CSVs linked by `contentId`:
   - `contents.csv`
   - `comments.csv`
