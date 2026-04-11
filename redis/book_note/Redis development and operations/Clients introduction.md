@@ -343,3 +343,130 @@
     # 参数：SHA1值, KEYS个数, KEYS列表...
     print(client.evalsha(scriptSha, 1, "hello"))
     ```
+
+### 客户端管理
+
+* 客户端```API```，```Redis```提供了多条命令来监控和管理与服务端相连的客户端连接状态。
+  * `client list` 命令，这是最常用的命令，用于列出所有已连接客户端的信息。输出结果的每一行代表一个客户端，包含十几个重要的属性：
+    *   **标识属性**：
+        *   **id**：客户端连接的唯一标识，随连接自增，重启后重置。
+        *   **addr**：客户端的```IP```和端口。
+        *   **fd**：```socket```文件描述符，若为-1则代表是```Redis```内部的伪装客户端。
+        *   **name**：客户端名称，可通过 `client setName` 设置。
+    *   **输入缓冲区 (`qbuf`, `qbuf-free`)**：
+        *   ```Redis```为每个客户端分配输入缓冲区，临时保存客户端发送的命令。
+        *   **限制**：输入缓冲区不可配置，动态调整，但**每个客户端缓冲区上限为1GB**，超过则连接会被关闭。
+        *   **风险**：输入缓冲区**不受 `maxmemory` 控制**。如果大量输入缓冲区占用过多内存（如```3GB```），即使数据本身只占```2GB```，也可能导致```OOM```或键值淘汰。
+
+          ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_9.png)
+
+    *   **输出缓冲区 (`obl`, `oll`, `omem`)**：
+        *   用于保存命令执行结果并返回给客户端。
+        *   **结构**：由**固定缓冲区**（16```KB```，用于小结果）和**动态缓冲区**（列表结构，用于大结果，如 `hgetall` 的返回）组成。
+        *   **参数含义**：`obl` 为固定缓冲区长度，`oll` 为动态缓冲区列表长度，`omem` 为总占用字节数。
+        *   **配置**：可通过 `client-output-buffer-limit` 按客户端类型（```normal```, ```slave```, ```pubsub```）设置硬限制和软限制。
+
+          ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_10.png)
+
+    *   **存活状态 (`age`, `idle`)**：
+        *   `age` 是连接已存在的时间，`idle` 是最近一次闲置的时间（单位为秒）。
+    *   **客户端类型 (`flags`)**：
+        *   标识客户端角色，例如 `N`（普通）、`S`（从节点）、`O`（正在执行 `monitor`）等。
+
+    使用示例：
+
+      ```bash
+      127.0.0.1:6379> client list
+      id=254487 addr=10.2.xx.234:60240 fd=1311 name= age=8888581 idle=8888581 flags=N db=0 sub=0 psub=0 multi=-1 qbuf=0 qbuf-free=0 obl=0 oll=0 omem=0 events=r cmd=get
+      id=7125108 addr=10.10.xx.103:33403 fd=139 name= age=241 idle=1 flags=N db=0 sub=0 psub=0 multi=-1 qbuf=0 qbuf-free=0 obl=0 oll=0 omem=0 events=r cmd=del
+      ```
+
+  * `client setName` 和 `client getName`，用于设置和获取当前连接的名称，便于在多应用共享```Redis```时标识客户端来源。
+
+    使用示例：
+
+      ```bash
+      # 1. 设置当前连接名称
+      127.0.0.1:6379> client setName test_client
+      OK
+
+      # 2. 获取当前连接名称
+      127.0.0.1:6379> client getName
+      "test_client"
+
+      # 3. 在 client list 中查看标识
+      127.0.0.1:6379> client list
+      id=55 addr=127.0.0.1:55604 fd=7 name=test_client age=23 idle=0 ...
+
+  * `client kill`，用于杀掉指定```IP```和端口的客户端连接。在处理因 `timeout=0` 产生的长时间空闲连接时非常有用。
+
+    使用示例：
+
+      ```bash
+      # 杀掉指定IP和端口的客户端
+      127.0.0.1:6379> client kill 127.0.0.1:52343
+      OK
+      ```
+
+  * `client pause`，阻塞客户端 `timeout` 毫秒。该命令对普通和发布订阅客户端有效，但**对从节点（主从复制）无效**，可用于可控地切换```Redis```节点。
+
+    使用示例：
+
+      ```bash
+      # 1. 在客户端A执行暂停命令（阻塞10000毫秒，即10秒）
+      127.0.0.1:6379> client pause 10000
+      OK
+
+      # 2. 此时在客户端B执行命令会感到明显阻塞，直到10秒后返回
+      127.0.0.1:6379> ping
+      PONG (9.72s)
+    ```
+
+  * `monitor`，用于监控```Redis```正在执行的所有命令。
+    *   **警告**：在高并发环境下，`monitor` 客户端的输出缓冲区会因为接收所有命令而暴涨，**极易瞬间耗尽内存**。
+
+    使用示例：
+      
+      ```bash
+      127.0.0.1:6379> monitor
+      OK
+      1472513599.754326 [0 127.0.0.1:56335] "set" "hello" "world"
+      1472513601.305303 [0 127.0.0.1:56335] "get" "hello"
+      1472513605.514383 [0 127.0.0.1:56335] "ping"
+      ```
+
+* 客户端相关配置，这些参数控制了服务端如何处理客户端连接：
+  *   **`timeout`**：检测客户端空闲连接的时间。若闲置时间达到 `timeout`，连接将被关闭。设置为0则不检测（默认值，但在实际运维中建议设置，如300秒）。
+  *   **`maxclients`**：最大客户端连接数，默认为10000。若超过此限制，新连接将被拒绝并抛出异常。
+  *   **`tcp-keepalive`**：```TCP```连接活性检测周期，建议设置为60秒，防止大量死连接占用系统资源。
+  *   **`tcp-backlog`**：```TCP```三次握手后的连接队列大小，默认511。若受操作系统限制（如```Linux```的 `somaxconn` 较小），```Redis```会发出警告日志。
+
+  使用示例：
+
+    ```bash
+    127.0.0.1:6379> info clients
+    # Clients
+    connected_clients:262             # 当前连接数
+    client_longest_output_list:0      # 输出缓冲区队列最大对象数
+    client_biggest_input_buf:0        # 输入缓冲区最大占用容量
+    blocked_clients:0                 # 正在执行阻塞命令的客户端数
+    ```
+
+* 客户端统计片段，通过 `info clients` 命令可以快速获取当前客户端的汇总统计指标：
+  * **`connected_clients`**：当前连接数，需重点监控，严防超过 `maxclients`。
+  *  **`client_longest_output_list`**：当前所有输出缓冲区队列对象个数的最大值。
+  *  **`client_biggest_input_buf`**：当前所有输入缓冲区占用的最大容量。
+  *  **`blocked_clients`**：正在执行阻塞命令（如 `blpop`）的客户端个数。
+
+  使用示例：
+
+    ```bash
+    127.0.0.1:6379> info clients
+    # Clients
+    connected_clients:262             # 当前连接数
+    client_longest_output_list:0      # 输出缓冲区队列最大对象数
+    client_biggest_input_buf:0        # 输入缓冲区最大占用容量
+    blocked_clients:0                 # 正在执行阻塞命令的客户端数
+    ```
+
+  此外，`info stats` 中的 `total_connections_received`（累计处理连接总数）和 `rejected_connections`（拒绝连接数）也是重要的参考指标。
