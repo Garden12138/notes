@@ -470,3 +470,56 @@
     ```
 
   此外，`info stats` 中的 `total_connections_received`（累计处理连接总数）和 `rejected_connections`（拒绝连接数）也是重要的参考指标。
+
+### 客户端常见异常
+
+* 无法从连接池获取到连接，这是```Jedis```使用中最常见的异常之一。```JedisPool```中的对象个数有限（默认8个），当所有连接都被占用且未归还时，新的调用者将无法获取连接。
+  *   **异常表现**：
+      *   如果设置了 `maxWaitMillis > 0`，在等待超时后会抛出：`JedisConnectionException: Could not get a resource from the pool`，并伴随 `Timeout waiting for idle object`。
+      *   如果设置了 `blockWhenExhausted = false`，则会立即抛出 `Pool exhausted`。
+  *   **常见原因**：
+      *   **客户端高并发**：连接池设置过小，无法满足瞬时高并发需求。
+      *   **连接泄露**：使用完```Jedis```对象后**没有正确释放/归还**到连接池中（例如缺少 `finally` 块中的 `close()` 调用）。
+      *   **慢查询**：客户端存在耗时极长的操作，导致```Jedis```对象被长时间占用，归还速度变慢，最终耗尽池子。
+      *   **服务端阻塞**：```Redis```服务端发生阻塞（如大键操作、```AOF```追加阻塞），导致客户端命令处理缓慢，连接无法释放。
+
+* 客户端读写超时，当客户端与```Redis```进行交互的时间超过了预设的读写超时时间时触发。
+  *   **异常表现**：`JedisConnectionException: java.net.SocketTimeoutException: Read timed out`。
+  *   **常见原因**：
+      *   **超时设置过短**：设置的 `soTimeout` 不足以支撑命令的正常执行。
+      *   **慢查询/大键操作**：命令本身耗时较长。
+      *   **网络问题**：客户端与服务端之间的网络链路不稳定。
+      *   **Redis自身阻塞**：服务端主线程由于某种原因被挂起。
+
+* 客户端连接超时，在尝试与```Redis```建立网络连接时，如果超过了指定的超时时间则报错。
+  *   **异常表现**：`JedisConnectionException: java.net.SocketTimeoutException: connect timed out`。
+  *   **常见原因**：
+      *   **连接超时设置过短**。
+      *   **Redis阻塞导致连接堆积**：服务端阻塞使得 `tcp-backlog` 队列已满，新的连接请求被丢弃或超时。
+      *   **网络不通**：物理链路断开或防火墙拦截。
+
+* 客户端缓冲区异常，这通常涉及到```Redis```协议数据流的解析中断。
+  *   **异常表现**：`JedisConnectionException: Unexpected end of stream`。
+  *   **常见原因**：
+      *   **输出缓冲区满**：如果为普通客户端设置了较小的输出缓冲区限制（如1```MB```），而尝试获取一个超过此大小的 **bigkey**，连接会被服务端强制断开。
+      *   **空闲连接被关闭**：长时间不使用的连接由于触发了```Redis```服务端的 `timeout` 设置被主动断开，客户端再次使用时就会报错。
+      *   **非线程安全使用**：**Jedis对象被多个线程并发操作**，导致协议解析错乱。
+
+* ```Lua```脚本相关异常，如果```Redis```正在执行一个耗时超过 `lua-time-limit` 的```Lua```脚本，其他正常的```API```调用会受到限制。
+  *   **异常表现**：`JedisDataException: BUSY Redis is busy running a script`。
+  *   **处理方式**：可以通过 `SCRIPT KILL` 杀死脚本（如果没写操作）或 `SHUTDOWN NOSAVE` 强行停止服务。
+
+* ```Redis```正在加载持久化文件，在```Redis```重启并加载```RDB```或```AOF```文件的过程中，无法响应正常的读写请求。
+  *   **异常表现**：`JedisDataException: LOADING Redis is loading the dataset in memory`。
+
+* ```Redis```内存超过```maxmemory```配置，当```Redis```内存使用达到 `maxmemory` 限制且无法根据淘汰策略释放空间时，写操作将被禁止。
+  *   **异常表现**：`JedisDataException: OOM command not allowed when used memory > 'maxmemory'`。
+  *   **建议**：应及时调整 `maxmemory` 设置，并排查内存陡增的原因（如是否存在```bigkey```）。
+
+* 客户端连接数过大，当```Redis```连接数超过了 `maxclients` 参数定义的限制时，会拒绝新的连接申请。
+  *   **异常表现**：`JedisDataException: ERR max number of clients reached`。
+  *   **解决方法**：
+      *   由于此时无法执行```Redis```命令，通常需要从**客户端**着手：下线部分占用连接过多的应用节点，或者查找是否存在连接泄露的```bug```。
+      *   如果```Redis```是高可用架构，可以考虑进行**手动故障转移**（```Failover```）来快速恢复。
+
+* **总结建议**：处理这些异常时，不能仅看表象。例如，连接池耗尽可能是因为慢查询，也可能是因为服务端阻塞。开发和运维人员需要结合 `info clients`、`slowlog` 以及客户端日志，通过“顺藤摸瓜”的方式定位核心问题。
