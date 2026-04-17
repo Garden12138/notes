@@ -12,6 +12,10 @@ Use this skill when the user wants a reminder bot that:
 - has fixed daily reminder jobs
 - syncs reminders into Apple Reminders with a local script
 
+Bundled resources:
+- AppleScript: `scripts/add_boss_reminder.scpt`
+- examples: `references/examples.md`
+
 ## Core rules
 
 1. For every scheduled reminder, treat **Telegram delivery** and **Apple Reminders sync** as two separate outputs.
@@ -56,6 +60,8 @@ Example:
 osascript ~/.openclaw/scripts/add_boss_reminder.scpt "洗杯子" "2026-04-17 17:40" "老板提醒" "2分钟后"
 ```
 
+If you need concrete command patterns, read `references/examples.md`.
+
 ## Script contract
 
 Example script contract:
@@ -63,6 +69,8 @@ Example script contract:
 ```bash
 osascript ~/.openclaw/scripts/add_boss_reminder.scpt "标题" "YYYY-MM-DD HH:MM" [列表名] [备注]
 ```
+
+A reusable copy of this script is bundled at `scripts/add_boss_reminder.scpt`.
 
 If the script defines a default list, you may omit the list name unless the user asked for a specific one.
 
