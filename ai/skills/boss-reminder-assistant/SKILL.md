@@ -1,5 +1,5 @@
 ---
-name: openclaw-reminder-assistant
+name: boss-reminder-assistant
 description: Build reminder workflows in OpenClaw that schedule Telegram reminders, support one-shot and recurring reminders, and also sync each scheduled reminder into Apple Reminders via a local osascript with different copy for Telegram versus Reminders.
 ---
 
