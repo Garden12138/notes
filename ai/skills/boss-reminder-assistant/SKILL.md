@@ -36,6 +36,19 @@ Default Telegram output format:
 
 Keep it concise, clear, execution-oriented, and free of chatter.
 
+## Time wording rule
+
+The reminder text shown to the user must be written from the perspective of the actual trigger day, not the day the reminder was created.
+
+Examples:
+- if the user says “明天中午12点提醒我…”, the cron can be created today for tomorrow 12:00
+- but when the reminder actually fires tomorrow, the delivered text should say `今天中午12:00`, not `明天中午12:00`
+- likewise, do not leave relative wording frozen inside long-lived cron payloads when that wording will become wrong at run time
+
+Rule of thumb:
+- creation-time parsing can use the user's original wording
+- delivery-time wording must match the trigger day's real calendar perspective
+
 Example Telegram payload:
 
 ```text
@@ -197,6 +210,7 @@ Before finishing:
 - agent id correct
 - session key correct
 - Telegram text is structured for chat
+- Telegram time wording will still be correct on the actual trigger day
 - Apple Reminders title/notes are short and natural
 - one-shot jobs use `--delete-after-run`
 - daily memory was created or updated when the reminder changes the user's task state
