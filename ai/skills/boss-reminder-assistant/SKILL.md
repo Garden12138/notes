@@ -109,6 +109,7 @@ For recurring reminders:
 - set `--tz <iana>`
 - create the Apple Reminders item only if the user's local workflow expects a matching Reminders entry now
 - if the user wants Reminders sync for every scheduled occurrence, you need a cron payload or wrapper that writes to Apple Reminders at trigger time, not just at creation time
+- for morning and evening summary jobs, do not rely only on session context, read `memory/*.md` first
 
 Example recurring cron:
 
@@ -140,6 +141,27 @@ Evening 22:00 template:
 2. 今天未完成什么
 3. 明天最优先的三件事
 
+## Memory-first summary rule
+
+For daily morning and evening reminder jobs:
+- read recent `memory/*.md` files before composing the message
+- treat memory files as the source of truth for completed, delayed, pending, and scheduled items
+- use recent conversation only as a secondary supplement when memory is incomplete
+- if the reminders become too generic, the likely failure is missing daily memory updates, not prompt wording alone
+
+Recommended daily memory pattern:
+- create or append `memory/YYYY-MM-DD.md`
+- record reminders created
+- record reminders completed
+- record delays or reschedules
+- record important notes that should appear in the next reminder, such as materials to bring
+
+Example facts to store:
+- 15:00 给老板发周报，已完成
+- 2026-04-22 10:00 开项目会
+- 和老板确认方案从 2026-04-21 18:00 延期到 2026-04-22 12:00
+- 备注：带上 PPT 和排期表
+
 ## Important implementation detail
 
 If the user's real requirement is:
@@ -163,7 +185,8 @@ This distinction matters.
 4. Write Apple Reminders copy separately from Telegram copy.
 5. Create the Reminders entry if the workflow calls for creation-time sync.
 6. Create the OpenClaw cron job with explicit Telegram routing.
-7. Return a short structured confirmation.
+7. Write or update daily memory so future morning and evening summaries can reuse the facts.
+8. Return a short structured confirmation.
 
 ## Validation checklist
 
@@ -176,6 +199,7 @@ Before finishing:
 - Telegram text is structured for chat
 - Apple Reminders title/notes are short and natural
 - one-shot jobs use `--delete-after-run`
+- daily memory was created or updated when the reminder changes the user's task state
 
 ## When to use this skill
 
