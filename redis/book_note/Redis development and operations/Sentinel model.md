@@ -58,6 +58,8 @@
   *   **从节点**：127.0.0.1:6380、127.0.0.1:6381。
   *   **Sentinel节点**：127.0.0.1:26379、127.0.0.1:26380、127.0.0.1:26381。
 
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_24.png)
+
 * 部署```Redis```数据节点，```Redis Sentinel```中的数据节点与普通的主从复制节点在配置上没有特殊区别。
   *   **启动主节点**：编写配置文件（如 `redis-6379.conf`），设置好端口、日志、工作目录等，使用 `redis-server` 启动。
   *   **启动从节点**：在从节点的配置文件中（如 `redis-6380.conf`）添加 `slaveof 127.0.0.1 6379` 配置，然后启动。
