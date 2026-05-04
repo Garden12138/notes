@@ -50,3 +50,53 @@
 
 * **版本建议：
   * ** 书中明确指出，```Redis 2.6```版本的```Sentinel v1```存在功能和健壮性问题，建议生产环境务必使用**Redis 2.8及以上版本**的```Sentinel v2```。
+
+### 安装和部署
+
+* 部署拓扑结构，为了演示方便，书中以一个典型的**3个Sentinel节点、1个主节点、2个从节点**组成的架构为例进行说明。
+  *   **主节点**：127.0.0.1:6379。
+  *   **从节点**：127.0.0.1:6380、127.0.0.1:6381。
+  *   **Sentinel节点**：127.0.0.1:26379、127.0.0.1:26380、127.0.0.1:26381。
+
+* 部署```Redis```数据节点，```Redis Sentinel```中的数据节点与普通的主从复制节点在配置上没有特殊区别。
+  *   **启动主节点**：编写配置文件（如 `redis-6379.conf`），设置好端口、日志、工作目录等，使用 `redis-server` 启动。
+  *   **启动从节点**：在从节点的配置文件中（如 `redis-6380.conf`）添加 `slaveof 127.0.0.1 6379` 配置，然后启动。
+  *   **确认主从关系**：启动后，可以通过 `redis-cli` 执行 `info replication` 命令查看，主节点应显示有两个已连接的从节点，从节点应显示其主节点为6379。
+
+* 部署```Sentinel```节点，```Sentinel```节点本质上是**特殊的Redis节点**，它们不存储数据，主要用于监控。
+  *   **配置Sentinel**：典型的配置文件内容如下：
+      ```text
+      port 26379
+      daemonize yes
+      logfile "26379.log"
+      dir /opt/soft/redis/data
+      sentinel monitor mymaster 127.0.0.1 6379 2
+      sentinel down-after-milliseconds mymaster 30000
+      sentinel parallel-syncs mymaster 1
+      sentinel failover-timeout mymaster 180000
+      ```
+      其中 `sentinel monitor mymaster 127.0.0.1 6379 2` 表示监控主节点，“2”代表判定主节点失败至少需要2个```Sentinel```节点同意，“```mymaster```”是主节点的别名。
+  *   **启动Sentinel**：有两种等价方法：
+      1. 使用 `redis-sentinel` 命令：`redis-sentinel redis-sentinel-26379.conf`。
+      2. 使用 `redis-server` 加参数：`redis-server redis-sentinel-26379.conf --sentinel`。
+  *   **确认状态**：使用 `info Sentinel` 命令可以查看，正常的```Sentinel```节点应能感知到主节点、从节点以及其他```Sentinel```节点的存在。
+
+* 配置优化及参数详解，书中深入分析了Sentinel的核心配置参数：
+  *   **`sentinel monitor <master-name> <ip> <port> <quorum>`**：
+      *   **Quorum（票数）**：用于故障发现和判定。建议设置为```Sentinel```节点数的一半加1。
+      *   **自动发现**：```Sentinel```只需配置主节点信息，它会通过主节点自动发现从节点和其他```Sentinel```节点，并动态更新配置文件。
+  *   **`sentinel down-after-milliseconds`**：判定节点不可达的超时时间（毫秒）。设置过大会导致故障发现延迟，设置过小可能增加误判率。
+  *   **`sentinel parallel-syncs`**：限制故障转移后，同时向新主节点发起复制操作的从节点个数。设为1可以降低主节点的网络和磁盘```IO```压力（轮询复制）。
+  *   **`sentinel failover-timeout`**：作用于故障转移的各个阶段（如选出从节点、晋升主节点等），如果某阶段执行时间超过此值，则认为转移失败。
+  *   **脚本通知**：
+      *   `sentinel notification-script`：故障转移期间发生警告事件时触发的脚本，可用于邮件或短信报警。
+      *   `sentinel client-reconfig-script`：故障转移结束后触发，用于通知应用方主节点已切换。
+  *   **动态调整**：可以使用 `sentinel set <master-name> <param> <value>` 命令动态修改配置，且执行成功后会**立即刷新配置文件**。
+
+* 部署技巧与实践建议
+  *   **物理机隔离**：```Sentinel```节点不应部署在同一台物理机器上（包括同一物理机上的不同虚拟机或容器），以实现真正的高可用。
+  *   **节点数量**：建议部署至少**3个且为奇数个**的```Sentinel```节点。奇数节点可以在满足“半数以上”选举条件的同时节省资源。
+  *   **监控模式选择**：
+      *   **方案一（一套Sentinel监控多个主节点）**：降低维护成本，但一旦```Sentinel```集合异常，会影响多个```Redis```应用，且网络连接较多。
+      *   **方案二（每个主节点配置一套Sentinel）**：彼此隔离，更加安全，但会造成资源浪费。
+      *   **建议**：如果监控的是同一业务的多个主节点，选方案一；否则建议采用方案二进行隔离。
