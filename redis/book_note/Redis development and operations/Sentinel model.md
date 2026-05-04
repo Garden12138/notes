@@ -102,3 +102,29 @@
       *   **方案一（一套Sentinel监控多个主节点）**：降低维护成本，但一旦```Sentinel```集合异常，会影响多个```Redis```应用，且网络连接较多。
       *   **方案二（每个主节点配置一套Sentinel）**：彼此隔离，更加安全，但会造成资源浪费。
       *   **建议**：如果监控的是同一业务的多个主节点，选方案一；否则建议采用方案二进行隔离。
+
+### API
+
+* 基础信息查询命令
+  *   **`sentinel masters`**：展示所有被当前```Sentinel```节点监控的主节点状态及其相关的统计信息。
+  *   **`sentinel master <master name>`**：展示指定名称的主节点状态及其相关统计信息。
+  *   **`sentinel slaves <master name>`**：展示指定主节点属下的所有从节点状态及其相关统计信息。
+  *   **`sentinel sentinels <master name>`**：展示监控该主节点的所有```Sentinel```节点集合，但不包含当前执行命令的这个```Sentinel```节点。
+  *   **`sentinel get-master-addr-by-name <master name>`**：返回指定主节点的当前```IP```地址和端口号。
+
+* 状态维护与配置操作命令
+  *   **`sentinel reset <pattern>`**：对符合通配符风格的主节点配置进行重置。这包括清除主节点的相关状态（如故障转移状态），并触发```Sentinel```重新发现从节点和其他Sentinel节点。
+  *   **`sentinel ckquorum <master name>`**：检查当前可达的```Sentinel```节点总数是否达到了配置的`<quorum>`票数。如果可达数不足，将无法进行自动故障转移，这意味着高可用特性将暂时失效。
+  *   **`sentinel flushconfig`**：强制将当前```Sentinel```节点的配置刷新到磁盘上。这在外部原因（如磁盘损坏）导致配置文件损坏或丢失时非常有用。
+  *   **`sentinel set <master name> <param> <value>`**：动态修改```Sentinel```节点的配置选项。该命令执行成功后会立即刷新配置文件，且仅对当前执行命令的```Sentinel```节点有效。
+
+* 监控节点的动态管理
+  *   **`sentinel remove <master name>`**：取消当前```Sentinel```节点对指定主节点的监控。需要注意，此操作仅在当前执行命令的节点上生效。
+  *   **`sentinel monitor <master name> <ip> <port> <quorum>`**：通过命令形式让```Sentinel```节点开始监控一个新的主节点，其参数含义与配置文件中的相同。
+
+* 故障转移相关命令
+  *   **`sentinel failover <master name>`**：对指定主节点发起**强制故障转移**，而不需要与其他```Sentinel```节点进行协商。故障转移完成后，其他```Sentinel```节点会根据结果自动更新自身的配置。该命令在日常运维（如计划内的设备维护或主节点迁移）中非常有用。
+  *   **`sentinel is-master-down-by-addr`**：这是```Sentinel```节点之间用于交换对主节点下线判断的内部```API```。根据参数不同，它还可以作为```Sentinel```领导者选举的通信方式。
+
+* 客户端连接与支持
+  * 作者特别强调，为了使```Redis Sentinel```发挥作用，客户端必须显式支持```Sentinel```协议。客户端在初始化时不再直接连接```Redis```数据节点，而是连接```Sentinel```节点集合，并通过`sentinel get-master-addr-by-name`获取当前真正的主节点信息。在```Java```环境下，可以使用`JedisSentinelPool`来实现这一逻辑。
