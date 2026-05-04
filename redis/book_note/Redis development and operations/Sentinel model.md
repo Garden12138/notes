@@ -168,3 +168,51 @@
   *   **配置发现服务**：在```Redis Sentinel```架构中，客户端应将```Sentinel```节点集合视为**配置发现服务**，而非简单的连接目标。
   *   **全局唯一性**：在实际开发中，建议 `JedisSentinelPool` 尽可能在全局范围内只有一个实例。
   *   **API限制**：```Sentinel```节点本身是特殊的```Redis```节点，它们不存储数据，仅支持如 `ping`、`sentinel`、`subscribe`、`publish`、`info`、`role` 等有限的命令。
+
+### 实现原理
+
+* 三个定时监控任务，```Sentinel``` 节点通过三个定时任务来维护集群的拓扑结构和节点状态：
+  *   **每隔 10 秒：** 每个 ```Sentinel``` 节点会向主节点和从节点发送 `info` 命令。这有助于 ```Sentinel``` 实时获取最新的拓扑结构（例如自动发现新加入的从节点）并在节点不可达或故障转移后更新节点信息。
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_29.png)
+
+  *   **每隔 2 秒：** 每个 ```Sentinel``` 节点会向 ```Redis``` 数据节点的 `__sentinel__:hello` 频道发送该 ```Sentinel``` 节点对主节点的判断以及自身的信息。同时，```Sentinel``` 也会订阅该频道，以此来**发现新的 Sentinel 节点**并与其他 ```Sentinel``` 节点**交换主节点状态**，作为客观下线和领导者选举的依据。
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_30.png)
+
+  *   **每隔 1 秒：** 每个 ```Sentinel``` 节点会向主节点、从节点以及其余 ```Sentinel``` 节点发送 `ping` 命令进行心跳检测。这是判定节点是否下线的直接依据。
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_31.png)
+
+* 主观下线和客观下线
+  *   **主观下线 (Subjective Offline, pfail)：** 当一个 ```Sentinel``` 节点在 `down-after-milliseconds` 配置的时间内未收到某个节点的有效回复时，它会将该节点标记为“主观下线”。这仅代表该 ```Sentinel``` 节点的个人意见，存在误判可能。
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_32.png)
+
+  *   **客观下线 (Objective Offline, fail)：** 当被标记为主观下线的节点是**主节点**时，该 ```Sentinel``` 节点会通过 `sentinel is-master-down-by-addr` 命令询问其他 ```Sentinel``` 节点。当认为该主节点下线的票数超过 `<quorum>` 时，```Sentinel``` 节点会对主节点做出“客观下线”的决定。
+      *   **注意：** 从节点和 ```Sentinel``` 节点只有主观下线，没有客观下线和后续的故障转移操作。
+
+      ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_33.png)
+
+* 领导者 ```Sentinel``` 节点选举，在判定主节点客观下线后，```Sentinel``` 集群需要选出一个**领导者**来执行故障转移工作。```Redis``` 使用了 **Raft 算法** 的思路来实现选举：
+  *  每个在线的 ```Sentinel``` 节点都有资格成为领导者。
+  *  确认主节点客观下线的 ```Sentinel``` 节点会向其他节点发送请求，要求将自己设置为领导者。
+  *  收到请求的 ```Sentinel``` 节点如果尚未同意过其他节点的请求，则会投出一票，每个节点在一个配置纪元（```Epoch```）内只有一票。
+  *  如果某个 ```Sentinel``` 节点获得的票数大于等于 `max(quorum, num(sentinels)/2 + 1)`，它就成为领导者。
+  *  通常情况下，选举过程非常快，基本上谁先完成客观下线判断，谁就更有可能成为领导者。
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_34.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_35.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_36.png)
+
+* 故障转移，由选举出的领导者 ```Sentinel``` 节点负责具体的故障转移流程：
+  *   **选出新的主节点：** 在从节点列表中筛选出“健康”的节点，并根据以下优先级顺序进行选择：
+      *  过滤掉不健康（下线、断线、丢包严重）的从节点。
+      *  选择 `slave-priority` 最高的节点。
+      *  选择复制偏移量最大的节点（确保数据最完整）。
+      *  若以上都相同，选择 `runid` 最小的节点。
+  *   **晋升主节点：** 对选出的从节点执行 `slaveof no one` 命令使其成为新主节点。
+  *   **重新配置从节点：** 向剩余的从节点发送命令，让它们成为新主节点的从节点。
+  *   **更新旧主节点：** ```Sentinel``` 集合会持续关注原来的主节点，待其恢复后，命令它去复制新的主节点。
