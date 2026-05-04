@@ -128,3 +128,43 @@
 
 * 客户端连接与支持
   * 作者特别强调，为了使```Redis Sentinel```发挥作用，客户端必须显式支持```Sentinel```协议。客户端在初始化时不再直接连接```Redis```数据节点，而是连接```Sentinel```节点集合，并通过`sentinel get-master-addr-by-name`获取当前真正的主节点信息。在```Java```环境下，可以使用`JedisSentinelPool`来实现这一逻辑。
+
+### 客户端连接
+
+* 客户端仍然像主从复制模式那样直接连接主节点的```IP```和端口，那么在主节点发生故障转移后，客户端将无法感知新主节点的变化，从而导致服务不可用。因此，各个语言的客户端需要显式支持```Redis Sentinel```。
+
+* ```Redis Sentinel```客户端的基本概念，```Redis Sentinel```集成了监控、通知、自动故障转移和配置提供者等功能。实际上，**Sentinel节点集合才是最了解主节点信息的来源**。
+  *   **核心标识**：各个主节点通过`master-name`进行标识。
+  *   **必要参数**：无论使用何种编程语言，正确连接```Redis Sentinel```必须具备两个参数：**Sentinel节点集合**和**masterName**。
+
+* ```Redis Sentinel```客户端的实现原理，实现一个支持```Redis Sentinel```的客户端通常遵循以下四个基本步骤：
+  *  **获取可用节点**：遍历```Sentinel```节点集合，获取一个可用的```Sentinel```节点。由于```Sentinel```节点之间共享数据，从任意一个可用的```Sentinel```节点获取主节点信息都是可行的。
+  *  **查询主节点信息**：通过```Sentinel```提供的```API``` `sentinel get-master-addr-by-name master-name` 来获取当前主节点的```IP```地址和端口。
+  *  **角色验证**：在获取到“主节点”信息后，客户端会通过 `role` 或 `info replication` 命令验证该节点是否真的是主节点。这一步是为了防止在故障转移期间，获取到的是过时或发生变化的信息。
+  *  **订阅变更通知**：客户端会保持与```Sentinel```节点集合的联系，**订阅Sentinel节点上的 `+switch-master` 频道**。一旦```Sentinel```完成了故障转移并发布了切换主节点的消息，客户端能够立刻感知并自动切换连接。
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_25.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_26.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_27.png)
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_28.png)
+
+* ```Java```客户端```Jedis```的操作实践，书中以```Java```客户端```Jedis```（版本2.8.2）为例，介绍了具体的实现方法。```Jedis```提供了 **`JedisSentinelPool`** 类来支持```Sentinel```模式。
+  * ```JedisSentinelPool```的初始化，初始化时需要传入 `masterName`、`sentinels` 集合、连接池配置（`poolConfig`）以及超时时间等参数。
+    *   **代码示例**：
+        ```java
+        JedisSentinelPool jedisSentinelPool = new JedisSentinelPool(masterName, sentinelSet, poolConfig, timeout);
+        ```
+    *   **获取资源**：使用方式与普通连接池类似，通过 `getResource()` 获取```Jedis```对象，使用完后调用 `close()` 将其归还给连接池。
+  * ```JedisSentinelPool```的内部实现逻辑
+    1.  **initSentinels**：在初始化时，```Jedis```会遍历```Sentinel```节点，执行 `sentinelGetMasterAddrByName` 找到主节点信息。
+    2.  **MasterListener**：```Jedis```会为每一个```Sentinel```节点单独启动一个名为 `MasterListener` 的线程。
+    3.  **发布订阅**：这些线程的核心任务是订阅```Sentinel```节点的 `+switch-master` 频道。
+    4.  **自动重连**：当 `+switch-master` 频道接收到消息时（消息包含新的主节点IP和端口），`MasterListener` 会调用 `initPool` 方法重新初始化连接池，从而实现对新主节点的连接。
+
+* 关键点总结
+  *   **配置发现服务**：在```Redis Sentinel```架构中，客户端应将```Sentinel```节点集合视为**配置发现服务**，而非简单的连接目标。
+  *   **全局唯一性**：在实际开发中，建议 `JedisSentinelPool` 尽可能在全局范围内只有一个实例。
+  *   **API限制**：```Sentinel```节点本身是特殊的```Redis```节点，它们不存储数据，仅支持如 `ping`、`sentinel`、`subscribe`、`publish`、`info`、`role` 等有限的命令。
