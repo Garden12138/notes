@@ -69,25 +69,27 @@
 
   ```python
   class SimpleTokenizerV1:
-        def __init__(self, vocab):
-            self.str_to_int = vocab                                                   
-            self.int_to_str = {i:s for s,i in vocab.items()}                          
+      def __init__(self, vocab):
+          self.str_to_int = vocab                                                   
+          self.int_to_str = {i:s for s,i in vocab.items()}                          
 
       def encode(self, text):                                                       
-            preprocessed = re.split(r'([,.?_!"()\']|--|\s)', text)
+            preprocessed = re.split(r'([,.:;?_!"()\']|--|\s)', text)
             preprocessed = [item.strip() for item in preprocessed if item.strip()]
             ids = [self.str_to_int[s] for s in preprocessed]
             return ids
 
       def decode(self, ids):                                                        
             text = " ".join([self.int_to_str[i] for i in ids])
-            text = re.sub(r'\s+([,.?!"()\'])', r'\1', text) # 去掉标点符号前面多余的空格："Hello , world !" -> "Hello, world!"                         
+            text = re.sub(r'\s+([,.?!"()\'])', r'\1', text) # 去掉标点符号前面多余的空格："Hello , world !" -> "Hello, world!"                       
             return text
   ```
 
   ```str_to_int```维护词汇表，用于```encode```方法中，将```token```转换为```token ID```；```int_to_str```维护反词汇表，用于```decode```方法中，将```token ID```转换为```token```：
 
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm5.png)
+
+  ***注意：```decode```方法中的正则表达式的处理逻辑仍然存在输入文本与解码文本不一致的情况，如 ```"It's the last he painted, you know," Mrs. Gisburn said with pardonable pride. -> " It' s the last he painted, you know," Mrs. Gisburn said with pardonable pride.```***
 
 * 实例化分词器，对艾迪丝·华顿的短篇小说中的一段文本进行分词：
 
@@ -131,12 +133,12 @@
 
   ```python
   class SimpleTokenizerV2:
-        def __init__(self, vocab):
-            self.str_to_int = vocab                                                   
-            self.int_to_str = {i:s for s,i in vocab.items()}                          
+      def __init__(self, vocab):
+          self.str_to_int = vocab                                                   
+          self.int_to_str = {i:s for s,i in vocab.items()}                          
 
       def encode(self, text):                                                       
-            preprocessed = re.split(r'([,.?_!"()\']|--|\s)', text)
+            preprocessed = re.split(r'([,.:;?_!"()\']|--|\s)', text)
             preprocessed = [item.strip() for item in preprocessed if item.strip()]
             preprocessed = [item if item in self.str_to_int else "<|unk|>" for item in preprocessed]
             ids = [self.str_to_int[s] for s in preprocessed]
@@ -311,7 +313,7 @@
           drop_last=drop_last,                                
           num_workers=0                                       
       )
-  return dataloader
+      return dataloader
   ```
 
   参数```txt```为文本内容，```batch_size```为每次加载的样本数（即从张量x和y中取出多少行数据），```max_length```为输入序列的最大长度，```stride```为滑动窗口的步长，```shuffle```为是否打乱数据集顺序，```drop_last```为是否丢弃最后一个不完整的样本，```num_workers```为加载数据时的进程数。使用数据加载器：
