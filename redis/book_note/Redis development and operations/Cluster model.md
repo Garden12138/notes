@@ -115,3 +115,43 @@
     * 如果消息体中包含新节点信息，则尝试与其发起 ```meet``` 握手。
     * 如果包含已知节点的下线标识（```pfail```），则将其保存到本地的下线报告链表中，用于后续判断是否进入客观下线状态。
     * 回复 ```pong```：处理完后回复包含自身状态的 ```pong``` 消息。
+
+### 集群伸缩
+
+* 伸缩原理，```Redis```集群伸缩的核心原理可以抽象为槽（```slot```）和对应数据在不同节点之间的灵活移动。
+  * 解耦： 槽是```Redis```集群管理数据的基本单位，集群共有16384个槽。通过将数据映射到槽，再将槽指派给具体的节点，实现了数据和节点之间的解耦。
+  * 平滑迁移： 在扩容或收缩时，只需将部分槽及其对应的键值数据从源节点迁移到目标节点，这一过程可以实现在线完成，不影响集群的正常读写。
+
+* 扩容集群，扩容是指向现有集群中添加新的主从节点对，通常分为以下三个主要步骤：
+  * 准备新节点，新节点必须开启集群模式（配置 ```cluster-enabled yes```），并以孤儿节点的形式启动。建议新节点的配置与现有集群节点保持一致，以便统一管理。
+  * 加入集群，新节点启动后，需要使用 ```cluster meet {ip} {port}``` 命令让新节点与集群中的任意一个现有节点握手。握手成功后，新节点的信息会通过```Gossip```协议在集群内传播，最终所有节点都会感知到新节点的存在。
+  * 迁移槽和数据，新节点刚加入时没有任何负责的槽，因此无法处理读写请求，需要为其迁移槽。
+  * 槽迁移计划： 制定计划，确定从哪些原有节点迁移多少个槽到新节点，以保证集群各节点负责的槽数量趋于均匀。
+  * 数据迁移流程（针对每个槽）：
+    * 目标节点准备导入： 对目标节点执行 ```cluster setslot {slot} importing {sourceNodeId}```。
+    * 源节点准备迁出： 对源节点执行 ```cluster setslot {slot} migrating {targetNodeId}```。
+    * 批量迁移键： 源节点循环执行 ```cluster getkeysinslot {slot} {count}``` 获取键，并使用原子性的 ```migrate``` 命令（支持批量迁移）将数据发送到目标节点。
+    * 通知指派信息： 数据迁移完成后，向集群内所有主节点发送 ````cluster setslot {slot} node {targetNodeId}```，更新槽的归属信息。
+  * 添加从节点，为了保证扩容后的高可用，需要为负责处理槽的新主节点添加从节点。使用 ```cluster replicate {masterNodeId}``` 命令让一个从节点开始复制新的主节点。
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_44.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_45.png)
+
+* 收缩集群，收缩集群是指安全下线部分节点，其流程与扩容相反：
+  * 下线迁移槽，如果下线的是持有槽的主节点，必须先将其负责的所有槽均匀地迁移到其他存活的主节点上。如果直接关闭持有槽的主节点，会导致集群部分槽无法提供服务，从而使整个集群处于故障状态（如果开启了集群完整性保护）。
+  * 忘记节点，当节点不再负责槽或本身是从节点时，可以使用 ```cluster forget {nodeId}``` 命令通知集群内的其他节点“忘记”该节点。
+    * 禁用列表： 接收到该命令的节点会将下线节点加入一个有效期为60秒的禁用列表，在此期间不再与其交换```Gossip```消息。
+    * 操作顺序： 对于主从节点同时下线的情况，建议先下线从节点再下线主节点，以防止不必要的全量复制。
+  * 关闭节点，所有节点都忘记该下线节点后，即可正常关闭其```Redis```进程。
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_46.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_47.png)
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/redis/redis_dev_maintenance_48.png)
+
+* 运维工具支持，由于手动执行上述命令（如逐个迁移槽）非常繁琐且易出错，```Redis```官方提供了 ```redis-trib.rb``` 工具来简化操作：
+  * ```reshard``` 命令： 简化数据迁移工作，只需指定目标节点、源节点和迁移槽数量即可自动完成复杂的迁移流程。
+  * ```rebalance``` 命令： 在扩容或收缩后，用于检查并平衡各节点之间的槽分布，确保负载均衡。
+  * ```add-node``` 和 ```del-node```： 分别用于快速添加节点和安全下线节点。
