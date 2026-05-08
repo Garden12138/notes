@@ -513,3 +513,405 @@
     ```bash
     torch.Size([8, 4, 256])
     ```
+
+### 本节实现代码(未整合版)
+
+```python
+import re
+import tiktoken
+import torch
+from torch.utils.data import Dataset, DataLoader
+
+# 读取文本
+with open("the-verdict.txt", "r", encoding="utf-8") as f:
+        raw_text = f.read()
+# 使用正则处理文本
+preprocessed = re.split(r'([,.:;?_!"()\']|--|\s)', raw_text)
+preprocessed = [item.strip() for item in preprocessed if item.strip()]
+# 定义词汇表
+all_tokens = sorted(set(preprocessed))
+vocab = {token:integer for integer,token in enumerate(all_tokens)}
+# 定义V1分词器
+class SimpleTokenizerV1:
+    def __init__(self, vocab):
+        self.str_to_int = vocab                                                   
+        self.int_to_str = {i:s for s,i in vocab.items()}                          
+
+    def encode(self, text):                                                       
+          preprocessed = re.split(r'([,.:;?_!"()\']|--|\s)', text)
+          preprocessed = [item.strip() for item in preprocessed if item.strip()]
+          ids = [self.str_to_int[s] for s in preprocessed]
+          return ids
+
+    def decode(self, ids):                                                        
+          text = " ".join([self.int_to_str[i] for i in ids])
+          text = re.sub(r'\s+([,.?!"()\'])', r'\1', text) # 去掉标点符号前面多余的空格："Hello , world !" -> "Hello, world!"               
+          return text
+# 使用V1分词器
+tokenizer = SimpleTokenizerV1(vocab)
+print('---------- 使用V1分词器 ----------')
+text = """"It's the last he painted, you know," Mrs. Gisburn said with pardonable pride."""
+print('原文：' + text)
+ids = tokenizer.encode(text)
+print('encode:')
+print(ids)
+raw_text = tokenizer.decode(ids)
+print('decode:')
+print(raw_text)
+# 词汇表添加特殊上下文token
+all_tokens = sorted(list(set(preprocessed)))
+all_tokens.extend(["<|endoftext|>", "<|unk|>"])
+vocab = {token:integer for integer,token in enumerate(all_tokens)}
+# 定义V2分词器
+class SimpleTokenizerV2:
+    def __init__(self, vocab):
+        self.str_to_int = vocab                                                   
+        self.int_to_str = {i:s for s,i in vocab.items()}                          
+
+    def encode(self, text):                                                       
+          preprocessed = re.split(r'([,.:;?_!"()\']|--|\s)', text)
+          preprocessed = [item.strip() for item in preprocessed if item.strip()]
+          preprocessed = [item if item in self.str_to_int else "<|unk|>" for item in preprocessed]
+          ids = [self.str_to_int[s] for s in preprocessed]
+          return ids
+
+    def decode(self, ids):                                                        
+          text = " ".join([self.int_to_str[i] for i in ids])
+          text = re.sub(r'\s+([,.?!"()\'])', r'\1', text) # 去掉标点符号前面多余的空格："Hello , world !" -> "Hello, world!"                         
+          return text
+# 使用V2分词器
+tokenizer = SimpleTokenizerV2(vocab)
+print('---------- 使用V1分词器 ----------')
+text1 = "Hello, do you like tea?"
+text2 = "In the sunlit terraces of the palace."
+text = " <|endoftext|> ".join((text1, text2))
+print('原文：' + text)
+ids = tokenizer.encode(text)
+print('encode:')
+print(ids)
+raw_text = tokenizer.decode(ids)
+print('decode:')
+print(raw_text)
+# 使用tiktoken分词器
+tokenizer = tiktoken.get_encoding("gpt2")
+print('---------- 使用tiktoken分词器 ----------')
+print('原文：' + text)
+ids = tokenizer.encode(text, allowed_special={"<|endoftext|>"})
+print('encode:')
+print(ids)
+raw_text = tokenizer.decode(ids)
+print('decode:')
+print(raw_text)
+# 定义数据对象
+class GPTDatasetV1(Dataset):
+    def __init__(self, txt, tokenizer, max_length, stride):
+        self.input_ids = [] # 张量x
+        self.target_ids = [] # 张量y
+        #A 将整个文本进行分词
+        token_ids = tokenizer.encode(txt)                                
+        # 使用滑动窗口将书籍分块为最大长度的重叠序列
+        # 以stride为步长，从文本头开始切长度为max_length的覆盖窗口，一直切到不能再切完整窗口为止，否则会越界
+        # 因为chunk是：[i : i + max_length]
+        # 所以i最大只能是：len(token_ids) - max_length
+        for i in range(0, len(token_ids) - max_length, stride):          
+            input_chunk = token_ids[i:i + max_length] # 张量x的一行
+            target_chunk = token_ids[i + 1: i + max_length + 1] # 张量y的一行
+            self.input_ids.append(torch.tensor(input_chunk))
+            self.target_ids.append(torch.tensor(target_chunk))
+
+    # 返回数据集的总行数
+    def __len__(self):                                                     
+        return len(self.input_ids)
+        
+    # 从数据集中返回指定行
+    def __getitem__(self, idx):                                            
+        return self.input_ids[idx], self.target_ids[idx]
+# 实现数据加载器
+def create_dataloader_v1(txt, batch_size=4, max_length=256,
+                       stride=128, shuffle=True, drop_last=True, num_workers=0):
+    # 初始化分词器
+    tokenizer = tiktoken.get_encoding("gpt2")
+    # 创建张量x和y数据集                       
+    dataset = GPTDatasetV1(txt, tokenizer, max_length, stride)
+    # 创建数据加载器
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        drop_last=drop_last,                                
+        num_workers=0                                       
+    )
+    return dataloader
+# 使用数据加载器，构建“输入-目标”张量
+with open("the-verdict.txt", "r", encoding="utf-8") as f:
+        raw_text = f.read()
+dataloader = create_dataloader_v1(
+    raw_text, batch_size=1, max_length=4, stride=1, shuffle=False)
+data_iter = iter(dataloader)# 将数据加载器转换为Python迭代器，通过next()函数获取下一批数据。
+inputs, targets = next(data_iter)
+print("Inputs:\n", inputs)
+print("\nTargets:\n", targets)
+# 创建权重矩阵
+vocab_size = 3000 # 假设词汇表大小为3000
+output_dim = 3 # 假设嵌入向量维度为3
+torch.manual_seed(123) # 随机种子设置123
+embedding_layer = torch.nn.Embedding(vocab_size, output_dim) # 创建权重矩阵
+print('权重矩阵：')
+print(embedding_layer.weight)
+# 实现嵌入矩阵
+print('嵌入矩阵：')
+token_embeddings = embedding_layer(inputs)
+print(token_embeddings)
+print('维度：')
+print(token_embeddings.shape)
+# 创建位置矩阵
+context_length = max_length = 4
+pos_embedding_layer = torch.nn.Embedding(context_length, output_dim)
+pos_embeddings = pos_embedding_layer(torch.arange(context_length))
+print('位置矩阵：')
+print(pos_embeddings)
+print('维度：')
+print(pos_embeddings.shape)
+# 计算输入矩阵
+input_embeddings = token_embeddings + pos_embeddings
+print('最终输入嵌入矩阵：')
+print(input_embeddings)
+print('维度：')
+print(input_embeddings.shape)
+```
+
+### 本节实践代码(整合版)
+
+```python
+import torch
+import tiktoken
+from torch.utils.data import Dataset, DataLoader
+
+
+# =========================
+# 1. 定义 GPT 文本数据集
+# =========================
+class GPTDatasetV1(Dataset):
+    def __init__(self, txt, tokenizer, max_length, stride):
+        self.input_ids = []
+        self.target_ids = []
+
+        # 将整篇文档转换为 token ID
+        token_ids = tokenizer.encode(txt, allowed_special={"<|endoftext|>"})
+
+        # 使用滑动窗口切分文档
+        for i in range(0, len(token_ids) - max_length, stride):
+            input_chunk = token_ids[i: i + max_length]
+            target_chunk = token_ids[i + 1: i + max_length + 1]
+
+            self.input_ids.append(torch.tensor(input_chunk))
+            self.target_ids.append(torch.tensor(target_chunk))
+
+    def __len__(self):
+        return len(self.input_ids)
+
+    def __getitem__(self, idx):
+        return self.input_ids[idx], self.target_ids[idx]
+
+
+# =========================
+# 2. 创建 DataLoader
+# =========================
+def create_dataloader_v1(
+    txt,
+    batch_size=4,
+    max_length=256,
+    stride=128,
+    shuffle=True,
+    drop_last=True,
+    num_workers=0
+):
+    tokenizer = tiktoken.get_encoding("gpt2")
+
+    dataset = GPTDatasetV1(
+        txt=txt,
+        tokenizer=tokenizer,
+        max_length=max_length,
+        stride=stride
+    )
+
+    dataloader = DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        drop_last=drop_last,
+        num_workers=num_workers
+    )
+
+    return dataloader
+
+
+# =========================
+# 3. 文档 Token 嵌入生成器
+# =========================
+class DocumentTokenEmbedding:
+    def __init__(
+        self,
+        vocab_size=50257,
+        context_length=256,
+        embedding_dim=768,
+        seed=123
+    ):
+        """
+        vocab_size: GPT-2 分词器的词表大小，默认 50257
+        context_length: 上下文长度，也就是每个输入序列的 token 数量
+        embedding_dim: 每个 token 被映射成多少维向量
+        seed: 随机种子，方便复现实验
+        """
+
+        torch.manual_seed(seed)
+
+        self.vocab_size = vocab_size
+        self.context_length = context_length
+        self.embedding_dim = embedding_dim
+
+        # token 嵌入层
+        self.token_embedding_layer = torch.nn.Embedding(
+            vocab_size,
+            embedding_dim
+        )
+
+        # 位置嵌入层
+        self.position_embedding_layer = torch.nn.Embedding(
+            context_length,
+            embedding_dim
+        )
+
+    def forward(self, input_ids):
+        """
+        input_ids 形状：
+        [batch_size, context_length]
+
+        返回：
+        token_embeddings: token 嵌入矩阵
+        position_embeddings: 位置嵌入矩阵
+        input_embeddings: token 嵌入 + 位置嵌入
+        """
+
+        batch_size, seq_len = input_ids.shape
+
+        if seq_len > self.context_length:
+            raise ValueError(
+                f"输入序列长度 {seq_len} 超过 context_length={self.context_length}"
+            )
+
+        # 生成 token 嵌入
+        # shape: [batch_size, seq_len, embedding_dim]
+        token_embeddings = self.token_embedding_layer(input_ids)
+
+        # 生成位置 id
+        # 例如 seq_len=4，则是 tensor([0, 1, 2, 3])
+        position_ids = torch.arange(seq_len)
+
+        # 生成位置嵌入
+        # shape: [seq_len, embedding_dim]
+        position_embeddings = self.position_embedding_layer(position_ids)
+
+        # token 嵌入 + 位置嵌入
+        # token_embeddings:    [batch_size, seq_len, embedding_dim]
+        # position_embeddings: [seq_len, embedding_dim]
+        #
+        # PyTorch 会自动广播 position_embeddings
+        input_embeddings = token_embeddings + position_embeddings
+
+        return token_embeddings, position_embeddings, input_embeddings
+
+
+# =========================
+# 4. 从文档生成嵌入矩阵
+# =========================
+def create_token_embeddings_from_file(
+    file_path,
+    batch_size=1,
+    max_length=4,
+    stride=1,
+    embedding_dim=3,
+    shuffle=False
+):
+    """
+    从文档文件中读取文本，并生成 token 嵌入矩阵。
+
+    返回：
+    inputs: 输入 token ID
+    targets: 目标 token ID
+    token_embeddings: token 嵌入矩阵
+    position_embeddings: 位置嵌入矩阵
+    input_embeddings: 最终输入嵌入矩阵
+    """
+
+    # 读取文档
+    with open(file_path, "r", encoding="utf-8") as f:
+        raw_text = f.read()
+
+    # 创建 DataLoader
+    dataloader = create_dataloader_v1(
+        txt=raw_text,
+        batch_size=batch_size,
+        max_length=max_length,
+        stride=stride,
+        shuffle=shuffle,
+        drop_last=True,
+        num_workers=0
+    )
+
+    # 取出一个 batch
+    data_iter = iter(dataloader)
+    inputs, targets = next(data_iter)
+
+    # 创建文档嵌入生成器
+    embedding_model = DocumentTokenEmbedding(
+        vocab_size=50257,
+        context_length=max_length,
+        embedding_dim=embedding_dim
+    )
+
+    # 生成嵌入
+    token_embeddings, position_embeddings, input_embeddings = embedding_model.forward(inputs)
+
+    return {
+        "inputs": inputs,
+        "targets": targets,
+        "token_embeddings": token_embeddings,
+        "position_embeddings": position_embeddings,
+        "input_embeddings": input_embeddings
+    }
+
+
+# =========================
+# 5. 使用示例
+# =========================
+if __name__ == "__main__":
+    result = create_token_embeddings_from_file(
+        file_path="the-verdict.txt",
+        batch_size=1,
+        max_length=4,
+        stride=1,
+        embedding_dim=3,
+        shuffle=False
+    )
+
+    print("输入 token IDs:")
+    print(result["inputs"])
+    print("维度:", result["inputs"].shape)
+
+    print("\n目标 token IDs:")
+    print(result["targets"])
+    print("维度:", result["targets"].shape)
+
+    print("\nToken 嵌入矩阵:")
+    print(result["token_embeddings"])
+    print("维度:", result["token_embeddings"].shape)
+
+    print("\n位置嵌入矩阵:")
+    print(result["position_embeddings"])
+    print("维度:", result["position_embeddings"].shape)
+
+    print("\n最终输入嵌入矩阵 = Token 嵌入矩阵 + 位置嵌入矩阵:")
+    print(result["input_embeddings"])
+    print("维度:", result["input_embeddings"].shape)
+```
