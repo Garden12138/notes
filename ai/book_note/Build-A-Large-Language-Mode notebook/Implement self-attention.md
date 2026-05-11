@@ -23,9 +23,13 @@
     
     ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm19.png)
 
-
-
 ### 通过注意力机制捕捉数据依赖关系
+
+* ```RNN```模型在长序列中存在消息覆盖或丢失的建模问题，通过引入注意力机制对编码器-解码器架构的 ```RNN``` 进行了改进，使得解码器在每个解码步骤可以选择性地访问输入序列的不同部分：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm20.png)
+
+  后续研究发现构建用于自然语言处理的深度神经网络并不需要 ```RNN``` 结构，随后提出了基于自注意力机制的原始 ```Transformer``` 架构。自注意力机制是一种允许输入序列中的每个位置在计算序列表示时关注同一序列中所有位置的机制。自注意力机制是基```Transformer```架构的当代大语言模型（如```GPT```系列模型）的关键组成部分。
 
 ### 通过自注意力机制关注输入的不同部分
 
