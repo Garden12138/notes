@@ -33,6 +33,82 @@
 
 ### 通过自注意力机制关注输入的不同部分
 
+* 在自注意力机制中，```“self”```指的是该机制通过关联同一输入序列中的不同位置来计算注意力权重的能力。它评估并学习输入内部各部分之间的关系和依赖性。
+
+* 不含可训练权重的简化自注意力机制。实现没有包含任何可训练的权重简化自注意力机制，目标是为输入序列每个元素计算一个上下文向量（代表该元素与其他元素的关联关系）：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm21.png)
+
+  以输入序列```Your journey starts with one step```为例：
+
+  ```python
+  import torch
+  inputs = torch.tensor(
+    [[0.43, 0.15, 0.89], # Your     (x^1)
+     [0.55, 0.87, 0.66], # journey  (x^2)
+     [0.57, 0.85, 0.64], # starts   (x^3)
+     [0.22, 0.58, 0.33], # with     (x^4)
+     [0.77, 0.25, 0.10], # one      (x^5)
+     [0.05, 0.80, 0.55]] # step     (x^6)
+  print('初始化输入嵌入层:')
+  print(inputs.shape)
+  ```
+
+  首先，计算注意力得分ω，通过计算查询 ```x(2)``` 与每个其他输入 ```token``` 的点积（点积运算本质上是一种将两个向量按元素相乘后再求和的简单方式）：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm22.png)
+
+  ```python
+  # 计算输入序列第二个元素的注意力得分
+  query = inputs[1]
+  attn_scores_2 = torch.empty(inputs.shape[0])
+  for i, x_i in enumerate(inputs):
+      attn_scores_2[i] = torch.dot(x_i, query)
+  print(attn_scores_2) 
+  ```
+
+  接下来，对计算的每个注意力得分进行归一化（注意力权重之和为 1，有助于解释和保持LLM训练稳定性）：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm23.png)
+
+  ```python
+  # 输入序列第二个元素的注意力得分归一，方式1：直接除法
+  attn_weights_2_tmp = attn_scores_2 / attn_scores_2.sum()
+  print("输入序列第二个元素的注意力得分归一，方式1：直接除法")
+  print("Attention weights:", attn_weights_2_tmp)
+  print("Sum:", attn_weights_2_tmp.sum())
+  # 输入序列第二个元素的注意力得分归一，方式2：自定义softmax算法
+  def softmax_naive(x):
+      return torch.exp(x) / torch.exp(x).sum(dim=0)
+  attn_weights_2_naive = softmax_naive(attn_scores_2)
+  print("输入序列第二个元素的注意力得分归一，方式2：自定义softmax算法")
+  print("Attention weights:", attn_weights_2_naive)
+  print("Sum:", attn_weights_2_naive.sum())
+  # 输入序列第二个元素的注意力得分归一，方式2：torch.softmax函数
+  attn_weights_2 = torch.softmax(attn_scores_2, dim=0)
+  print("输入序列第二个元素的注意力得分归一，方式2：torch.softmax函数")
+  print("Attention weights:", attn_weights_2)
+  print("Sum:", attn_weights_2.sum())
+  ```
+
+  使用```softmax```好处：
+    * 归一化输出为概率：```Softmax``` 将输出转换为 0 到 1 之间的概率，且所有类别的概率之和为 1，方便解释结果。例如，在分类任务中，输出可以直接表示模型对各类别的信心。
+    * 平滑和放大效果：```Softmax``` 不仅能归一化，还具有平滑和放大效果。较大的输入值会被放大，较小的输入值会被抑制，从而增强模型对最优类别的区分。
+    * 支持多分类问题：与 ```sigmoid``` 不同，```Softmax``` 适用于多类别分类问题。它可以输出每个类别的概率，使得模型可以处理多分类任务。
+
+  最后，通过加权和（将每个输入向量与对应的归一后的注意力得分相乘后相加）计算输入元素的上下文向量：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm24.png)
+
+  ```python
+  # 使用加权和计算输入序列第二个元素的的上下文向量
+  context_vec_2 = torch.zeros(query.shape)
+  for i,x_i in enumerate(inputs):
+      context_vec_2 += attn_weights_2[i]*x_i
+  print("输入序列第二个元素的的上下文向量")
+  print(context_vec_2)
+  ```
+
 ### 实现带有可训练权重的自注意力机制
 
 ### 使用因果注意力机制来屏蔽后续词
