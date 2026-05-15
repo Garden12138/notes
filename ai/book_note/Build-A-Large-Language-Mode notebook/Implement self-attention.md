@@ -109,6 +109,51 @@
   print(context_vec_2)
   ```
 
+* 为所有输入的 ```token``` 计算注意力权重。在上一步我们实现了计算输入序列第二个元素的上下文向量，在这基础上，我们可实现所有输入对的上下问向量计算，流程和上一步一致：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm25.png)
+
+  首先，初始化定义所有输入对的注意力的得分张量：
+
+  ```python
+  attn_scores = torch.empty(inputs.shape[0], inputs.shape[0])
+  ```
+
+  接下来，计算所有输入对的点积：
+
+  ```python
+  # 使用嵌套for循环计算点积
+  for i, x_i in enumerate(inputs):
+      for j, x_j in enumerate(inputs):
+          attn_scores[i, j] = torch.dot(x_i, x_j)
+  print("使用嵌套for循环计算点积:")
+  print(attn_scores)
+  # 使用矩阵乘法计算点积
+  attn_scores = inputs @ inputs.T
+  print("使用矩阵乘法计算点积:")
+  print(attn_scores)
+  ```
+
+  继续计算所有输入对的注意力权重
+
+  ```python
+  # 计算所有输入对的注意力权重（归一）
+  attn_weights = torch.softmax(attn_scores, dim=-1)
+  print("计算所有输入对的注意力权重（归一）:")
+  print(attn_weights)
+  ```
+
+  最后计算所有输入对的上下文向量：
+
+  ```python
+  # 计算所有输入对的上下文向量，使用矩阵乘法
+  all_context_vecs = attn_weights @ inputs
+  print("计算所有输入对的上下文向量，使用矩阵乘法：:")
+  print(all_context_vecs)
+  ```
+
+  符号```@```表示矩阵乘法运算；```.T```表示矩阵转置运算；```dim=-1```表示沿着最后一维进行运算，当前张量是二维，-1表示列，即沿着列方向（水平方向归一）。
+
 ### 实现带有可训练权重的自注意力机制
 
 ### 使用因果注意力机制来屏蔽后续词
