@@ -156,6 +156,155 @@
 
 ### 实现带有可训练权重的自注意力机制
 
+* 与简化自注意力机制相比，不是直接使用嵌入向量来计算上下文向量，而是使用可训练的权重参数矩阵来计算上下文向量。
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm30.png)
+
+* 逐步计算注意力权重
+
+  * 计算查询向量 ```q``` 、键向量 ```k``` 以及值向量 ```v``` ：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm26.png)
+
+    以输入序列第二个元素为例子：
+
+    ```python
+    # 初始化权重参数矩阵
+    d_in = inputs.shape[1]                                          
+    d_out = 2   
+    torch.manual_seed(123)
+    W_query = torch.nn.Parameter(torch.rand(d_in, d_out), requires_grad=False)
+    W_key   = torch.nn.Parameter(torch.rand(d_in, d_out), requires_grad=False)
+    W_value = torch.nn.Parameter(torch.rand(d_in, d_out), requires_grad=False)
+    print("初始化权重参数矩阵:")
+    print(W_query)
+    print(W_key)
+    print(W_value)
+    # 计算输入序列第二个元素的query、key 和 value 向量
+    x_2 = inputs[1]
+    query_2 = x_2 @ W_query
+    key_2 = x_2 @ W_key
+    value_2 = x_2 @ W_value
+    print("计算输入序列第二个元素的query、key 和 value 向量:")
+    print(query_2)
+    print(key_2)
+    print(value_2)
+    ```
+
+    ```d_out``` 表示输出维度，一般由实际训练时定义，它可将输入维度转化为指定输出维度；这里将```requires_grad```设置为```False```，以便在输出结果中减少不必要的信息，从而使演示更加清晰。但如果要将这些权重矩阵用于模型训练，则需要将```requires_grad```设置为```True```，以便在模型训练过程中更新这些矩阵。
+
+  * 计算注意力得分：
+    
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm27.png)
+
+    以输入序列第二个元素对所有输入元素的注意力得分为例：
+
+    ```python
+    # 计算输入序列所有元素的query、key 向量
+    querys = inputs @ W_query
+    keys = inputs @ W_key
+    # 计算输入序列第二个元素对所有输入元素的注意力得分
+    print("计算输入序列第二个元素对所有输入元素的注意力得分：")
+    attn_scores_2 = querys[1] @ keys.T
+    print(attn_scores_2)
+    ```
+
+  * 计算注意力权重：
+
+    ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm28.png)
+
+    以输入序列第二个元素对所有输入元素的注意力权重为例：
+
+    ```python
+    # 计算输入序列第二个元素对所有输入元素的注意力权重（得分归一）
+    print("计算输入序列第二个元素对所有输入元素的注意力权重（得分归一）：")
+    d_k = keys.shape[-1]
+    attn_weights_2 = torch.softmax(attn_scores_2 / d_k**0.5, dim=-1) # 先进行点积缩放，防止点积结果过大导致梯度丢失
+    print(attn_weights_2)
+    ```
+
+    使用```sqrt(d_k)```是因为点积结果的大小，通常会随着维度```d_k```增大而变大；更准确地说，它的标准差大约会按```sqrt(d_k)```增大。所以用```sqrt(d_k)```缩放，是为了把点积结果拉回到一个比较稳定的范围。
+
+  * 计算上下文向量：
+
+    ```python
+    # 计算输入序列所有元素的向量
+    values = inputs @ W_value
+    # 计算输入序列第二个元素对所有输入元素的上下文向量
+    print("计算输入序列第二个元素对所有输入元素的上下文向量：")
+    context_vec_2 = attn_weights_2 @ values
+    print(context_vec_2)
+    ```
+
+* 实现一个简洁的自注意力机制 Python 类
+
+  * 在上面分步骤展示从嵌入向量到上下文向量每个环节的细节后，我们需要进行整合封装，实现一个简洁的自注意力机制 Python 类。
+
+  * 实现一个简洁的自注意力机制V1类：
+
+    ```python
+    class SelfAttention_v1(nn.Module):
+        def __init__(self, d_in, d_out):
+            super().__init__()
+            self.d_out = d_out
+            # 手动初始化权重参数矩阵：W_query、W_key、W_value
+            self.W_query = nn.Parameter(torch.rand(d_in, d_out))
+            self.W_key   = nn.Parameter(torch.rand(d_in, d_out))
+            self.W_value = nn.Parameter(torch.rand(d_in, d_out))
+
+        def forward(self, x):
+            # 计算权重向量：queries、keys、values
+            keys = x @ self.W_key
+            queries = x @ self.W_query
+            values = x @ self.W_value
+            # 计算注意力得分
+            attn_scores = queries @ keys.T
+            # 计算注意力权重
+            attn_weights = torch.softmax(attn_scores / keys.shape[-1]**0.5, dim=-1)
+            # 计算上下文向量
+            context_vec = attn_weights @ values
+            return context_vec
+    print("实现一个简洁的自注意力机制V1类：")
+    torch.manual_seed(123)
+    sa_v1 = SelfAttention_v1(d_in, d_out)
+    print(sa_v1(inputs))
+    ```
+
+  * 实现一个简洁的自注意力机制V2类：
+
+    ```python
+    class SelfAttention_v2(nn.Module):
+        def __init__(self, d_in, d_out, qkv_bias=False):
+            super().__init__()
+            self.d_out = d_out
+            # 自动初始化权重参数矩阵：W_query、W_key、W_value
+            self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)
+            self.W_key   = nn.Linear(d_in, d_out, bias=qkv_bias)
+            self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)
+
+        def forward(self, x):
+            # 计算权重向量：queries、keys、values
+            keys = self.W_key(x)
+            queries = self.W_query(x)
+            values = self.W_value(x)
+            # 计算注意力得分
+            attn_scores = queries @ keys.T
+            # 计算注意力权重
+            attn_weights = torch.softmax(
+                attn_scores / keys.shape[-1]**0.5, dim=-1)
+            # 计算上下文向量
+            context_vec = attn_weights @ values
+            return context_vec
+    print("实现一个简洁的自注意力机制V2类：")
+    torch.manual_seed(789)
+    sa_v2 = SelfAttention_v2(d_in, d_out)
+    print(sa_v2(inputs))
+    ```
+
+    ```v2```与```v1```的区别在于当禁用偏置单元时，```nn.Linear``` 层可以有效地执行矩阵乘法。此外，使用 ```nn.Linear``` 替代手动实现的 ```nn.Parameter(torch.rand(...))``` 的一个显著优势在于，```nn.Linear``` 具有优化的权重初始化方案，从而有助于实现更稳定和更高效的模型训练。
+
+
+
 ### 使用因果注意力机制来屏蔽后续词
 
 ### 从单头注意力扩展到多头注意力
