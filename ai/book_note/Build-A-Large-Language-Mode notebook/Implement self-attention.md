@@ -303,8 +303,86 @@
 
     ```v2```与```v1```的区别在于当禁用偏置单元时，```nn.Linear``` 层可以有效地执行矩阵乘法。此外，使用 ```nn.Linear``` 替代手动实现的 ```nn.Parameter(torch.rand(...))``` 的一个显著优势在于，```nn.Linear``` 具有优化的权重初始化方案，从而有助于实现更稳定和更高效的模型训练。
 
-
-
 ### 使用因果注意力机制来屏蔽后续词
+
+* 因果注意力（也称为掩蔽注意力）是一种特殊的自注意力形式。它限制模型在处理任何给定的 ```token``` 时，只考虑当前以及之前 ```token```，而不能看到后续内容，因此需要对每个处理的 ```token``` 屏蔽其后续 ```token```。
+
+* 对注意力权重的对角线上方部分进行了掩码操作，并对未掩码的注意力权重进行归一化，使得每一行的注意力权重之和为 1：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm31.png)
+
+  ```python
+  # 实现因果注意力掩码V1
+  print("实现因果注意力掩码V1：")
+  queries = sa_v2.W_query(inputs)
+  print("当前q向量：")
+  print(queries)
+  keys = sa_v2.W_key(inputs)
+  print("当前k向量：")
+  print(keys)
+  attn_scores = queries @ keys.T
+  print("当前注意力得分：")
+  print(attn_scores)
+  attn_weights = torch.softmax(attn_scores / keys.shape[-1]**0.5, dim=-1)
+  print("当前注意力权重：")
+  print(attn_weights)
+  # 生成对角线以下为1的掩码矩阵
+  print("生成对角线以下为1的掩码矩阵：")
+  context_length = attn_scores.shape[0]
+  mask_simple = torch.tril(torch.ones(context_length, context_length))
+  print(mask_simple)
+  # 将当前注意力权重对角线以上的值置零
+  print("将当前注意力权重对角线以上的值置零：")
+  masked_simple = attn_weights*mask_simple
+  print(masked_simple)
+  # 重新归一计算注意力权重
+  print("重新归一计算注意力权重：")
+  row_sums = masked_simple.sum(dim=-1, keepdim=True)
+  masked_simple_norm = masked_simple / row_sums
+  print(masked_simple_norm)
+  ```
+
+  ```torch.ones```表示生成一个全为 1 的张量；```torch.tril```表示生成一个下三角矩阵，其中下三角矩阵的对角线以下的元素为 1（包含对角线），其余元素为 0。
+
+  还可以利用 ```softmax``` 函数的数学特性（当一行中存在负无穷值（```-∞```）时，```Softmax``` 函数会将这些值视为零概率。），更高效地计算掩码后的注意力权重，减少计算步骤：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm32.png)
+
+  ```python
+  # 实现因果注意力掩码V2
+  print("实现因果注意力掩码V2：")
+  # 生成对角线以上为1（不包含对角线）的掩码矩阵
+  print("生成对角线以上为1（不包含对角线）的掩码矩阵：")
+  mask = torch.triu(torch.ones(context_length, context_length), diagonal=1)
+  print(mask)
+  attn_scores_masked = attn_scores.masked_fill(mask.bool(), -torch.inf) # 先将0-1掩码矩阵转换为false-true掩码矩阵，然后将注意力得分矩阵在遇到true的时候替换为-inf，false时保留原值
+  print(attn_scores_masked)
+  # 归一计算注意力权重
+  print("归一计算注意力权重：")
+  attn_weights_masked = torch.softmax(attn_scores_masked / keys.shape[-1]**0.5, dim=-1)
+  print(attn_weights_masked)
+  ```
+
+  ```torch.triu```表示生成上三角矩阵，其中上三角矩阵的对角线以上元素为 1（```diagonal=1```，不包含对角线），其余元素为 0；```torch.bool```表示将掩码矩阵转换为布尔类型，布尔类型中0表示```false```，1表示```true```；```torch.masked_fill```表示将注意力得分矩阵在遇到```true```的时候替换为```-inf```，```false```时保留原值。
+
+* 使用 ```dropout``` 遮掩额外的注意力权重防止过拟合，确保模型不会过于依赖任何特定的隐藏层单元组合，提高模型的泛化能力。需要注意的是，仅在训练过程中使用，训练结束后则会禁用：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm33.png)
+
+  ```python
+  # 应用dropout掩码，减少在训练时过拟合
+  print("应用dropout掩码，减少在训练时过拟合：")
+  dropout = torch.nn.Dropout(0.5) # 每个元素都有 50% 的概率被置为 0
+  print(dropout(attn_weights_masked))
+  ```
+  
+  当对注意力权重矩阵应用 50% 的 ```dropout``` 时，矩阵中一半的元素会被随机设置为零。为了补偿有效元素的减少，矩阵中剩余元素的值会被放大 ```1/0.5 = 2``` 倍，公式如下：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm34.png)
+
+  缩放操作的作用：
+
+    * 增大未遮盖值的相对差异：放大剩余权重后，它们的数值相对于被置零的权重增大，从而拉大了非零元素之间的相对差异。这使得在 ```Softmax``` 计算中（输入值的差异越大，输出分布就会越尖锐；而输入值差异越小，输出分布就会越平滑），剩下的值之间的对比更明显，从而影响 ```Softmax``` 输出的分布形态。
+    * 增强模型的选择性关注：在训练中，模型会在每个步骤中随机选择不同的 ```token``` 进行更高的关注，这使模型在学习时不会依赖特定 ```token``` 的注意力。
 
 ### 从单头注意力扩展到多头注意力
