@@ -386,3 +386,455 @@
     * 增强模型的选择性关注：在训练中，模型会在每个步骤中随机选择不同的 ```token``` 进行更高的关注，这使模型在学习时不会依赖特定 ```token``` 的注意力。
 
 ### 从单头注意力扩展到多头注意力
+
+* 多头注意力机制就是让模型从多个不同角度同时关注输入内容，从而更全面地理解上下文关系。“多头”一词指的是将注意力机制划分为多个“头”，每个头独立运作，在这种情况下，单个因果注意力模块可以视为单头注意力。
+
+* 通过堆叠实现多头注意力机制，创建多个自注意力机制的实例，每个实例都具有独立的权重，然后将它们的输出合并：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm35.png)
+  
+  ```python
+  # 通过堆叠实现多头注意力机制
+  print("通过堆叠实现多头注意力机制：")
+  class MultiHeadAttentionWrapper(nn.Module):
+      def __init__(self, d_in, d_out, context_length,
+                 dropout, num_heads, qkv_bias=False):
+          super().__init__()
+          self.heads = nn.ModuleList(
+              [CausalAttention(d_in, d_out, context_length, dropout, qkv_bias)
+               for _ in range(num_heads)]
+          )
+      def forward(self, x):
+          return torch.cat([head(x) for head in self.heads], dim=-1) # 循环进行使用因果注意力机制计算上下文向量，按最后一个维度进行拼接
+  torch.manual_seed(123)
+  mha = MultiHeadAttentionWrapper(d_in, d_out, context_length, 0.0, num_heads=2)
+  context_vecs = mha(batch)
+  print(context_vecs)
+  ```
+
+  这段代码通过“堆叠多个注意力头”的方式实现了一个简单的多头注意力机制。它的核心思想是：创建多个独立的 `CausalAttention` 因果注意力模块，让它们分别对同一份输入进行注意力计算，然后将多个注意力头的输出结果拼接在一起。
+
+  在初始化方法中，`MultiHeadAttentionWrapper` 使用 `nn.ModuleList` 保存多个 `CausalAttention` 模块。这里通过列表推导式创建了 `num_heads` 个注意力头，每个注意力头都会接收相同的参数配置，例如输入维度 `d_in`、输出维度 `d_out`、上下文长度 `context_length`、dropout 比例以及是否使用 QKV 偏置。
+
+  虽然这些注意力头的结构是一样的，但它们是彼此独立的模块，每个头都有自己独立的 `W_query`、`W_key` 和 `W_value` 等可训练参数。因此，即使输入数据相同，不同注意力头也可以从不同角度学习 token 之间的关系。
+
+  在 `forward` 方法中，代码会遍历 `self.heads` 中的每一个注意力头，并将输入 `x` 分别传入每个 `head` 进行计算。每个注意力头都会输出一组上下文向量，表示该头根据因果注意力机制得到的上下文信息。
+
+  最后，代码使用 `torch.cat([head(x) for head in self.heads], dim=-1)` 将所有注意力头的输出在最后一个维度上进行拼接。这里的 `dim=-1` 表示沿着特征维度拼接，而不是沿着 batch 或 token 数量维度拼接。
+
+  需要注意的是，这种实现方式中，每个注意力头的输出维度都是 `d_out`，所以最终输出的维度会变成 `num_heads * d_out`。例如当 `num_heads=2` 时，两个头的结果拼接后，最后一维会变成原来的 2 倍。
+
+  `torch.manual_seed(123)` 用于固定随机种子，保证每次运行时模型参数的随机初始化结果一致，方便复现实验结果。整体来看，这种方式比较直观，容易理解多头注意力的基本思想，但由于每个头都是单独的注意力模块，计算和参数组织方式不如后面“权重分割”的实现高效。
+
+
+* 通过权重分割实现多头注意力机制：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm36.png)
+
+  ```python
+  # 通过权重分割实现多头注意力机制
+  print("通过权重分割实现多头注意力机制：")
+  class MultiHeadAttention(nn.Module):
+      def __init__(self, d_in, d_out,
+                 context_length, dropout, num_heads, qkv_bias=False):
+          super().__init__()
+          # 检查总维度是否可平均分给多个注意力头
+          assert d_out % num_heads == 0, "d_out must be divisible by num_heads"
+          # 多头的总维度
+          self.d_out = d_out
+          # 注意力头数量
+          self.num_heads = num_heads
+          # 每个注意力头的维度
+          self.head_dim = d_out // num_heads
+          # 自动初始化权重参数矩阵：W_query、W_key、W_value
+          self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)
+          self.W_key = nn.Linear(d_in, d_out, bias=qkv_bias)
+          self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)
+          # 输出线性层，把多个注意力头拼接后的结果再做一次线性变换，让模型学习如何融合不同头的信息，得到最终的多头注意力输出
+          self.out_proj = nn.Linear(d_out, d_out)
+          self.dropout = nn.Dropout(dropout)
+          self.register_buffer(
+              'mask',
+               torch.triu(torch.ones(context_length, context_length), diagonal=1)
+          )
+
+
+      def forward(self, x):
+          b, num_tokens, d_in = x.shape
+          # 计算权重向量：queries、keys、values : (b, num_tokens, d_out)
+          keys = self.W_key(x)                                  
+          queries = self.W_query(x)                             
+          values = self.W_value(x)
+          # 添加 num_heads 维度来隐式地拆分矩阵 : (b, num_tokens, d_out) -> (b, num_tokens, num_heads, head_dim)
+          keys = keys.view(b, num_tokens, self.num_heads, self.head_dim)
+          values = values.view(b, num_tokens, self.num_heads, self.head_dim)
+          queries = queries.view(b, num_tokens, self.num_heads, self.head_dim)
+          # 转置token数量和注意力头数，使每个head单独计算注意力 : (b, num_tokens, num_heads, head_dim) -> (b, num_heads, num_tokens, head_dim)
+          keys = keys.transpose(1, 2)                               
+          queries = queries.transpose(1, 2)                         
+          values = values.transpose(1, 2)                           
+          # 使用点积计算注意力得分，点积公式：Q @ K.T
+          attn_scores = queries @ keys.transpose(2, 3)
+          # 使用掩码填充注意力得分，遮住未来得分
+          mask_bool = self.mask.bool()[:num_tokens, :num_tokens]
+          attn_scores.masked_fill_(mask_bool, -torch.inf)
+          # 使用归一（先点积缩放）计算注意力权重
+          attn_weights = torch.softmax(
+              attn_scores / keys.shape[-1]**0.5, dim=-1)
+          # 随机丢弃一部分注意力权重，减少过拟合（训练时启用）
+          attn_weights = self.dropout(attn_weights)
+          # 计算上下文向量，转置转置注意力头数和token数量 : (b, num_heads, num_tokens, head_dim) -> (b, num_tokens, num_heads, head_dim) 
+          context_vec = (attn_weights @ values).transpose(1, 2)
+          # 先把上下文向量整理成连续内存布局（转置会改变张量的维度顺序，但底层内存可能不是连续排列的），后重新变形合并多个head
+          context_vec = context_vec.contiguous().view(b, num_tokens, self.d_out)
+          # 对合并后的多头结果再做一次线性变换
+          context_vec = self.out_proj(context_vec)
+          return context_vec
+
+  torch.manual_seed(123)
+  batch_size, context_length, d_in = batch.shape
+  d_out = 2
+  mha = MultiHeadAttention(d_in, d_out, context_length, 0.0, num_heads=2)
+  context_vecs = mha(batch)
+  print(context_vecs)
+  print("context_vecs.shape:", context_vecs.shape)
+  ```
+
+  这段代码通过“权重分割”的方式实现了更标准、更高效的多头注意力机制。它不像前一种“堆叠多个注意力模块”的方式那样创建多个独立的 `CausalAttention`，而是使用一组大的线性层，一次性计算出所有注意力头需要的 `queries`、`keys` 和 `values`。
+
+  在初始化方法中，`d_out` 表示多头注意力最终输出的总维度，`num_heads` 表示注意力头的数量。代码要求 `d_out` 必须能够被 `num_heads` 整除，这样才能将总维度平均分配给每个注意力头。每个头的维度由 `head_dim = d_out // num_heads` 计算得到。
+
+  `W_query`、`W_key` 和 `W_value` 是三个线性层，分别用于将输入 `x` 映射成查询向量、键向量和值向量。它们的输出形状都是 `(batch_size, num_tokens, d_out)`，也就是说，此时还没有真正分成多个头，只是先把所有头需要的向量统一计算出来。
+
+  接着，代码通过 `view` 将最后一维 `d_out` 拆分成 `num_heads` 和 `head_dim` 两个维度，形状从 `(batch_size, num_tokens, d_out)` 变成 `(batch_size, num_tokens, num_heads, head_dim)`。然后再通过 `transpose(1, 2)` 调整维度顺序，变成 `(batch_size, num_heads, num_tokens, head_dim)`，这样每个注意力头就可以独立地对所有 token 进行注意力计算。
+
+  在注意力计算阶段，代码使用 `queries @ keys.transpose(2, 3)` 计算注意力得分，也就是每个 token 的 query 与其他 token 的 key 做点积。随后使用上三角因果掩码 `mask` 遮住当前位置之后的 token，防止模型在生成当前 token 时看到未来信息。
+
+  注意力得分会先除以 `head_dim` 的平方根进行缩放，然后通过 `softmax` 转换成注意力权重。这个缩放操作可以避免点积结果过大，从而让 `softmax` 的结果更加稳定。之后再使用 `dropout` 随机丢弃一部分注意力权重，用于减少训练过程中的过拟合。
+
+  得到注意力权重后，代码将其与 `values` 相乘，计算出每个注意力头对应的上下文向量。随后通过 `transpose` 和 `view` 将多个头的结果重新拼接回 `d_out` 维度，形状变回 `(batch_size, num_tokens, d_out)`。
+
+  最后，`out_proj` 输出投影层会对拼接后的多头结果再做一次线性变换，用来学习如何融合不同注意力头的信息，得到最终的多头注意力输出。相比简单堆叠多个注意力模块，这种写法参数组织更紧凑，计算效率更高，也更接近 Transformer 中实际使用的多头注意力实现方式。
+
+### 本节实践代码(整合版)
+
+```python
+"""
+multi_head_attention.py
+
+基于《Build a Large Language Model (From Scratch)》注意力机制章节的学习代码，
+整理出的多头注意力机制实现示例。
+
+包含：
+1. CausalAttention：单头因果注意力
+2. MultiHeadAttentionWrapper：通过堆叠多个单头注意力实现多头注意力
+3. MultiHeadAttention：通过权重分割实现高效多头注意力
+"""
+
+import torch
+import torch.nn as nn
+
+
+class CausalAttention(nn.Module):
+    """单头因果注意力机制。
+
+    作用：
+    - 计算 Query、Key、Value
+    - 使用因果 mask 遮住未来 token
+    - 得到每个 token 对历史 token 的上下文向量
+    """
+
+    def __init__(
+        self,
+        d_in: int,
+        d_out: int,
+        context_length: int,
+        dropout: float,
+        qkv_bias: bool = False,
+    ):
+        super().__init__()
+        self.d_out = d_out
+
+        # 自动初始化 W_query、W_key、W_value 三组可训练参数
+        self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)
+        self.W_key = nn.Linear(d_in, d_out, bias=qkv_bias)
+        self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)
+
+        self.dropout = nn.Dropout(dropout)
+
+        # 注册因果注意力 mask：
+        # 上三角为 1，表示这些位置属于“未来 token”，需要被遮住
+        self.register_buffer(
+            "mask",
+            torch.triu(torch.ones(context_length, context_length), diagonal=1),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """前向传播。
+
+        Args:
+            x: 输入张量，形状为 (batch_size, num_tokens, d_in)
+
+        Returns:
+            context_vec: 上下文向量，形状为 (batch_size, num_tokens, d_out)
+        """
+        batch_size, num_tokens, _ = x.shape
+
+        keys = self.W_key(x)
+        queries = self.W_query(x)
+        values = self.W_value(x)
+
+        # 注意力得分：Q @ K^T
+        # queries: (batch_size, num_tokens, d_out)
+        # keys.transpose(1, 2): (batch_size, d_out, num_tokens)
+        # attn_scores: (batch_size, num_tokens, num_tokens)
+        attn_scores = queries @ keys.transpose(1, 2)
+
+        # 只取当前序列长度对应的 mask 区域
+        mask_bool = self.mask.bool()[:num_tokens, :num_tokens]
+
+        # 将未来 token 的注意力得分替换为 -inf，
+        # 这样经过 softmax 后，这些位置的注意力权重会变成 0
+        attn_scores.masked_fill_(mask_bool, -torch.inf)
+
+        # 缩放点积注意力：除以 key 向量维度的平方根，避免点积结果过大
+        attn_weights = torch.softmax(
+            attn_scores / keys.shape[-1] ** 0.5,
+            dim=-1,
+        )
+
+        # 训练时随机丢弃一部分注意力权重，减少过拟合
+        attn_weights = self.dropout(attn_weights)
+
+        # 使用注意力权重对 value 加权求和
+        context_vec = attn_weights @ values
+        return context_vec
+
+
+class MultiHeadAttentionWrapper(nn.Module):
+    """通过堆叠多个 CausalAttention 实现多头注意力。
+
+    这种写法直观、适合学习：
+    - 每个 head 都是一个独立的 CausalAttention
+    - 最后把所有 head 的输出在最后一个维度上拼接起来
+    """
+
+    def __init__(
+        self,
+        d_in: int,
+        d_out: int,
+        context_length: int,
+        dropout: float,
+        num_heads: int,
+        qkv_bias: bool = False,
+    ):
+        super().__init__()
+
+        self.heads = nn.ModuleList(
+            [
+                CausalAttention(
+                    d_in=d_in,
+                    d_out=d_out,
+                    context_length=context_length,
+                    dropout=dropout,
+                    qkv_bias=qkv_bias,
+                )
+                for _ in range(num_heads)
+            ]
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        # 每个 head 单独计算上下文向量，然后按最后一个维度拼接
+        # 如果每个 head 输出 d_out，num_heads 个 head 拼接后就是 d_out * num_heads
+        return torch.cat([head(x) for head in self.heads], dim=-1)
+
+
+class MultiHeadAttention(nn.Module):
+    """通过权重分割实现的高效多头注意力机制。
+
+    这是更接近 Transformer / GPT 实际使用方式的实现：
+    - 先一次性计算所有 head 的 Query、Key、Value
+    - 再把 d_out 拆成 num_heads 个 head_dim
+    - 每个 head 并行计算注意力
+    - 最后拼接多个 head 的结果，并通过 out_proj 融合
+    """
+
+    def __init__(
+        self,
+        d_in: int,
+        d_out: int,
+        context_length: int,
+        dropout: float,
+        num_heads: int,
+        qkv_bias: bool = False,
+    ):
+        super().__init__()
+
+        # d_out 必须能被 num_heads 整除，才能平均分给每个注意力头
+        assert d_out % num_heads == 0, "d_out must be divisible by num_heads"
+
+        self.d_out = d_out
+        self.num_heads = num_heads
+        self.head_dim = d_out // num_heads
+
+        # 一次性生成所有 head 的 Q、K、V
+        self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)
+        self.W_key = nn.Linear(d_in, d_out, bias=qkv_bias)
+        self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)
+
+        # 输出投影层：
+        # 多个 head 拼接后，再通过这个线性层学习如何融合不同 head 的信息
+        self.out_proj = nn.Linear(d_out, d_out)
+
+        self.dropout = nn.Dropout(dropout)
+
+        # 因果 mask：遮住未来 token
+        self.register_buffer(
+            "mask",
+            torch.triu(torch.ones(context_length, context_length), diagonal=1),
+        )
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """前向传播。
+
+        Args:
+            x: 输入张量，形状为 (batch_size, num_tokens, d_in)
+
+        Returns:
+            context_vec: 多头注意力输出，形状为 (batch_size, num_tokens, d_out)
+        """
+        batch_size, num_tokens, _ = x.shape
+
+        # 1. 计算 Q、K、V
+        # 形状都是：(batch_size, num_tokens, d_out)
+        keys = self.W_key(x)
+        queries = self.W_query(x)
+        values = self.W_value(x)
+
+        # 2. 把 d_out 拆成 num_heads 个 head_dim
+        # (batch_size, num_tokens, d_out)
+        # -> (batch_size, num_tokens, num_heads, head_dim)
+        keys = keys.view(batch_size, num_tokens, self.num_heads, self.head_dim)
+        queries = queries.view(batch_size, num_tokens, self.num_heads, self.head_dim)
+        values = values.view(batch_size, num_tokens, self.num_heads, self.head_dim)
+
+        # 3. 调整维度顺序，让每个 head 可以单独计算注意力
+        # -> (batch_size, num_heads, num_tokens, head_dim)
+        keys = keys.transpose(1, 2)
+        queries = queries.transpose(1, 2)
+        values = values.transpose(1, 2)
+
+        # 4. 每个 head 内部计算注意力得分：Q @ K^T
+        # attn_scores: (batch_size, num_heads, num_tokens, num_tokens)
+        attn_scores = queries @ keys.transpose(2, 3)
+
+        # 5. 应用因果 mask，遮住未来 token
+        mask_bool = self.mask.bool()[:num_tokens, :num_tokens]
+        attn_scores.masked_fill_(mask_bool, -torch.inf)
+
+        # 6. 缩放 + softmax，得到注意力权重
+        attn_weights = torch.softmax(
+            attn_scores / self.head_dim ** 0.5,
+            dim=-1,
+        )
+
+        # 7. dropout
+        attn_weights = self.dropout(attn_weights)
+
+        # 8. 使用注意力权重对 values 加权求和
+        # context_vec: (batch_size, num_heads, num_tokens, head_dim)
+        context_vec = attn_weights @ values
+
+        # 9. 把多个 head 的结果重新拼接起来
+        # (batch_size, num_heads, num_tokens, head_dim)
+        # -> (batch_size, num_tokens, num_heads, head_dim)
+        context_vec = context_vec.transpose(1, 2)
+
+        # transpose 后内存可能不连续，所以先 contiguous，再 view
+        # -> (batch_size, num_tokens, d_out)
+        context_vec = context_vec.contiguous().view(
+            batch_size,
+            num_tokens,
+            self.d_out,
+        )
+
+        # 10. 输出投影，融合多个 head 的信息
+        context_vec = self.out_proj(context_vec)
+
+        return context_vec
+
+
+def build_demo_inputs() -> torch.Tensor:
+    """构造书中示例使用的输入嵌入。"""
+    inputs = torch.tensor(
+        [
+            [0.43, 0.15, 0.89],  # Your
+            [0.55, 0.87, 0.66],  # journey
+            [0.57, 0.85, 0.64],  # starts
+            [0.22, 0.58, 0.33],  # with
+            [0.77, 0.25, 0.10],  # one
+            [0.05, 0.80, 0.55],  # step
+        ]
+    )
+
+    # 增加 batch 维度：
+    # 原始 inputs: (num_tokens, d_in)
+    # batch: (batch_size, num_tokens, d_in)
+    batch = torch.stack((inputs, inputs), dim=0)
+    return batch
+
+
+def demo_multi_head_attention() -> None:
+    """运行多头注意力示例。"""
+    torch.manual_seed(123)
+
+    batch = build_demo_inputs()
+    batch_size, context_length, d_in = batch.shape
+
+    print("输入 batch 形状:", batch.shape)
+    print("batch_size:", batch_size)
+    print("context_length:", context_length)
+    print("d_in:", d_in)
+
+    # ------------------------------------------------------------------
+    # 方法一：通过堆叠多个单头因果注意力实现多头注意力
+    # ------------------------------------------------------------------
+    print("\n方法一：通过堆叠实现多头注意力")
+    wrapper_mha = MultiHeadAttentionWrapper(
+        d_in=d_in,
+        d_out=2,
+        context_length=context_length,
+        dropout=0.0,
+        num_heads=2,
+    )
+
+    wrapper_context_vecs = wrapper_mha(batch)
+
+    print("输出结果:")
+    print(wrapper_context_vecs)
+    print("输出形状:", wrapper_context_vecs.shape)
+    print("说明：每个 head 输出 2 维，2 个 head 拼接后输出 4 维")
+
+    # ------------------------------------------------------------------
+    # 方法二：通过权重分割实现更高效的多头注意力
+    # ------------------------------------------------------------------
+    print("\n方法二：通过权重分割实现多头注意力")
+    efficient_mha = MultiHeadAttention(
+        d_in=d_in,
+        d_out=2,
+        context_length=context_length,
+        dropout=0.0,
+        num_heads=2,
+    )
+
+    efficient_context_vecs = efficient_mha(batch)
+
+    print("输出结果:")
+    print(efficient_context_vecs)
+    print("输出形状:", efficient_context_vecs.shape)
+    print("说明：d_out=2，num_heads=2，所以每个 head 的维度 head_dim=1")
+
+
+if __name__ == "__main__":
+    demo_multi_head_attention()
+```
