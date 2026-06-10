@@ -862,4 +862,75 @@
 
 ###  实现 GPT 模型
 
+* 实现```GPT```模型架构，```token```嵌入层、位置嵌入层、```Dropout```层、多层```Transformer```模块、最终层归一化以及线性输出层：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm44.png)
+
+  最后一个```Transformer```模块的输出会经过一个最终的层归一化步骤，然后进入线性输出层。该层将 ```Transformer```的输出映射到一个高维空间（对应模型的词汇表大小），以预测序列中的下一个词。
+
+  实现如下：
+
+  ```python
+  # 实现GPT模型
+  print("实现GPT模型：")
+  class GPTModel(nn.Module):
+      def __init__(self, cfg):
+          super().__init__()
+          self.tok_emb = nn.Embedding(cfg["vocab_size"], cfg["emb_dim"])
+          self.pos_emb = nn.Embedding(cfg["context_length"], cfg["emb_dim"])
+          self.drop_emb = nn.Dropout(cfg["drop_rate"])
+
+          self.trf_blocks = nn.Sequential(
+              *[TransformerBlock(cfg) for _ in range(cfg["n_layers"])])
+
+          self.final_norm = LayerNorm(cfg["emb_dim"])
+          # PyTorch 内部保存的权重形状[vocab_size, emb_dim]
+          self.out_head = nn.Linear(
+              cfg["emb_dim"], cfg["vocab_size"], bias=False
+          )
+
+      def forward(self, in_idx):
+          batch_size, seq_len = in_idx.shape
+          tok_embeds = self.tok_emb(in_idx)
+
+          pos_embeds = self.pos_emb(torch.arange(seq_len, device=in_idx.device))# 设备设置将根据输入数据所在的位置选择在 CPU 或 GPU 上训练模型
+          x = tok_embeds + pos_embeds
+          x = self.drop_emb(x)
+          x = self.trf_blocks(x)
+          x = self.final_norm(x)
+          logits = self.out_head(x)
+          return logits
+
+  torch.manual_seed(123)
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  model = GPTModel(GPT_CONFIG_124M)
+  model.to(device)
+  batch = batch.to(device)
+  out = model(batch)
+  print("Input batch:\n", batch)
+  print("\nOutput shape:", out.shape)
+  print(out)
+  ```
+
+  这里因为存在权重共享，输出的参数量比实际的大，我们可通过减去输入的参数量，得到模型的实际参数量：
+
+  ```python
+  total_params = sum(p.numel() for p in model.parameters())
+  print(f"Total number of parameters: {total_params:,}")
+  total_params_gpt2 = total_params - sum(p.numel() for p in model.out_head.parameters())
+  print(f"Number of trainable parameters considering weight tying: {total_params_gpt2:,}")
+  ```
+
+  ```GPT```最后一层得到的是每个位置的隐藏向量，形状是```[batch_size, seq_len, emb_dim]```。输出层```nn.Linear(emb_dim, vocab_size)```会把它投影到词表空间，内部计算相当于用```[emb_dim, vocab_size]```的矩阵做乘法。如果使用```GPT-2```的权重共享，这个输出矩阵本质上就是```token```嵌入矩阵```tok_emb.weight```的转置版本：
+
+  ```python
+  hidden:           [batch_size, seq_len, emb_dim]
+  tok_emb.weight:   [vocab_size, emb_dim]
+  tok_emb.weight.T: [emb_dim, vocab_size]
+
+  logits = hidden @ tok_emb.weight.T
+
+  logits:           [batch_size, seq_len, vocab_size]
+  ```
+
 ### 生成文本
