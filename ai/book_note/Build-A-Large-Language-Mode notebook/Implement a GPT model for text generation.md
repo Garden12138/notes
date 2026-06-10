@@ -604,6 +604,95 @@
 
 ### 实现带有 GELU 激活函数的前馈神经网络
 
+* ```GELU```激活函数是一种非线性激活函数，它将在这个神经网络子模块中起着至关重要的作用。与```ReLU```激活函数相比，```GELU```激活函数在训练过程中具有更好的性能和稳定性。```GELU``` 理解成一种“更柔和的 ```ReLU```”，```RELU```是````x > 0````就保留0，```x <= 0```就变成0，而```GELU```则是根据```x```的大小，决定保留多少```x```。```GELU``` 激活函数的公式如下：
+
+  ```GELU(x)=x⋅Φ(x)```，```x```为输入值，```Φ(x)```为标准正态分布的累积分布函数即```Φ(x)=P(Z≤x),Z∼N(0,1)``，这里：
+
+  ```txt
+  Z 表示随机生成出来的那个数
+  Z ~ N(0,1) 表示 Z 服从标准正态分布
+  P(Z ≤ x) 表示 Z 小于等于 x 的概率
+  ```
+
+  标准正态分布是左右对称的：
+
+  ```txt
+            0
+            |
+        ____|____
+      /          \
+  ---/------------\---
+  负数区域     正数区域
+  ```
+
+  随机取一个数，它落在0左边的概率是50%，所以```Φ(0) = P(Z ≤ 0) = 0.5```，所以可以把它理解成一个0到1之间的比例系数即```GELU(x) ≈ x ⋅ 某个0到1之间的比例```。但原始的```Φ(x)```计算起来比较麻烦，涉及正态分布积分。模型训练时要计算海量数据，如果每次都算精确```Φ(x)```，开销比较大，可使用近似公式：```GELU(x) ≈ 0.5 ⋅ x ⋅ (1 + tanh[(2/π)⋅(x + 0.044715⋅x3])```，可以简单理解为```GELU(x) ≈ 0.5 ⋅ x ⋅ 某个0到2之间的比例系数``，实现代码如下：
+
+  ```python
+  # 近似实现GELU函数
+  print("近似实现GELU函数：")
+  class GELU(nn.Module):
+      def __init__(self):
+          super().__init__()
+
+      def forward(self, x):
+          return 0.5 * x * (1 + torch.tanh(
+              torch.sqrt(torch.tensor(2.0 / torch.pi)) *
+              (x + 0.044715 * torch.pow(x, 3))
+          ))
+
+  gelu, relu = GELU(), nn.ReLU()
+  x = torch.linspace(-3, 3, 100)
+  y_gelu, y_relu = gelu(x), relu(x)
+  plt.figure(figsize=(8, 3))
+  for i, (y, label) in enumerate(zip([y_gelu, y_relu], ["GELU", "ReLU"]), 1):
+      plt.subplot(1, 2, i)
+      plt.plot(x, y)
+      plt.title(f"{label} activation function")
+      plt.xlabel("x")
+      plt.ylabel(f"{label}(x)")
+      plt.grid(True)
+  plt.tight_layout()
+  #plt.show()
+  print("已保存activation_functions.png")
+  plt.savefig("activation_functions.png", dpi=300, bbox_inches="tight")
+  ```
+
+  结果如图：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm40.png)
+
+  ```GELU```的平滑性使其在训练过程中具有更好的优化特性，能够对模型参数进行更细微的调整。相比之下，```RELU```在零点处有一个拐角，这在网络深度较大或结构复杂时可能会增加优化难度。此外，```ReLU```对所有负输入的输出为零，而```GELU```对负值允许一个小的非零输出。在训练过程中，接收负输入的神经元也能对学习过程产生一定的贡献。
+
+* 实现带GELU激活函数的前馈神经网络。```FeedForward```模块是一个小型神经网络，由两个线性层和一个```GELU```激活函数组成。首先通过第一个线性层将嵌入维度扩展到一个更高维度的空间，再接入非线性```GELU```激活，最后再通过第二个线性层变换回原始维度。这样做是为了扩展后的高维空间可以让模型“看到”输入数据中更多的隐藏特征，提取出更丰富的信息。然后在收缩回低维度时，这些丰富的特征被整合到了输入的原始维度表示中，使模型最终的输出包含更多的上下文和信息：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm41.png)
+
+  代码实现如下：
+
+  ```python
+  # 实现带GELU激活函数的前馈神经网络
+  print("实现带GELU激活函数的前馈神经网络：")
+  class FeedForward(nn.Module):
+      def __init__(self, cfg):
+          super().__init__()
+          self.layers = nn.Sequential(
+              nn.Linear(cfg["emb_dim"], 4 * cfg["emb_dim"]),
+              GELU(),
+              nn.Linear(4 * cfg["emb_dim"], cfg["emb_dim"]),
+          )
+
+      def forward(self, x):
+          return self.layers(x)
+
+  ffn = FeedForward(GPT_CONFIG_124M)
+  x = torch.rand(2, 3, 768)
+  print("应用前：")
+  print(x)
+  out = ffn(x)
+  print("应用后：")
+  print(out)
+  ```
+
 ### 添加快捷连接
 
 ### 在 Transformer 模块中连接注意力层与线性层
