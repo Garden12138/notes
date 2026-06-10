@@ -792,6 +792,74 @@
 
 ### 在 Transformer 模块中连接注意力层与线性层
 
+* 实现```Transformer```模块，它由层归一化、多头注意力、```dropout```、前馈层以及```GELU```激活函数等多个概念组成：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm43.png)
+
+  实现如下：
+
+  ```python
+  # 实现Transformer模块
+  print("实现Transformer模块：")
+
+  class TransformerBlock(nn.Module):
+      def __init__(self, cfg):
+          super().__init__()
+
+          # 注册多头注意力机制
+          self.att = MultiHeadAttention(
+              d_in=cfg["emb_dim"],
+              d_out=cfg["emb_dim"],
+              context_length=cfg["context_length"],
+              num_heads=cfg["n_heads"],
+              dropout=cfg["drop_rate"],
+              qkv_bias=cfg["qkv_bias"]
+          )
+
+          # 注册前馈神经网络层
+          self.ff = FeedForward(cfg)
+
+          # 注册两组层归一化
+          self.norm1 = LayerNorm(cfg["emb_dim"])
+          self.norm2 = LayerNorm(cfg["emb_dim"])
+
+          # 注册dropout层
+          self.drop_shortcut = nn.Dropout(cfg["drop_rate"])
+
+      def forward(self, x):
+          # 1. shortcut 保存原始输入
+          shortcut = x
+
+          # 2. LayerNorm -> 多头注意力 -> Dropout
+          x = self.norm1(x)
+          x = self.att(x)
+          x = self.drop_shortcut(x)
+
+          # 3. 残差连接
+          x = x + shortcut
+
+          # 4. 再次保存 shortcut
+          shortcut = x
+
+          # 5. LayerNorm -> 前馈网络 -> Dropout
+          x = self.norm2(x)
+          x = self.ff(x)
+          x = self.drop_shortcut(x)
+
+          # 6. 残差连接
+          x = x + shortcut
+
+          return x
+
+  torch.manual_seed(123)
+  x = torch.rand(2, 4, 768)
+  block = TransformerBlock(GPT_CONFIG_124M)
+  output = block(x)
+
+  print("Input shape:", x.shape)
+  print("Output shape:", output.shape)
+  ```
+
 ###  实现 GPT 模型
 
 ### 生成文本
