@@ -695,6 +695,101 @@
 
 ### 添加快捷连接
 
+* 快捷连接，用于缓解梯度消失问题。梯度消失是指在训练中指导权重更新的梯度在反向传播过程中逐渐减小：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm42.png)
+
+  可以看出跳过一层或多层，为梯度提供一条更短的流动路径，这是通过将某层的输出（上一层的输出，这一层的输入）加到后续层的输出（这一层的输出）上来实现的。
+
+  实现了一个5层的深度神经网络，每层包括一个线性层和```GELU```激活函数：
+
+  ```python
+  class ExampleDeepNeuralNetwork(nn.Module):
+      def __init__(self, layer_sizes, use_shortcut):
+          super().__init__()
+          self.use_shortcut = use_shortcut
+          self.layers = nn.ModuleList([
+              nn.Sequential(nn.Linear(layer_sizes[0], layer_sizes[1]), GELU()),
+              nn.Sequential(nn.Linear(layer_sizes[1], layer_sizes[2]), GELU()),
+              nn.Sequential(nn.Linear(layer_sizes[2], layer_sizes[3]), GELU()),
+              nn.Sequential(nn.Linear(layer_sizes[3], layer_sizes[4]), GELU()),
+              nn.Sequential(nn.Linear(layer_sizes[4], layer_sizes[5]), GELU())
+          ])
+
+      def forward(self, x):
+          for layer in self.layers:
+              layer_output = layer(x)
+              # 启动快捷连接并且当前层的输入与当前层的输出形状相同，最后一层的输出形状我们设置不一样以达到最后一层不再加快捷链接的效果
+              if self.use_shortcut and x.shape == layer_output.shape:
+                  x = x + layer_output
+              else:
+                  x = layer_output
+          return x
+  ```
+
+  实现反向传播过程中计算梯度的函数：
+
+  ```python
+  def print_gradients(model, x):
+      # 向前传播
+      output = model(x)
+      target = torch.tensor([[0.]])
+
+      # 计算loss损失值
+      loss = nn.MSELoss()
+      loss = loss(output, target)
+
+      # 反向传播
+      loss.backward()
+
+      for name, param in model.named_parameters():
+          if 'weight' in name:
+              # 打印梯度
+              print(f"{name} has gradient mean of {param.grad.abs().mean().item()}")
+  ```
+
+  实践添加快捷键连接：
+
+  ```python
+  # 进行没有快捷连接的神经网络的反向传播：
+  print("进行没有快捷连接的神经网络的反向传播：")
+  torch.manual_seed(123)
+  model_without_shortcut = ExampleDeepNeuralNetwork(
+      layer_sizes, use_shortcut=False
+  )
+  print_gradients(model_without_shortcut, sample_input)
+
+  # 进行有快捷连接的神经网络的反向传播：
+  print("进行有快捷连接的神经网络的反向传播：")
+  torch.manual_seed(123)
+  model_with_shortcut = ExampleDeepNeuralNetwork(
+      layer_sizes, use_shortcut=True
+  )
+  print_gradients(model_with_shortcut, sample_input)
+  ```
+
+  从输出结果可以看到，使用快捷连接的神经网络最后一层（```layers.4```）的梯度依然比其他层更大。然而，随着接近第一层（```layers.0```），梯度值逐渐趋于稳定，并未缩小到几乎消失的程度。
+
+  ```bash
+  进行没有快捷连接的神经网络的反向传播：
+  layers.0.0.weight has gradient mean of 0.00020173584925942123
+  layers.1.0.weight has gradient mean of 0.00012011159560643137
+  layers.2.0.weight has gradient mean of 0.0007152040489017963
+  layers.3.0.weight has gradient mean of 0.0013988736318424344
+  layers.4.0.weight has gradient mean of 0.005049645435065031
+  进行有快捷连接的神经网络的反向传播：
+  layers.0.0.weight has gradient mean of 0.22169791162014008
+  layers.1.0.weight has gradient mean of 0.20694105327129364
+  layers.2.0.weight has gradient mean of 0.32896995544433594
+  layers.3.0.weight has gradient mean of 0.2665732204914093
+  layers.4.0.weight has gradient mean of 1.3258540630340576
+  ```
+
+* 快捷连接的两个重要的作用：
+
+  * 保持信息（或特征）流畅传递
+  * 缓解梯度消失问题
+
 ### 在 Transformer 模块中连接注意力层与线性层
 
 ###  实现 GPT 模型
