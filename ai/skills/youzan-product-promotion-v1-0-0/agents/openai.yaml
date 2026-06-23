@@ -1,0 +1,4 @@
+interface:
+  display_name: "有赞商品推广 v1.0.0"
+  short_description: "按商品名称筛选有赞商品，生成并复制微信小程序推广链接。"
+  default_prompt: "请使用该 skill 获取指定有赞商品的微信小程序推广链接。"

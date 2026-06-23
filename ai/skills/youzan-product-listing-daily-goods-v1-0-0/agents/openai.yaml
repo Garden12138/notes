@@ -1,0 +1,4 @@
+interface:
+  display_name: "有赞日用百货上架 v1.0.0"
+  short_description: "按流程从有赞分销市场选择日用百货商品，上架、改价并保存复核。"
+  default_prompt: "请使用该 skill 在有赞中上架一件日用百货商品，并按流程复核结果。"
