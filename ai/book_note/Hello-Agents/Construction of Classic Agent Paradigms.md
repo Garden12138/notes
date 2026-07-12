@@ -65,7 +65,7 @@ SERPAPI_API_KEY=""
 | 分组 | 文件与职责 |
 |:--|:--|
 | 公共能力 | [`llm.py`](./code/llm.py)：模型调用；[`.env.example`](./code/.env.example)：环境变量模板 |
-| ReAct | [`too_executor.py`](./code/too_executor.py)：工具注册与调度；[`search_tool.py`](./code/search_tool.py)、[`serpapi_tool.py`](./code/serpapi_tool.py)：搜索工具；[`react_agent.py`](./code/react_agent.py)：核心循环；[`react_agent_main.py`](./code/react_agent_main.py)：CLI 与 Mock |
+| ReAct | [`tool_executor.py`](./code/tool_executor.py)：工具注册与调度；[`search_tool.py`](./code/search_tool.py)、[`serpapi_tool.py`](./code/serpapi_tool.py)：搜索工具；[`react_agent.py`](./code/react_agent.py)：核心循环；[`react_agent_main.py`](./code/react_agent_main.py)：CLI 与 Mock |
 | Plan-and-Solve | [`plan.py`](./code/plan.py)：规划器；[`plan_executor.py`](./code/plan_executor.py)：执行器；[`plan_and_solve_agent.py`](./code/plan_and_solve_agent.py)：流程协调；[`plan_and_solve_agent_main.py`](./code/plan_and_solve_agent_main.py)：CLI |
 | Reflection | [`memory.py`](./code/memory.py)：短期记忆；[`reflection_agent.py`](./code/reflection_agent.py)：反思循环；[`reflection_agent_main.py`](./code/reflection_agent_main.py)：提示词、CLI 与 Mock |
 
@@ -131,7 +131,7 @@ Action: Finish[最终答案]
 
 #### 工具层与代码映射
 
-[`ToolExecutor`](./code/too_executor.py) 保存工具名称、描述和执行函数。Agent 把工具描述加入提示词，模型输出工具名后，再由执行器找到对应 Python 函数。
+[`ToolExecutor`](./code/tool_executor.py) 保存工具名称、描述和执行函数。Agent 把工具描述加入提示词，模型输出工具名后，再由执行器找到对应 Python 函数。
 
 当前接口把所有工具统一为“单个字符串输入”：
 
@@ -149,7 +149,7 @@ tool_executor.registerTool(
 * `echo`：原样返回输入，便于调试控制流。
 * `search`：调用 SerpApi，依次尝试答案框、知识图谱和前三条自然搜索结果。
 
-附件中的文件名 `too_executor.py` 很可能是 `tool_executor.py` 的拼写遗留，但现有模块引用保持一致，因此本次保留原名。`search_tool.py` 与 `serpapi_tool.py` 功能基本相同，也作为实践演进痕迹一并保留。
+`search_tool.py` 与 `serpapi_tool.py` 功能基本相同，仍作为实践演进痕迹一并保留。
 
 #### 实践一：计算器与搜索
 
@@ -165,6 +165,59 @@ python react_agent_main.py --mock
 ```text
 Thought → Action → Observation → Thought → Finish
 ```
+
+<details>
+<summary>实际运行结果：ReAct 搜索英伟达最新 GPU</summary>
+
+````text
+$ python react_agent_main.py "英伟达最新的GPU型号是什么"
+工具 'calculator' 已注册。
+工具 'echo' 已注册。
+工具 'search' 已注册。
+--- 第 1 步 ---
+🧠 正在调用 gpt-5.4 模型...
+✅ 大语言模型响应成功:
+Thought: 需要查询最新信息，使用搜索工具获取“英伟达 最新 GPU 型号”相关结果。
+Action: search[英伟达 最新 GPU 型号]
+思考: 需要查询最新信息，使用搜索工具获取“英伟达 最新 GPU 型号”相关结果。
+🎬 行动: search[英伟达 最新 GPU 型号]
+🔍 正在执行 [SerpApi] 网页搜索: 英伟达 最新 GPU 型号
+👀 观察: [1] 对比各型号NVIDIA GPU
+GeForce RTX 5070 Ti, 12 GB, 大型 ; NVIDIA RTX PRO 2000 Blackwell 架构, 8 GB, 中型 ; NVIDIA RTX PRO 3000 Blackwell 架构, 12 GB, 大型 ; 创作大师.
+
+[2] 比较GeForce 系列最新一代显卡和前代显卡| NVIDIA
+比较最新一代RTX 30 系列显卡和前代的RTX 20 系列、GTX 10 和900 系列显卡。查看规格、功能、技术支持等内容。
+
+[3] Blackwell 生成式AI 架构| NVIDIA
+与NVIDIA Blackwell GPU 相比，NVIDIA Blackwell Ultra Tensor Core 可实现2 倍的注意力层加速和1.5倍的AI计算FLOPS。NVIDIA Blackwell Transformer 引擎采用了称为微张量 ...
+--- 第 2 步 ---
+🧠 正在调用 gpt-5.4 模型...
+✅ 大语言模型响应成功:
+Thought: 搜索结果显示英伟达较新的GPU架构与型号涉及 Blackwell，且结果中直接出现了 GeForce RTX 5070 Ti 和 RTX PRO Blackwell 系列。问题问“最新的GPU型号”，但“最新”可能因产品线不同而不同；基于现有观察，给出当前搜索结果中出现的最新型号，并说明这一点。
+Action: Finish[根据当前搜索结果，英伟达最新一代GPU已进入 Blackwell 架构。结果中出现的最新型号包括：
+- GeForce RTX 5070 Ti
+- NVIDIA RTX PRO 2000 / 3000 Blackwell
+
+如果你指的是消费级显卡，当前可回答为：GeForce RTX 5070 Ti。
+如果你指的是专业/AI方向，则是 Blackwell 系列 GPU。]
+思考: 搜索结果显示英伟达较新的GPU架构与型号涉及 Blackwell，且结果中直接出现了 GeForce RTX 5070 Ti 和 RTX PRO Blackwell 系列。问题问“最新的GPU型号”，但“最新”可能因产品线不同而不同；基于现有观察，给出当前搜索结果中出现的最新型号，并说明这一点。
+🎉 最终答案: 根据当前搜索结果，英伟达最新一代GPU已进入 Blackwell 架构。结果中出现的最新型号包括：
+- GeForce RTX 5070 Ti
+- NVIDIA RTX PRO 2000 / 3000 Blackwell
+
+如果你指的是消费级显卡，当前可回答为：GeForce RTX 5070 Ti。
+如果你指的是专业/AI方向，则是 Blackwell 系列 GPU。
+
+=== ReAct 最终输出 ===
+根据当前搜索结果，英伟达最新一代GPU已进入 Blackwell 架构。结果中出现的最新型号包括：
+- GeForce RTX 5070 Ti
+- NVIDIA RTX PRO 2000 / 3000 Blackwell
+
+如果你指的是消费级显卡，当前可回答为：GeForce RTX 5070 Ti。
+如果你指的是专业/AI方向，则是 Blackwell 系列 GPU。
+````
+
+</details>
 
 配置真实模型与 `SERPAPI_API_KEY` 后，可以运行需要最新信息的问题：
 
@@ -270,6 +323,57 @@ python plan_and_solve_agent_main.py +  "一个水果店周一卖出15个苹果�
 
 这个案例展示了 Plan-and-Solve 的价值：各步运算并不难，难点在于不漏掉中间关系，并让最后一步回到原始目标。
 
+<details>
+<summary>实际运行结果：Plan-and-Solve 水果店应用题</summary>
+
+````text
+$ python plan_and_solve_agent_main.py "一个水果店周一卖出了15个苹果。周二卖出的苹果数量是周一的两倍。周三卖出的数量比周二少了5个。请问这三天总共卖出了多少个苹果？"
+
+--- 开始处理问题 ---
+问题: 一个水果店周一卖出了15个苹果。周二卖出的苹果数量是周一的两倍。周三卖出的数量比周二少了5个。请问这三天总共卖出了多少个苹果？
+--- 正在生成计划 ---
+🧠 正在调用 gpt-5.4 模型...
+✅ 大语言模型响应成功:
+```python
+["记录周一卖出的苹果数量为15个。", "计算周二卖出的苹果数量：周一的两倍，即15 × 2。", "根据周二的结果计算周三卖出的苹果数量：周二数量减去5。", "将周一、周二和周三卖出的苹果数量相加，得到三天总共卖出的苹果数量。"]
+```
+✅ 计划已生成:
+```python
+["记录周一卖出的苹果数量为15个。", "计算周二卖出的苹果数量：周一的两倍，即15 × 2。", "根据周二的结果计算周三卖出的苹果数量：周二数量减去5。", "将周一、周二和周三卖出的苹果数量相加，得到三天总共卖出的苹果数量。"]
+```
+
+--- 正在执行计划 ---
+
+-> 正在执行步骤 1/4: 记录周一卖出的苹果数量为15个。
+🧠 正在调用 gpt-5.4 模型...
+✅ 大语言模型响应成功:
+15个苹果
+✅ 步骤 1 已完成，结果: 15个苹果
+
+-> 正在执行步骤 2/4: 计算周二卖出的苹果数量：周一的两倍，即15 × 2。
+🧠 正在调用 gpt-5.4 模型...
+✅ 大语言模型响应成功:
+30个苹果
+✅ 步骤 2 已完成，结果: 30个苹果
+
+-> 正在执行步骤 3/4: 根据周二的结果计算周三卖出的苹果数量：周二数量减去5。
+🧠 正在调用 gpt-5.4 模型...
+✅ 大语言模型响应成功:
+25个苹果
+✅ 步骤 3 已完成，结果: 25个苹果
+
+-> 正在执行步骤 4/4: 将周一、周二和周三卖出的苹果数量相加，得到三天总共卖出的苹果数量。
+🧠 正在调用 gpt-5.4 模型...
+✅ 大语言模型响应成功:
+70个苹果
+✅ 步骤 4 已完成，结果: 70个苹果
+
+--- 任务完成 ---
+最终答案: 70个苹果
+````
+
+</details>
+
 #### 优势、局限与工程改进
 
 **优势：**
@@ -357,6 +461,235 @@ python reflection_agent_main.py --mock
 
 真实模型可能第一次就给出筛法，这会削弱“低效初稿→评审→优化”的演示效果。这说明 Reflection 的收益取决于初稿质量、评审标准和任务是否存在可改进空间；教学时使用确定性的 Mock 更容易观察控制流。
 
+<details>
+<summary>实际运行结果：Reflection 素数函数优化</summary>
+
+````text
+$ python reflection_agent_main.py \
+  "编写一个函数，返回所有不大于 n 的素数"
+
+--- 开始处理任务 ---
+任务: 编写一个函数，返回所有不大于 n 的素数
+
+--- 正在进行初始尝试 ---
+🧠 正在调用 gpt-5.4 模型...
+✅ 大语言模型响应成功:
+from math import isqrt
+
+
+def primes_up_to(n: int) -> list[int]:
+    """
+    返回所有不大于 n 的素数列表。
+
+    参数:
+        n (int): 上限整数。
+
+    返回:
+        list[int]: 所有不大于 n 的素数，按升序排列。
+
+    示例:
+        >>> primes_up_to(10)
+        [2, 3, 5, 7]
+    """
+    if n < 2:
+        return []
+
+    is_prime = [True] * (n + 1)
+    is_prime[0] = False
+    is_prime[1] = False
+
+    for i in range(2, isqrt(n) + 1):
+        if is_prime[i]:
+            for multiple in range(i * i, n + 1, i):
+                is_prime[multiple] = False
+
+    return [i for i, prime in enumerate(is_prime) if prime]
+📝 记忆已更新，新增一条 'execution' 记录。
+
+--- 第 1/3 轮迭代 ---
+
+-> 正在进行反思...
+🧠 正在调用 gpt-5.4 模型...
+✅ 大语言模型响应成功:
+这段代码的核心算法是**埃拉托斯特尼筛法（Sieve of Eratosthenes）**，不是试除法。
+
+## 复杂度评估
+- **时间复杂度：** `O(n log log n)`
+- **空间复杂度：** `O(n)`
+
+其中：
+- 外层循环到 `sqrt(n)`
+- 内层仅对素数执行标记
+- 总体复杂度优于逐个数做试除的 `O(n sqrt(n))` 或 `O(n log n)` 级别方案
+
+## 算法层面的结论
+就“返回所有不大于 `n` 的素数”这一问题而言，这段代码已经使用了经典高效算法，**算法级别上已经相当优**，不存在像“用筛法替代试除法”这种更高层级的替代改进空间。
+
+但如果你对性能有极致要求，仍然存在**更优的筛法变体**，可以在常数因子或大规模输入下显著提升性能：
+
+---
+
+## 当前算法的主要不足
+
+### 1. 筛掉了所有偶数，存在一半以上的冗余处理
+当前实现为每个 `0..n` 的整数都分配了布尔位，并在筛选时也会处理偶数位置。
+
+这会导致：
+- 空间浪费接近一半
+- 标记操作包含大量无意义的偶数位置访问
+
+### 2. Python 层面的逐元素赋值开销较大
+这一段：
+```python
+for multiple in range(i * i, n + 1, i):
+    is_prime[multiple] = False
+```
+虽然算法复杂度正确，但在 Python 中大量循环赋值常数代价很高。
+
+---
+
+## 更优的算法建议
+
+### 方案一：奇数优化筛法
+只存储奇数，跳过所有偶数。
+
+### 优势
+- **空间复杂度仍为 `O(n)`，但常数减半**
+- **时间复杂度仍为 `O(n log log n)`，但实际运行速度明显更快**
+- 是对当前实现最直接、最有效的算法优化
+
+### 思路
+- `2` 单独处理
+- 只维护 `[3, 5, 7, ...]` 的素性状态
+- 对奇素数 `p`，从 `p*p` 开始，以 `2*p` 为步长筛除
+
+### 示例实现
+```python
+from math import isqrt
+
+def primes_up_to(n: int) -> list[int]:
+    if n < 2:
+        return []
+    if n == 2:
+        return [2]
+
+    size = (n // 2)
+    is_prime = [True] * (size + 1)  # index i 表示奇数 2*i+1
+    is_prime[0] = False  # 1 不是素数
+
+    limit = isqrt(n)
+    for i in range(1, (limit // 2) + 1):
+        if is_prime[i]:
+            p = 2 * i + 1
+            start = (p * p) // 2
+            for j in range(start, size + 1, p):
+                is_prime[j] = False
+
+    return [2] + [2 * i + 1 for i in range(1, size + 1) if is_prime[i] and 2 * i + 1 <= n]
+```
+
+---
+
+### 方案二：切片批量标记的筛法
+仍然是埃氏筛，但利用 Python 切片一次性赋值，减少 Python 循环开销。
+
+### 优势
+- **算法复杂度不变：`O(n log log n)`**
+- 对 Python 来说通常比显式内层 `for` 更快
+
+### 示例
+```python
+from math import isqrt
+
+def primes_up_to(n: int) -> list[int]:
+    if n < 2:
+        return []
+
+    is_prime = bytearray(b'\x01') * (n + 1)
+    is_prime[0:2] = b'\x00\x00'
+
+    for p in range(2, isqrt(n) + 1):
+        if is_prime[p]:
+            start = p * p
+            is_prime[start:n+1:p] = b'\x00' * (((n - start) // p) + 1)
+
+    return [i for i in range(2, n + 1) if is_prime[i]]
+```
+
+---
+
+### 方案三：分段筛（Segmented Sieve）
+如果 `n` 很大，这是**算法上更适合大规模输入**的方案。
+
+### 优势
+- 时间复杂度仍接近 `O(n log log n)`
+- **空间复杂度可降为 `O(sqrt(n))` 到 `O(segment_size)`**
+- 对超大范围筛素数更实用，缓存友好
+
+### 适用场景
+- `n` 非常大
+- 内存压力明显
+- 希望提升缓存局部性
+
+---
+
+## 最终结论
+- **当前代码的算法复杂度已经很好：`O(n log log n)`**
+- **不存在更高层级的通用替代算法能在渐进时间复杂度上显著优于它**
+- 但若追求极致性能，当前实现的主要瓶颈是：
+  1. 没有跳过偶数
+  2. Python 内层逐项标记开销大
+
+## 建议
+- **中等规模输入：优先改为“奇数优化的埃氏筛”**
+- **Python 实现追求更快常数：结合 `bytearray` + 切片赋值**
+- **超大规模输入：使用分段筛**
+
+因此，结论不是“无需改进”，而是：
+
+**算法框架本身是对的，但实现还不是性能最优版本；应优先改成“仅筛奇数的埃拉托斯特尼筛法”，在大规模场景下进一步考虑分段筛。**
+📝 记忆已更新，新增一条 'reflection' 记录。
+
+✅ 反思认为已无需改进，任务完成。
+
+--- 任务完成 ---
+最终生成的结果:
+```python
+from math import isqrt
+
+
+def primes_up_to(n: int) -> list[int]:
+    """
+    返回所有不大于 n 的素数列表。
+
+    参数:
+        n (int): 上限整数。
+
+    返回:
+        list[int]: 所有不大于 n 的素数，按升序排列。
+
+    示例:
+        >>> primes_up_to(10)
+        [2, 3, 5, 7]
+    """
+    if n < 2:
+        return []
+
+    is_prime = [True] * (n + 1)
+    is_prime[0] = False
+    is_prime[1] = False
+
+    for i in range(2, isqrt(n) + 1):
+        if is_prime[i]:
+            for multiple in range(i * i, n + 1, i):
+                is_prime[multiple] = False
+
+    return [i for i, prime in enumerate(is_prime) if prime]
+```
+````
+
+</details>
+
 #### 一次重要的停止条件修复
 
 附件原实现使用：
@@ -433,30 +766,6 @@ flowchart LR
 ```
 
 ### 我的实践总结
-
-#### 本次代码整理
-
-同步附件时保留了原有教学结构和 CLI，仅做保证代码可理解、可解析和控制流正确的最小修复：
-
-| 问题 | 处理 |
-|:--|:--|
-| 三个入口文件末尾混入大段运行日志，Reflection 日志中的三引号破坏 Python 语法 | 删除日志，将重要现象提炼到笔记 |
-| `serpapi_tool.py` 使用 `os.getenv` 却没有导入 `os` | 补充 `import os` |
-| Reflection 用子串判断停止，否定句也会误停 | 改为规范化后的精确匹配 |
-| ReAct 入口动态注入已存在的依赖和重复提示词 | 改为普通模块导入和按需加载搜索工具 |
-| Plan 入口仍保留“补注入 ast”的过时代码 | 直接使用已正常导入 `ast` 的规划模块 |
-| `too_executor.py` 拼写与两份搜索工具重复 | 为保持附件引用关系与实践轨迹，暂不重命名或删除 |
-
-#### 离线验证结果
-
-验证过程没有调用真实 LLM 或搜索接口：
-
-* 13 个 Python 文件全部通过内存语法编译。
-* ReAct Mock 用两轮完成计算，最终结果为 `102`。
-* Reflection Mock 确实经历初稿、评审、筛法优化和明确停止。
-* 回归反馈“当前结果并非无需改进，仍需优化”时，Agent 会继续生成下一版。
-* Plan-and-Solve 使用 Fake LLM 验证了计划解析、历史传递和 `70 个苹果` 的最终结果。
-* 缺少 `SERPAPI_API_KEY` 时，搜索工具返回清晰的配置错误，并不会创建搜索客户端。
 
 #### 从代码中得到的工程认识
 

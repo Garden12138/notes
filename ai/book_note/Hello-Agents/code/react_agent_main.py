@@ -20,8 +20,7 @@ from typing import Callable
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
 
-# 注意：这里保持和你现有文件名一致，是 too_executor.py，不是 tool_executor.py
-from too_executor import ToolExecutor
+from tool_executor import ToolExecutor
 from react_agent import ReActAgent
 
 
