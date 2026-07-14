@@ -1,0 +1,1320 @@
+#!/usr/bin/env bash
+# wechat-iphone — high-level WeChat automation over iphone-use + WDA
+# macOS / Bash 3.2 compatible
+
+set -uo pipefail
+IFS=$'\n\t'
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+STATE_DIR="${WECHAT_IPHONE_STATE_DIR:-$HOME/.iphone-use/wechat-iphone}"
+TOKEN_FILE="${WECHAT_IPHONE_TOKEN_FILE:-$HOME/.iphone-use/agent-token}"
+HOST="${WECHAT_IPHONE_HOST:-http://127.0.0.1:44321}"
+WDA_URL="${WECHAT_IPHONE_WDA_URL:-http://127.0.0.1:8100}"
+APP_BUNDLE="${WECHAT_IPHONE_APP_BUNDLE:-com.tencent.xin}"
+DAEMON_LABEL="${WECHAT_IPHONE_DAEMON_LABEL:-com.leeguoo.iphone-use}"
+DAEMON_PLIST="${WECHAT_IPHONE_DAEMON_PLIST:-$HOME/Library/LaunchAgents/com.leeguoo.iphone-use.plist}"
+DAEMON_APP="${WECHAT_IPHONE_DAEMON_APP:-$HOME/Applications/iPhoneUse.app}"
+DAEMON_BINARY="$DAEMON_APP/Contents/MacOS/iphone-use"
+
+# Defaults below follow the user's verified deployment notes.
+IPHONE_USE_PROJECT_DIR="${WECHAT_IPHONE_PROJECT_DIR:-$HOME/path/to/iphone-use}"
+WDA_SCRIPT="${WECHAT_IPHONE_WDA_SCRIPT:-$IPHONE_USE_PROJECT_DIR/scripts/setup-wda.sh}"
+WDA_FIXED_SCRIPT="${WECHAT_IPHONE_WDA_FIXED_SCRIPT:-$HOME/.iphone-use/setup-wda.sh}"
+WDA_TEAM_ID="${WDA_TEAM_ID:-<APPLE_TEAM_ID>}"
+WDA_UDID="${WDA_UDID:-<IPHONE_UDID>}"
+WDA_SERVICE_LABEL="${WECHAT_IPHONE_WDA_SERVICE_LABEL:-com.leeguoo.iphone-use.wda}"
+WDA_SERVICE_PLIST="${WECHAT_IPHONE_WDA_SERVICE_PLIST:-$HOME/Library/LaunchAgents/com.leeguoo.iphone-use.wda.plist}"
+WDA_WRAPPER="$STATE_DIR/run-wda-keeper.sh"
+WDA_SERVICE_LOG_DIR="${WECHAT_IPHONE_WDA_LOG_DIR:-$HOME/Library/Logs/iPhoneUse}"
+WDA_START_TIMEOUT="${WECHAT_IPHONE_WDA_START_TIMEOUT:-300}"
+
+# Coordinates validated on the user's current WeChat/iPhone layout.
+SEARCH_X="${WECHAT_IPHONE_SEARCH_X:-0.50}"
+SEARCH_Y="${WECHAT_IPHONE_SEARCH_Y:-0.12}"
+FIRST_RESULT_X="${WECHAT_IPHONE_FIRST_RESULT_X:-0.50}"
+FIRST_RESULT_Y="${WECHAT_IPHONE_FIRST_RESULT_Y:-0.20}"
+INPUT_X="${WECHAT_IPHONE_INPUT_X:-0.50}"
+INPUT_Y="${WECHAT_IPHONE_INPUT_Y:-0.93}"
+SCROLL_X="${WECHAT_IPHONE_SCROLL_X:-0.50}"
+SCROLL_Y="${WECHAT_IPHONE_SCROLL_Y:-0.52}"
+SCROLL_DY="${WECHAT_IPHONE_SCROLL_DY:--200}"
+SCROLL_RETRY_DY="${WECHAT_IPHONE_SCROLL_RETRY_DY:--280}"
+
+DEFAULT_CONFIG="$SCRIPT_DIR/../config/allowed-groups.json"
+FALLBACK_CONFIG="$HOME/.config/wechat-iphone/allowed-groups.json"
+if [[ -n "${WECHAT_IPHONE_CONFIG:-}" ]]; then
+  CONFIG_FILE="$WECHAT_IPHONE_CONFIG"
+elif [[ -f "$DEFAULT_CONFIG" ]]; then
+  CONFIG_FILE="$DEFAULT_CONFIG"
+else
+  CONFIG_FILE="$FALLBACK_CONFIG"
+fi
+
+mkdir -p "$STATE_DIR"
+LOCK_DIR="$STATE_DIR/controller.lock"
+TOKEN=""
+
+log() {
+  printf '[wechat-iphone] %s\n' "$*" >&2
+}
+
+die_json() {
+  local code="$1"
+  local message="$2"
+  local exit_code="${3:-1}"
+  python3 - "$code" "$message" <<'PY'
+import json, sys
+print(json.dumps({"ok": False, "error": sys.argv[1], "message": sys.argv[2]}, ensure_ascii=False))
+PY
+  exit "$exit_code"
+}
+
+require_cmd() {
+  command -v "$1" >/dev/null 2>&1 || die_json "MISSING_COMMAND" "缺少命令：$1"
+}
+
+init_runtime() {
+  require_cmd curl
+  require_cmd python3
+  if [[ ! -f "$TOKEN_FILE" ]]; then
+    die_json "TOKEN_NOT_FOUND" "找不到 iphone-use token：$TOKEN_FILE"
+  fi
+  TOKEN="$(tr -d '\r\n' < "$TOKEN_FILE")"
+  if [[ -z "$TOKEN" ]]; then
+    die_json "TOKEN_EMPTY" "iphone-use token 为空：$TOKEN_FILE"
+  fi
+}
+
+acquire_lock() {
+  if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+    die_json "PHONE_CONTROLLER_BUSY" "另一个微信手机操作任务正在运行" 75
+  fi
+  printf '%s\n' "$$" > "$LOCK_DIR/pid"
+  trap 'rm -rf "$LOCK_DIR"' EXIT INT TERM HUP
+}
+
+phone_status() {
+  curl --noproxy "*" -sS --max-time 8 \
+    -H "Authorization: Bearer $TOKEN" \
+    "$HOST/agent/status"
+}
+
+phone_elements() {
+  curl --noproxy "*" -sS --max-time 20 \
+    -H "Authorization: Bearer $TOKEN" \
+    "$HOST/agent/elements"
+}
+
+phone_act() {
+  local payload="$1"
+  curl --noproxy "*" -sS --max-time 30 \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -X POST \
+    "$HOST/agent/input" \
+    -d "$payload"
+}
+
+json_text_payload() {
+  python3 - "$1" <<'PY'
+import json, sys
+print(json.dumps({"type": "text", "text": sys.argv[1]}, ensure_ascii=False))
+PY
+}
+
+normalize_message_for_wechat() {
+  python3 - "$1" <<'PY'
+import re
+import sys
+
+message = sys.argv[1].replace("\r\n", "\n").replace("\r", "\n")
+message = re.sub(r"[ \t\f\v]*\n+[ \t\f\v]*", " ", message)
+message = re.sub(r"[ \t]{2,}", " ", message)
+print(message.strip())
+PY
+}
+
+json_tap_label_payload() {
+  python3 - "$1" <<'PY'
+import json, sys
+print(json.dumps({"type": "tap", "label": sys.argv[1]}, ensure_ascii=False))
+PY
+}
+
+json_tap_element_payload() {
+  python3 - "$1" <<'PY'
+import json, sys
+print(json.dumps({"type": "tap", "element": int(sys.argv[1])}, ensure_ascii=False))
+PY
+}
+
+json_launch_payload() {
+  python3 - "$1" <<'PY'
+import json, sys
+print(json.dumps({"type": "launch_app", "bundle": sys.argv[1]}, ensure_ascii=False))
+PY
+}
+
+status_ready_from_stdin() {
+  python3 -c '
+import json, sys
+try:
+    s = json.load(sys.stdin)
+except Exception:
+    raise SystemExit(1)
+ready = all([
+    s.get("ok") is True,
+    s.get("wda") is True,
+    s.get("wda_actionable") is True,
+    s.get("wda_locked") is False,
+    s.get("drivable") is True,
+    s.get("mode") == "agent",
+])
+raise SystemExit(0 if ready else 1)
+'
+}
+
+assert_ready() {
+  local raw
+  if ! raw="$(phone_status 2>/dev/null)"; then
+    die_json "IPHONE_USE_UNREACHABLE" "无法访问 $HOST/agent/status"
+  fi
+  if ! printf '%s' "$raw" | status_ready_from_stdin; then
+    printf '%s\n' "$raw" >&2
+    die_json "IPHONE_NOT_READY" "需要 ok=true、wda=true、wda_actionable=true、wda_locked=false、drivable=true、mode=agent"
+  fi
+}
+
+is_allowed_group() {
+  local group="$1"
+  if [[ ! -f "$CONFIG_FILE" ]]; then
+    return 1
+  fi
+  python3 - "$CONFIG_FILE" "$group" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    data = json.load(f)
+allowed = data.get("groups", [])
+raise SystemExit(0 if sys.argv[2] in allowed else 1)
+PY
+}
+
+assert_allowed_group() {
+  local group="$1"
+  if ! is_allowed_group "$group"; then
+    die_json "GROUP_NOT_ALLOWED" "群聊不在允许名单：$group；配置文件：$CONFIG_FILE"
+  fi
+}
+
+save_elements() {
+  local file="$1"
+  if ! phone_elements > "$file"; then
+    die_json "ELEMENTS_FAILED" "读取元素树失败"
+  fi
+  if ! python3 - "$file" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    json.load(f)
+PY
+  then
+    die_json "ELEMENTS_INVALID_JSON" "元素树不是有效 JSON：$file"
+  fi
+}
+
+find_label_contains() {
+  local file="$1"
+  local needle="$2"
+  python3 - "$file" "$needle" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    data = json.load(f)
+needle = sys.argv[2]
+for e in data.get("elements", []):
+    label = str(e.get("label", "")).strip()
+    if needle in label:
+        print(label)
+        break
+PY
+}
+
+find_wechat_send_element_index() {
+  local file="$1"
+  python3 - "$file" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    data = json.load(f)
+
+for idx, e in enumerate(data.get("elements", [])):
+    label = str(e.get("label", "")).strip()
+    kind = str(e.get("kind", ""))
+    rect = e.get("rect") or []
+    if label != "发送" or kind != "Button" or len(rect) != 4:
+        continue
+    print(idx)
+    break
+PY
+}
+
+draft_message_state_file() {
+  local file="$1"
+  local message="$2"
+  python3 - "$file" "$message" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    data = json.load(f)
+message = sys.argv[2]
+drafts = []
+for e in data.get("elements", []):
+    kind = str(e.get("kind", ""))
+    rect = e.get("rect") or []
+    if kind != "TextView" or len(rect) != 4:
+        continue
+    x, y, w, h = map(float, rect)
+    if not (250 <= y <= 500):
+        continue
+    value = str(e.get("value", "") or e.get("label", "") or "").strip()
+    if value:
+        drafts.append(value)
+
+if not drafts:
+    print("empty")
+    raise SystemExit(0)
+
+for value in drafts:
+    if value == message:
+        print("exact")
+        raise SystemExit(0)
+
+for value in drafts:
+    if message and value.count(message) >= 2:
+        print("duplicate")
+        raise SystemExit(0)
+
+for value in drafts:
+    if message and message in value:
+        print("contains")
+        raise SystemExit(0)
+
+print("different")
+PY
+}
+
+is_chat_list_file() {
+  local file="$1"
+  python3 - "$file" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    data = json.load(f)
+for e in data.get("elements", []):
+    label = str(e.get("label", "")).strip()
+    kind = str(e.get("kind", ""))
+    rect = e.get("rect") or []
+    y = float(rect[1]) if len(rect) == 4 else 9999
+    if "搜索" in label and y < 250 and kind in {"SearchField", "TextField", "Button", "Other", "StaticText"}:
+        raise SystemExit(0)
+raise SystemExit(1)
+PY
+}
+
+is_group_open_file() {
+  local file="$1"
+  local group="$2"
+  python3 - "$file" "$group" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    data = json.load(f)
+target = sys.argv[2]
+header = False
+chat_hint = False
+for e in data.get("elements", []):
+    label = str(e.get("label", "")).strip()
+    rect = e.get("rect") or []
+    y = float(rect[1]) if len(rect) == 4 else 9999
+    if target in label and y < 180:
+        header = True
+    if label in {"语音", "键盘", "表情", "更多", "发送", "聊天信息"}:
+        chat_hint = True
+raise SystemExit(0 if header and chat_hint else 1)
+PY
+}
+
+verify_group_open() {
+  local group="$1"
+  local file="$2"
+  save_elements "$file"
+  is_group_open_file "$file" "$group"
+}
+
+return_to_chat_list() {
+  local tmp="$STATE_DIR/current-elements.json"
+  local attempt=1
+  while [[ $attempt -le 4 ]]; do
+    save_elements "$tmp"
+    if is_chat_list_file "$tmp"; then
+      return 0
+    fi
+    local back_label
+    back_label="$(find_label_contains "$tmp" "返回")"
+    if [[ -z "$back_label" ]]; then
+      return 1
+    fi
+    phone_act "$(json_tap_label_payload "$back_label")" >/dev/null
+    sleep 1
+    attempt=$((attempt + 1))
+  done
+  save_elements "$tmp"
+  is_chat_list_file "$tmp"
+}
+
+clear_search_if_possible() {
+  local tmp="$STATE_DIR/search-elements.json"
+  save_elements "$tmp"
+  local label
+  label="$(find_label_contains "$tmp" "清除")"
+  if [[ -n "$label" ]]; then
+    phone_act "$(json_tap_label_payload "$label")" >/dev/null || true
+    sleep 0.5
+  fi
+}
+
+open_group_internal() {
+  local group="$1"
+  local verify_file="$STATE_DIR/group-verify.json"
+
+  log "打开微信"
+  phone_act "$(json_launch_payload "$APP_BUNDLE")" >/dev/null
+  sleep 1
+
+  if verify_group_open "$group" "$verify_file"; then
+    log "当前已在目标群聊"
+    return 0
+  fi
+
+  if ! return_to_chat_list; then
+    die_json "CHAT_LIST_NOT_FOUND" "无法返回微信聊天列表"
+  fi
+
+  log "点击聊天列表搜索栏"
+  phone_act "{\"type\":\"tap\",\"x\":$SEARCH_X,\"y\":$SEARCH_Y}" >/dev/null
+  sleep 1
+
+  clear_search_if_possible
+
+  log "搜索群聊：$group"
+  phone_act "$(json_text_payload "$group")" >/dev/null
+  sleep 1
+
+  log "点击第一条搜索结果"
+  phone_act "{\"type\":\"tap\",\"x\":$FIRST_RESULT_X,\"y\":$FIRST_RESULT_Y}" >/dev/null
+  sleep 1
+
+  if ! verify_group_open "$group" "$verify_file"; then
+    die_json "TARGET_GROUP_NOT_VERIFIED" "点击搜索结果后，未在页面顶部验证到目标群聊：$group"
+  fi
+}
+
+page_signature() {
+  local file="$1"
+  python3 - "$file" <<'PY'
+import hashlib, json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    data = json.load(f)
+rows = []
+for e in data.get("elements", []):
+    label = str(e.get("label", "")).strip()
+    rect = e.get("rect") or []
+    if not label or len(rect) != 4:
+        continue
+    x, y, w, h = map(float, rect)
+    if 70 <= y < 690:
+        rows.append((str(e.get("kind", "")), label, round(x), round(y), round(w), round(h)))
+rows.sort()
+blob = json.dumps(rows, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+print(hashlib.sha256(blob).hexdigest())
+PY
+}
+
+cmd_status() {
+  init_runtime
+  local raw
+  raw="$(phone_status)" || die_json "IPHONE_USE_UNREACHABLE" "无法访问 iphone-use status"
+  printf '%s' "$raw" | python3 -c '
+import json, sys
+s = json.load(sys.stdin)
+ready = all([
+    s.get("ok") is True,
+    s.get("wda") is True,
+    s.get("wda_actionable") is True,
+    s.get("wda_locked") is False,
+    s.get("drivable") is True,
+    s.get("mode") == "agent",
+])
+out = {
+    "ok": True,
+    "action": "status",
+    "ready": ready,
+    "status": s,
+}
+print(json.dumps(out, ensure_ascii=False))
+'
+}
+
+resolve_wda_script() {
+  if [[ -x "$WDA_SCRIPT" ]]; then
+    printf '%s\n' "$WDA_SCRIPT"
+    return 0
+  fi
+  if [[ -x "$WDA_FIXED_SCRIPT" ]]; then
+    printf '%s\n' "$WDA_FIXED_SCRIPT"
+    return 0
+  fi
+  return 1
+}
+
+service_loaded() {
+  local label="$1"
+  launchctl print "gui/$(id -u)/$label" >/dev/null 2>&1
+}
+
+wda_reachable() {
+  curl --noproxy "*" -sS --max-time 4 "$WDA_URL/status" >/dev/null 2>&1
+}
+
+validate_wda_script() {
+  local script="$1"
+  local active="$STATE_DIR/wda-script-active.$$"
+
+  sed '/^[[:space:]]*#/d' "$script" > "$active"
+
+  if grep -Eq 'nohup[[:space:]]+xcodebuild' "$active"; then
+    rm -f "$active"
+    die_json "WDA_SCRIPT_NOT_PATCHED" "setup-wda.sh 仍使用 nohup xcodebuild；请按实测文档移除 nohup，并让 xcodebuild 保持为 setup-wda.sh 的直接子进程"
+  fi
+
+  if grep -Eq -- '-allowProvisioningUpdates|-allowProvisioningDeviceRegistration|DEVELOPMENT_TEAM=|PRODUCT_BUNDLE_IDENTIFIER=|CODE_SIGN_IDENTITY=|CODE_SIGN_STYLE=' "$active"; then
+    rm -f "$active"
+    die_json "WDA_SIGNING_OVERRIDE_FOUND" "setup-wda.sh 仍包含命令行签名覆盖；本机成功方案要求复用 Xcode 项目中的 Team 与 Bundle ID 配置"
+  fi
+
+  rm -f "$active"
+
+  if ! grep -q 'WDA_KEEPALIVE' "$script"; then
+    die_json "WDA_KEEPALIVE_UNSUPPORTED" "setup-wda.sh 不包含 WDA_KEEPALIVE 支持，请同步实测修改后的脚本"
+  fi
+}
+
+close_competing_apps() {
+  log "关闭可能争用 XCTest 会话的 Xcode GUI 与 iPhone 镜像"
+  osascript -e 'tell application "Xcode" to quit' >/dev/null 2>&1 || true
+  osascript -e 'tell application id "com.apple.ScreenContinuity" to quit' >/dev/null 2>&1 || true
+  sleep 1
+}
+
+check_wda_prerequisites() {
+  require_cmd xcodebuild
+  require_cmd xcrun
+  require_cmd iproxy
+  require_cmd idevice_id
+
+  local script
+  script="$(resolve_wda_script)" || die_json "WDA_SCRIPT_NOT_FOUND" "找不到 setup-wda.sh；已检查：$WDA_SCRIPT 和 $WDA_FIXED_SCRIPT"
+  validate_wda_script "$script"
+
+  if command -v warp-cli >/dev/null 2>&1 && warp-cli status 2>/dev/null | grep -qiw 'Connected'; then
+    die_json "VPN_TUN_ACTIVE" "Cloudflare WARP 正在连接，会破坏 CoreDevice/XCTest 会话；请先断开"
+  fi
+
+  if ! idevice_id -l 2>/dev/null | grep -Fxq "$WDA_UDID"; then
+    die_json "IPHONE_USB_NOT_FOUND" "USB 未识别目标 iPhone：$WDA_UDID；请解锁、保持亮屏并检查数据线"
+  fi
+}
+
+start_daemon_internal() {
+  local uid_num
+  uid_num="$(id -u)"
+
+  [[ -f "$DAEMON_PLIST" ]] || die_json "DAEMON_PLIST_NOT_FOUND" "找不到：$DAEMON_PLIST"
+  [[ -x "$DAEMON_BINARY" ]] || die_json "DAEMON_BINARY_NOT_FOUND" "找不到或不可执行：$DAEMON_BINARY"
+
+  if ! plutil -lint "$DAEMON_PLIST" >/dev/null; then
+    die_json "DAEMON_PLIST_INVALID" "LaunchAgent plist 校验失败：$DAEMON_PLIST"
+  fi
+
+  log "启动 iphone-use LaunchAgent"
+  if ! service_loaded "$DAEMON_LABEL"; then
+    launchctl bootstrap "gui/$uid_num" "$DAEMON_PLIST" >/dev/null 2>&1 \
+      || die_json "DAEMON_BOOTSTRAP_FAILED" "无法 bootstrap $DAEMON_LABEL"
+  fi
+
+  launchctl enable "gui/$uid_num/$DAEMON_LABEL" >/dev/null 2>&1 || true
+  launchctl kickstart -k "gui/$uid_num/$DAEMON_LABEL" >/dev/null \
+    || die_json "DAEMON_KICKSTART_FAILED" "无法启动 $DAEMON_LABEL"
+
+  local count=0
+  while true; do
+    if phone_status >/dev/null 2>&1; then
+      return 0
+    fi
+    count=$((count + 1))
+    if [[ $count -ge 30 ]]; then
+      die_json "DAEMON_START_TIMEOUT" "iphone-use 未在 30 秒内响应 $HOST/agent/status"
+    fi
+    sleep 1
+  done
+}
+
+stop_wda_processes() {
+  local script=""
+  script="$(resolve_wda_script 2>/dev/null || true)"
+  if [[ -n "$script" ]]; then
+    "$script" stop >/dev/null 2>&1 || true
+  fi
+
+  pkill -9 -f 'xcodebuild.*WebDriverAgentRunner' 2>/dev/null || true
+  pkill -f 'iproxy.*8100' 2>/dev/null || true
+  pkill -f 'socat.*8100' 2>/dev/null || true
+  pkill -f 'iproxy.*9100' 2>/dev/null || true
+  pkill -9 -f '/usr/bin/sudo -- /usr/bin/true' 2>/dev/null || true
+
+  rm -f \
+    "$HOME/.iphone-use/wda-runner.pid" \
+    "$HOME/.iphone-use/wda-relay.pid" \
+    "$HOME/.iphone-use/wda-mjpeg-relay.pid"
+}
+
+write_wda_service_files() {
+  local script="$1"
+  mkdir -p "$STATE_DIR" "$WDA_SERVICE_LOG_DIR" "$HOME/Library/LaunchAgents"
+
+  cat > "$WDA_WRAPPER" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$IPHONE_USE_PROJECT_DIR"
+exec env \\
+  WDA_KEEPALIVE=1 \\
+  WDA_TEAM_ID="$WDA_TEAM_ID" \\
+  WDA_UDID="$WDA_UDID" \\
+  "$script"
+EOF
+  chmod 700 "$WDA_WRAPPER"
+
+  cat > "$WDA_SERVICE_PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>$WDA_SERVICE_LABEL</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>$WDA_WRAPPER</string>
+  </array>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+
+  <key>LimitLoadToSessionType</key>
+  <string>Aqua</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>$HOME</string>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>StandardOutPath</key>
+  <string>$WDA_SERVICE_LOG_DIR/wda-keeper.log</string>
+  <key>StandardErrorPath</key>
+  <string>$WDA_SERVICE_LOG_DIR/wda-keeper.err</string>
+</dict>
+</plist>
+EOF
+  chmod 600 "$WDA_SERVICE_PLIST"
+  plutil -lint "$WDA_SERVICE_PLIST" >/dev/null \
+    || die_json "WDA_SERVICE_PLIST_INVALID" "生成的 WDA LaunchAgent plist 无效"
+}
+
+stop_wda_service_internal() {
+  local uid_num
+  uid_num="$(id -u)"
+
+  launchctl bootout "gui/$uid_num/$WDA_SERVICE_LABEL" >/dev/null 2>&1 || true
+  sleep 1
+  stop_wda_processes
+}
+
+start_wda_service_internal() {
+  local force="${1:-0}"
+  local uid_num
+  uid_num="$(id -u)"
+
+  if [[ "$force" != "1" ]] && wda_reachable && service_loaded "$WDA_SERVICE_LABEL"; then
+    log "WDA 已由专用 LaunchAgent 守护并且可用，跳过重启"
+    return 0
+  fi
+
+  if [[ "$force" != "1" ]] && wda_reachable && ! service_loaded "$WDA_SERVICE_LABEL"; then
+    log "检测到手工启动的 WDA；将其切换为专用 LaunchAgent 守护模式"
+  fi
+
+  check_wda_prerequisites
+  close_competing_apps
+
+  local script
+  script="$(resolve_wda_script)" || die_json "WDA_SCRIPT_NOT_FOUND" "找不到 setup-wda.sh"
+
+  log "清理旧 WDA/XCTest/iproxy 进程"
+  stop_wda_service_internal
+  write_wda_service_files "$script"
+
+  log "通过专用 LaunchAgent 启动 WDA_KEEPALIVE=1"
+  if ! launchctl bootstrap "gui/$uid_num" "$WDA_SERVICE_PLIST" >/dev/null 2>&1; then
+    sleep 1
+    launchctl bootout "gui/$uid_num/$WDA_SERVICE_LABEL" >/dev/null 2>&1 || true
+    sleep 1
+    launchctl bootstrap "gui/$uid_num" "$WDA_SERVICE_PLIST" >/dev/null 2>&1 \
+      || die_json "WDA_SERVICE_BOOTSTRAP_FAILED" "无法加载 $WDA_SERVICE_LABEL；查看 $WDA_SERVICE_LOG_DIR/wda-keeper.err"
+  fi
+
+  launchctl enable "gui/$uid_num/$WDA_SERVICE_LABEL" >/dev/null 2>&1 || true
+  launchctl kickstart -k "gui/$uid_num/$WDA_SERVICE_LABEL" >/dev/null \
+    || die_json "WDA_SERVICE_KICKSTART_FAILED" "无法启动 $WDA_SERVICE_LABEL"
+
+  local elapsed=0
+  while ! wda_reachable; do
+    elapsed=$((elapsed + 2))
+    if [[ $elapsed -ge $WDA_START_TIMEOUT ]]; then
+      tail -n 80 "$HOME/.iphone-use/wda-runner.log" >&2 2>/dev/null || true
+      tail -n 80 "$WDA_SERVICE_LOG_DIR/wda-keeper.err" >&2 2>/dev/null || true
+      die_json "WDA_START_TIMEOUT" "WDA 未在 ${WDA_START_TIMEOUT} 秒内响应 $WDA_URL/status"
+    fi
+    sleep 2
+  done
+}
+
+request_agent_mode_if_needed() {
+  local raw
+  raw="$(phone_status 2>/dev/null || true)"
+  if printf '%s' "$raw" | status_ready_from_stdin >/dev/null 2>&1; then
+    return 0
+  fi
+
+  curl --noproxy "*" -sS --max-time 15 \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -X POST \
+    "$HOST/agent/mode" \
+    -d '{"mode":"agent"}' >/dev/null 2>&1 || true
+}
+
+wait_agent_ready() {
+  local count=0
+  local raw=""
+  while true; do
+    raw="$(phone_status 2>/dev/null || true)"
+    if printf '%s' "$raw" | status_ready_from_stdin >/dev/null 2>&1; then
+      return 0
+    fi
+    count=$((count + 1))
+    if [[ $count -ge 60 ]]; then
+      printf '%s\n' "$raw" >&2
+      die_json "STACK_NOT_READY" "WDA 已启动，但 iphone-use 未在 60 秒内进入可操作 Agent 状态"
+    fi
+    sleep 1
+  done
+}
+
+cmd_status() {
+  init_runtime
+
+  local raw=""
+  local daemon_loaded=false
+  local wda_service_loaded=false
+  local wda_http=false
+
+  service_loaded "$DAEMON_LABEL" && daemon_loaded=true
+  service_loaded "$WDA_SERVICE_LABEL" && wda_service_loaded=true
+  wda_reachable && wda_http=true
+  raw="$(phone_status 2>/dev/null || true)"
+
+  python3 - "$raw" "$daemon_loaded" "$wda_service_loaded" "$wda_http" "$IPHONE_USE_PROJECT_DIR" "$WDA_UDID" <<'PY'
+import json, sys
+raw, daemon_loaded, wda_service_loaded, wda_http, project_dir, udid = sys.argv[1:]
+try:
+    status = json.loads(raw)
+except Exception:
+    status = None
+ready = bool(status) and all([
+    status.get("ok") is True,
+    status.get("wda") is True,
+    status.get("wda_actionable") is True,
+    status.get("wda_locked") is False,
+    status.get("drivable") is True,
+    status.get("mode") == "agent",
+])
+print(json.dumps({
+    "ok": True,
+    "action": "status",
+    "ready": ready,
+    "daemon_loaded": daemon_loaded == "true",
+    "wda_service_loaded": wda_service_loaded == "true",
+    "wda_http_reachable": wda_http == "true",
+    "project_dir": project_dir,
+    "wda_udid": udid,
+    "status": status,
+}, ensure_ascii=False))
+PY
+}
+
+cmd_start_daemon() {
+  init_runtime
+  start_daemon_internal
+  cmd_status
+}
+
+cmd_start_wda() {
+  init_runtime
+  start_wda_service_internal 0
+  request_agent_mode_if_needed
+  wait_agent_ready
+  cmd_status
+}
+
+cmd_start() {
+  init_runtime
+  start_daemon_internal
+  start_wda_service_internal 0
+  request_agent_mode_if_needed
+  wait_agent_ready
+  cmd_status
+}
+
+cmd_restart() {
+  init_runtime
+  start_daemon_internal
+  start_wda_service_internal 1
+  request_agent_mode_if_needed
+  wait_agent_ready
+  cmd_status
+}
+
+cmd_stop_wda() {
+  require_cmd launchctl
+  require_cmd curl
+  stop_wda_service_internal
+  python3 - <<'PY'
+import json
+print(json.dumps({"ok": True, "action": "stop-wda", "stopped": True}, ensure_ascii=False))
+PY
+}
+
+cmd_stop() {
+  require_cmd launchctl
+  local uid_num
+  uid_num="$(id -u)"
+
+  stop_wda_service_internal
+  launchctl bootout "gui/$uid_num/$DAEMON_LABEL" >/dev/null 2>&1 || true
+
+  python3 - <<'PY'
+import json
+print(json.dumps({"ok": True, "action": "stop", "wda_stopped": True, "daemon_stopped": True}, ensure_ascii=False))
+PY
+}
+
+cmd_doctor() {
+  require_cmd python3
+  require_cmd curl
+
+  local wda_script=""
+  wda_script="$(resolve_wda_script 2>/dev/null || true)"
+  local daemon_plist_ok=false daemon_binary_ok=false project_ok=false wda_script_ok=false
+  local iproxy_ok=false usb_ok=false wda_http=false daemon_http=false
+
+  [[ -f "$DAEMON_PLIST" ]] && plutil -lint "$DAEMON_PLIST" >/dev/null 2>&1 && daemon_plist_ok=true
+  [[ -x "$DAEMON_BINARY" ]] && daemon_binary_ok=true
+  [[ -d "$IPHONE_USE_PROJECT_DIR" ]] && project_ok=true
+  [[ -n "$wda_script" && -x "$wda_script" ]] && wda_script_ok=true
+  command -v iproxy >/dev/null 2>&1 && iproxy_ok=true
+  command -v idevice_id >/dev/null 2>&1 && idevice_id -l 2>/dev/null | grep -Fxq "$WDA_UDID" && usb_ok=true
+  wda_reachable && wda_http=true
+
+  if [[ -f "$TOKEN_FILE" ]]; then
+    TOKEN="$(tr -d '\r\n' < "$TOKEN_FILE")"
+    phone_status >/dev/null 2>&1 && daemon_http=true
+  fi
+
+  python3 - "$daemon_plist_ok" "$daemon_binary_ok" "$project_ok" "$wda_script_ok" "$iproxy_ok" "$usb_ok" "$wda_http" "$daemon_http" "$wda_script" <<'PY'
+import json, sys
+names = [
+    "daemon_plist_ok", "daemon_binary_ok", "project_dir_ok", "wda_script_ok",
+    "iproxy_ok", "usb_device_ok", "wda_http_reachable", "daemon_http_reachable",
+]
+values = [value == "true" for value in sys.argv[1:9]]
+checks = dict(zip(names, values))
+print(json.dumps({
+    "ok": all(values[:6]),
+    "action": "doctor",
+    "checks": checks,
+    "wda_script": sys.argv[9],
+}, ensure_ascii=False))
+PY
+}
+
+cmd_open_group() {
+  local group=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --group) group="${2:-}"; shift 2 ;;
+      *) die_json "INVALID_ARGUMENT" "未知参数：$1" ;;
+    esac
+  done
+  [[ -n "$group" ]] || die_json "GROUP_REQUIRED" "需要 --group"
+
+  init_runtime
+  assert_allowed_group "$group"
+  assert_ready
+  acquire_lock
+  open_group_internal "$group"
+
+  python3 - "$group" <<'PY'
+import json, sys
+print(json.dumps({"ok": True, "action": "open-group", "group": sys.argv[1], "verified": True}, ensure_ascii=False))
+PY
+}
+
+cmd_send() {
+  local group=""
+  local message=""
+  local dry_run=0
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --group) group="${2:-}"; shift 2 ;;
+      --message) message="${2:-}"; shift 2 ;;
+      --dry-run) dry_run=1; shift ;;
+      *) die_json "INVALID_ARGUMENT" "未知参数：$1" ;;
+    esac
+  done
+
+  [[ -n "$group" ]] || die_json "GROUP_REQUIRED" "需要 --group"
+  [[ -n "$message" ]] || die_json "MESSAGE_REQUIRED" "需要 --message"
+  local raw_message="$message"
+  message="$(normalize_message_for_wechat "$message")"
+  [[ -n "$message" ]] || die_json "MESSAGE_REQUIRED" "换行归一化后消息为空"
+
+  init_runtime
+  assert_allowed_group "$group"
+  assert_ready
+  acquire_lock
+  open_group_internal "$group"
+
+  local message_prepared=0
+  local draft_state="$STATE_DIR/draft-before-input.json"
+  local draft_status=""
+
+  save_elements "$draft_state"
+  if ! is_group_open_file "$draft_state" "$group"; then
+    die_json "TARGET_GROUP_LOST" "准备输入消息前已无法验证目标群聊，停止发送"
+  fi
+
+  draft_status="$(draft_message_state_file "$draft_state" "$message")"
+  case "$draft_status" in
+    exact)
+      log "输入框已存在目标文案，跳过输入，准备直接发送"
+      message_prepared=1
+      ;;
+    duplicate)
+      die_json "DRAFT_MESSAGE_DUPLICATED" "输入框中已存在重复拼接文案，停止发送以避免群内重复内容"
+      ;;
+    contains|different)
+      die_json "DRAFT_MESSAGE_CONFLICT" "输入框中已有其他内容，停止发送以避免拼接错误"
+      ;;
+    empty)
+      ;;
+    *)
+      die_json "DRAFT_MESSAGE_UNKNOWN" "无法判断输入框草稿状态：$draft_status"
+      ;;
+  esac
+
+  if [[ $message_prepared -eq 0 ]]; then
+    log "点击消息输入框"
+    phone_act "{\"type\":\"tap\",\"x\":$INPUT_X,\"y\":$INPUT_Y}" >/dev/null
+    sleep 1
+
+    draft_state="$STATE_DIR/draft-focused.json"
+    save_elements "$draft_state"
+    if ! is_group_open_file "$draft_state" "$group"; then
+      die_json "TARGET_GROUP_LOST" "点击输入框后已无法验证目标群聊，停止发送"
+    fi
+
+    draft_status="$(draft_message_state_file "$draft_state" "$message")"
+    case "$draft_status" in
+      exact)
+        log "输入框已存在目标文案，跳过输入，准备直接发送"
+        message_prepared=1
+        ;;
+      duplicate)
+        die_json "DRAFT_MESSAGE_DUPLICATED" "输入框中已存在重复拼接文案，停止发送以避免群内重复内容"
+        ;;
+      contains|different)
+        die_json "DRAFT_MESSAGE_CONFLICT" "输入框中已有其他内容，停止发送以避免拼接错误"
+        ;;
+      empty)
+        ;;
+      *)
+        die_json "DRAFT_MESSAGE_UNKNOWN" "无法判断输入框草稿状态：$draft_status"
+        ;;
+    esac
+  fi
+
+  if [[ $message_prepared -eq 0 ]]; then
+    log "输入消息"
+    if [[ "$message" != "$raw_message" ]]; then
+      log "消息包含换行；已压缩为单条文本，避免微信拆成多条发送"
+    fi
+    phone_act "$(json_text_payload "$message")" >/dev/null
+    sleep 1
+
+    draft_state="$STATE_DIR/draft-after-input.json"
+    save_elements "$draft_state"
+    if ! is_group_open_file "$draft_state" "$group"; then
+      die_json "TARGET_GROUP_LOST" "输入消息后已无法验证目标群聊，停止发送"
+    fi
+
+    draft_status="$(draft_message_state_file "$draft_state" "$message")"
+    case "$draft_status" in
+      exact)
+        message_prepared=1
+        ;;
+      duplicate)
+        die_json "DRAFT_MESSAGE_DUPLICATED" "输入消息后检测到完整文案已重复拼接，停止发送以避免群内重复内容"
+        ;;
+      contains|different)
+        die_json "DRAFT_MESSAGE_CONFLICT" "输入消息后草稿内容与目标文案不一致，停止发送"
+        ;;
+      empty)
+        die_json "DRAFT_MESSAGE_NOT_FOUND" "输入消息后未能在输入框中验证目标文案，停止发送"
+        ;;
+      *)
+        die_json "DRAFT_MESSAGE_UNKNOWN" "无法判断输入框草稿状态：$draft_status"
+        ;;
+    esac
+  fi
+
+  local before="$STATE_DIR/before-send.json"
+  local send_element=""
+  local send_find_attempt=1
+  local send_find_max_attempts="${WECHAT_IPHONE_SEND_FIND_ATTEMPTS:-5}"
+  local send_find_interval="${WECHAT_IPHONE_SEND_FIND_INTERVAL:-1}"
+
+  while [[ $send_find_attempt -le $send_find_max_attempts ]]; do
+    save_elements "$before"
+
+    if ! is_group_open_file "$before" "$group"; then
+      die_json "TARGET_GROUP_LOST" "输入消息后已无法验证目标群聊，停止发送"
+    fi
+
+    draft_status="$(draft_message_state_file "$before" "$message")"
+    case "$draft_status" in
+      exact|empty)
+        ;;
+      duplicate)
+        die_json "DRAFT_MESSAGE_DUPLICATED" "点击发送前检测到输入框中完整文案已重复拼接，停止发送以避免群内重复内容"
+        ;;
+      contains|different)
+        die_json "DRAFT_MESSAGE_CONFLICT" "点击发送前输入框内容与目标文案不一致，停止发送"
+        ;;
+      *)
+        die_json "DRAFT_MESSAGE_UNKNOWN" "无法判断输入框草稿状态：$draft_status"
+        ;;
+    esac
+
+    send_element="$(find_wechat_send_element_index "$before")"
+    if [[ -n "$send_element" ]]; then
+      break
+    fi
+
+    log "第 $send_find_attempt 次未找到发送按钮，${send_find_interval} 秒后重试"
+    sleep "$send_find_interval"
+    send_find_attempt=$((send_find_attempt + 1))
+  done
+
+  if [[ -z "$send_element" ]]; then
+    die_json       "SEND_BUTTON_NOT_FOUND"       "保持键盘展开并重试 ${send_find_max_attempts} 次后，仍未在元素树中找到发送按钮，消息未发送"
+  fi
+
+  if [[ $dry_run -eq 1 ]]; then
+    python3 - "$group" "$message" "$send_element" <<'PY'
+import json, sys
+print(json.dumps({
+    "ok": True,
+    "action": "send",
+    "dry_run": True,
+    "group": sys.argv[1],
+    "message": sys.argv[2],
+    "send_element": int(sys.argv[3]),
+    "prepared": True,
+}, ensure_ascii=False))
+PY
+    return 0
+  fi
+
+  log "点击发送按钮元素：$send_element"
+  local send_result
+  send_result="$(phone_act "$(json_tap_element_payload "$send_element")")"
+  sleep 3
+
+  local after="$STATE_DIR/after-send.json"
+  save_elements "$after"
+
+  python3 - "$after" "$group" "$message" "$send_result" <<'PY'
+import json, sys
+path, group, message, send_result = sys.argv[1:]
+with open(path, encoding="utf-8") as f:
+    data = json.load(f)
+labels = [str(e.get("label", "")) for e in data.get("elements", [])]
+group_ok = any(group in x for x in labels)
+message_ok = any(message in x for x in labels)
+print(json.dumps({
+    "ok": True,
+    "action": "send",
+    "group": group,
+    "message": message,
+    "sent": True,
+    "verified": bool(group_ok and message_ok),
+    "group_still_open": group_ok,
+    "message_visible": message_ok,
+    "transport_result": send_result,
+    "warning": None if group_ok and message_ok else "发送操作已执行，但元素树未能完整验证；不要自动重试，以免重复发送。",
+}, ensure_ascii=False))
+PY
+}
+
+cmd_read() {
+  local group=""
+  local pages=1
+  local out_dir=""
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --group) group="${2:-}"; shift 2 ;;
+      --pages) pages="${2:-}"; shift 2 ;;
+      --out-dir) out_dir="${2:-}"; shift 2 ;;
+      *) die_json "INVALID_ARGUMENT" "未知参数：$1" ;;
+    esac
+  done
+
+  [[ -n "$group" ]] || die_json "GROUP_REQUIRED" "需要 --group"
+  if ! [[ "$pages" =~ ^[0-9]+$ ]] || [[ "$pages" -lt 1 ]] || [[ "$pages" -gt 50 ]]; then
+    die_json "INVALID_PAGES" "--pages 必须是 1 到 50 的整数"
+  fi
+
+  init_runtime
+  assert_allowed_group "$group"
+  assert_ready
+  acquire_lock
+  open_group_internal "$group"
+
+  if [[ -z "$out_dir" ]]; then
+    out_dir="$STATE_DIR/history-$(date +%Y%m%d-%H%M%S)"
+  fi
+  mkdir -p "$out_dir"
+
+  local first="$out_dir/page-01.json"
+  save_elements "$first"
+  local previous_signature
+  previous_signature="$(page_signature "$first")"
+  local collected=1
+
+  local page_number=2
+  while [[ $page_number -le $pages ]]; do
+    local page_name
+    page_name="$(printf '%02d' "$page_number")"
+    local candidate="$out_dir/.candidate.json"
+    local target="$out_dir/page-${page_name}.json"
+
+    log "准备获取第 $page_number 页"
+    local scroll_result
+    scroll_result="$(phone_act "{\"type\":\"scroll\",\"x\":$SCROLL_X,\"y\":$SCROLL_Y,\"dx\":0,\"dy\":$SCROLL_DY}")"
+    if [[ "$scroll_result" != *"ok"* ]]; then
+      log "滑动未成功：$scroll_result"
+      break
+    fi
+
+    sleep 2
+    save_elements "$candidate"
+    local next_signature
+    next_signature="$(page_signature "$candidate")"
+
+    if [[ "$next_signature" == "$previous_signature" ]]; then
+      log "页面未变化，尝试更强滑动"
+      scroll_result="$(phone_act "{\"type\":\"scroll\",\"x\":$SCROLL_X,\"y\":0.55,\"dx\":0,\"dy\":$SCROLL_RETRY_DY}")"
+      if [[ "$scroll_result" != *"ok"* ]]; then
+        rm -f "$candidate"
+        break
+      fi
+      sleep 2
+      save_elements "$candidate"
+      next_signature="$(page_signature "$candidate")"
+    fi
+
+    if [[ "$next_signature" == "$previous_signature" ]]; then
+      log "页面仍未变化，可能已经到达最早消息"
+      rm -f "$candidate"
+      break
+    fi
+
+    mv "$candidate" "$target"
+    previous_signature="$next_signature"
+    collected=$page_number
+    page_number=$((page_number + 1))
+  done
+
+  python3 - "$out_dir" "$group" "$pages" "$collected" <<'PY'
+import glob, json, os, sys
+out_dir, group, requested, collected = sys.argv[1], sys.argv[2], int(sys.argv[3]), int(sys.argv[4])
+ignore = {
+    group, "返回", "聊天信息", "语音", "键盘", "表情", "更多", "发送", "搜索"
+}
+pages = []
+for filename in sorted(glob.glob(os.path.join(out_dir, "page-*.json"))):
+    with open(filename, encoding="utf-8") as f:
+        data = json.load(f)
+    rows = []
+    seen = set()
+    for element in data.get("elements", []):
+        label = str(element.get("label", "")).strip()
+        rect = element.get("rect") or []
+        if not label or label in ignore or len(rect) != 4:
+            continue
+        x, y, width, height = map(float, rect)
+        if not 70 <= y < 690:
+            continue
+        key = (label, round(x), round(y), round(width), round(height))
+        if key in seen:
+            continue
+        seen.add(key)
+        rows.append({
+            "kind": element.get("kind"),
+            "label": label,
+            "rect": rect,
+            "depth": element.get("depth"),
+        })
+    rows.sort(key=lambda item: (float(item["rect"][1]), float(item["rect"][0])))
+    pages.append({
+        "page": os.path.basename(filename),
+        "items": rows,
+    })
+print(json.dumps({
+    "ok": True,
+    "action": "read",
+    "group": group,
+    "requested_pages": requested,
+    "collected_pages": len(pages),
+    "raw_dir": out_dir,
+    "pages": pages,
+}, ensure_ascii=False))
+PY
+}
+
+cmd_elements() {
+  local group=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --group) group="${2:-}"; shift 2 ;;
+      *) die_json "INVALID_ARGUMENT" "未知参数：$1" ;;
+    esac
+  done
+  init_runtime
+  assert_ready
+  acquire_lock
+  if [[ -n "$group" ]]; then
+    assert_allowed_group "$group"
+    open_group_internal "$group"
+  fi
+  phone_elements
+}
+
+usage() {
+  cat <<'USAGE'
+用法：
+  wechat-iphone doctor
+  wechat-iphone status
+  wechat-iphone start-daemon
+  wechat-iphone start-wda
+  wechat-iphone start
+  wechat-iphone restart
+  wechat-iphone stop-wda
+  wechat-iphone stop
+  wechat-iphone open-group --group "群聊名称"
+  wechat-iphone send --group "群聊名称" --message "消息正文" [--dry-run]
+  wechat-iphone read --group "群聊名称" [--pages N] [--out-dir DIR]
+  wechat-iphone elements [--group "群聊名称"]
+
+启动说明：
+  - iphone-use 通过 com.leeguoo.iphone-use LaunchAgent 启动。
+  - WDA 通过独立的 com.leeguoo.iphone-use.wda LaunchAgent 启动。
+  - WDA 服务实际执行已验证命令：WDA_KEEPALIVE=1 + WDA_TEAM_ID + WDA_UDID。
+  - 不传 WDA_BUNDLE_ID；签名 Team 与 Bundle ID 复用 Xcode 项目中的有效配置。
+  - 启动 WDA 前自动退出 Xcode GUI 与 iPhone 镜像，并要求 USB 识别目标设备。
+
+环境变量：
+  WECHAT_IPHONE_PROJECT_DIR          默认 $HOME/path/to/iphone-use
+  WECHAT_IPHONE_WDA_SCRIPT           默认 <项目>/scripts/setup-wda.sh
+  WDA_TEAM_ID                        默认 <APPLE_TEAM_ID>
+  WDA_UDID                           默认 <IPHONE_UDID>
+  WECHAT_IPHONE_CONFIG               允许群配置文件
+  WECHAT_IPHONE_HOST                 默认 http://127.0.0.1:44321
+  WECHAT_IPHONE_TOKEN_FILE           默认 ~/.iphone-use/agent-token
+  WECHAT_IPHONE_WDA_START_TIMEOUT    默认 300 秒
+  WECHAT_IPHONE_SEARCH_X/Y           搜索栏坐标
+  WECHAT_IPHONE_FIRST_RESULT_X/Y     第一条搜索结果坐标
+  WECHAT_IPHONE_INPUT_X/Y            消息输入框坐标
+  WECHAT_IPHONE_SEND_FIND_ATTEMPTS   查找发送按钮的最大次数，默认 5
+  WECHAT_IPHONE_SEND_FIND_INTERVAL   每次查找间隔秒数，默认 1
+
+发送说明：
+  - send 会在发送前把消息里的换行压缩为空格，避免微信把一条多段文案拆成多条消息。
+  - 输入前会检查输入框草稿；若已存在同一目标文案，跳过输入并直接准备发送。
+  - 输入消息最多执行一次；点击发送前会拦截完整文案重复拼接。
+  - 输入后不收起键盘；保持键盘展开，直接点击当前可见的“发送”按钮/键。
+USAGE
+}
+
+main() {
+  local command="${1:-}"
+  [[ $# -gt 0 ]] && shift
+  case "$command" in
+    doctor) cmd_doctor "$@" ;;
+    status) cmd_status "$@" ;;
+    start-daemon) cmd_start_daemon "$@" ;;
+    start-wda) cmd_start_wda "$@" ;;
+    start) cmd_start "$@" ;;
+    restart) cmd_restart "$@" ;;
+    stop-wda) cmd_stop_wda "$@" ;;
+    stop) cmd_stop "$@" ;;
+    open-group) cmd_open_group "$@" ;;
+    send) cmd_send "$@" ;;
+    read) cmd_read "$@" ;;
+    elements) cmd_elements "$@" ;;
+    help|-h|--help|"") usage ;;
+    *) die_json "UNKNOWN_COMMAND" "未知命令：$command" ;;
+  esac
+}
+
+main "$@"
