@@ -1,0 +1,1 @@
+在当前 session 中确认发送 task_id=youzan-promo-<YYYYMMDD>-<SEQ> 上一步已经回显且经人工核对的单行文案，目标群=<TARGET_WECHAT_GROUP>。先重新检查浏览器商品与链接身份、手机状态、allowlist、群名和草稿；若不能证明仍是同一 task_id、同一商品、同一链接和同一文案，立即停止。正式发送命令最多调用一次。若 sent=true 但 verified=false，按可能已经发送报告，禁止重试、WDA 补点或坐标补点。

@@ -14,7 +14,7 @@
 | 微信发送 | 群聊 allowlist、群名双校验、草稿冲突检测、发送按钮元素定位 |
 | 防重复 | 每个任务最多调用一次正式发送；验证不完整也不自动重发 |
 
-这套流程的边界很明确：商品、发布、群发等外部状态只能按当前任务授权修改；页面或设备状态无法确认时，任务停止并保留证据。
+执行边界：商品、发布、群发等外部状态只能按当前任务授权修改；页面或设备状态无法确认时，任务停止并保留证据。
 
 ### 实践文件
 
@@ -29,8 +29,11 @@
 | [主流程 Skill](./code/youzan-wechat-promotion/openclaw/skills/youzan-wechat-auto-promotion/SKILL.md) | 串联上架、链接、文案和发送 |
 | [wechat-iphone 脚本](./code/youzan-wechat-promotion/iphone-use/scripts/wechat-iphone) | 状态、WDA、群聊、草稿和发送实现 |
 | [allowlist 示例](./code/youzan-wechat-promotion/iphone-use/config/allowed-groups.json.example) | 目标群配置格式 |
+| [环境与任务示例](./code/youzan-wechat-promotion/.env.example) | Gateway 变量、坐标和任务输入的公开模板 |
+| [任务门禁脚本](./code/youzan-wechat-promotion/iphone-use/scripts/run-wechat-task.sh) | 复现时补充任务证据隔离与持久化 send once |
+| [离线 smoke test](./code/youzan-wechat-promotion/tests/smoke.sh) | 不连接有赞和手机的语法、报告与防重测试 |
 
-这些文件来自 2026-07-14 的实际工作区。公开版只替换了本机路径、签名标识、设备标识和商品示例，没有重写执行逻辑。
+`AGENTS.md`、三个 Skills 和原始 `wechat-iphone` 来自 2026-07-14 的实际工作区，公开版只替换环境值和业务示例。环境模板、任务门禁和测试是复现审计后增加的加固层，不冒充当日运行文件。
 
 ### 前置条件
 
@@ -38,6 +41,7 @@ iPhone-use、WDA 签名、USB 中继和 Agent Token 的安装过程见[在 Mac �
 
 开始业务任务前确认：
 
+* Node 不低于 `22.19.0`，OpenClaw Gateway RPC 正常；
 * 有赞后台已登录，浏览器会话属于有赞商城 A；
 * iPhone 已通过 USB 连接、解锁、亮屏并信任当前 Mac；
 * iphone-use daemon 和 WDA 均可访问；
@@ -58,6 +62,18 @@ WDA_KEEPALIVE=1 \
 ```
 
 Team ID、UDID、WDA Bundle ID、Token 和群名不写入公开仓库。
+
+空机器复现顺序：固定版本、部署专用 Agent、把非密钥变量写入 Gateway、接管已登录 Chrome、验证手机状态、校准坐标，最后做 dry-run。逐条命令和预期结果见[实践快照运行手册](./code/youzan-wechat-promotion/README.md)。关键缺口是浏览器会话：本次实践使用 `user` profile 接管已登录 Chrome，Agent 不负责在新浏览器中登录。
+
+```bash
+openclaw gateway status --require-rpc
+openclaw skills check --agent "<AGENT_NAME>"
+openclaw browser --browser-profile user status
+openclaw browser --browser-profile user tabs
+openclaw browser --browser-profile user snapshot --format ai
+```
+
+只有 Gateway 可用、三个 Skill 可发现，且 snapshot 能识别当前有赞页面，业务预检才算开始。
 
 ### 端到端流程
 
@@ -136,8 +152,9 @@ OpenClaw 不直接编排长坐标序列。易变的页面定位放进 Skill 或�
 先检查脚本和手机：
 
 ```bash
-wechat-iphone doctor
-wechat-iphone status
+export WECHAT_IPHONE="$OPENCLAW_WORKSPACE/skills/wechat-iphone/scripts/wechat-iphone"
+"$WECHAT_IPHONE" doctor
+"$WECHAT_IPHONE" status
 ```
 
 手机状态至少满足：
@@ -166,7 +183,7 @@ wechat-iphone status
   &csrf_token=<CURRENT_CSRF_TOKEN>
 ```
 
-选择规则保持简单：从 `data[0]` 开始按数组原始顺序检查，跳过 `isAdded === true`，遇到首个 `title`、`alias`、`algId` 完整且 `isAdded === false` 的商品后立即停止。
+选择规则：从 `data[0]` 开始按数组原始顺序检查，跳过 `isAdded === true`，遇到首个 `title`、`alias`、`algId` 完整且 `isAdded === false` 的商品后立即停止。
 
 随后用同一条记录的 `alias` 和 `algId` 打开详情页，再核对完整商品名和“上架到店铺”入口。接口不可用或字段矛盾时才退回卡片悬停判断；视觉兜底也必须读到明确的“未添加”。
 
@@ -215,7 +232,7 @@ wechat-iphone status
 先用独立演练任务准备草稿并定位发送按钮：
 
 ```bash
-wechat-iphone send \
+"$WECHAT_IPHONE" send \
   --group "<TARGET_WECHAT_GROUP>" \
   --message "单行推广文案 <PRODUCT_LINK>" \
   --dry-run
@@ -226,7 +243,7 @@ wechat-iphone send \
 正式发送命令只调用一次：
 
 ```bash
-wechat-iphone send \
+"$WECHAT_IPHONE" send \
   --group "<TARGET_WECHAT_GROUP>" \
   --message "单行推广文案 <PRODUCT_LINK>"
 ```
@@ -245,19 +262,19 @@ wechat-iphone send \
 }
 ```
 
-OpenClaw 报告把 `group_still_open` 映射为 `group_verified`，并补充 `task_id` 和 `evidence_dir`。字段分层后，脚本结果和任务报告不会混为一谈。
+原始 Agent 读取 `sent` 和 `verified`；公开包新增的任务门禁再把 `group_still_open` 映射为 `group_verified`，并补充 `task_id` 和 `evidence_dir`。
 
 ### wechat-iphone 的安全抽象
 
 Agent 使用稳定命令，不直接拼 WDA 请求：
 
 ```bash
-wechat-iphone doctor
-wechat-iphone status
-wechat-iphone open-group --group "<TARGET_WECHAT_GROUP>"
-wechat-iphone send --group "<TARGET_WECHAT_GROUP>" --message "消息" --dry-run
-wechat-iphone read --group "<TARGET_WECHAT_GROUP>" --pages 1
-wechat-iphone elements --group "<TARGET_WECHAT_GROUP>"
+"$WECHAT_IPHONE" doctor
+"$WECHAT_IPHONE" status
+"$WECHAT_IPHONE" open-group --group "<TARGET_WECHAT_GROUP>"
+"$WECHAT_IPHONE" send --group "<TARGET_WECHAT_GROUP>" --message "消息" --dry-run
+"$WECHAT_IPHONE" read --group "<TARGET_WECHAT_GROUP>" --pages 1
+"$WECHAT_IPHONE" elements --group "<TARGET_WECHAT_GROUP>"
 ```
 
 | 机制 | 实现 |
@@ -314,20 +331,21 @@ stateDiagram-v2
 | `SEND_BUTTON_NOT_FOUND` | 元素树中没有发送按钮 | 报告未发送，不补点 |
 | `PRODUCT_LINK_MISMATCH` | 链接不属于当前商品 | 关闭弹窗并停止任务 |
 
-证据按任务隔离，避免跨商品读取旧状态：
+原始 `wechat-iphone` 把草稿和元素树写进 `WECHAT_IPHONE_STATE_DIR`，并不会自行创建业务任务目录。公开包新增的 `run-wechat-task.sh` 为每次调用分配独立状态目录，并在正式调用前持久写入 `send-invoked`：
 
 ```text
 $HOME/.iphone-use/wechat-iphone/tasks/<TASK_ID>/
 ├── task.json
-├── listing.json
-├── link.json
-├── message.txt
-├── before-send.json
-├── after-send.json
-└── report.json
+├── send-invoked/marker.json
+└── invocations/<RUN_ID>/
+    ├── message.txt
+    ├── wechat-result.json
+    ├── wechat.log
+    ├── report.json
+    └── state/
 ```
 
-`wechat-iphone` 本身把元素树写入状态目录；编排层再按 `task_id` 归档并在报告中填写 `evidence_dir`。
+Runner 将脚本的 `group_still_open` 映射为 `group_verified`，并补充 `task_id`、`send_invoked` 和 `evidence_dir`。有赞侧的选品、SKU 和链接证据仍由 OpenClaw 报告负责；不要把 runner 描述成完整业务账本。
 
 ### 实践踩坑
 
@@ -341,7 +359,7 @@ $HOME/.iphone-use/wechat-iphone/tasks/<TASK_ID>/
 | dry-run 后文案重复 | 输入框保留上次草稿 | 四阶段检查草稿，`exact` 时不重复输入 |
 | 看不到消息就想重发 | 发送成功与元素树验证不是同一件事 | `sent=true` 即消耗发送机会，核验失败只报告 |
 
-这些问题都不是靠增加点击次数解决的。恢复动作必须回到可验证的状态，而不是换一条未定义路径继续跑。
+恢复动作必须回到可验证的状态，不能换一条未定义路径继续跑。
 
 ### 多商品素材小程序扩展
 
@@ -355,15 +373,14 @@ $HOME/.iphone-use/wechat-iphone/tasks/<TASK_ID>/
 
 ### 定时运行与去重
 
-定时任务只负责触发专用 Agent，不直接执行手机脚本：
+定时任务只负责触发专用 Agent，不直接执行手机脚本。当前公开快照没有商品推广账本或持久任务队列，因此只定时生成草稿：
 
 ```cron
-30 10 * * 1-5 openclaw agent \
-  --agent "<AGENT_NAME>" \
-  --message "按有赞商城 A 推广流程执行，模式=draft"
+PATH=/absolute/path/to/node/bin:/usr/bin:/bin
+30 10 * * 1-5 openclaw agent --agent "<AGENT_NAME>" --message "按有赞商城 A 推广流程执行，模式=draft"
 ```
 
-推荐先定时生成 `draft`，人工审核后再建立独立的 `send` 任务。去重至少记录：
+自动发送前必须补齐业务去重账本，至少记录：
 
 * `task_id`；
 * 商品唯一标识或 alias；
@@ -374,6 +391,8 @@ $HOME/.iphone-use/wechat-iphone/tasks/<TASK_ID>/
 * 完成时间。
 
 `send_invoked=true` 后，同一任务不再进入 `SENDING`。如果需要再次推广，应创建新的业务任务，而不是修改旧状态。
+
+上线定时发送前，先完成不少于 20 次 dry-run 和 10 次人工监督的正式发送。未达到这个样本量，或仍存在一次 `SENT_UNVERIFIED` 未查明原因，都不启用自动发送。
 
 ### 验收清单
 
@@ -387,6 +406,8 @@ $HOME/.iphone-use/wechat-iphone/tasks/<TASK_ID>/
 * [ ] 正式任务尚未调用过发送命令；
 * [ ] `sent` 与 `verified` 分开记录，验证不完整时没有重发；
 * [ ] 证据已归档到当前 `task_id`；
+* [ ] 新设备坐标已从当前元素树校准，没有照搬 `393 × 852` 基线；
+* [ ] 上线自动发送前已通过 20 次 dry-run 和 10 次人工监督发送；
 * [ ] 公开文件不含本机标识、凭证、群名、商品或聊天内容。
 
 ### 参考资料

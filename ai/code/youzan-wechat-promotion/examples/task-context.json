@@ -1,0 +1,12 @@
+{
+  "task_id": "youzan-promo-<YYYYMMDD>-<SEQ>",
+  "store": "有赞商城A",
+  "product_source": "auto_select",
+  "ranking": "15天热销榜",
+  "category": "日用百货",
+  "listing_group": "<LISTING_GROUP>",
+  "price_markup": 5.0,
+  "target_group": "<TARGET_WECHAT_GROUP>",
+  "mode": "draft"
+}
+

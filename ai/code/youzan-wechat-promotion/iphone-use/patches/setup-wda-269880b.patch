@@ -1,0 +1,33 @@
+diff --git a/scripts/setup-wda.sh b/scripts/setup-wda.sh
+index cc0458b..09df0a7 100755
+--- a/scripts/setup-wda.sh
++++ b/scripts/setup-wda.sh
+@@ -264,16 +264,17 @@ info "Building + launching WDA on the phone (first build takes a few minutes)"
+ _kill_pidfile "$RUNNER_PID_FILE"
+ pkill -f "xcodebuild.*WebDriverAgentRunner" 2>/dev/null || true
+ : > "$RUN_LOG"
+-(
+-    cd "$WDA_DIR"
+-    nohup xcodebuild -project WebDriverAgent.xcodeproj -scheme WebDriverAgentRunner \
+-        -destination "platform=iOS,id=$WDA_UDID" \
+-        -allowProvisioningUpdates \
+-        DEVELOPMENT_TEAM="$TEAM_ID" \
+-        PRODUCT_BUNDLE_IDENTIFIER="$WDA_BUNDLE_ID" \
+-        test > "$RUN_LOG" 2>&1 &
+-    echo $! > "$RUNNER_PID_FILE"
+-)
++ORIGINAL_DIR="$PWD"
++cd "$WDA_DIR"
++
++xcodebuild -project WebDriverAgent.xcodeproj -scheme WebDriverAgentRunner \
++    -destination "platform=iOS,id=$WDA_UDID" \
++    test > "$RUN_LOG" 2>&1 &
++
++RUNNER_PID=$!
++echo "$RUNNER_PID" > "$RUNNER_PID_FILE"
++
++cd "$ORIGINAL_DIR"
+ ok "runner pid $(cat "$RUNNER_PID_FILE") (log: $RUN_LOG)"
+ 
+ info "Waiting for ServerURLHere (or a trust error) ..."
+

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+case "${1:-}" in
+  doctor)
+    printf '%s\n' '{"ok":true,"action":"doctor"}'
+    ;;
+  status)
+    printf '%s\n' '{"ok":true,"action":"status","ready":true}'
+    ;;
+  send)
+    shift
+    dry_run=false
+    message=""
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        --group) shift 2 ;;
+        --message) message="${2:-}"; shift 2 ;;
+        --dry-run) dry_run=true; shift ;;
+        *) exit 1 ;;
+      esac
+    done
+    if [[ "$dry_run" == true ]]; then
+      printf '%s\n' '{"ok":true,"action":"send","dry_run":true,"prepared":true}'
+    elif [[ "$message" == *unverified* ]]; then
+      printf '%s\n' '{"ok":true,"action":"send","sent":true,"verified":false,"group_still_open":true,"message_visible":false,"warning":"verification incomplete"}'
+    else
+      printf '%s\n' '{"ok":true,"action":"send","sent":true,"verified":true,"group_still_open":true,"message_visible":true,"warning":null}'
+    fi
+    ;;
+  -h|--help|help|"")
+    printf '%s\n' 'fake wechat-iphone'
+    ;;
+  *) exit 1 ;;
+esac
+
