@@ -5,21 +5,10 @@
 set -uo pipefail
 IFS=$'\n\t'
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 STATE_DIR="${WECHAT_IPHONE_STATE_DIR:-$HOME/.iphone-use/wechat-iphone}"
 TOKEN_FILE="${WECHAT_IPHONE_TOKEN_FILE:-$HOME/.iphone-use/agent-token}"
 HOST="${WECHAT_IPHONE_HOST:-http://127.0.0.1:44321}"
 APP_BUNDLE="${WECHAT_IPHONE_APP_BUNDLE:-com.tencent.xin}"
-
-DEFAULT_CONFIG="$SCRIPT_DIR/../config/allowed-groups.json"
-FALLBACK_CONFIG="$HOME/.config/wechat-iphone/allowed-groups.json"
-if [[ -n "${WECHAT_IPHONE_CONFIG:-}" ]]; then
-  CONFIG_FILE="$WECHAT_IPHONE_CONFIG"
-elif [[ -f "$DEFAULT_CONFIG" ]]; then
-  CONFIG_FILE="$DEFAULT_CONFIG"
-else
-  CONFIG_FILE="$FALLBACK_CONFIG"
-fi
 
 SEARCH_X="${WECHAT_IPHONE_SEARCH_X:-0.50}"
 SEARCH_Y="${WECHAT_IPHONE_SEARCH_Y:-0.12}"
@@ -63,42 +52,6 @@ PY
 
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 || die_json "MISSING_COMMAND" "缺少命令: $1"
-}
-
-assert_allowed_group() {
-  local group="$1"
-  local rc=0
-
-  require_cmd python3
-
-  if [[ ! -f "$CONFIG_FILE" ]]; then
-    die_json "GROUP_ALLOWLIST_NOT_FOUND" "找不到群聊允许名单: $CONFIG_FILE"
-  fi
-
-  python3 - "$CONFIG_FILE" "$group" <<'PY'
-import json
-import sys
-
-try:
-    with open(sys.argv[1], encoding="utf-8") as file:
-        data = json.load(file)
-except (OSError, json.JSONDecodeError):
-    raise SystemExit(2)
-
-groups = data.get("groups")
-if not isinstance(groups, list) or any(not isinstance(item, str) for item in groups):
-    raise SystemExit(3)
-
-raise SystemExit(0 if sys.argv[2] in groups else 4)
-PY
-  rc=$?
-
-  case "$rc" in
-    0) return 0 ;;
-    2) die_json "GROUP_ALLOWLIST_INVALID_JSON" "群聊允许名单不是有效 JSON: $CONFIG_FILE" ;;
-    3) die_json "GROUP_ALLOWLIST_INVALID_SCHEMA" "群聊允许名单必须包含字符串数组 groups: $CONFIG_FILE" ;;
-    *) die_json "GROUP_NOT_ALLOWED" "群聊不在允许名单: ${group}；配置文件: ${CONFIG_FILE}" ;;
-  esac
 }
 
 init_runtime() {
@@ -154,19 +107,6 @@ import sys
 print(json.dumps({
     "type": "text",
     "text": sys.argv[1],
-}, ensure_ascii=False))
-PY
-}
-
-json_text_clear_payload() {
-  python3 - "$1" <<'PY'
-import json
-import sys
-
-print(json.dumps({
-    "type": "text",
-    "text": sys.argv[1],
-    "clear": True,
 }, ensure_ascii=False))
 PY
 }
@@ -1308,8 +1248,8 @@ send_promotion() {
 
   sleep 0.8
 
-  log "清空输入框后写入最终推广文案"
-  phone_act "$(json_text_clear_payload "$message")" >/dev/null
+  log "输入最终推广文案"
+  phone_act "$(json_text_payload "$message")" >/dev/null
   sleep 1.5
 
   save_elements "$before_send"
@@ -1423,10 +1363,6 @@ usage() {
   --send-x <比例>            保留兼容参数，v6 默认不再使用固定坐标发送
   --send-y <比例>            保留兼容参数，v6 默认不再使用固定坐标发送
 
-环境变量：
-
-  WECHAT_IPHONE_CONFIG       群聊允许名单 JSON；默认先查 ../config/allowed-groups.json
-
 示例：
 
   ./wechat-iphone-scenario3-v6-send-button-fixed.sh send-promotion \
@@ -1444,10 +1380,6 @@ EOF
 
 main() {
   local action="${1:-}"
-  if [[ "$action" == "-h" || "$action" == "--help" ]]; then
-    usage
-    exit 0
-  fi
   if [[ -z "$action" ]]; then
     usage
     exit 1
@@ -1538,7 +1470,6 @@ main() {
     die_json "MESSAGE_EMPTY" "推广文案不能为空"
   fi
 
-  assert_allowed_group "$group"
   init_runtime
   acquire_lock
   assert_ready

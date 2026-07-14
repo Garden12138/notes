@@ -30,21 +30,57 @@
 
 ### 实践文件
 
-四个场景脚本和 OpenClaw 工作区文件原本只存在于本地，尚未进入 iphone-use 上游仓库。为使本文可复现，仓库内保留了一份[2026-07-14 公开脱敏快照](./code/liangjiu-wechat-promotion/README.md)。
+四个场景脚本和 OpenClaw 工作区文件原本只存在于本地，尚未进入 iphone-use 上游仓库。仓库内提供[从空环境到首次 dry-run 的部署包](./code/liangjiu-wechat-promotion/README.md)。`practice-snapshot` 保留实践原貌；同级顶层文件是补齐数据交接和安全校验后的部署版。
 
 | 文件 | 作用 |
 | --- | --- |
 | [AGENTS.md](./code/liangjiu-wechat-promotion/openclaw/AGENTS.md) | 任务范围、指令优先级、发送授权和停止条件 |
 | [TOOLS.md](./code/liangjiu-wechat-promotion/openclaw/TOOLS.md) | 脚本、快捷指令、文案文件和坐标参数 |
-| [新品采集 Skill](./code/liangjiu-wechat-promotion/openclaw/skills/liangjiu-new-products-collection-v1-0-0/SKILL.md) | 场景一到场景二的 WDA 衔接规则 |
+| [新品采集 Skill](./code/liangjiu-wechat-promotion/openclaw/skills/liangjiu-new-products-collection-v1-0-0/SKILL.md) | 采集、选品、WDA 衔接、详情与有限补位 |
 | [微信推广 Skill](./code/liangjiu-wechat-promotion/openclaw/skills/liangjiu-wechat-auto-promotion-v1-0-0/SKILL.md) | 采集、选品、文案、发送与分享编排 |
+| [实践原貌](./code/liangjiu-wechat-promotion/openclaw/practice-snapshot/README.md) | 当时实际使用的 AGENTS、TOOLS 和 Skills，公开脱敏版 |
 | [iu_clipboard_relay.py](./code/liangjiu-wechat-promotion/iphone-use/scripts/iu_clipboard_relay.py) | 将 iPhone 剪贴板转发至 `/agent/inbox` |
 | [场景一脚本](./code/liangjiu-wechat-promotion/iphone-use/scripts/wechat-iphone-scenario1-v13-names-only.sh) | 预检、启动和新品名称采集 |
+| [安全选品 helper](./code/liangjiu-wechat-promotion/iphone-use/scripts/select_safe_products.py) | `products.jsonl` 转为同类选品清单 |
 | [场景二脚本](./code/liangjiu-wechat-promotion/iphone-use/scripts/wechat-iphone-scenario2-v13-safe-reset-list-top.sh) | 列表复位、详情提取和链接回传 |
+| [事实文案 helper](./code/liangjiu-wechat-promotion/iphone-use/scripts/build_verified_promotion.py) | 合并补跑结果并生成事实文案 |
 | [场景三脚本](./code/liangjiu-wechat-promotion/iphone-use/scripts/wechat-iphone-scenario3-v6-send-button-fixed.sh) | 群名校验、文案输入和单次发送 |
 | [场景四脚本](./code/liangjiu-wechat-promotion/iphone-use/scripts/wechat-iphone-scenario4-v2-share-confirm-send.sh) | 从最终文案提取链接并逐个分享 |
+| [WDA 补丁](./code/liangjiu-wechat-promotion/iphone-use/patches/setup-wda-269880b.patch) | 移除 `nohup` 与命令行签名覆盖 |
+| [群允许名单样例](./code/liangjiu-wechat-promotion/iphone-use/config/allowed-groups.json.example) | 场景一、三、四共用的 `groups` 数组 |
+| [Smoke test](./code/liangjiu-wechat-promotion/tests/smoke.sh) | 不连接手机验证语法、Skills 和数据交接 |
 
-公开快照没有真实群名、用户名路径、Team ID、UDID、默认商品或完整小程序链接。控制流程、CLI、状态判断、错误码和产物格式与实践版本一致；场景三中原先内嵌的历史文案与确认标记被改为运行时输入。
+公开文件没有真实群名、用户名路径、Team ID、UDID、默认商品或完整小程序链接。实践版的 Proposal Skill、固定营销尾句和未接入白名单等问题没有被抹去，而是放进 `practice-snapshot`；部署版已修正并附有差异说明。
+
+### 从零部署的最短路径
+
+本次实测基线为 OpenClaw `2026.6.6`、iphone-use `0.4.12`（commit `269880b5e1ddd06c110fad8d7c37643ecc4212e5`）、WebDriverAgent commit `bed8d1e4964a49849c51462b80412359589b7654`、Xcode `26.3`。Node 最低要求为 `22.19.0`。先固定版本跑通，再逐项升级。
+
+OpenClaw 的安装与专用 Agent 创建命令如下，完整的复制和校验命令见部署包 README：
+
+```bash
+npm install -g openclaw@2026.6.6
+openclaw onboard --install-daemon
+
+export OPENCLAW_AGENT_ID="liangjiu-promotion"
+export OPENCLAW_WORKSPACE="$HOME/.openclaw/workspace-liangjiu-promotion"
+
+openclaw agents add "$OPENCLAW_AGENT_ID" \
+  --workspace "$OPENCLAW_WORKSPACE" \
+  --non-interactive
+```
+
+把部署版 `AGENTS.md`、`TOOLS.md` 和两个 Skill 复制到该 workspace，再执行：
+
+```bash
+openclaw gateway status --require-rpc
+openclaw skills list --agent "$OPENCLAW_AGENT_ID" --json
+openclaw skills check --agent "$OPENCLAW_AGENT_ID"
+```
+
+Gateway 由 launchd 启动时不一定继承终端环境。`IPHONE_USE_DIR`、`WECHAT_IPHONE_CONFIG`、目标群和 WDA 本地参数要写入 OpenClaw 的 `env.vars` 或其全局 `.env`；Agent Token 仍由脚本从 `~/.iphone-use/agent-token` 读取，不能放进 Skill 或快捷指令。
+
+四个场景脚本、两个 helper 和 Relay 部署到 iphone-use 的 `scripts/`，群允许名单放到 `config/allowed-groups.json`。固定在上述 iphone-use commit 时，先 `git apply --check`，再应用仓库中的 WDA 补丁。补丁校验失败时停止，不强行套到其他版本。
 
 ### 分层与任务契约
 
@@ -83,7 +119,7 @@ OpenClaw 在调用脚本前建立任务上下文：
 }
 ```
 
-它是编排层契约，不是 Shell CLI。编排层再把字段转换为 `--limit`、`--products-file`、`--group`、`--message-file` 和 `--dry-run`。其中 `draft` 只生成结果，`send` 才允许进入正式发送。
+它是编排层契约，不是 Shell CLI。每个 `task_id` 使用独立的 `$IPHONE_USE_DIR/runs/<task_id>`。编排层再把字段转换为 `--limit`、`--products-file`、`--group`、`--message-file` 和 `--dry-run`。新任务默认 `draft`，本次明确授权后才切到 `send`。
 
 任务状态按下面的顺序推进：
 
@@ -151,6 +187,18 @@ cd "$IPHONE_USE_DIR/scripts"
 未指定品类时，Agent 先排除规格片段，再过滤酒水、保健品、医疗器械、药品、成人用品以及带治疗、理疗、检测、医用等暗示的商品。剩余标题归入普通食品、服饰鞋包、家居日用、厨房用品等低风险品类。
 
 只有同一品类能够选满六件才进入详情提取。少于六件时停止，不跨高风险品类凑数。进入场景二前，Agent 先报告所选品类和六个标题；标题是否真实存在、价格与链接是否有效，仍由详情页验证。
+
+这一步不能只写在 prompt 里。部署版用确定性 helper 完成数据交接：
+
+```bash
+python3 ./select_safe_products.py \
+  --input "$RUN_DIR/new-products/products.jsonl" \
+  --count 6 \
+  --output "$RUN_DIR/selected-products.txt" \
+  --report "$RUN_DIR/selection.json"
+```
+
+某件详情定位失败时，把首批 `results.jsonl` 传给 `--exclude-results`，在同品类补位一次。第二轮仍不足即停止。
 
 ### 场景二：详情提取
 
@@ -302,7 +350,27 @@ Relay 返回给 iPhone 的响应还包含 `forwarded`、`upstream_status` 和 `r
 
 文案只能使用本次详情页验证过的标题、价格、规格和链接。缺少链接的商品不进入最终文案；规格未识别时保留缺失状态，不由模型补写。
 
-实践版本的主 Skill 仍带有“现货充足、尺码颜色齐全、早拍早发”等固定收尾句。这些内容未必来自商品详情，与“只使用已验证事实”冲突，是当前技术债。公开快照保留它以反映真实版本，但新任务应删除该尾句，或逐项取得事实依据。
+实践原貌中的主 Skill 带有“现货充足、尺码颜色齐全、早拍早发”等固定收尾句。这些内容没有详情页依据。部署版已删除该尾句，并用 helper 对标题、价格、链接回传和重复链接做硬校验：
+
+```bash
+python3 ./build_verified_promotion.py \
+  --results "$RUN_DIR/promote-products/results.jsonl" \
+  --results "$RUN_DIR/promote-products-repair/results.jsonl" \
+  --expected-count 6 \
+  --output "$RUN_DIR/final-promotion.txt"
+```
+
+没有补跑文件时省略第二个 `--results`。规格未识别时省略规格行，不推断；已验证数量少于或多于六件都会失败，不能静默截断后发送。
+
+场景一、三、四共用同一份群允许名单：
+
+```json
+{
+  "groups": ["<TARGET_WECHAT_GROUP>"]
+}
+```
+
+群名不在名单时，场景三、四会在手机操作前停止。UI 内仍保留“搜索结果精确匹配 + 发送前顶部标题精确匹配”的双校验。
 
 正式发送前先 dry-run：
 
@@ -313,7 +381,7 @@ Relay 返回给 iPhone 的响应还包含 `forwarded`、`upstream_status` 和 `r
   --dry-run
 ```
 
-dry-run 会进入群聊并填写文案，不点击发送。正式运行前必须确认输入框没有残留草稿，然后执行不带 `--dry-run` 的同一命令。
+dry-run 会进入群聊并填写文案，不点击发送。部署版每次写入前先清空输入框，因此正式命令不会叠加上一次 dry-run 草稿；仍要核对 `task_id`、群名和文案文件没有变化，再执行不带 `--dry-run` 的同一命令。
 
 场景三先精确搜索群名，进入聊天后检查一次顶部标题；写入文案后再次检查，再按元素树定位“发送”按钮。发送按钮只点击一次。后置检查即使超时，也不能覆盖“点击可能已经发生”这一事实。
 
@@ -325,19 +393,37 @@ dry-run 会进入群聊并填写文案，不点击发送。正式运行前必须
   --target-group "<TARGET_WECHAT_GROUP>"
 ```
 
-首次回归可加 `--max-links 1`。每个链接单独写入 `results.jsonl`；单项失败时返回部分结果，不通过随机点击补偿。
+`--max-links 1` 会真实分享一个链接，并不是 dry-run。只有明确允许真实回归时才能使用。每个链接单独写入 `results.jsonl`；单项失败时返回部分结果，不通过随机点击补偿。
+
+### 首次运行顺序
+
+不要一上来把整条链交给 Agent。按下面的阶梯定位问题：
+
+1. `bash tests/smoke.sh`，验证语法、两个 Skills 和数据交接；
+2. 场景一 `status`，确认 WDA 可驱动且没有控制锁；
+3. 场景二 `test-clipboard-bridge`，确认本次 iPhone 剪贴板进入 inbox；
+4. 场景一 `collect-new-products --dry-run`，只定位到新品页；
+5. 正式采集并检查 `selection.json`；
+6. 只取一个商品跑场景二，检查标题、价格、链接和回传状态；
+7. 用 `build_verified_promotion.py --expected-count 1` 生成一商品文案；
+8. 场景三 dry-run，结果必须为 `sent=false`；
+9. 再让 OpenClaw 以 `draft` 模式跑六商品，人工核对后才发送。
+
+新设备还要先从 `/agent/elements` 读取 `screen.width`、`screen.height`，按元素中心重新计算归一化坐标。`393 × 852` 只是本次实测基线。
 
 ### 实测结果
 
 以下结果均可由本地 `summary.json`、`results.jsonl` 和发送前后元素树复核：
 
+表内发送与分享结果来自 2026-07-13 的实践原貌。本文新增的选品/文案 helper、群允许名单和输入框清空已通过离线 smoke test，并用真实脱敏前 `products.jsonl`、首批 5 件结果和补位 1 件结果回放成功；本次补文没有再次向微信群发送消息，因此不把代码加固写成新的真机发送实测。
+
 | 日期 | 范围 | 结果 | 边界 |
 | --- | --- | --- | --- |
-| 2026-07-10 | 两商品详情提取 | 2/2 得到标题、价格、规格和链接 | 验证详情解析与快捷指令回传 |
-| 2026-07-13 | 新品候选采集 | 目标 50，实际 24 | 页面到底，`target_reached=false` |
-| 2026-07-13 | 六商品详情 | 首轮 5 成功、1 个 `PRODUCT_NOT_FOUND`，随后补位 1 件 | 六件有标题、价格和链接；该批规格仍有未识别 |
-| 2026-07-13 | 三商品推广 | 群文案发送完成，链接分享 3/3 | 验证发送与分享闭环 |
-| 2026-07-13 | 六链接分享 | `results.jsonl` 为 6/6 | 只证明分享阶段成功 |
+| 2026-07-10 | [两商品详情提取](./code/liangjiu-wechat-promotion/evidence/2026-07-10-scene2-two-products-summary.json) | 2/2 得到标题、价格、规格和链接 | 验证详情解析与快捷指令回传 |
+| 2026-07-13 | [新品候选采集](./code/liangjiu-wechat-promotion/evidence/2026-07-13-scene1-summary.json) | 目标 50，实际 24 | 页面到底，`target_reached=false` |
+| 2026-07-13 | [六商品详情](./code/liangjiu-wechat-promotion/evidence/2026-07-13-scene2-batch-summary.json) | 首轮 5 成功、1 个 `PRODUCT_NOT_FOUND`，[随后补位 1 件](./code/liangjiu-wechat-promotion/evidence/2026-07-13-scene2-repair-summary.json) | 六件有标题、价格和链接；该批规格仍有未识别 |
+| 2026-07-13 | [三商品推广](./code/liangjiu-wechat-promotion/evidence/2026-07-13-scene3-send-summary.json) | 群文案发送完成，[链接分享 3/3](./code/liangjiu-wechat-promotion/evidence/2026-07-13-scene4-three-links-summary.json) | 验证发送与分享闭环 |
+| 2026-07-13 | [六链接分享](./code/liangjiu-wechat-promotion/evidence/2026-07-13-scene4-six-links-summary.json) | `results.jsonl` 为 6/6 | 只证明分享阶段成功 |
 
 另一个非敏感样例是“朴小样韩式石锅拌饭酱”。本文不再公开其他商品名或完整链接。
 
@@ -359,6 +445,8 @@ dry-run 会进入群聊并填写文案，不点击发送。正式运行前必须
 | 快捷指令有时进入编辑器 | Shortcuts 会恢复上次状态 | 先轮询 inbox，再识别编辑器并点击运行 |
 | 滚动后定位错误 | 继续使用旧元素矩形 | 每次滚动、返回和复位后重新读取元素树 |
 | 六件中一件找不到 | 列表标题变化或定位不唯一 | 返回部分失败，重新选候选，不点相似标题 |
+| dry-run 后正式文案叠加 | 输入框残留上次草稿 | 正式写入使用 `clear=true`，并复核文案文件 |
+| 相似群名可被参数传入 | 只有 UI 内匹配，没有配置边界 | 场景一、三、四共用 `allowed-groups.json` |
 | 发送后确认超时 | 元素树未及时出现消息 | 标记 `uncertain`，禁止自动重试 |
 
 ### 安全边界与未完成项
@@ -374,7 +462,7 @@ dry-run 会进入群聊并填写文案，不点击发送。正式运行前必须
 | 发送 | 一次机会；结果不确定即停止 |
 | 产物 | 元素树可能含群名与聊天内容，按需保留，公开前脱敏 |
 
-当前已经验证采集、详情与链接提取、群文案发送和逐链接分享。下面这些能力仍未形成可复核的完整实现：
+历史实践已经验证采集、详情与链接提取、群文案发送和逐链接分享。下面这些能力仍未形成可复核的完整实现：
 
 - OpenClaw 定时调度；
 - 持久化商品去重库；

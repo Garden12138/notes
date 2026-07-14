@@ -1,0 +1,9 @@
+⏰12:00 本次新品推荐
+
+<PRODUCT_1>｜¥<PRICE_1>
+规格：<SPEC_1>
+#小程序://良久素材/<REDACTED_1>
+
+<PRODUCT_2>｜¥<PRICE_2>
+#小程序://良久素材/<REDACTED_2>
+

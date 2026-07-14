@@ -1,0 +1,9 @@
+{
+  "task_id": "liangjiu-promo-YYYYMMDD-001",
+  "source_page": "新品首发",
+  "target_count": 6,
+  "selection_mode": "auto_safe_same_category",
+  "target_group": "<TARGET_WECHAT_GROUP>",
+  "mode": "draft"
+}
+

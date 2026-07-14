@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "action": "send-promotion",
+  "group": "<TARGET_WECHAT_GROUP>",
+  "sent": true,
+  "send_verified": true,
+  "warning": null
+}
+

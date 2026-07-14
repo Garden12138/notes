@@ -1,0 +1,13 @@
+{
+  "ok": true,
+  "action": "promote-products",
+  "target_count": 1,
+  "success_count": 1,
+  "verified_fields": [
+    "title",
+    "price",
+    "product_link"
+  ],
+  "spec_missing_count": 1
+}
+

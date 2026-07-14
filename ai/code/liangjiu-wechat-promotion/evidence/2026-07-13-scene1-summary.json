@@ -1,0 +1,11 @@
+{
+  "ok": true,
+  "action": "collect-new-product-names",
+  "source_page": "新品首发",
+  "target_count": 50,
+  "collected_count": 24,
+  "target_reached": false,
+  "completion_reason": "end_reached_or_no_more_recognizable_products",
+  "scroll_count": 20
+}
+

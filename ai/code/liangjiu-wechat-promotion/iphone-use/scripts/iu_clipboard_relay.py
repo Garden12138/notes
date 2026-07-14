@@ -201,6 +201,18 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    if sys.argv[1:] in (["-h"], ["--help"]):
+        print(__doc__.strip())
+        print("\nEnvironment:")
+        print("  IU_RELAY_HOST        Listen host (default 0.0.0.0)")
+        print("  IU_RELAY_PORT        Listen port (default 18080)")
+        print("  IU_INBOX_URL         Upstream /agent/inbox URL")
+        print("  IU_AGENT_TOKEN_FILE  iphone-use Agent Token file")
+        return
+    if sys.argv[1:]:
+        print(f"ERROR: unknown argument: {sys.argv[1]}", file=sys.stderr)
+        raise SystemExit(2)
+
     try:
         read_token()
     except Exception as exc:

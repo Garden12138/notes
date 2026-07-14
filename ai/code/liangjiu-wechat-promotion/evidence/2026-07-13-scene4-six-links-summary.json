@@ -1,0 +1,8 @@
+{
+  "ok": true,
+  "action": "share-product-links",
+  "target_group": "<TARGET_WECHAT_GROUP>",
+  "target_count": 6,
+  "success_count": 6
+}
+

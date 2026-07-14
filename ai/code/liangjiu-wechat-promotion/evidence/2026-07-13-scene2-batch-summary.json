@@ -1,0 +1,15 @@
+{
+  "ok": false,
+  "action": "promote-products",
+  "target_count": 6,
+  "success_count": 5,
+  "failed_count": 1,
+  "failed_error": "PRODUCT_NOT_FOUND",
+  "verified_fields_for_successes": [
+    "title",
+    "price",
+    "product_link"
+  ],
+  "spec_missing_count": 5
+}
+

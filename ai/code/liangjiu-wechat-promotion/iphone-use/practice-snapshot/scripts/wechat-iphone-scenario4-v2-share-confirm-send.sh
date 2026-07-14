@@ -7,21 +7,10 @@
 set -uo pipefail
 IFS=$'\n\t'
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 STATE_DIR="${WECHAT_IPHONE_STATE_DIR:-$HOME/.iphone-use/wechat-iphone}"
 TOKEN_FILE="${WECHAT_IPHONE_TOKEN_FILE:-$HOME/.iphone-use/agent-token}"
 HOST="${WECHAT_IPHONE_HOST:-http://127.0.0.1:44321}"
 APP_BUNDLE="${WECHAT_IPHONE_APP_BUNDLE:-com.tencent.xin}"
-
-DEFAULT_CONFIG="$SCRIPT_DIR/../config/allowed-groups.json"
-FALLBACK_CONFIG="$HOME/.config/wechat-iphone/allowed-groups.json"
-if [[ -n "${WECHAT_IPHONE_CONFIG:-}" ]]; then
-  CONFIG_FILE="$WECHAT_IPHONE_CONFIG"
-elif [[ -f "$DEFAULT_CONFIG" ]]; then
-  CONFIG_FILE="$DEFAULT_CONFIG"
-else
-  CONFIG_FILE="$FALLBACK_CONFIG"
-fi
 
 DEFAULT_PROMOTION_FILE="./scenario3-final-promotion.txt"
 DEFAULT_TRANSFER_CHAT="文件传输助手"
@@ -73,42 +62,6 @@ PY
 require_cmd() {
   command -v "$1" >/dev/null 2>&1 \
     || die_json "MISSING_COMMAND" "缺少命令: $1"
-}
-
-assert_allowed_group() {
-  local group="$1"
-  local rc=0
-
-  require_cmd python3
-
-  if [[ ! -f "$CONFIG_FILE" ]]; then
-    die_json "GROUP_ALLOWLIST_NOT_FOUND" "找不到群聊允许名单: $CONFIG_FILE"
-  fi
-
-  python3 - "$CONFIG_FILE" "$group" <<'PY'
-import json
-import sys
-
-try:
-    with open(sys.argv[1], encoding="utf-8") as file:
-        data = json.load(file)
-except (OSError, json.JSONDecodeError):
-    raise SystemExit(2)
-
-groups = data.get("groups")
-if not isinstance(groups, list) or any(not isinstance(item, str) for item in groups):
-    raise SystemExit(3)
-
-raise SystemExit(0 if sys.argv[2] in groups else 4)
-PY
-  rc=$?
-
-  case "$rc" in
-    0) return 0 ;;
-    2) die_json "GROUP_ALLOWLIST_INVALID_JSON" "群聊允许名单不是有效 JSON: $CONFIG_FILE" ;;
-    3) die_json "GROUP_ALLOWLIST_INVALID_SCHEMA" "群聊允许名单必须包含字符串数组 groups: $CONFIG_FILE" ;;
-    *) die_json "GROUP_NOT_ALLOWED" "群聊不在允许名单: ${group}；配置文件: ${CONFIG_FILE}" ;;
-  esac
 }
 
 init_runtime() {
@@ -2235,10 +2188,6 @@ usage() {
                               分享确认页绿色发送按钮兜底纵坐标
                               默认：0.865
 
-环境变量：
-
-  WECHAT_IPHONE_CONFIG       群聊允许名单 JSON；默认先查 ../config/allowed-groups.json
-
 示例：
 
   先测试一个商品：
@@ -2258,11 +2207,6 @@ EOF
 
 main() {
   local action="${1:-}"
-
-  if [[ "$action" == "-h" || "$action" == "--help" ]]; then
-    usage
-    exit 0
-  fi
 
   if [[ -z "$action" ]]; then
     usage
@@ -2334,7 +2278,6 @@ main() {
     die_json "INVALID_MAX_LINKS" "--max-links 必须是非负整数"
   fi
 
-  assert_allowed_group "$target_group"
   init_runtime
   acquire_lock
   assert_ready
