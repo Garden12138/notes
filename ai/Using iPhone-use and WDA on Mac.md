@@ -62,13 +62,16 @@
 
 完整链路如下：
 
-```text
-Agent
-  -> iPhone-use daemon（127.0.0.1:44321）
-  -> WDA 本机入口（127.0.0.1:8100）
-  -> iproxy USB 中继
-  -> iPhone 上的 WebDriverAgentRunner
-  -> iOS 元素树与原生事件
+```mermaid
+flowchart LR
+    A["AI Agent"] --> B["iPhone-use daemon<br/>127.0.0.1:44321"]
+    B --> C{"选择控制模式"}
+    C -->|Agent 模式| D["WDA 本机入口<br/>127.0.0.1:8100"]
+    D --> E["iproxy<br/>USB 中继"]
+    E --> F["iPhone 上的<br/>WebDriverAgentRunner"]
+    F --> G["iOS 元素树<br/>点击、输入、截图"]
+    C -->|镜像模式| H["iPhone 镜像"]
+    H --> I["画面识别<br/>坐标与系统事件"]
 ```
 
 其中：
@@ -122,6 +125,36 @@ Agent
   ```bash
   curl --noproxy "*" ...
   ```
+
+### 从零安装到可用的流程
+
+下面的流程图可以作为首次部署时的执行顺序。每个判断节点都通过后，再进入下一步：
+
+```mermaid
+flowchart TD
+    A["准备 Mac 与 iPhone<br/>Xcode、开发者模式、USB、解锁"] --> B["安装依赖并构建 iPhone-use"]
+    B --> C["打包并安装 iPhoneUse.app<br/>注册 LaunchAgent、授予权限"]
+    C --> D{"44321 端口是否监听？"}
+    D -->|否| D1["检查 App、LaunchAgent<br/>屏幕录制与辅助功能权限"]
+    D1 --> C
+    D -->|是| E["运行 setup-wda.sh doctor"]
+    E --> F{"前置检查是否通过？"}
+    F -->|否| F1["修复 USB、设备信任、证书<br/>DDI、VPN 或中继工具"]
+    F1 --> E
+    F -->|是| G["在 Xcode 配置 WDA 真机签名<br/>执行 Product -> Test"]
+    G --> H{"前台 WDA 是否运行成功？"}
+    H -->|否| H1["排查签名、Bundle ID<br/>设备解锁和证书信任"]
+    H1 --> G
+    H -->|是| I{"脚本是否出现<br/>签名覆盖或 IDE disconnection？"}
+    I -->|是| I1["应用本文的本机脚本修复"]
+    I1 --> J["使用 WDA_KEEPALIVE=1 启动"]
+    I -->|否| J
+    J --> K{"8100/status 是否返回 JSON？"}
+    K -->|否| K1["检查 iproxy、USB 和本地代理"]
+    K1 --> J
+    K -->|是| L["验证 Agent API"]
+    L --> M["wda=true 且 drivable=true<br/>完整链路可用"]
+```
 
 ### 安装 iPhone-use
 
@@ -549,6 +582,30 @@ cd "$IPHONE_USE_DIR"
 | iPhone-use LaunchAgent 日志 | `$HOME/Library/Logs/iPhoneUse/`，以安装脚本实际配置为准 |
 
 ### 常见故障
+
+#### 故障定位流程图
+
+遇到 WDA 启动或验证失败时，可以先按下面的顺序判断，再查看对应故障说明：
+
+```mermaid
+flowchart TD
+    S["WDA 启动或验证失败"] --> A{"doctor 是否通过？"}
+    A -->|否| A1["解锁设备、检查 USB 与信任<br/>断开 VPN、确认 Xcode 和证书"]
+    A1 --> A
+    A -->|是| B{"Xcode Product -> Test 是否成功？"}
+    B -->|否| B1["修复 Team、Bundle ID<br/>自动签名与开发者证书信任"]
+    B1 --> B
+    B -->|是| C{"命令行是否签名失败？"}
+    C -->|是| C1["检查命令行签名覆盖<br/>改用最小 xcodebuild 命令"]
+    C -->|否| D{"Runner 是否启动后很快退出？"}
+    D -->|是| D1["检查 WDA_KEEPALIVE、nohup<br/>会话争用、USB 和 VPN"]
+    D -->|否| E{"中继已启动但 8100 无响应？"}
+    E -->|是| E1["优先使用 iproxy<br/>检查 UDID、USB 和 --noproxy"]
+    E -->|否| F["检查 WDA 日志、Agent Token<br/>44321 状态和 API 返回值"]
+    C1 --> R["重新启动并验证"]
+    D1 --> R
+    E1 --> R
+```
 
 #### No Account for Team / No signing certificate / No profiles
 
