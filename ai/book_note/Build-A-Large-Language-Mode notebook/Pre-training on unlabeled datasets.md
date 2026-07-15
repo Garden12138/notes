@@ -381,6 +381,233 @@
 
 #### 计算训练集和验证集的损失
 
+* 训练损失衡量模型对训练数据的拟合程度，验证损失衡量模型在未参与训练的数据上的表现。训练前先计算两者，作为后续比较的基线。
+
+* 加载《判决》（The Verdict）文本并统计字符数和 token 数：
+
+  ```python
+  print("实现文本生成损失的计算：")
+  print("加载数据集：")
+
+  file_path = "the-verdict.txt"
+  with open(file_path, "r", encoding="utf-8") as file:
+      text_data = file.read()
+
+  total_characters = len(text_data)
+  tokenizer = tiktoken.get_encoding("gpt2")
+  total_tokens = len(tokenizer.encode(text_data))
+
+  print("Characters:", total_characters)
+  print("Tokens:", total_tokens)
+  ```
+
+  输出：
+
+  ```text
+  Characters: 20445
+  Tokens: 5489
+  ```
+
+  字符数和 token 数不同，因为 GPT-2 分词器使用 BPE，一个 token 可能对应一个字符、多个字符或单词片段。这个数据集只用于验证训练流程，规模不足以训练出实用的语言模型。
+
+* 按字符位置连续切分数据，前 90% 用于训练，后 10% 用于验证：
+
+  ```python
+  print("数据集划分为90%训练集和10%验证集：")
+
+  train_ratio = 0.90
+  split_idx = int(train_ratio * len(text_data))
+  train_data = text_data[:split_idx]
+  val_data = text_data[split_idx:]
+
+  print("训练集长度：", len(train_data))
+  print("验证集长度：", len(val_data))
+  ```
+
+  输出：
+
+  ```text
+  训练集长度： 18400
+  验证集长度： 2045
+  ```
+
+  先切分文本，再分别创建滑动窗口，可以避免同一个窗口同时跨入训练集和验证集。
+
+* 图 5.9 展示了 `max_length` 和 `stride` 如何控制文本窗口。代码中两者都为 256，因此每次向后移动 256 个 token，窗口之间不重叠。
+
+  ![图 5.9：使用滑动窗口构建训练批次](https://raw.githubusercontent.com/skindhu/Build-A-Large-Language-Model-CN/main/Image/chapter5/figure5.9.png)
+
+* 创建训练集和验证集 DataLoader：
+
+  ```python
+  print("创建训练集加载器：")
+  train_loader = create_dataloader_v1(
+      train_data,
+      batch_size=2,
+      max_length=256,
+      stride=256,
+      drop_last=True,
+      shuffle=True,
+      num_workers=0,
+  )
+
+  print("创建验证集加载器：")
+  val_loader = create_dataloader_v1(
+      val_data,
+      batch_size=2,
+      max_length=256,
+      stride=256,
+      drop_last=False,
+      shuffle=False,
+      num_workers=0,
+  )
+
+  print("Train loader:")
+  for x, y in train_loader:
+      print(x.shape, y.shape)
+
+  print("\nValidation loader:")
+  for x, y in val_loader:
+      print(x.shape, y.shape)
+  ```
+
+  输出汇总：
+
+  ```text
+  Train loader:      9 个批次，每个 x、y 均为 torch.Size([2, 256])
+  Validation loader: 1 个批次，x、y 均为 torch.Size([2, 256])
+  ```
+
+  参数含义：
+
+  - `batch_size=2`：每批包含 2 个文本窗口。
+  - `max_length=256`：每个窗口包含 256 个 token，小于模型支持的 1024。
+  - `stride=256`：每次移动一个完整窗口，窗口之间不重叠。
+  - `shuffle=True`：训练时打乱窗口顺序；验证时保持固定顺序。
+  - `drop_last=True`：训练集丢弃最后一个不足 2 个样本的批次；验证集保留。
+
+  `x` 和 `y` 形状相同，但内容错开一个 token：`x` 是模型输入，`y` 是每个位置的下一个 token。
+
+* `calc_loss_batch` 计算单个批次的平均交叉熵：
+
+  ```python
+  print("实现计算训练和验证加载器返回的批量数据的损失值方法：")
+
+  def calc_loss_batch(input_batch, target_batch, model, device):
+      # 数据和模型必须位于同一设备
+      input_batch = input_batch.to(device)
+      target_batch = target_batch.to(device)
+
+      logits = model(input_batch)
+      loss = torch.nn.functional.cross_entropy(
+          logits.flatten(0, 1),
+          target_batch.flatten(),
+      )
+      return loss
+  ```
+
+  形状变化：
+
+  ```text
+  input_batch、target_batch: [2, 256]
+  logits:                    [2, 256, 50257]
+  logits.flatten(0, 1):      [512, 50257]
+  target_batch.flatten():    [512]
+  loss:                      标量
+  ```
+
+  一个批次共有 `2 × 256 = 512` 个目标位置，返回值是这些位置的平均交叉熵。
+
+* `calc_loss_loader` 计算指定 DataLoader 中若干批次的平均损失：
+
+  ```python
+  print("实现计算指定数据加载器中的指定数据批次的损失值方法：")
+
+  def calc_loss_loader(data_loader, model, device, num_batches=None):
+      total_loss = 0.0
+
+      if len(data_loader) == 0:
+          return float("nan")
+
+      if num_batches is None:
+          num_batches = len(data_loader)
+      else:
+          num_batches = min(num_batches, len(data_loader))
+
+      for i, (input_batch, target_batch) in enumerate(data_loader):
+          if i >= num_batches:
+              break
+
+          loss = calc_loss_batch(
+              input_batch,
+              target_batch,
+              model,
+              device,
+          )
+
+          # 调试信息，正式训练时可以移除
+          print("批次：", i)
+          print("loss：", loss)
+
+          # 将标量张量转换为 Python 数值后累加
+          total_loss += loss.item()
+
+      return total_loss / num_batches
+  ```
+
+  `num_batches=None` 表示遍历全部批次；指定批次数可以减少评估开销。若指定值超过 DataLoader 的长度，使用实际批次数。空 DataLoader 返回 `nan`，避免除以 0。
+
+* 将模型和数据放到同一设备，在评估模式下计算基线损失：
+
+  ```python
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  model.to(device)
+  model.eval()
+
+  with torch.no_grad():
+      train_loss = calc_loss_loader(train_loader, model, device)
+      val_loss = calc_loss_loader(val_loader, model, device)
+
+  print("Training loss:", train_loss)
+  print("Validation loss:", val_loss)
+  ```
+
+  `model.eval()` 关闭 Dropout，`torch.no_grad()` 关闭梯度记录；两者作用不同。
+
+  输出汇总：
+
+  ```text
+  Train batch losses:
+  [11.0307, 10.9937, 11.0069, 11.0117, 11.0029,
+   10.9994, 11.0199, 11.0337, 10.9971]
+
+  Validation batch losses:
+  [11.0442]
+
+  Training loss:   11.01067140367296
+  Validation loss: 11.044153213500977
+  ```
+
+  训练损失是 9 个训练批次损失的平均值。验证集只有一个批次，所以验证损失等于该批次的损失。
+
+  上面列出的批次损失只显示 4 位小数，直接平均约为 `11.01066667`；程序使用未舍入的 `loss.item()`，因此得到 `11.01067140367296`。
+
+  模型尚未训练，两项损失都接近 11，且差距很小。此时它们只是随机初始化模型的基线；后续训练应使训练损失和验证损失下降。
+
+* 整体流程：
+
+  ```text
+  文本切分
+      ↓
+  创建训练集、验证集 DataLoader
+      ↓
+  calc_loss_batch：计算单批次平均交叉熵
+      ↓
+  calc_loss_loader：计算多个批次的平均值
+      ↓
+  得到训练损失与验证损失基线
+  ```
+
 ### 训练 LLM
 
 ### 通过解码策略控制生成结果的随机性
