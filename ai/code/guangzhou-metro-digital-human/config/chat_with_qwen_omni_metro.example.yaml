@@ -1,0 +1,82 @@
+default:
+  logger:
+    log_level: INFO
+
+  service:
+    host: 0.0.0.0
+    port: 8282
+    cert_file: ssl_certs/localhost.crt
+    cert_key: ssl_certs/localhost.key
+
+  chat_engine:
+    model_root: models
+    concurrent_limit: 3
+    handler_search_path:
+      - src/handlers
+
+    handler_configs:
+      RtcClient:
+        module: client/rtc_client/client_handler_rtc
+        connection_ttl: 900
+        turn_config:
+          turn_provider: turn_server
+          urls:
+            - "turn:<turn-server-host>:3478"
+          username: <turn-username>
+          credential: <turn-credential>
+
+      SileroVad:
+        module: vad/silerovad/vad_handler_silero
+        speaking_threshold: 0.5
+        start_delay: 2048
+        end_delay: 5000
+        buffer_look_back: 5000
+        speech_padding: 512
+
+      SenseVoice:
+        enabled: true
+        module: asr/sensevoice/asr_handler_sensevoice
+        model_name: iic/SenseVoiceSmall
+
+      QwenOmni:
+        enabled: true
+        module: llm/qwen_omni/llm_handler_qwen_omni
+        model_name: qwen3-omni-flash-realtime
+        voice: Cherry
+        enable_video_input: true
+        video_frame_interval_ms: 1000
+        enable_text_output: true
+        input_audio_format: PCM_16000HZ_MONO_16BIT
+        output_audio_format: PCM_24000HZ_MONO_16BIT
+        enable_turn_detection: false
+        enable_input_transcription: false
+
+        enable_asr_dify_integration: true
+        asr_handler_name: SenseVoice
+        dify_api_url: <dify-api-base-url>
+        dify_timeout: 5
+        asr_timeout: 3
+
+        tts_model_name: qwen3-tts-flash-realtime
+        tts_voice: Cherry
+
+        redis_host: 127.0.0.1
+        redis_port: 6379
+        redis_db: 0
+        redis_password: <redis-password>
+        navigation_context_ttl: 120
+        food_context_ttl: 120
+        navigation_context_key: navigation_scene_context
+        food_context_key: food_scene_context
+
+        dify_interaction_timeout: 5
+
+      AvatarMusetalk:
+        module: avatar/musetalk/avatar_handler_musetalk
+        fps: 15
+        batch_size: 5
+        avatar_video_path: src/handlers/avatar/musetalk/MuseTalk/data/video/avatar.mp4
+        avatar_model_dir: models/musetalk/avatar_model
+        force_create_avatar: false
+        debug: false
+        multi_thread_inference: true

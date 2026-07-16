@@ -1,0 +1,24 @@
+diff --git a/Dockerfile.cuda12.8 b/Dockerfile.cuda12.8
+--- a/Dockerfile.cuda12.8
++++ b/Dockerfile.cuda12.8
+@@ -1,9 +1,15 @@
+-RUN uv pip install setuptools pip wheel && \
+-    uv sync --all-packages && \
+-    uv pip uninstall mmcv && \
+-    uv run mim install mmcv==2.2.0 --force && \
++ARG MMCV_WHEEL_URL=https://github.com/MiroPsota/torch_packages_builder/releases/download/mmcv-2.2.0/mmcv-2.2.0%2Bpt2.8.0cu128-cp311-cp311-linux_x86_64.whl
++
++RUN uv pip install setuptools pip wheel && \
++    uv sync --all-packages && \
++    uv pip uninstall mmcv mmdet mmpose mmengine && \
++    curl -fL "${MMCV_WHEEL_URL}" -o /tmp/mmcv.whl && \
++    uv pip install /tmp/mmcv.whl && \
++    uv pip install mmdet mmpose && \
++    uv pip install transformers==4.40.0 && \
++    rm -f /tmp/mmcv.whl && \
+     # Fix mmdet version compatibility
+-    MMDET_INIT_FILE="$VENV_PATH/lib/python3.11/site-packages/mmdet/__init__.py" && \
++    MMDET_INIT_FILE="$WORK_DIR/.venv/lib/python3.11/site-packages/mmdet/__init__.py" && \
+     if [ -f "$MMDET_INIT_FILE" ]; then \
+         sed -i "s/mmcv_maximum_version = '[^']*'/mmcv_maximum_version = '2.2.1'/g" "$MMDET_INIT_FILE"; \
+     fi
