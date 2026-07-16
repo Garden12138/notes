@@ -67,7 +67,7 @@ flowchart LR
 | github | 查询词、排序、分页参数 | `items`、`total_count` | 10 条 |
 | arxiv | 查询词、数量、筛选参数 | 论文标题、摘要等字段 | 5 条 |
 
-![工作流节点运行状态](./assets/low-code-platforms/coze-workflow-running.png)
+![工作流节点运行状态](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello_agents_coze_workflow_running.png)
 
 三个节点并行执行，避免把网络请求串行叠加。需要注意的是，三个工具的返回结构不同，不能只把整个对象交给模型后期待它自行识别；关键字段应在节点映射或提示词中明确写出。
 
@@ -84,7 +84,7 @@ flowchart LR
 
 #### 运行结果
 
-![工作流完整运行结果](./assets/low-code-platforms/coze-workflow-run-result.png)
+![工作流完整运行结果](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello_agents_coze_workflow_run_result.png)
 
 本次运行记录如下：
 
@@ -108,7 +108,7 @@ flowchart LR
 
 #### Agent 调用工作流
 
-![Agent 调用每日简报工作流](./assets/low-code-platforms/coze-agent-workflow-call.png)
+![Agent 调用每日简报工作流](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello_agents_coze_workflow_call.png)
 
 “每日AI简报”Agent 采用自主规划模式，并把 `daily_ai_briefing` 配置为可调用工作流。用户输入“每日简报”后，Agent 识别意图、调用工作流，再把 `output` 作为最终回复。
 
@@ -116,7 +116,7 @@ flowchart LR
 
 #### 日报输出
 
-![每日 AI 简报预览](./assets/low-code-platforms/coze-daily-brief-preview.png)
+![每日 AI 简报预览](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello_agents_coze_workflow_daily_brief_preview.png)
 
 最终页面生成了标题 `AI 日报｜2026 年 07 月 14 日｜by@garden`，技术新闻部分包含 10 条内容，每条都有标题、原始链接和一句概述。
 
@@ -132,7 +132,7 @@ flowchart LR
 
 #### 发布
 
-![Coze 发布渠道配置](./assets/low-code-platforms/coze-publish-channels.png)
+![Coze 发布渠道配置](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello_agents_coze_workflow_publish_channels.png)
 
 实践已进入发布配置页。截图中扣子商店已授权并选中，API 也已授权；飞书、微信等渠道仍需要单独授权或配置。因此这里只能确认发布入口已经配置，不能据此判断所有渠道都已上线。
 
