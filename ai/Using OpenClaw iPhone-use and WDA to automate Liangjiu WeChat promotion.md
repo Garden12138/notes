@@ -309,7 +309,7 @@ ipconfig getifaddr en0
 | `text` | 第一步的“剪贴板”变量 |
 | 请求头 | 不需要 |
 
-![IU Clipboard Export 快捷指令设置，局域网地址已脱敏](./images/iphone-use-wda/iu-clipboard-export-shortcut-redacted.png)
+![IU Clipboard Export 快捷指令设置，局域网地址已脱敏](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/iu-clipboard-export-shortcut-redacted.png)
 
 首次运行时，iOS 可能询问本地网络访问权限，应允许“快捷指令”访问当前局域网。Mac 与 iPhone 必须处于同一可信网络。
 

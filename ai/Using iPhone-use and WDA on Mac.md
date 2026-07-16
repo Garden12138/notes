@@ -62,7 +62,7 @@
 
 下图展示从 AI Agent 到 iPhone 元素树的主要数据通道：
 
-![iPhone-use 与 WDA 整体架构流程](images/iphone-use-wda/architecture-flow.png)
+![iPhone-use 与 WDA 整体架构流程](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/architecture-flow.png)
 
 完整链路和模式分支如下：
 
@@ -134,7 +134,7 @@ flowchart LR
 
 首次部署可以概括为 `PREP -> BUILD -> SIGN -> START -> RELAY -> VERIFY` 六个阶段：
 
-![iPhone-use 与 WDA 从准备到验证的部署流程](images/iphone-use-wda/deployment-flow.png)
+![iPhone-use 与 WDA 从准备到验证的部署流程](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/deployment-flow.png)
 
 下面的流程图给出了每个阶段的判断条件。每个判断节点都通过后，再进入下一步：
 
