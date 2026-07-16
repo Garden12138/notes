@@ -610,6 +610,290 @@
 
 ### 训练 LLM
 
+#### 实现训练循环
+
+* 训练按 epoch 和 batch 两层循环进行。每个 batch 都要执行：清空梯度、计算损失、反向传播、更新权重。
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm46.png)
+
+  图中第 3 步写的是清除上一 epoch 的梯度，更准确地说，是清除上一批次残留的梯度。PyTorch 默认累加梯度，不主动清空会把多个批次的梯度叠加在一起。
+
+* 实现简单训练循环：
+
+  ```python
+  def train_model_simple(
+      model,
+      train_loader,
+      val_loader,
+      optimizer,
+      device,
+      num_epochs,
+      eval_freq,
+      eval_iter,
+      start_context,
+      tokenizer,
+  ):
+      train_losses = []
+      val_losses = []
+      track_tokens_seen = []
+
+      tokens_seen = 0
+      global_step = -1
+
+      for epoch in range(num_epochs):
+          model.train()
+
+          for input_batch, target_batch in train_loader:
+              # 1. 清空上一批次的梯度
+              optimizer.zero_grad()
+
+              # 2. 前向传播并计算当前批次的交叉熵
+              loss = calc_loss_batch(
+                  input_batch,
+                  target_batch,
+                  model,
+                  device,
+              )
+
+              # 3. 反向传播，计算每个参数的梯度
+              loss.backward()
+
+              # 4. 根据梯度更新模型参数
+              optimizer.step()
+
+              tokens_seen += input_batch.numel()
+              global_step += 1
+
+              # 每隔 eval_freq 个更新步骤评估一次模型
+              if global_step % eval_freq == 0:
+                  train_loss, val_loss = evaluate_model(
+                      model,
+                      train_loader,
+                      val_loader,
+                      device,
+                      eval_iter,
+                  )
+
+                  train_losses.append(train_loss)
+                  val_losses.append(val_loss)
+                  track_tokens_seen.append(tokens_seen)
+
+                  print(
+                      f"Ep {epoch + 1} (Step {global_step:06d}): "
+                      f"Train loss {train_loss:.3f}, "
+                      f"Val loss {val_loss:.3f}"
+                  )
+
+          # 每个 epoch 结束后生成一段文本
+          generate_and_print_sample(
+              model,
+              tokenizer,
+              device,
+              start_context,
+          )
+
+      return train_losses, val_losses, track_tokens_seen
+  ```
+
+  参数更新的核心顺序：
+
+  ```text
+  optimizer.zero_grad()
+          ↓
+  loss = calc_loss_batch(...)
+          ↓
+  loss.backward()
+          ↓
+  optimizer.step()
+  ```
+
+  `global_step` 从 `-1` 开始，所以第一个批次更新后为 step 0。`input_batch.numel()` 是当前批次的 token 数，本例每批为 `2 × 256 = 512`。
+
+#### 评估与生成样本
+
+* `evaluate_model` 计算少量训练批次和验证批次的损失：
+
+  ```python
+  def evaluate_model(model, train_loader, val_loader, device, eval_iter):
+      model.eval()
+
+      with torch.no_grad():
+          train_loss = calc_loss_loader(
+              train_loader,
+              model,
+              device,
+              num_batches=eval_iter,
+          )
+          val_loss = calc_loss_loader(
+              val_loader,
+              model,
+              device,
+              num_batches=eval_iter,
+          )
+
+      model.train()
+      return train_loss, val_loss
+  ```
+
+  `model.eval()` 关闭 Dropout，`torch.no_grad()` 关闭梯度记录。评估完成后调用 `model.train()`，恢复训练模式。
+
+  本次训练设置 `eval_iter=1`，每次只用一个批次估算损失。这样速度快，但训练集经过随机打乱，不同评估点可能取到难度不同的批次，因此曲线会有小幅波动。
+
+* `generate_and_print_sample` 在每个 epoch 后生成 50 个 token，用于直观看模型是否进步：
+
+  ```python
+  def generate_and_print_sample(model, tokenizer, device, start_context):
+      model.eval()
+
+      # 位置嵌入表的长度就是模型支持的上下文长度
+      context_size = model.pos_emb.weight.shape[0]
+      encoded = text_to_token_ids(start_context, tokenizer).to(device)
+
+      with torch.no_grad():
+          token_ids = generate_text_simple(
+              model=model,
+              idx=encoded,
+              max_new_tokens=50,
+              context_size=context_size,
+          )
+
+      decoded_text = token_ids_to_text(token_ids, tokenizer)
+      print(decoded_text.replace("\n", " "))
+
+      model.train()
+  ```
+
+  损失提供数值指标，生成样本用于观察文本是否从无意义输出逐渐变得连贯。
+
+#### 启动训练
+
+* 使用 AdamW 训练随机初始化的 GPT 模型：
+
+  ```python
+  print("训练LLM开始...")
+
+  torch.manual_seed(123)
+  model = GPTModel(GPT_CONFIG_124M)
+
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  model.to(device)
+
+  optimizer = torch.optim.AdamW(
+      model.parameters(),
+      lr=0.0004,
+      weight_decay=0.1,
+  )
+
+  num_epochs = 10
+  train_losses, val_losses, tokens_seen = train_model_simple(
+      model=model,
+      train_loader=train_loader,
+      val_loader=val_loader,
+      optimizer=optimizer,
+      device=device,
+      num_epochs=num_epochs,
+      eval_freq=5,
+      eval_iter=1,
+      start_context="Every effort moves you",
+      tokenizer=tokenizer,
+  )
+
+  print("训练LLM结束...")
+  ```
+
+  AdamW 在 Adam 的基础上改进了权重衰减方式。`lr=0.0004` 是学习率，`weight_decay=0.1` 用于抑制权重过度增大。
+
+  训练集每个 epoch 有 9 个批次，训练 10 个 epoch，共更新参数 90 次。`eval_freq=5` 表示每 5 个 step 评估一次，因此记录 18 组损失；每个 epoch 结束生成一次样本，共生成 10 次。
+
+* 控制台输出节选：
+
+  ```text
+  Ep 1 (Step 000000): Train loss 9.954, Val loss 9.948
+  Ep 1 (Step 000005): Train loss 8.298, Val loss 8.292
+  Every effort moves you      ,        ,          ,  , , , ...
+
+  Ep 3 (Step 000020): Train loss 5.913, Val loss 6.687
+  Ep 3 (Step 000025): Train loss 5.685, Val loss 6.598
+  Every effort moves you Wedding Wedding Wedding ...
+
+  Ep 6 (Step 000045): Train loss 4.647, Val loss 6.464
+  Ep 6 (Step 000050): Train loss 3.195, Val loss 6.490
+  Every effort moves you know. " to "Oh, I said, in the ...
+
+  Ep 9 (Step 000075): Train loss 1.445, Val loss 6.486
+  Ep 9 (Step 000080): Train loss 1.007, Val loss 6.527
+  Every effort moves you know where her " to a cheap genius ...
+
+  Ep 10 (Step 000085): Train loss 1.188, Val loss 6.568
+  Every effort moves you know where her husband, a cheap genius-- ...
+  ```
+
+  生成文本的变化大致为：标点重复 → 单词重复和乱码 → 出现常见短语 → 形成较完整的句子。
+
+  训练损失从约 `9.954` 降到 `1.188`，说明模型越来越熟悉训练数据。验证损失降到约 `6.4` 后不再明显改善，训练与验证损失的差距持续扩大，说明模型开始过拟合这个小数据集，后期生成内容可能直接记住训练文本。
+
+  step 80 的训练损失为 `1.007`，step 85 回升到 `1.188`，不代表整体训练退化。`eval_iter=1` 只抽取一个经过打乱的训练批次，不同批次的损失存在波动。
+
+#### 绘制损失曲线
+
+* 将 epoch、累计 token 数、训练损失和验证损失绘制在同一张图中：
+
+  ```python
+  import matplotlib.pyplot as plt
+
+
+  def plot_losses(
+      epochs_seen,
+      tokens_seen,
+      train_losses,
+      val_losses,
+      output_path="losses.png",
+  ):
+      fig, ax1 = plt.subplots(figsize=(5, 3))
+
+      ax1.plot(epochs_seen, train_losses, label="Training loss")
+      ax1.plot(
+          epochs_seen,
+          val_losses,
+          linestyle="-.",
+          label="Validation loss",
+      )
+      ax1.set_xlabel("Epochs")
+      ax1.set_ylabel("Loss")
+      ax1.legend(loc="upper right")
+
+      # 上方横轴显示累计处理的 token 数
+      ax2 = ax1.twiny()
+      ax2.plot(tokens_seen, train_losses, alpha=0)
+      ax2.set_xlabel("Tokens seen")
+
+      fig.tight_layout()
+      plt.savefig(output_path, dpi=300, bbox_inches="tight")
+      plt.close(fig)
+
+
+  # 将 18 个评估点近似映射到 0～10 个 epoch
+  epochs_tensor = torch.linspace(
+      0,
+      num_epochs,
+      len(train_losses),
+  )
+
+  plot_losses(
+      epochs_tensor,
+      tokens_seen,
+      train_losses,
+      val_losses,
+      output_path="losses.png",
+  )
+  ```
+
+  `epochs_tensor` 是按评估点数量生成的近似 epoch 进度；`tokens_seen` 保存每次评估时模型累计处理的 token 数。
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm47.png)
+
+  曲线中训练损失持续下降，而验证损失在前期下降后停留在 6.4～6.6。两条曲线逐渐分离，是过拟合的典型表现。这里的主要原因是数据集很小，却被重复训练了 10 次。
+
 ### 通过解码策略控制生成结果的随机性
 
 #### Temperature scaling
