@@ -4,7 +4,9 @@
 >
 > 实践一：使用 Coze 构建“每日 AI 简报”，截图记录于 2026 年 7 月 14 日。
 >
-> 实践二：使用 FastGPT 构建“电商售后客服助手”。平台界面和功能以后可能调整。
+> 实践二：使用 Dify 构建“Garden 个人助手”，重点实践多路由、MCP 和异步视频生成。
+>
+> 实践三：使用 FastGPT 构建“电商售后客服助手”。平台界面和功能以后可能调整。
 
 ### 低代码平台解决什么
 
@@ -152,6 +154,157 @@ flowchart LR
 
 `数据源 → 工作流 → 大模型 → Agent → 发布渠道`
 
+### Dify：多路由个人助手
+
+[原文 5.3 节](https://datawhalechina.github.io/hello-agents/#/./chapter5/%E7%AC%AC%E4%BA%94%E7%AB%A0%20%E5%9F%BA%E4%BA%8E%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%99%BA%E4%BD%93%E6%90%AD%E5%BB%BA?id=_53-%e5%b9%b3%e5%8f%b0%e4%ba%8c%ef%bc%9adify)使用 Dify 构建“超级智能体个人助手”，把日常问答、文案优化、多模态生成、数据分析和 MCP 工具放进同一个 Chatflow。Dify 在这里承担两项工作：用问题分类器选择能力，再用不同的 Agent、插件或工作流完成任务。
+
+#### 总体路由
+
+我的应用名为“Garden 个人助手”。用户输入先经过问题分类器，再进入九类分支：
+
+| 类别 | 处理方式 |
+| --- | --- |
+| 一般性日常生活问题 | 日常助手与常用工具 |
+| 优化文案 | 文案优化助手 |
+| 生成图片 | Seedream 文生图 |
+| 生成视频 | Seedance 文生视频与结果轮询 |
+| 查询数据 | 数据查询分支 |
+| 数据分析 | 数据分析分支 |
+| 地图导航 | 高德 MCP |
+| 美食推荐 | 美食 MCP |
+| 新闻资讯 | 新闻 MCP |
+
+```mermaid
+flowchart LR
+    U["用户输入"] --> C["问题分类器"]
+    C --> D["日常助手"]
+    C --> T["文案优化"]
+    C --> I["Seedream 文生图"]
+    C --> V["Seedance 文生视频"]
+    C --> Q["数据查询与分析"]
+    C --> M1["高德 MCP"]
+    C --> M2["美食 MCP"]
+    C --> M3["新闻 MCP"]
+    D --> R["对应回复节点"]
+    T --> R
+    I --> R
+    V --> R
+    Q --> R
+    M1 --> R
+    M2 --> R
+    M3 --> R
+```
+
+分类器和主要 Agent 使用 `DeepSeek-V4-Pro`。每个分支都有独立回复节点，避免不同节点的输出类型互相干扰。
+
+![日常助手与东京时间查询](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_dify_workflow_1.png)
+
+测试“现在东京多少点”时，分类器进入日常助手，Agent 调用时间工具后返回东京时间，并补充与北京时间的时差。这个分支适合作为兜底，但工具描述要写清地点、时间、时区等参数，否则 Agent 容易在相似工具间选错。
+
+#### 文案优化分支
+
+![文案优化助手运行结果](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_dify_workflow_2.png)
+
+输入“优化下面文本：欢迎使用 Dify，创建美好的智能世界”后，助手生成了一篇完整的营销文案。原文提示词要求输出超过 500 字，因此短句也被扩写成较长内容。
+
+固定长度便于统一交付格式，但不适合所有请求。更合理的做法是让用户选择“精简、标准、详细”，或按原文长度设置扩写比例；没有明确要求时，优先保留原意和信息密度。
+
+#### MCP 工具分支
+
+高德、美食和新闻分支使用支持 MCP 工具的 ReAct Agent。问题分类器只负责路由，具体工具选择和参数填写交给各分支 Agent。
+
+![高德 MCP 路线规划](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_dify_workflow_3.png)
+
+“从磨碟沙到天河公园应该怎么走”被分到地图导航，高德 MCP 返回地铁换乘和公交备选方案，并给出距离和预计耗时。
+
+![美食 MCP 推荐结果](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_dify_workflow_4.png)
+
+“磨碟沙附近有什么好吃的”进入美食推荐分支，结果按粤菜、快餐和小吃分类。推荐类结果会随时间变化，正式使用时应保留数据来源、查询时间和距离范围，不把模型整理后的内容当成长期有效信息。
+
+![新闻 MCP 查询结果](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_dify_workflow_5.png)
+
+新闻分支测试“获取今天 AI 资讯”，返回当天的 AI 新闻和来源。这里的“今天”依赖系统时间，调用工具时需要传入日期或时区，避免跨时区后取到前一天的数据。
+
+#### 文生图分支
+
+![Seedream 文生图结果](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_dify_workflow_6.png)
+
+测试输入是“生成 Saber 在吃肯德基的图”。执行记录显示：
+
+| 节点 | 耗时 |
+| --- | ---: |
+| 用户问题分类 | 4.116 秒 |
+| Seedream 文生图 | 31.985 秒 |
+| 图片回复 | 16.526 毫秒 |
+
+图像生成占绝大部分时间，回复节点几乎没有额外开销。截图中的生成参数包括 2048×2048、JPEG 输出和水印开启；实际发布前还要确认品牌标识、角色版权和内容合规要求。
+
+#### 文生视频：异步任务与轮询
+
+视频生成不是一次请求直接返回文件，而是典型的异步任务：
+
+1. Seedance 创建视频任务并返回任务 ID。
+2. 从响应中提取任务 ID。
+3. 使用任务 ID 查询生成状态。
+4. 未完成时等待后重试，完成后返回 MP4 文件。
+
+我的流程把“视频生成任务 ID 提取”放在循环外：
+
+```mermaid
+flowchart LR
+    U["生成视频请求"] --> V["Seedance 创建任务"]
+    V --> E["提取 task_id：只执行一次"]
+    E --> Q
+    subgraph L["循环：只负责轮询"]
+        Q["查询视频结果"] --> C{"files 是否为空"}
+        C -->|是| W["等待"]
+        W --> Q
+    end
+    C -->|否| R["回复视频文件"]
+```
+
+![Seedance 视频生成与循环结果](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_dify_workflow_7.png)
+
+这次测试输入是“生成 Saber 在疯狂星期四吃肯德基的视频”，最终得到一个 4.62 MB 的 MP4 文件。节点记录如下：
+
+| 节点 | 用量或耗时 |
+| --- | ---: |
+| 用户问题分类 | 1.08K Tokens，6.230 秒 |
+| Seedance 创建视频任务 | 3.668 秒 |
+| 视频任务 ID 提取 | 788 Tokens，3.894 秒 |
+| 循环查询结果 | 约 1 分 11 秒 |
+
+任务创建很快，主要等待发生在远程生成和轮询阶段。
+
+#### 为什么把参数提取移到循环外
+
+任务 ID 在任务创建成功后不会变化，它是循环不变量。假设查询结果需要轮询 `n` 次：
+
+| 方案 | 参数提取次数 | 查询次数 |
+| --- | ---: | ---: |
+| 参数提取放在循环内 | `n` | `n` |
+| 参数提取放在循环外 | 1 | `n` |
+
+优化后少执行 `n - 1` 次参数提取。由于该节点本身调用大模型，本次单次就消耗 788 Tokens、约 3.9 秒，移出循环可以直接减少重复 Token、等待时间和失败点。
+
+循环内部只保留会变化的状态：
+
+`查询结果 → 判断 files 是否为空 → 等待或返回文件`
+
+如果视频插件已经输出结构化的 `task_id` 字段，还可以直接引用该变量，不再调用大模型提取。循环还应设置最大次数、等待间隔和失败分支，分别处理任务超时、接口限流和生成失败，避免一直轮询。
+
+#### Dify 实践结论
+
+| 观察 | 结论 |
+| --- | --- |
+| 九类请求由一个分类器路由 | 新增能力时只需增加分类和独立分支 |
+| MCP Agent 负责具体工具调用 | 分类器无需理解每个 API 参数 |
+| 图片和视频生成耗时明显更长 | 前端需要展示处理中状态 |
+| 视频任务 ID 在轮询期间不变 | 参数提取应放到循环外 |
+| 轮询节点可能长时间运行 | 必须配置间隔、上限和异常出口 |
+
+这次改动不是简单少放一个节点，而是把“初始化”和“重复检查”分开：循环外准备稳定参数，循环内只处理会变化的任务状态。
+
 ### FastGPT：知识库与工作流
 
 [原文 5.4 节](https://datawhalechina.github.io/hello-agents/#/./chapter5/%E7%AC%AC%E4%BA%94%E7%AB%A0%20%E5%9F%BA%E4%BA%8E%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%99%BA%E8%83%BD%E4%BD%93%E6%90%AD%E5%BB%BA?id=_54-%e5%b9%b3%e5%8f%b0%e4%b8%89%ef%bc%9afastgpt)把 FastGPT 定位为知识库问答与 Agent 构建平台。它的重点是把 RAG 链路做成可配置流程：
@@ -274,6 +427,8 @@ AI 对话节点同样使用 `deepseek-v4-flash`。提示词要求先表达理解
 - [Hello-Agents 第五章 GitHub 源文件](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter5/%E7%AC%AC%E4%BA%94%E7%AB%A0%20%E5%9F%BA%E4%BA%8E%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%99%BA%E4%BD%93%E6%90%AD%E5%BB%BA.md)
 - [Coze](https://www.coze.cn/)
 - [Dify](https://dify.ai/)
+- [Dify：参数提取节点示例](https://docs.dify.ai/en/guides/application-orchestrate/creating-an-application)
+- [Dify：工作流错误处理](https://docs.dify.ai/zh/use-dify/build/predefined-error-handling-logic)
 - [FastGPT](https://fastgpt.io/)
 - [FastGPT：问题分类节点](https://doc.fastgpt.io/zh-CN/guide/build/workflow/nodes/question_classify)
 - [FastGPT：知识库搜索节点](https://doc.fastgpt.io/zh-CN/guide/build/workflow/nodes/dataset_search)
