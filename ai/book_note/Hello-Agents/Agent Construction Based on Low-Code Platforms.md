@@ -7,6 +7,8 @@
 > 实践二：使用 Dify 构建“Garden 个人助手”，重点实践多路由、MCP 和异步视频生成。
 >
 > 实践三：使用 FastGPT 构建“电商售后客服助手”。平台界面和功能以后可能调整。
+>
+> 实践四：使用 n8n AI Assistant（AI Chat）构建“Gmail AI Agent with Vector Store RAG”，并完成调试、发布与邮件回信验证。
 
 ### 低代码平台解决什么
 
@@ -421,6 +423,177 @@ AI 对话节点同样使用 `deepseek-v4-flash`。提示词要求先表达理解
 
 简化实践保留了 FastGPT 的主要价值：用可视化分支管理业务规则，用知识库约束回答依据。接入订单查询、退款进度等实时接口时，再增加 MCP 或 HTTP 工具即可。
 
+### n8n：通用自动化与 AI Assistant
+
+> 对应原文：[5.5 平台四：n8n](https://datawhalechina.github.io/hello-agents/#/./chapter5/%E7%AC%AC%E4%BA%94%E7%AB%A0%20%E5%9F%BA%E4%BA%8E%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%99%BA%E8%83%BD%E4%BD%93%E6%90%AD%E5%BB%BA?id=_55-%e5%b9%b3%e5%8f%b0%e5%9b%9b%ef%bc%9an8n)
+
+n8n 首先是通用工作流自动化平台，LLM、记忆和工具只是流程中的节点。它适合把 Gmail、数据库、HTTP API 和 AI Agent 串成可执行的业务流程，而不是只做一个聊天机器人。
+
+原文通过手动添加节点搭建智能邮件助手；我的业务目标相近，但搭建方式不同：我把原文工作流截图交给 n8n AI Assistant，通过左侧 AI Chat 完成建图、配置检查、试跑和排错。最终产物仍是普通 n8n 工作流，可以在画布上继续编辑和发布。
+
+这里的正式产品名是 `AI Assistant（Preview）`，AI Chat 指它在编辑器内的对话界面。它在本次实践前不久发布，并接替了早期的 AI Workflow Builder。
+
+这次实践中，最值得关注的不是“AI 帮忙放了几个节点”，而是 **AI Chat 已经成为工作流编辑器的自然语言操作层**。它不只回答 n8n 的使用问题，还能直接修改画布并结合执行记录修复错误。
+
+#### 工作流结构
+
+工作流包含两条独立入口：一条写入知识库，一条处理 Gmail 邮件。
+
+```mermaid
+flowchart TB
+    subgraph K["知识库写入路径"]
+        T["Manual Trigger"] --> C["Code：准备知识文本"]
+        C --> V["Simple Vector Store：写入文档"]
+        D["Default Data Loader"] --> V
+        E1["Gemini Embeddings"] --> V
+    end
+
+    subgraph M["邮件处理路径"]
+        G["Gmail Trigger：收到未读邮件"] --> A["AI Agent：理解并生成回复"]
+        A --> S["Gmail Send：回复发件人"]
+        L["Gemini Chat Model"] --> A
+        R["Simple Memory"] --> A
+        W["SerpAPI 搜索"] --> A
+        Q["向量知识库工具"] --> A
+        E2["Gemini Embeddings"] --> Q
+    end
+
+    V -. "使用相同知识库标识供 Agent 检索" .-> Q
+```
+
+知识库路径由手动触发器启动，把 Code 节点中的文本经过 Data Loader 和 Gemini Embeddings 写入 `Simple Vector Store`。邮件路径由 Gmail Trigger 轮询未读邮件，AI Agent 根据邮件内容选择知识库或搜索工具，再由 Gmail 节点发出回复。
+
+两条路径可以放在同一个画布中，但执行语义仍然独立：手动运行知识库分支不会顺带触发 Gmail，发布 Gmail 分支也不等于知识库一定已经写入。正式使用时应把内存向量库换成 Pinecone、Qdrant、PGVector 等持久化存储，避免不同执行之间的数据不可用。
+
+#### 用 AI Chat 从参考图生成工作流
+
+我在 AI Chat 中上传原文工作流截图，并提出“根据附件创建工作流”。它先识别出知识库写入和 Gmail Agent 两条路径，再读取相关节点的结构，生成节点、连线和参数。
+
+![AI Chat 根据参考图分析工作流](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_1.png)
+
+生成后，AI Chat 主动修正了两个结构问题：为知识库写入路径补充触发节点，并调整 Memory 的会话键引用。随后它把 Gmail OAuth 配置以表单形式交给我处理。
+
+![AI Chat 修正工作流并引导配置 Gmail](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_2.png)
+
+这一步体现了 AI Assistant 与普通问答助手的差别：普通助手只能告诉我“应该添加哪些节点”，这里的 AI Chat 会直接操作当前项目中的工作流，修改结果同步显示在右侧画布上。
+
+#### 凭证配置与运行检查
+
+要运行该工作流，需要三类凭证：
+
+| 节点 | 凭证 |
+| --- | --- |
+| Gmail Trigger、Send a message | Gmail OAuth2 |
+| Gemini Chat Model、Gemini Embeddings | Google Gemini API |
+| `search_google` | SerpAPI |
+
+![AI Chat 检查工作流所需凭证](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_3.png)
+
+凭证仍在 n8n 的标准配置界面中授权，不能把密钥直接发到聊天框。AI Chat 的作用是指出缺失项、打开对应配置入口并在授权后继续检查。
+
+完成配置后，它还给出三条有效提醒：内存向量库不适合跨执行持久化；自动回复所有未读邮件风险较高；中文知识库与英文提示词可能造成回复语言不一致。
+
+![AI Chat 完成配置检查并提示运行风险](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_4.png)
+
+#### 两种触发方式
+
+工作流不是点击一次就会顺序跑完两条路径：
+
+1. 点击 `Test workflow`，执行的是知识库写入路径。
+2. 发布或监听 Gmail Trigger 后，需要向绑定邮箱发送一封新的未读邮件，才会进入邮件回复路径。
+
+![AI Chat 解释当前工作流是否可以运行](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_5.png)
+
+![AI Chat 说明 Gmail Trigger 的触发条件](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_6.png)
+
+这类说明很实用。画布连线只能展示节点关系，AI Chat 则结合触发器类型解释实际运行时机，减少了“手动测试成功，为什么邮件路径没有执行”的误判。
+
+#### 根据执行记录修复类型错误
+
+第一次发送邮件时，`Send a message` 节点报错：
+
+```text
+input.split is not a function (item 0)
+```
+
+![Send a message 节点出现类型错误](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_7.png)
+
+我让 AI Chat 检查失败执行。它发现 Gmail Trigger 开启了 `simple: false`，因此 `from` 是结构化对象，而 `sendTo` 需要字符串。节点内部对收件人调用 `.split()` 时就会失败。
+
+![AI Chat 从执行数据定位错误原因](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_8.png)
+
+修复过程不是重新生成整张工作流，而是修改 Gmail 节点的字段表达式，并重新校验节点参数。
+
+![AI Chat 修改节点参数并重新构建](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_9.png)
+
+修改前：
+
+```text
+{{ $('Gmail Trigger').item.json.from }}
+```
+
+修改后：
+
+```text
+{{ $('Gmail Trigger').item.json.from.value[0].address }}
+```
+
+![AI Chat 确认收件人表达式修复](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_10.png)
+
+修复的关键不是表达式写法本身，而是把节点间的字段契约说清楚：上游输出对象，下游需要字符串。AI Chat 能读取失败执行中的真实数据，再修改当前画布，这比脱离上下文猜测错误快得多。
+
+#### 实际运行结果
+
+知识库路径先单独执行成功，Code、Data Loader、Embeddings 和 Vector Store 节点均返回正常状态。
+
+![知识库写入路径执行成功](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_11.png)
+
+随后用可回复的邮箱发送测试邮件，Gmail Trigger、AI Agent 和 Send a message 完整执行成功。Gemini Chat Model 与 Simple Memory 被调用，搜索和知识库作为 Agent 可选工具保留。
+
+![Gmail AI Agent 路径执行成功](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_12.png)
+
+发布前，n8n 要求填写版本名，并提示 Gemini 节点会消耗 n8n Connect 额度。发布属于有外部影响的操作，AI Chat 不会静默完成，仍需要人工确认。
+
+![发布工作流并填写版本信息](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_13.png)
+
+测试邮箱收到主题为 `Re: n8n workflow test` 的自动回复。
+
+![Gmail 收到 n8n 自动回复](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_14.png)
+
+![n8n 自动回复邮件正文](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_15.jpg)
+
+执行历史保留了每次运行的状态和耗时：第 4 次执行为前述类型错误，修复后的多次执行均成功。它既是运行记录，也是定位回归问题的依据。
+
+![n8n 工作流执行历史](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/hello-agents_n8n_workflow_16.png)
+
+#### 为什么 AI Chat 是关键功能
+
+AI Chat 把 n8n 的使用方式从“先熟悉节点，再搭工作流”改成了“先描述目标，再检查和调整生成结果”。
+
+| 传统画布操作 | AI Chat 辅助操作 |
+| --- | --- |
+| 从空白画布搜索节点 | 用自然语言或参考图生成初始工作流 |
+| 手动阅读每个节点的参数 | 根据节点结构生成并校验参数 |
+| 自己判断缺少哪些凭证 | 列出依赖并打开授权入口 |
+| 在执行数据中逐层排错 | 读取失败执行，解释原因并修改表达式 |
+| 每次调整都回到画布操作 | 在同一段对话中连续增删、修改和复测 |
+
+它真正降低的是三类成本：面对空白画布时的设计成本、节点字段映射的学习成本、跨节点排错的上下文切换成本。右侧仍是标准 n8n 工作流，用户可以检查每个节点，而不是得到一个不可见的黑盒结果。这种“对话生成 + 可视化审查”的组合，是我认为 n8n 很出色的产品设计。
+
+AI Chat 也不能代替流程设计。触发条件、凭证授权、数据类型、外部副作用和存储持久性仍要人工确认。更合适的使用方式是：让它完成初稿和机械修改，自己负责业务约束、风险控制与最终验收。
+
+#### n8n 实践结论
+
+| 观察 | 结论 |
+| --- | --- |
+| AI Chat 可从截图生成节点与连线 | 适合快速还原参考方案，省去空白画布起步 |
+| 能读取失败执行并直接改节点 | 它不仅负责生成，也能参与调试闭环 |
+| Gmail `from` 为对象而发送节点需要字符串 | 节点连线正确不代表字段类型匹配 |
+| 两条路径使用不同触发器 | 知识写入和邮件处理要分别测试 |
+| Simple Vector Store 位于内存 | 演示方便，正式环境应换持久化向量库 |
+| 自动回复会产生外部影响 | 发布前应增加过滤、草稿或人工审核 |
+| 修复后收到邮件且连续执行成功 | 实践完成了构建、发布和真实回信验证 |
+
 ### 参考资料
 
 - [Hello-Agents 第五章：基于低代码平台的智能体搭建](https://datawhalechina.github.io/hello-agents/#/./chapter5/%E7%AC%AC%E4%BA%94%E7%AB%A0%20%E5%9F%BA%E4%BA%8E%E4%BD%8E%E4%BB%A3%E7%A0%81%E5%B9%B3%E5%8F%B0%E7%9A%84%E6%99%BA%E8%83%BD%E4%BD%93%E6%90%AD%E5%BB%BA)
@@ -434,3 +607,6 @@ AI 对话节点同样使用 `deepseek-v4-flash`。提示词要求先表达理解
 - [FastGPT：知识库搜索节点](https://doc.fastgpt.io/zh-CN/guide/build/workflow/nodes/dataset_search)
 - [FastGPT：知识库搜索引用合并](https://doc.fastgpt.io/zh-CN/guide/build/workflow/nodes/knowledge_base_search_merge)
 - [n8n](https://n8n.io/)
+- [n8n AI Assistant（Preview）](https://docs.n8n.io/build/ways-of-building-workflows/ai-assistant-preview/)
+- [n8n：AI Assistant 发布说明](https://community.n8n.io/t/introducing-the-ai-assistant-the-workflow-building-agent-inside-n8n/302667)
+- [n8n：AI Workflow Builder 使用建议](https://blog.n8n.io/ai-workflow-builder-best-practices/)
