@@ -1547,22 +1547,43 @@
 
   这比在小型《The Verdict》数据集上训练的模型更连贯。这里使用 `temperature=1.5` 和 Top-k 随机采样，即使权重加载正确，也不要求逐字得到相同文本。
 
-#### 当前程序只打印第一行的原因
+#### 实践结果与分析
 
-* 当前控制台停在：
+* 修正后的完整代码运行成功，控制台输出节选：
 
   ```text
   加载gpt2-small (124M)权重，推理生成文本：
+  开始下载gpt_download.py...
+  gpt_download.py下载完成：/mnt/data/llm-gpt2/gpt_download.py
+  开始导入gpt_download.py...
+  gpt_download.py导入完成
+  开始下载并读取GPT-2 124M权重，首次运行需要下载约500 MB...
+
+  checkpoint: 100%|██████████| 77.0/77.0
+  encoder.json: 100%|██████████| 1.04M/1.04M
+  hparams.json: 100%|██████████| 90.0/90.0
+  model.ckpt.data-00000-of-00001: 100%|██████████| 498M/498M [12:38]
+  model.ckpt.index: 100%|██████████| 5.21k/5.21k
+  model.ckpt.meta: 100%|██████████| 471k/471k
+  vocab.bpe: 100%|██████████| 456k/456k
+
+  GPT-2权重读取完成
+  Settings: {'n_vocab': 50257, 'n_ctx': 1024, 'n_embd': 768,
+             'n_head': 12, 'n_layer': 12}
+  Parameter dictionary keys: dict_keys(['blocks', 'b', 'g', 'wpe', 'wte'])
+  开始创建GPTModel...
+  GPTModel创建完成
+  开始映射OpenAI权重到GPTModel...
+  权重映射完成
+  推理设备： cuda
+  开始生成文本...
+  Output text:
+   Every effort moves you as far as the hand can go until the end of your turn
+  unless something interrupts your control flow. As you may observe I
   ```
 
-  按所贴代码的执行顺序，下一行就是没有进度提示和显式超时的 `urllib.request.urlretrieve`，因此最可能是访问 GitHub Raw 较慢或被阻断。上面的修正版在下载前后打印状态，并在文件已存在时跳过重复下载，可以直接判断卡在哪一步。
+  程序之前看起来“卡住”，实际耗时主要来自 498 MB 权重文件的下载：本次用了约 12 分 38 秒。加入阶段日志后，可以区分脚本下载、TensorFlow 权重读取、参数映射和文本生成，而不是只看到第一行后一直等待。
 
-  此外，原实践代码还需要修正以下问题：
+  `settings` 和 `params` 的内容符合 GPT-2 small，模型也在 CUDA 上生成了连贯文本，说明模型配置、权重映射和输入设备已经正确衔接。再次运行时，完整下载的权重文件会被复用，不需要重新下载 498 MB。
 
-  - 下载 `gpt_download.py` 后还要导入并调用 `download_and_load_gpt2`，否则不会得到 `settings` 和 `params`。
-  - `GPTModel` 需要 `GPTConfig` 对象，因此要执行 `GPTConfig(**NEW_CONFIG_DICT)`。
-  - `final_norm` 和 `out_head` 的赋值必须缩进在 `load_weights_into_gpt` 函数内部。
-  - `gpt.to(device)` 后，输入 token 也要 `.to(device)`。
-  - 首次下载 124M 权重约需 500 MB；如果停在“开始下载并读取GPT-2 124M权重”，应先观察 tqdm 进度和 `gpt2/124M` 目录中的文件大小。
-
-  如果原始 TensorFlow 检查点加载受环境限制，官方 Chapter 5 notebook 还提供了预先转换好的 PyTorch `.pth` 权重作为替代方案。
+  实践输出与原文参考文本不同是正常的。`temperature=1.5` 和 `top_k=50` 使用随机采样；即使设置相同随机种子，CPU/CUDA 设备和运行环境不同也可能产生另一条合理文本。
