@@ -201,7 +201,7 @@
 
 * 训练的目标是提高正确目标 token 的概率。图 5.6 使用 7 个 token 的简化词表，实际词表大小为 `50257`。
 
-  ![图 5.6：提高正确目标 token 所对应的概率](https://raw.githubusercontent.com/skindhu/Build-A-Large-Language-Model-CN/main/Image/chapter5/figure5.6.png)
+  ![图 5.6：提高正确目标 token 所对应的概率](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm48.png)
 
 * 使用 PyTorch 高级索引，分别取得两条文本中三个正确目标 token 的概率：
 
@@ -305,7 +305,7 @@
 
 * 图 5.7 展示了从 logits 到损失的过程：
 
-  ![图 5.7：从 logits 计算负平均对数概率](https://raw.githubusercontent.com/skindhu/Build-A-Large-Language-Model-CN/main/Image/chapter5/figure5.7.png)
+  ![图 5.7：从 logits 计算负平均对数概率](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm49.png)
 
 * 对平均对数概率乘以 `-1`：
 
@@ -435,7 +435,7 @@
 
 * 图 5.9 展示了 `max_length` 和 `stride` 如何控制文本窗口。代码中两者都为 256，因此每次向后移动 256 个 token，窗口之间不重叠。
 
-  ![图 5.9：使用滑动窗口构建训练批次](https://raw.githubusercontent.com/skindhu/Build-A-Large-Language-Model-CN/main/Image/chapter5/figure5.9.png)
+  ![图 5.9：使用滑动窗口构建训练批次](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm50.png)
 
 * 创建训练集和验证集 DataLoader：
 
@@ -896,11 +896,226 @@
 
 ### 通过解码策略控制生成结果的随机性
 
+* 5.2 生成样本时使用的是贪心解码：每一步都选择 logit 最大的 token。同一个模型接收相同输入时，生成结果固定，也容易复述训练文本。本节改用概率采样，并通过温度和 Top-k 控制随机程度。
+
 #### Temperature scaling
+
+* 先用一个小词表观察贪心解码与概率采样的区别：
+
+  ```python
+  vocab = {
+      "closer": 0,
+      "every": 1,
+      "effort": 2,
+      "forward": 3,
+      "inches": 4,
+      "moves": 5,
+      "pizza": 6,
+      "toward": 7,
+      "you": 8,
+  }
+  inverse_vocab = {token_id: token for token, token_id in vocab.items()}
+
+  next_token_logits = torch.tensor(
+      [4.51, 0.89, -1.90, 6.75, 1.63, -1.62, -1.89, 6.28, 1.79]
+  )
+  probas = torch.softmax(next_token_logits, dim=0)
+
+  # 贪心解码：固定选择概率最高的 token
+  greedy_token_id = torch.argmax(probas).item()
+  print(inverse_vocab[greedy_token_id])
+
+  # 概率采样：概率越高越容易被选中，但不保证一定被选中
+  torch.manual_seed(123)
+  sampled_token_id = torch.multinomial(probas, num_samples=1).item()
+  print(inverse_vocab[sampled_token_id])
+  ```
+
+  ```text
+  forward
+  forward
+  ```
+
+  这次采样仍得到 `forward`，是因为它的概率最高。区别在于 `argmax` 每次都选它，而 `multinomial` 只是更容易选它，其他 token 仍有机会被选中。
+
+* 温度缩放是在 Softmax 前将 logits 除以温度 $T$：
+
+  $$
+  p_i=\frac{\exp(z_i/T)}{\sum_j\exp(z_j/T)}
+  $$
+
+  ```python
+  def softmax_with_temperature(logits, temperature):
+      scaled_logits = logits / temperature
+      return torch.softmax(scaled_logits, dim=0)
+  ```
+
+  - `T=1`：logits 不变。
+  - `0<T<1`：logits 的差距被放大，分布更尖锐，结果更保守。
+  - `T>1`：logits 的差距被缩小，分布更平缓，结果更多样，也更可能选中不通顺的低概率 token。
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm51.png)
+
+  公式要求 $T>0$。后面的生成函数将 `temperature=0` 单独处理为贪心解码，不会执行除以 0。
 
 #### Top-k 采样
 
+* 温度升高后，整个词表中的低概率 token 都可能被采样。Top-k 先把候选范围限制为 logit 最大的 k 个 token，再从这些候选中采样：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm52.png)
+
+* 以上面 9 个 logits 为例，只保留 Top-3：
+
+  ```python
+  top_k = 3
+  top_logits, top_positions = torch.topk(next_token_logits, top_k)
+
+  print("Top logits:", top_logits)
+  print("Top positions:", top_positions)
+
+  new_logits = torch.where(
+      next_token_logits < top_logits[-1],
+      torch.tensor(float("-inf")),
+      next_token_logits,
+  )
+  topk_probas = torch.softmax(new_logits, dim=0)
+
+  print(new_logits)
+  print(topk_probas)
+  ```
+
+  ```text
+  Top logits: tensor([6.7500, 6.2800, 4.5100])
+  Top positions: tensor([3, 7, 0])
+  tensor([4.5100,   -inf,   -inf, 6.7500,   -inf,   -inf,   -inf, 6.2800,   -inf])
+  tensor([0.0615, 0.0000, 0.0000, 0.5775, 0.0000, 0.0000, 0.0000, 0.3610, 0.0000])
+  ```
+
+  `exp(-inf)=0`，所以被排除的 token 经过 Softmax 后概率为 0。Top-k 只负责筛选候选，最终仍由 `multinomial` 按概率随机选择。
+
 #### 对文本生成函数进行调整
+
+* 将两种策略加入文本生成函数，执行顺序为：`Top-k 筛选 → 温度缩放 → Softmax → 随机采样`。
+
+  ```python
+  def generate(
+      model,
+      idx,
+      max_new_tokens,
+      context_size,
+      temperature=1.0,
+      top_k=None,
+      eos_id=None,
+  ):
+      for _ in range(max_new_tokens):
+          # 只保留模型支持的最后 context_size 个 token
+          idx_cond = idx[:, -context_size:]
+
+          with torch.no_grad():
+              logits = model(idx_cond)
+
+          # 最后一个位置用于预测下一个 token
+          logits = logits[:, -1, :]  # [batch_size, vocab_size]
+
+          if top_k is not None:
+              top_logits, _ = torch.topk(logits, top_k)
+
+              # [batch_size] → [batch_size, 1]，与 logits 广播比较
+              min_val = top_logits[:, -1].unsqueeze(-1)
+              logits = torch.where(
+                  logits < min_val,
+                  torch.tensor(
+                      float("-inf"),
+                      device=logits.device,
+                      dtype=logits.dtype,
+                  ),
+                  logits,
+              )
+
+          if temperature > 0.0:
+              logits = logits / temperature
+              probs = torch.softmax(
+                  logits,
+                  dim=-1,
+              )  # [batch_size, vocab_size]
+              idx_next = torch.multinomial(probs, num_samples=1)
+          else:
+              # temperature <= 0 时使用贪心解码
+              idx_next = torch.argmax(logits, dim=-1, keepdim=True)
+
+          if eos_id is not None and (idx_next == eos_id).all():
+              break
+
+          idx = torch.cat((idx, idx_next), dim=1)
+
+      return idx
+  ```
+
+  `eos_id` 判断中的 `.all()` 表示整个批次都生成结束 token 时才停止。本例 `batch_size=1`，可以直接使用；多样本生成时通常还需要分别记录每个样本是否已经结束。
+
+* 5.3 紧接 5.2 执行，应沿用已经训练完成的 `model`，不要重新创建随机模型。为接近原文的推理环境，将模型和输入统一放到 CPU：
+
+  ```python
+  inference_device = torch.device("cpu")
+  model.to(inference_device)
+  model.eval()
+
+  tokenizer = tiktoken.get_encoding("gpt2")
+
+  # 放在 generate 前，固定本次 multinomial 采样的随机状态
+  torch.manual_seed(123)
+
+  token_ids = generate(
+      model=model,
+      idx=text_to_token_ids(
+          "Every effort moves you",
+          tokenizer,
+      ).to(inference_device),
+      max_new_tokens=15,
+      context_size=GPT_CONFIG_124M.context_length,
+      top_k=25,
+      temperature=1.4,
+  )
+
+  print("Output text:\n", token_ids_to_text(token_ids, tokenizer))
+  ```
+
+  `GPT_CONFIG_124M` 已从字典转换为 `GPTConfig` 对象，因此上下文长度要用属性访问：
+
+  ```python
+  GPT_CONFIG_124M.context_length
+  ```
+
+  只有原始字典 `GPT_CONFIG_124M_DICT` 才能写成：
+
+  ```python
+  GPT_CONFIG_124M_DICT["context_length"]
+  ```
+
+* 原文同样基于 5.2 训练完成的模型，参考输出为：
+
+  ```text
+  Every effort moves you stand to work on surprise, a one of us had gone with random-
+  ```
+
+  当前实践沿用 5.2 训练完成的 `model`，得到：
+
+  ```text
+  通过温度、top-k采样增加文本生成多样性：
+  Output text:
+   Every effort moves you his
+  between the last but I must; ority. She been fellow
+  ```
+
+  这段文本已经出现了英文句式和上下文关联，说明模型经过 5.2 训练后学到了一部分训练文本的结构；不过数据集很小，训练时间也短，再加上随机采样，语法仍可能不完整。
+
+  与原文不一致并不代表训练或生成代码有误，主要有以下原因：
+
+  - 本地数据的字符数、token 数、上下文长度和训练损失均与原文不同，最终得到的模型权重自然不同。
+  - `temperature=1.4` 会调用 `torch.multinomial` 随机采样；随机种子只能在模型权重、随机调用顺序和运行环境都一致时复现相同结果。
+  - PyTorch 版本以及 CPU/CUDA 设备的计算差异，也可能改变采样结果。
+
+  推理时仍需调用 `model.eval()` 关闭 Dropout，否则会引入额外随机性。这里的关键不是逐字复现原文，而是确认输出来自 5.2 训练后的模型，并能随温度和 Top-k 设置产生不同结果。
 
 ### 在 PyTorch 中加载和保存模型权重
 
