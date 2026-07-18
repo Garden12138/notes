@@ -1267,3 +1267,302 @@
   `eval_iter=1` 每次只计算一个批次，单个损失点会有波动；但训练损失接近 0、验证损失持续上升的整体趋势已经很明显，继续训练不能改善模型对未见文本的表现。
 
 ### 从 OpenAI 加载预训练权重
+
+#### 下载并读取 GPT-2 权重
+
+* 本章前面只在一篇短篇小说上训练模型。这里加载 OpenAI 已在大规模语料上预训练好的 GPT-2 权重，不再从随机参数开始训练。
+
+  原书的加载方式依赖 TensorFlow 和 tqdm：
+
+  ```text
+  pip install "tensorflow>=2.15.0" "tqdm>=4.66"
+  ```
+
+* 下载 `gpt_download.py`，再调用其中的 `download_and_load_gpt2`：
+
+  ```python
+  from pathlib import Path
+  import urllib.request
+
+
+  script_url = (
+      "https://raw.githubusercontent.com/rasbt/"
+      "LLMs-from-scratch/main/ch05/"
+      "01_main-chapter-code/gpt_download.py"
+  )
+  script_path = Path("gpt_download.py")
+
+  if not script_path.exists():
+      print("开始下载gpt_download.py...")
+      urllib.request.urlretrieve(script_url, script_path)
+      print("gpt_download.py下载完成")
+  else:
+      print("gpt_download.py已存在，跳过下载")
+
+  from gpt_download import download_and_load_gpt2
+
+  print("开始下载并读取GPT-2 124M权重...")
+  settings, params = download_and_load_gpt2(
+      model_size="124M",
+      models_dir="gpt2",
+  )
+  print("GPT-2权重读取完成")
+  print("Settings:", settings)
+  print("Parameter dictionary keys:", params.keys())
+  ```
+
+  `urlretrieve` 只下载约 6 KB 的 Python 脚本，并不会得到模型权重。真正创建 `params` 的是 `download_and_load_gpt2`，它会下载 7 个文件，其中权重文件约 498 MB；首次执行需要等待，并会显示 tqdm 进度条。已经完整下载的文件会被复用。
+
+  成功后可以看到：
+
+  ```text
+  Settings: {'n_vocab': 50257, 'n_ctx': 1024, 'n_embd': 768,
+             'n_head': 12, 'n_layer': 12}
+  Parameter dictionary keys: dict_keys(['blocks', 'b', 'g', 'wpe', 'wte'])
+  ```
+
+  `settings` 保存 GPT-2 的结构参数；`params` 保存从 TensorFlow 检查点读取的权重。
+
+#### 调整 GPTModel 配置
+
+* OpenAI 提供了四种 GPT-2 规模：
+
+  ```python
+  model_configs = {
+      "gpt2-small (124M)": {
+          "emb_dim": 768,
+          "n_layers": 12,
+          "n_heads": 12,
+      },
+      "gpt2-medium (355M)": {
+          "emb_dim": 1024,
+          "n_layers": 24,
+          "n_heads": 16,
+      },
+      "gpt2-large (774M)": {
+          "emb_dim": 1280,
+          "n_layers": 36,
+          "n_heads": 20,
+      },
+      "gpt2-xl (1558M)": {
+          "emb_dim": 1600,
+          "n_layers": 48,
+          "n_heads": 25,
+      },
+  }
+  ```
+
+  ![图 5.17：不同规模的 GPT-2 使用相同架构，只调整嵌入维度、层数和注意力头数](https://raw.githubusercontent.com/skindhu/Build-A-Large-Language-Model-CN/main/Image/chapter5/figure5.17.png)
+
+* 本次加载 GPT-2 small。OpenAI 权重使用 1024-token 上下文，并且 Q、K、V 投影包含偏置，所以要覆盖这两项配置：
+
+  ```python
+  model_name = "gpt2-small (124M)"
+
+  NEW_CONFIG_DICT = GPT_CONFIG_124M_DICT.copy()
+  NEW_CONFIG_DICT.update(model_configs[model_name])
+  NEW_CONFIG_DICT.update(
+      {
+          "context_length": 1024,
+          "qkv_bias": True,
+      }
+  )
+
+  # GPTModel 接收 GPTConfig 对象，而不是原始字典
+  NEW_CONFIG = GPTConfig(**NEW_CONFIG_DICT)
+  gpt = GPTModel(NEW_CONFIG)
+  gpt.eval()
+  ```
+
+  这里不能直接把 `NEW_CONFIG_DICT` 传给当前实现的 `GPTModel`，因为模型通过 `.vocab_size`、`.context_length` 等属性读取配置。
+
+#### 将 OpenAI 权重映射到 GPTModel
+
+* `assign` 先检查形状，再把 OpenAI 权重转换为可训练参数：
+
+  ```python
+  import numpy as np
+
+
+  def assign(left, right):
+      if left.shape != right.shape:
+          raise ValueError(
+              f"Shape mismatch. Left: {left.shape}, Right: {right.shape}"
+          )
+
+      return torch.nn.Parameter(torch.tensor(right))
+  ```
+
+  形状检查很重要：即使配置、转置方向或层映射只错一处，也不能正确加载权重。
+
+* OpenAI 和当前 `GPTModel` 的主要名称对应关系：
+
+  | OpenAI 参数 | GPTModel 参数 | 处理方式 |
+  | --- | --- | --- |
+  | `wpe` | `pos_emb.weight` | 直接复制位置嵌入 |
+  | `wte` | `tok_emb.weight`、`out_head.weight` | 复制 token 嵌入和输出层权重 |
+  | `c_attn` | `W_query`、`W_key`、`W_value` | 沿最后一维三等分，权重转置 |
+  | `attn.c_proj` | `att.out_proj` | 权重转置，偏置直接复制 |
+  | `mlp.c_fc`、`mlp.c_proj` | 前馈网络两个线性层 | 权重转置，偏置直接复制 |
+  | `ln_1`、`ln_2` | `norm1`、`norm2` | `g/b` 对应 `scale/shift` |
+  | 顶层 `g/b` | `final_norm.scale/shift` | 直接复制最终归一化参数 |
+
+  TensorFlow 线性层权重的维度顺序与 PyTorch `Linear.weight` 相反，因此注意力输出投影和前馈网络等权重需要 `.T` 转置；偏置是一维张量，不需要转置。
+
+* 完整映射函数：
+
+  ```python
+  def load_weights_into_gpt(gpt, params):
+      gpt.pos_emb.weight = assign(gpt.pos_emb.weight, params["wpe"])
+      gpt.tok_emb.weight = assign(gpt.tok_emb.weight, params["wte"])
+
+      for block_idx in range(len(params["blocks"])):
+          openai_block = params["blocks"][block_idx]
+          gpt_block = gpt.trf_blocks[block_idx]
+
+          # OpenAI 把 Q、K、V 放在同一个 c_attn 张量中
+          q_w, k_w, v_w = np.split(
+              openai_block["attn"]["c_attn"]["w"],
+              3,
+              axis=-1,
+          )
+          gpt_block.att.W_query.weight = assign(
+              gpt_block.att.W_query.weight,
+              q_w.T,
+          )
+          gpt_block.att.W_key.weight = assign(
+              gpt_block.att.W_key.weight,
+              k_w.T,
+          )
+          gpt_block.att.W_value.weight = assign(
+              gpt_block.att.W_value.weight,
+              v_w.T,
+          )
+
+          q_b, k_b, v_b = np.split(
+              openai_block["attn"]["c_attn"]["b"],
+              3,
+              axis=-1,
+          )
+          gpt_block.att.W_query.bias = assign(
+              gpt_block.att.W_query.bias,
+              q_b,
+          )
+          gpt_block.att.W_key.bias = assign(
+              gpt_block.att.W_key.bias,
+              k_b,
+          )
+          gpt_block.att.W_value.bias = assign(
+              gpt_block.att.W_value.bias,
+              v_b,
+          )
+
+          gpt_block.att.out_proj.weight = assign(
+              gpt_block.att.out_proj.weight,
+              openai_block["attn"]["c_proj"]["w"].T,
+          )
+          gpt_block.att.out_proj.bias = assign(
+              gpt_block.att.out_proj.bias,
+              openai_block["attn"]["c_proj"]["b"],
+          )
+
+          gpt_block.ff.layers[0].weight = assign(
+              gpt_block.ff.layers[0].weight,
+              openai_block["mlp"]["c_fc"]["w"].T,
+          )
+          gpt_block.ff.layers[0].bias = assign(
+              gpt_block.ff.layers[0].bias,
+              openai_block["mlp"]["c_fc"]["b"],
+          )
+          gpt_block.ff.layers[2].weight = assign(
+              gpt_block.ff.layers[2].weight,
+              openai_block["mlp"]["c_proj"]["w"].T,
+          )
+          gpt_block.ff.layers[2].bias = assign(
+              gpt_block.ff.layers[2].bias,
+              openai_block["mlp"]["c_proj"]["b"],
+          )
+
+          gpt_block.norm1.scale = assign(
+              gpt_block.norm1.scale,
+              openai_block["ln_1"]["g"],
+          )
+          gpt_block.norm1.shift = assign(
+              gpt_block.norm1.shift,
+              openai_block["ln_1"]["b"],
+          )
+          gpt_block.norm2.scale = assign(
+              gpt_block.norm2.scale,
+              openai_block["ln_2"]["g"],
+          )
+          gpt_block.norm2.shift = assign(
+              gpt_block.norm2.shift,
+              openai_block["ln_2"]["b"],
+          )
+
+      gpt.final_norm.scale = assign(gpt.final_norm.scale, params["g"])
+      gpt.final_norm.shift = assign(gpt.final_norm.shift, params["b"])
+      gpt.out_head.weight = assign(gpt.out_head.weight, params["wte"])
+  ```
+
+  `gpt.out_head.weight` 也使用 `wte`，对应 GPT-2 的 token 嵌入与输出层权重设计。所有参数先在 CPU 上完成替换，再统一把模型移动到推理设备。
+
+#### 加载权重并生成文本
+
+* 完成映射后进行推理：
+
+  ```python
+  print("加载gpt2-small (124M)权重，推理生成文本：")
+
+  load_weights_into_gpt(gpt, params)
+
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  gpt.to(device)
+  gpt.eval()
+
+  torch.manual_seed(123)
+  token_ids = generate(
+      model=gpt,
+      idx=text_to_token_ids(
+          "Every effort moves you",
+          tokenizer,
+      ).to(device),
+      max_new_tokens=25,
+      context_size=NEW_CONFIG.context_length,
+      top_k=50,
+      temperature=1.5,
+  )
+
+  print("Output text:\n", token_ids_to_text(token_ids, tokenizer))
+  ```
+
+  模型和输入 token 必须在同一设备。由于 `NEW_CONFIG` 是 `GPTConfig` 对象，上下文长度使用 `NEW_CONFIG.context_length`，不能再使用字典下标。
+
+* 原文的参考输出为：
+
+  ```text
+  Every effort moves you toward finding an ideal new way to practice something!
+  What makes us want to be on top of that?
+  ```
+
+  这比在小型《The Verdict》数据集上训练的模型更连贯。这里使用 `temperature=1.5` 和 Top-k 随机采样，即使权重加载正确，也不要求逐字得到相同文本。
+
+#### 当前程序只打印第一行的原因
+
+* 当前控制台停在：
+
+  ```text
+  加载gpt2-small (124M)权重，推理生成文本：
+  ```
+
+  按所贴代码的执行顺序，下一行就是没有进度提示和显式超时的 `urllib.request.urlretrieve`，因此最可能是访问 GitHub Raw 较慢或被阻断。上面的修正版在下载前后打印状态，并在文件已存在时跳过重复下载，可以直接判断卡在哪一步。
+
+  此外，原实践代码还需要修正以下问题：
+
+  - 下载 `gpt_download.py` 后还要导入并调用 `download_and_load_gpt2`，否则不会得到 `settings` 和 `params`。
+  - `GPTModel` 需要 `GPTConfig` 对象，因此要执行 `GPTConfig(**NEW_CONFIG_DICT)`。
+  - `final_norm` 和 `out_head` 的赋值必须缩进在 `load_weights_into_gpt` 函数内部。
+  - `gpt.to(device)` 后，输入 token 也要 `.to(device)`。
+  - 首次下载 124M 权重约需 500 MB；如果停在“开始下载并读取GPT-2 124M权重”，应先观察 tqdm 进度和 `gpt2/124M` 目录中的文件大小。
+
+  如果原始 TensorFlow 检查点加载受环境限制，官方 Chapter 5 notebook 还提供了预先转换好的 PyTorch `.pth` 权重作为替代方案。
