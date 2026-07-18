@@ -1119,4 +1119,151 @@
 
 ### 在 PyTorch 中加载和保存模型权重
 
+#### 保存模型权重
+
+* PyTorch 推荐保存模型的 `state_dict`：
+
+  ```python
+  torch.save(model.state_dict(), "model.pth")
+  ```
+
+  `state_dict` 是一个从层名称映射到参数和缓冲区的字典。它只保存模型状态，不包含 `GPTModel` 类和 `GPT_CONFIG_124M` 配置，因此加载时仍需用相同配置创建模型。
+
+  `.pth` 是 PyTorch 常用的文件扩展名，并不是强制格式。
+
+#### 加载模型用于推理
+
+* 加载权重前先创建结构相同的模型，再把状态复制进去：
+
+  ```python
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+  model = GPTModel(GPT_CONFIG_124M).to(device)
+  model_state_dict = torch.load(
+      "model.pth",
+      map_location=device,
+      weights_only=True,
+  )
+  model.load_state_dict(model_state_dict)
+  model.eval()
+  ```
+
+  `map_location=device` 将检查点中的张量映射到当前设备，例如把在 CUDA 上保存的权重加载到 CPU。`weights_only=True` 只允许加载保存权重所需的受支持对象；检查点仍应来自可信来源。
+
+  `load_state_dict` 要求模型结构和参数形状匹配，否则会报告缺失键、多余键或形状不一致。用于推理时调用 `model.eval()`，关闭 Dropout。
+
+#### 保存完整训练检查点
+
+* 只保存模型权重适合推理。如果以后还要继续训练，还应保存优化器状态：
+
+  ```python
+  print("保存模型权重开始...")
+
+  torch.save(
+      {
+          "model_state_dict": model.state_dict(),
+          "optimizer_state_dict": optimizer.state_dict(),
+      },
+      "model_and_optimizer.pth",
+  )
+
+  print("保存模型权重结束，文件名为model_and_optimizer.pth")
+  ```
+
+  AdamW 的 `state_dict` 不仅保存学习率、权重衰减等参数组设置，还保存每个模型参数的一阶和二阶动量。只恢复模型而重新初始化优化器，模型仍可继续训练，但 AdamW 的历史统计会从头积累，训练轨迹会发生变化。
+
+#### 恢复并继续训练
+
+* 真正验证检查点能否恢复，应重新创建模型和优化器，模拟新的 Python 会话：
+
+  ```python
+  print("加载保存的模型权重开始...")
+
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  checkpoint = torch.load(
+      "model_and_optimizer.pth",
+      map_location=device,
+      weights_only=True,
+  )
+
+  # state_dict 不包含模型结构，需要先重新创建模型
+  model = GPTModel(GPT_CONFIG_124M).to(device)
+  model.load_state_dict(checkpoint["model_state_dict"])
+
+  # 优化器必须绑定新模型的参数，之后再恢复状态
+  optimizer = torch.optim.AdamW(
+      model.parameters(),
+      lr=0.0004,
+      weight_decay=0.1,
+  )
+  optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+  model.train()
+
+  resume_epochs = 10
+  train_losses, val_losses, tokens_seen = train_model_simple(
+      model=model,
+      train_loader=train_loader,
+      val_loader=val_loader,
+      optimizer=optimizer,
+      device=device,
+      num_epochs=resume_epochs,
+      eval_freq=5,
+      eval_iter=1,
+      start_context="Every effort moves you",
+      tokenizer=tokenizer,
+  )
+
+  # 这是恢复后的第二阶段曲线，横轴重新从 0 计数
+  resume_epochs_tensor = torch.linspace(
+      0,
+      resume_epochs,
+      len(train_losses),
+  )
+  plot_losses(
+      resume_epochs_tensor,
+      tokens_seen,
+      train_losses,
+      val_losses,
+      output_path="re-losses.png",
+  )
+
+  print("加载保存的模型权重结束，文件名为re-losses.png")
+  ```
+
+  创建优化器时传入的初始超参数用于构造参数组；执行 `optimizer.load_state_dict` 后，会恢复检查点中保存的学习率、权重衰减和动量状态。
+
+  如果保存后立即把检查点加载回原来的 `model` 和 `optimizer`，而两者尚未发生变化，加载前后实际上相同，不能证明新会话可以正确恢复。在同一进程中单纯追加训练，也可以直接再次调用 `train_model_simple`，无需先保存再加载。
+
+* 控制台输出节选：
+
+  ```text
+  Ep 1 (Step 000000): Train loss 0.753, Val loss 6.601
+  Ep 1 (Step 000005): Train loss 0.865, Val loss 6.654
+  Every effort moves you know where her husband, lounging in a hooded chair,
+  had lit a cigar and drawn the Russian deerhound's head between his knees. ...
+
+  Ep 3 (Step 000025): Train loss 0.251, Val loss 6.905
+  Ep 6 (Step 000050): Train loss 0.101, Val loss 7.261
+  Ep 9 (Step 000080): Train loss 0.057, Val loss 7.442
+  Ep 10 (Step 000085): Train loss 0.032, Val loss 7.498
+  Every effort moves you know where her husband, lounging in a hooded chair,
+  had lit a cigar and drawn the Russian deerhound's head between his knees. ...
+
+  损失曲线已保存到：re-losses.png
+  ```
+
+  检查点是在 5.2 完成 10 个 epoch 后保存的，所以这里打印的 `Ep 1～10` 实际是第二阶段追加的 10 个 epoch。`train_model_simple` 每次调用都会将 `global_step` 和 `tokens_seen` 重新初始化，因此日志又从 `Ep 1 / Step 0` 开始。
+
+  当前检查点只恢复模型和优化器，没有恢复已完成 epoch、全局 step、累计 token、损失历史及随机数状态。因此它可以继续训练，但不能做到和一次不间断的 20-epoch 训练逐步完全一致。
+
+* 追加训练的损失曲线：
+
+  ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm53.png)
+
+  横轴 `0～10` 只表示加载检查点后的第二阶段训练，不表示模型总共只训练了 10 个 epoch。
+
+  训练损失从 `0.753` 降到 `0.032`，验证损失却从 `6.601` 升到 `7.498`，两者差距进一步扩大。生成文本反复出现 `her husband, lounging in a hooded chair...` 等训练集原句，说明模型继续记忆这个小数据集，过拟合更加严重。
+
+  `eval_iter=1` 每次只计算一个批次，单个损失点会有波动；但训练损失接近 0、验证损失持续上升的整体趋势已经很明显，继续训练不能改善模型对未见文本的表现。
+
 ### 从 OpenAI 加载预训练权重
