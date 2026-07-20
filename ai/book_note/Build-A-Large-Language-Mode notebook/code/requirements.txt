@@ -1,0 +1,10 @@
+torch>=2.0
+tiktoken>=0.5
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7
+tqdm>=4.66
+
+# Optional dependencies are declared in pyproject.toml:
+#   python -m pip install -e '.[test]'
+#   python -m pip install -e '.[openai-weights]'

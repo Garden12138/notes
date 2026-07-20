@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-from-scratch-notes"
+version = "0.1.0"
+description = "《Build a Large Language Model From Scratch》学习代码整理"
+requires-python = ">=3.10"
+dependencies = [
+    "torch>=2.0",
+    "tiktoken>=0.5",
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "matplotlib>=3.7",
+    "tqdm>=4.66",
+]
+
+[project.optional-dependencies]
+openai-weights = ["tensorflow>=2.15"]
+test = ["pytest>=8.0"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["llm_from_scratch*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
