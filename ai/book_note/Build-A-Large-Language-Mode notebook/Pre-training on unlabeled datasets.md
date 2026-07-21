@@ -881,12 +881,16 @@ AdamW 虽然带有偏差修正，但前几个 step 的动量估计仍建立在�
 
 附录 D.1 使用线性预热。设初始学习率为 $\eta_{init}$、峰值学习率为 $\eta_{peak}$，预热步数为 $N_w$：
 
+预热阶段（$0\le t<N_w$）：
+
 $$
-\eta_t=
-\begin{cases}
-\eta_{init}+\dfrac{t}{N_w}(\eta_{peak}-\eta_{init}), & 0\le t<N_w \\
-\eta_{peak}, & t\ge N_w
-\end{cases}
+\eta_t=\eta_{init}+\frac{t}{N_w}(\eta_{peak}-\eta_{init})
+$$
+
+预热结束后（$t\ge N_w$）：
+
+$$
+\eta_t=\eta_{peak}
 $$
 
 因此每一步的增量为：
