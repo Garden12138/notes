@@ -33,6 +33,7 @@ from llm_from_scratch.model import GPTModel
 from llm_from_scratch.openai_weights import assign_parameter
 from llm_from_scratch.training import (
     causal_lm_loader_loss,
+    linear_warmup_lr,
     train_causal_lm,
 )
 
@@ -257,6 +258,84 @@ def test_train_causal_lm_runs_one_update() -> None:
     )
     assert len(history[0]) == len(history[1]) == len(history[2]) == 1
     assert not torch.equal(before, model.output.weight)
+
+
+def test_linear_warmup_lr_reaches_and_keeps_peak() -> None:
+    learning_rates = [
+        linear_warmup_lr(
+            step,
+            warmup_steps=4,
+            initial_lr=1e-5,
+            peak_lr=4e-4,
+        )
+        for step in range(7)
+    ]
+
+    assert learning_rates == pytest.approx(
+        [1e-5, 0.0001075, 0.000205, 0.0003025, 4e-4, 4e-4, 4e-4]
+    )
+    assert linear_warmup_lr(
+        0,
+        warmup_steps=0,
+        initial_lr=1.0,
+        peak_lr=4e-4,
+    ) == pytest.approx(4e-4)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {"step": -1, "warmup_steps": 4, "initial_lr": 0.0, "peak_lr": 1e-3},
+        {"step": 0, "warmup_steps": -1, "initial_lr": 0.0, "peak_lr": 1e-3},
+        {"step": 0, "warmup_steps": 4, "initial_lr": -1e-4, "peak_lr": 1e-3},
+        {"step": 0, "warmup_steps": 4, "initial_lr": 2e-3, "peak_lr": 1e-3},
+    ],
+)
+def test_linear_warmup_lr_rejects_invalid_values(
+    kwargs: dict[str, int | float],
+) -> None:
+    with pytest.raises(ValueError):
+        linear_warmup_lr(**kwargs)
+
+
+def test_train_causal_lm_applies_warmup_before_optimizer_step() -> None:
+    class TrainableLanguageModel(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.embedding = nn.Embedding(8, 4)
+            self.output = nn.Linear(4, 8)
+
+        def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
+            return self.output(self.embedding(input_ids))
+
+    class RecordingSGD(torch.optim.SGD):
+        def __init__(self, parameters: object, lr: float) -> None:
+            super().__init__(parameters, lr=lr)
+            self.learning_rates: list[float] = []
+
+        def step(self, closure: object = None) -> object:
+            self.learning_rates.append(float(self.param_groups[0]["lr"]))
+            return super().step(closure)
+
+    model = TrainableLanguageModel()
+    batch = (torch.tensor([[0, 1, 2]]), torch.tensor([[1, 2, 3]]))
+    loader = [batch, batch, batch, batch]
+    optimizer = RecordingSGD(model.parameters(), lr=0.1)
+
+    train_causal_lm(
+        model,
+        loader,
+        loader,
+        optimizer,
+        "cpu",
+        num_epochs=1,
+        eval_freq=4,
+        eval_iter=1,
+        warmup_steps=2,
+        initial_lr=0.0,
+    )
+
+    assert optimizer.learning_rates == pytest.approx([0.0, 0.05, 0.1, 0.1])
 
 
 def test_instruction_responses_are_sliced_by_token(monkeypatch: pytest.MonkeyPatch) -> None:

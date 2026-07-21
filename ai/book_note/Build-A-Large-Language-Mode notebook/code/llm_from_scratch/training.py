@@ -1,4 +1,4 @@
-"""因果语言模型的损失、评估与训练循环。"""
+"""因果语言模型的损失、评估、学习率调度与训练循环。"""
 
 from __future__ import annotations
 
@@ -16,6 +16,7 @@ __all__ = [
     "causal_lm_loader_loss",
     "evaluate_causal_lm",
     "generate_and_print_sample",
+    "linear_warmup_lr",
     "train_causal_lm",
     "plot_losses",
 ]
@@ -178,6 +179,38 @@ def generate_and_print_sample(
         model.train(was_training)
 
 
+def linear_warmup_lr(
+    step: int,
+    *,
+    warmup_steps: int,
+    initial_lr: float,
+    peak_lr: float,
+) -> float:
+    """返回指定更新步的线性预热学习率。
+
+    ``step=0`` 使用 ``initial_lr``；达到 ``warmup_steps`` 后固定使用
+    ``peak_lr``。传入 ``warmup_steps=0`` 表示关闭预热。
+    """
+    if step < 0:
+        raise ValueError("step 不能为负数")
+    if warmup_steps < 0:
+        raise ValueError("warmup_steps 不能为负数")
+    if peak_lr < 0:
+        raise ValueError("peak_lr 不能为负数")
+    if warmup_steps == 0:
+        return peak_lr
+    if initial_lr < 0:
+        raise ValueError("initial_lr 不能为负数")
+    if initial_lr > peak_lr:
+        raise ValueError("initial_lr 不能大于 peak_lr")
+
+    if step >= warmup_steps:
+        return peak_lr
+
+    progress = step / warmup_steps
+    return initial_lr + progress * (peak_lr - initial_lr)
+
+
 def train_causal_lm(
     model: nn.Module,
     train_loader: Any,
@@ -189,18 +222,38 @@ def train_causal_lm(
     eval_iter: int,
     start_context: str | None = None,
     tokenizer: Any | None = None,
+    *,
+    warmup_steps: int = 0,
+    initial_lr: float = 0.0,
 ) -> tuple[list[float], list[float], list[int]]:
-    """执行书中使用的简洁因果语言模型训练循环。"""
+    """执行书中使用的简洁因果语言模型训练循环。
+
+    优化器中配置的学习率是每个参数组的峰值学习率。``warmup_steps``
+    大于 0 时，前若干次参数更新会从 ``initial_lr`` 线性升至各组峰值；
+    默认值 0 保持原来的固定学习率行为。
+    """
     if num_epochs <= 0:
         raise ValueError("num_epochs 必须为正整数")
     if eval_freq <= 0:
         raise ValueError("eval_freq 必须为正整数")
     if eval_iter <= 0:
         raise ValueError("eval_iter 必须为正整数")
+    if warmup_steps < 0:
+        raise ValueError("warmup_steps 不能为负数")
     if (start_context is None) != (tokenizer is None):
         raise ValueError("start_context 与 tokenizer 必须同时提供或同时省略")
     if len(train_loader) == 0:
         raise ValueError("train_loader 不能为空")
+
+    peak_lrs = [float(group["lr"]) for group in optimizer.param_groups]
+    if warmup_steps > 0:
+        for peak_lr in peak_lrs:
+            linear_warmup_lr(
+                0,
+                warmup_steps=warmup_steps,
+                initial_lr=initial_lr,
+                peak_lr=peak_lr,
+            )
 
     model.to(device)
     train_losses: list[float] = []
@@ -212,6 +265,19 @@ def train_causal_lm(
     for epoch in range(num_epochs):
         model.train()
         for input_batch, target_batch in train_loader:
+            global_step += 1
+            if warmup_steps > 0:
+                for param_group, peak_lr in zip(
+                    optimizer.param_groups,
+                    peak_lrs,
+                ):
+                    param_group["lr"] = linear_warmup_lr(
+                        global_step,
+                        warmup_steps=warmup_steps,
+                        initial_lr=initial_lr,
+                        peak_lr=peak_lr,
+                    )
+
             optimizer.zero_grad(set_to_none=True)
             loss = causal_lm_batch_loss(
                 input_batch,
@@ -223,7 +289,6 @@ def train_causal_lm(
             optimizer.step()
 
             tokens_seen += input_batch.numel()
-            global_step += 1
 
             if global_step % eval_freq == 0:
                 train_loss, val_loss = evaluate_causal_lm(

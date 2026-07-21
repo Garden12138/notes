@@ -834,6 +834,162 @@
 
   step 80 的训练损失为 `1.007`，step 85 回升到 `1.188`，不代表整体训练退化。`eval_iter=1` 只抽取一个经过打乱的训练批次，不同批次的损失存在波动。
 
+#### 学习率预热
+
+> 阅读资料：[附录 D.1：学习率预热](https://skindhu.github.io/Build-A-Large-Language-Model-CN/#/./cn-Book/%E9%99%84%E5%BD%95D.%E7%BB%99%E8%AE%AD%E7%BB%83%E5%BE%AA%E7%8E%AF%E6%B7%BB%E5%8A%A0%E9%AB%98%E7%BA%A7%E6%8A%80%E5%B7%A7?id=d1-%e5%ad%a6%e4%b9%a0%e7%8e%87%e9%a2%84%e7%83%ad)
+
+学习率预热（learning rate warmup）是指：训练开始时先使用较小的学习率，再用若干个更新 step 将它逐渐增加到正常训练使用的峰值学习率。它主要用于降低训练初期出现大幅、破坏性参数更新的风险。
+
+##### 学习率决定参数每次迈多大一步
+
+模型参数的基本更新可以写成：
+
+$$
+\theta_{t+1}=\theta_t-\eta_t g_t
+$$
+
+其中：
+
+- $\theta_t$：更新前的模型参数。
+- $g_t$：当前梯度。
+- $\eta_t$：当前学习率。
+- $\theta_{t+1}$：更新后的模型参数。
+
+假设某个参数 $\theta_t=0.5$，梯度 $g_t=10$：
+
+| 学习率 | 参数更新量 $\eta_tg_t$ | 更新后的参数 |
+| ---: | ---: | ---: |
+| $0.001$ | $0.001\times10=0.01$ | $0.5-0.01=0.49$ |
+| $0.1$ | $0.1\times10=1$ | $0.5-1=-0.5$ |
+
+学习率从 `0.001` 增加到 `0.1` 后，参数不再是小幅调整，而是直接从 `0.5` 跨到 `-0.5`。所以学习率越大，单次参数更新通常越大；实际幅度还同时取决于梯度、优化器状态和参数尺度。
+
+##### 为什么训练初期更需要小步走
+
+LLM 刚开始训练时通常存在以下情况：
+
+- 模型参数是随机初始化的，还没有形成稳定的数据表示。
+- 第一个或前几个 mini-batch 不一定能代表整体数据分布。
+- 某些参数的梯度可能很大，不同层的梯度尺度也可能相差很多。
+- AdamW 的一阶、二阶动量从零开始，初期统计只来自少量批次。
+
+AdamW 虽然带有偏差修正，但前几个 step 的动量估计仍建立在很少的样本上。此时的梯度可以理解为：模型还没有站稳，就根据少量数据给出了一个粗糙方向。
+
+如果马上使用较大的学习率，相当于方向还没判断准就先迈一大步，可能导致损失突然增大、激活异常、梯度爆炸甚至出现 `NaN`。预热则是先小步更新，等表示和优化器状态逐渐稳定后，再提高速度。
+
+##### 线性预热
+
+附录 D.1 使用线性预热。设初始学习率为 $\eta_{init}$、峰值学习率为 $\eta_{peak}$，预热步数为 $N_w$：
+
+$$
+\eta_t=
+\begin{cases}
+\eta_{init}+\dfrac{t}{N_w}(\eta_{peak}-\eta_{init}), & 0\le t<N_w \\
+\eta_{peak}, & t\ge N_w
+\end{cases}
+$$
+
+因此每一步的增量为：
+
+$$
+\Delta\eta=\frac{\eta_{peak}-\eta_{init}}{N_w}
+$$
+
+在当前代码中，`step=0` 使用 `initial_lr`，到达 `warmup_steps` 后使用峰值学习率。优化器创建时配置的 `lr` 就是峰值：
+
+```python
+peak_lr = 4e-4
+optimizer = torch.optim.AdamW(
+    model.parameters(),
+    lr=peak_lr,
+    weight_decay=0.1,
+)
+```
+
+预热步数一般按总更新步数的比例计算。原文给出的经验区间是 `0.1%～20%`，示例使用 `20%`：
+
+```python
+num_epochs = 10
+total_steps = len(train_loader) * num_epochs
+warmup_ratio = 0.2
+warmup_steps = max(1, int(warmup_ratio * total_steps))
+```
+
+这个比例是经验值，不是固定规则。数据量、batch size、模型规模和峰值学习率变化后，都应重新观察损失和梯度。若不需要预热，直接设置 `warmup_steps=0`。
+
+##### 训练模块中的实现
+
+[`training.py`](./code/llm_from_scratch/training.py) 新增了 `linear_warmup_lr`：
+
+```python
+def linear_warmup_lr(
+    step,
+    *,
+    warmup_steps,
+    initial_lr,
+    peak_lr,
+):
+    if warmup_steps == 0 or step >= warmup_steps:
+        return peak_lr
+
+    progress = step / warmup_steps
+    return initial_lr + progress * (peak_lr - initial_lr)
+```
+
+`train_causal_lm` 新增两个保持向后兼容的关键字参数：
+
+```python
+train_losses, val_losses, tokens_seen = train_causal_lm(
+    model=model,
+    train_loader=train_loader,
+    val_loader=val_loader,
+    optimizer=optimizer,
+    device=device,
+    num_epochs=num_epochs,
+    eval_freq=5,
+    eval_iter=1,
+    start_context="Every effort moves you",
+    tokenizer=tokenizer,
+    warmup_steps=warmup_steps,
+    initial_lr=1e-5,
+)
+```
+
+- `warmup_steps=0`：关闭预热，行为与原训练循环一致。
+- `warmup_steps>0`：把优化器中每个参数组原本的 `lr` 当作各自的峰值，从 `initial_lr` 线性升高。
+- `initial_lr` 必须非负且不能大于峰值学习率。
+
+学习率必须在本 step 的 `optimizer.step()` 之前写入参数组：
+
+```python
+for param_group, peak_lr in zip(optimizer.param_groups, peak_lrs):
+    param_group["lr"] = linear_warmup_lr(
+        global_step,
+        warmup_steps=warmup_steps,
+        initial_lr=initial_lr,
+        peak_lr=peak_lr,
+    )
+
+optimizer.zero_grad(set_to_none=True)
+loss = causal_lm_batch_loss(input_batch, target_batch, model, device)
+loss.backward()
+optimizer.step()
+```
+
+如果在 `optimizer.step()` 之后才修改，新的学习率只能作用于下一次更新，调度曲线会整体错开一个 step。
+
+##### 预热能做什么，不能做什么
+
+| 作用 | 说明 |
+| --- | --- |
+| 减小初期参数更新 | 避免不稳定梯度配合峰值学习率产生大跳跃 |
+| 平滑进入正常训练 | 给模型表示和 AdamW 动量统计一个逐渐建立的过程 |
+| 不能修复错误数据 | 数据异常、标签错误仍会产生错误梯度 |
+| 不能完全替代梯度裁剪 | 预热控制学习率，梯度裁剪直接限制梯度范数 |
+| 不负责训练后期减速 | 后期通常再配合余弦衰减或线性衰减 |
+
+预热的核心不是“学习率越小越好”，而是把训练初期和正常训练阶段分开：开始时控制风险，稳定后仍要达到足够大的学习率，保证模型能够有效学习。
+
 #### 绘制损失曲线
 
 * 将 epoch、累计 token 数、训练损失和验证损失绘制在同一张图中：
