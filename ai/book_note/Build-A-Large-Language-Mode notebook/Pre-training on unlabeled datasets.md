@@ -1137,11 +1137,121 @@ train_losses, val_losses, tokens_seen = train_causal_lm(
 )
 ```
 
-- 优化器中原本配置的 `lr` 作为 `peak_lr`。
-- `global_step < warmup_steps` 时执行线性预热。
-- 预热结束后执行余弦衰减。
-- `min_lr=None` 时关闭余弦衰减，保留“预热后固定使用峰值学习率”的原行为。
-- 每个 step 的学习率要在 `optimizer.step()` 之前写入参数组，才能作用于本次参数更新。
+##### `train_causal_lm` 的具体修改
+
+原来的 `train_causal_lm` 只接收 `warmup_steps` 和 `initial_lr`：预热结束后，学习率一直保持为优化器中配置的峰值。为了支持余弦衰减，函数新增了一个可选参数：
+
+```python
+def train_causal_lm(
+    ...,
+    warmup_steps=0,
+    initial_lr=0.0,
+    min_lr=None,
+):
+```
+
+`min_lr=None` 是兼容开关：不传它时，已有训练代码的行为不会改变；传入具体数值时，才会在预热后启用余弦衰减。
+
+函数内部首先计算本次训练一共包含多少次参数更新：
+
+```python
+total_training_steps = len(train_loader) * num_epochs
+```
+
+例如 DataLoader 每个 epoch 有 9 个批次，训练 10 个 epoch，则总更新次数是 `9 × 10 = 90`。余弦衰减需要这个值来计算当前进度。
+
+然后在真正修改学习率之前，保存优化器每个参数组最初配置的学习率：
+
+```python
+peak_lrs = [
+    float(group["lr"])
+    for group in optimizer.param_groups
+]
+```
+
+这里不能在每一步直接把当前的 `param_group["lr"]` 当作峰值，因为该值会在预热和衰减过程中不断被改写。提前保存 `peak_lrs`，后续计算始终以原始峰值为基准；多个参数组拥有不同学习率时，也可以分别调度。
+
+如果传入了 `min_lr`，训练开始前会调用一次 `cosine_decay_lr` 检查参数：
+
+```python
+for peak_lr in peak_lrs:
+    cosine_decay_lr(
+        warmup_steps,
+        warmup_steps=warmup_steps,
+        total_training_steps=total_training_steps,
+        peak_lr=peak_lr,
+        min_lr=min_lr,
+    )
+```
+
+这次调用不是在更新优化器，而是提前确认 `total_training_steps > warmup_steps`、`min_lr >= 0` 且 `min_lr <= peak_lr`，避免训练进行到一半才发现调度参数错误。
+
+进入每个 batch 后，先增加 `global_step`，再根据当前阶段选择学习率：
+
+```python
+global_step += 1
+
+if warmup_steps > 0 and global_step < warmup_steps:
+    # 阶段 1：从 initial_lr 线性升到 peak_lr
+    lr = linear_warmup_lr(...)
+
+elif min_lr is not None:
+    # 阶段 2：从 peak_lr 余弦衰减到 min_lr
+    lr = cosine_decay_lr(...)
+
+elif warmup_steps > 0:
+    # 只启用预热：预热结束后固定为 peak_lr
+    lr = peak_lr
+```
+
+三个分支分别表示：
+
+| 条件 | 当前阶段 | 学习率变化 |
+| --- | --- | --- |
+| `global_step < warmup_steps` | 线性预热 | `initial_lr → peak_lr` |
+| 预热结束且设置了 `min_lr` | 余弦衰减 | `peak_lr → min_lr` |
+| 预热结束但 `min_lr=None` | 固定阶段 | 保持 `peak_lr` |
+
+计算完成后，把结果写入对应的优化器参数组：
+
+```python
+for param_group, peak_lr in zip(
+    optimizer.param_groups,
+    peak_lrs,
+):
+    param_group["lr"] = lr
+```
+
+实际代码把这段赋值分别写在预热和衰减分支内，因为不同参数组可能具有不同的 `peak_lr`，每组都需要独立计算自己的学习率。
+
+学习率调度位于本 step 的反向传播和参数更新之前：
+
+```text
+global_step += 1
+→ 计算当前学习率
+→ 写入 optimizer.param_groups
+→ zero_grad
+→ forward / loss
+→ backward
+→ optimizer.step
+```
+
+这样计算出的学习率会立即作用于本次 `optimizer.step()`。如果把赋值放在 `optimizer.step()` 后面，它只能影响下一个 batch，整个调度会错开一个 step。
+
+四种参数组合的行为如下：
+
+| `warmup_steps` | `min_lr` | 实际行为 |
+| ---: | --- | --- |
+| `0` | `None` | 始终使用优化器原始学习率 |
+| `> 0` | `None` | 线性预热，之后保持峰值 |
+| `0` | 具体数值 | 从第一个 step 开始余弦衰减 |
+| `> 0` | 具体数值 | 先线性预热，再余弦衰减 |
+
+函数原来的返回值没有改变，仍然是训练损失、验证损失和评估时累计处理的 token 数，因此已有调用代码不需要修改：
+
+```python
+return train_losses, val_losses, tokens_seen_at_eval
+```
 
 附录中的 `global_step` 从 `0` 开始，而 `total_training_steps` 是更新次数，所以最后一次实际更新的 step 是 `total_training_steps - 1`。因此训练结束时的 `progress` 通常非常接近但略小于 `1`，学习率也会非常接近但略高于 `min_lr`；在 `step == total_training_steps` 时公式才精确得到 `min_lr`。这不改变调度逻辑，`min_lr` 仍是衰减的目标下限。
 
