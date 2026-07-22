@@ -994,6 +994,177 @@ optimizer.step()
 
 预热的核心不是“学习率越小越好”，而是把训练初期和正常训练阶段分开：开始时控制风险，稳定后仍要达到足够大的学习率，保证模型能够有效学习。
 
+#### 余弦衰减
+
+> 阅读资料：[附录 D.2：余弦衰减](https://skindhu.github.io/Build-A-Large-Language-Model-CN/#/./cn-Book/%E9%99%84%E5%BD%95D.%E7%BB%99%E8%AE%AD%E7%BB%83%E5%BE%AA%E7%8E%AF%E6%B7%BB%E5%8A%A0%E9%AB%98%E7%BA%A7%E6%8A%80%E5%B7%A7?id=d2-%e4%bd%99%e5%bc%a6%e8%a1%b0%e5%87%8f)
+
+余弦衰减（cosine decay）用于在预热结束后逐渐降低学习率。训练前期需要较大的学习率快速学习，后期接近较低损失区域时则应减小更新步幅，降低参数在最优区域附近来回越过的风险。
+
+完整的学习率变化分为两个阶段：
+
+```text
+warmup：       initial_lr → peak_lr
+cosine decay： peak_lr    → min_lr
+```
+
+##### 从 progress 到学习率
+
+预热结束后，先计算衰减阶段已经进行的比例：
+
+$$
+p=\frac{global\_step-warmup\_steps}
+        {total\_training\_steps-warmup\_steps}
+$$
+
+代码对应为：
+
+```python
+progress = (
+    (global_step - warmup_steps)
+    / (total_training_steps - warmup_steps)
+)
+```
+
+`progress` 表示预热结束后已经走完多少比例：刚结束预热时为 `0`，衰减阶段进行一半时约为 `0.5`，训练接近结束时约为 `1`。
+
+然后用余弦函数生成衰减系数：
+
+$$
+c(p)=\frac{1+\cos(\pi p)}{2}
+$$
+
+| `progress` | `π × progress` | `cos(π × progress)` | `(1 + cos) / 2` |
+| ---: | ---: | ---: | ---: |
+| `0` | `0` | `1` | `1` |
+| `0.5` | `π/2` | `0` | `0.5` |
+| `1` | `π` | `-1` | `0` |
+
+`cos(π × progress)` 本身会从 `1` 变到 `-1`，不能直接作为学习率或缩放系数。先加 `1` 再除以 `2`，就把范围从 `[-1, 1]` 映射成 `[0, 1]`，得到一个从 `1` 平滑下降到 `0` 的系数。
+
+最终学习率为：
+
+$$
+lr=min\_lr+(peak\_lr-min\_lr)
+   \frac{1+\cos(\pi\cdot progress)}{2}
+$$
+
+这里不是直接用余弦值当学习率，而是先用余弦函数生成衰减系数，再把学习率从 `peak_lr` 平滑映射到 `min_lr`：
+
+- `(peak_lr - min_lr)` 是学习率可以衰减的范围。
+- 余弦系数从 `1` 降到 `0`，使这部分从完整幅度降到 `0`。
+- 最后加上 `min_lr`，保证目标下限不是 `0`。
+
+假设 `peak_lr=1.0`、`min_lr=0.1`：
+
+| `progress` | 余弦系数 | 学习率 |
+| ---: | ---: | ---: |
+| `0` | `1` | `0.1 + 0.9 × 1 = 1.0` |
+| `0.5` | `0.5` | `0.1 + 0.9 × 0.5 = 0.55` |
+| `1` | `0` | `0.1 + 0.9 × 0 = 0.1` |
+
+##### `math.pi` 和三个特殊余弦值
+
+`math.pi` 是 Python `math` 模块提供的圆周率 `π`：
+
+```python
+import math
+
+print(math.pi)  # 3.141592653589793
+```
+
+Python 的三角函数使用弧度。`progress` 从 `0` 变到 `1` 时，`math.pi * progress` 会把它映射到 `0～π`，正好让余弦函数走半个周期：
+
+| 弧度 | 角度 | 单位圆上的点 | `cos`，即横坐标 |
+| ---: | ---: | ---: | ---: |
+| `0` | `0°` | `(1, 0)` | `1` |
+| `π/2` | `90°` | `(0, 1)` | `0` |
+| `π` | `180°` | `(-1, 0)` | `-1` |
+
+单位圆上角度为 `θ` 的点写成 `(cos θ, sin θ)`，因此 `cos θ` 就是该点的横坐标。点从圆的最右侧经过顶部走到最左侧，横坐标自然从 `1` 平滑变成 `0`，再变成 `-1`。
+
+##### 训练模块中的实现
+
+[`training.py`](./code/llm_from_scratch/training.py) 中的 `cosine_decay_lr` 负责预热后的学习率计算：
+
+```python
+def cosine_decay_lr(
+    step,
+    *,
+    warmup_steps,
+    total_training_steps,
+    peak_lr,
+    min_lr,
+):
+    progress = (step - warmup_steps) / (
+        total_training_steps - warmup_steps
+    )
+    progress = min(progress, 1.0)
+    cosine_factor = 0.5 * (
+        1.0 + math.cos(math.pi * progress)
+    )
+    return min_lr + (peak_lr - min_lr) * cosine_factor
+```
+
+`progress` 被限制在最大值 `1`，因此即使传入超过训练终点的 step，学习率也会停在 `min_lr`，不会沿余弦曲线再次上升。
+
+在训练循环中，通过 `min_lr` 开启余弦衰减：
+
+```python
+num_epochs = 10
+total_training_steps = len(train_loader) * num_epochs
+warmup_steps = max(1, int(0.2 * total_training_steps))
+
+optimizer = torch.optim.AdamW(
+    model.parameters(),
+    lr=4e-4,  # peak_lr
+    weight_decay=0.1,
+)
+
+train_losses, val_losses, tokens_seen = train_causal_lm(
+    model=model,
+    train_loader=train_loader,
+    val_loader=val_loader,
+    optimizer=optimizer,
+    device=device,
+    num_epochs=num_epochs,
+    eval_freq=5,
+    eval_iter=1,
+    start_context="Every effort moves you",
+    tokenizer=tokenizer,
+    warmup_steps=warmup_steps,
+    initial_lr=1e-5,
+    min_lr=1e-5,
+)
+```
+
+- 优化器中原本配置的 `lr` 作为 `peak_lr`。
+- `global_step < warmup_steps` 时执行线性预热。
+- 预热结束后执行余弦衰减。
+- `min_lr=None` 时关闭余弦衰减，保留“预热后固定使用峰值学习率”的原行为。
+- 每个 step 的学习率要在 `optimizer.step()` 之前写入参数组，才能作用于本次参数更新。
+
+附录中的 `global_step` 从 `0` 开始，而 `total_training_steps` 是更新次数，所以最后一次实际更新的 step 是 `total_training_steps - 1`。因此训练结束时的 `progress` 通常非常接近但略小于 `1`，学习率也会非常接近但略高于 `min_lr`；在 `step == total_training_steps` 时公式才精确得到 `min_lr`。这不改变调度逻辑，`min_lr` 仍是衰减的目标下限。
+
+##### 我的理解
+
+总的来说，学习率衰减就是一个从大到小的过程。训练进度从 `0` 走到 `1` 时，经过转换的余弦系数
+
+$$
+\frac{1+\cos(\pi\cdot progress)}{2}
+$$
+
+刚好会从 `1` 平滑下降到 `0`。用它乘以学习率的可变化范围 `peak_lr - min_lr`，再加上最终要衰减到的目标小值 `min_lr`，就能让整个学习率逐渐变小：
+
+```text
+当前学习率
+= 最低学习率
++ 可衰减范围 × 当前剩余比例
+```
+
+需要注意，原始的 `cos(π × progress)` 是从 `1` 变到 `-1`；真正从 `1` 降到 `0` 的是经过 `(1 + cos) / 2` 转换后的系数。
+
+一句话概括：余弦衰减不是把余弦值直接当成学习率，而是用半个余弦周期生成一个从 `1` 平滑下降到 `0` 的系数，再把学习率从 `peak_lr` 平滑降到 `min_lr`。
+
 #### 绘制损失曲线
 
 * 将 epoch、累计 token 数、训练损失和验证损失绘制在同一张图中：

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -17,6 +18,7 @@ __all__ = [
     "evaluate_causal_lm",
     "generate_and_print_sample",
     "linear_warmup_lr",
+    "cosine_decay_lr",
     "train_causal_lm",
     "plot_losses",
 ]
@@ -211,6 +213,41 @@ def linear_warmup_lr(
     return initial_lr + progress * (peak_lr - initial_lr)
 
 
+def cosine_decay_lr(
+    step: int,
+    *,
+    warmup_steps: int,
+    total_training_steps: int,
+    peak_lr: float,
+    min_lr: float,
+) -> float:
+    """返回预热结束后指定更新步的余弦衰减学习率。
+
+    ``step=warmup_steps`` 时返回 ``peak_lr``；``step`` 到达
+    ``total_training_steps`` 时返回 ``min_lr``。超过终点的 step 会固定在
+    ``min_lr``，从而避免学习率继续沿余弦曲线回升。
+    """
+    if step < 0:
+        raise ValueError("step 不能为负数")
+    if warmup_steps < 0:
+        raise ValueError("warmup_steps 不能为负数")
+    if total_training_steps <= warmup_steps:
+        raise ValueError("total_training_steps 必须大于 warmup_steps")
+    if step < warmup_steps:
+        raise ValueError("余弦衰减阶段的 step 不能小于 warmup_steps")
+    if peak_lr < 0 or min_lr < 0:
+        raise ValueError("peak_lr 和 min_lr 不能为负数")
+    if min_lr > peak_lr:
+        raise ValueError("min_lr 不能大于 peak_lr")
+
+    progress = (step - warmup_steps) / (
+        total_training_steps - warmup_steps
+    )
+    progress = min(progress, 1.0)
+    cosine_factor = 0.5 * (1.0 + math.cos(math.pi * progress))
+    return min_lr + (peak_lr - min_lr) * cosine_factor
+
+
 def train_causal_lm(
     model: nn.Module,
     train_loader: Any,
@@ -225,12 +262,14 @@ def train_causal_lm(
     *,
     warmup_steps: int = 0,
     initial_lr: float = 0.0,
+    min_lr: float | None = None,
 ) -> tuple[list[float], list[float], list[int]]:
     """执行书中使用的简洁因果语言模型训练循环。
 
     优化器中配置的学习率是每个参数组的峰值学习率。``warmup_steps``
     大于 0 时，前若干次参数更新会从 ``initial_lr`` 线性升至各组峰值；
-    默认值 0 保持原来的固定学习率行为。
+    传入 ``min_lr`` 后，预热结束的学习率会沿半个余弦周期降至该下限。
+    ``warmup_steps=0`` 且 ``min_lr=None`` 时保持原来的固定学习率行为。
     """
     if num_epochs <= 0:
         raise ValueError("num_epochs 必须为正整数")
@@ -245,6 +284,7 @@ def train_causal_lm(
     if len(train_loader) == 0:
         raise ValueError("train_loader 不能为空")
 
+    total_training_steps = len(train_loader) * num_epochs
     peak_lrs = [float(group["lr"]) for group in optimizer.param_groups]
     if warmup_steps > 0:
         for peak_lr in peak_lrs:
@@ -253,6 +293,15 @@ def train_causal_lm(
                 warmup_steps=warmup_steps,
                 initial_lr=initial_lr,
                 peak_lr=peak_lr,
+            )
+    if min_lr is not None:
+        for peak_lr in peak_lrs:
+            cosine_decay_lr(
+                warmup_steps,
+                warmup_steps=warmup_steps,
+                total_training_steps=total_training_steps,
+                peak_lr=peak_lr,
+                min_lr=min_lr,
             )
 
     model.to(device)
@@ -266,7 +315,7 @@ def train_causal_lm(
         model.train()
         for input_batch, target_batch in train_loader:
             global_step += 1
-            if warmup_steps > 0:
+            if warmup_steps > 0 and global_step < warmup_steps:
                 for param_group, peak_lr in zip(
                     optimizer.param_groups,
                     peak_lrs,
@@ -277,6 +326,24 @@ def train_causal_lm(
                         initial_lr=initial_lr,
                         peak_lr=peak_lr,
                     )
+            elif min_lr is not None:
+                for param_group, peak_lr in zip(
+                    optimizer.param_groups,
+                    peak_lrs,
+                ):
+                    param_group["lr"] = cosine_decay_lr(
+                        global_step,
+                        warmup_steps=warmup_steps,
+                        total_training_steps=total_training_steps,
+                        peak_lr=peak_lr,
+                        min_lr=min_lr,
+                    )
+            elif warmup_steps > 0:
+                for param_group, peak_lr in zip(
+                    optimizer.param_groups,
+                    peak_lrs,
+                ):
+                    param_group["lr"] = peak_lr
 
             optimizer.zero_grad(set_to_none=True)
             loss = causal_lm_batch_loss(
