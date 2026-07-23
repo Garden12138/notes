@@ -260,36 +260,34 @@
 
 * 对数把概率连乘转换为加法：
 
-  $$
-  \ln\left(\prod_i p_i\right)=\sum_i\ln p_i
-  $$
+  ```text
+  ln(Πᵢ pᵢ) = Σᵢ ln(pᵢ)
+  ```
 
   以 `0.2`、`0.1`、`0.05` 为例：
 
-  $$
-  \begin{aligned}
-  0.2\times0.1\times0.05 &= 0.001 \\
-  \ln(0.001) &\approx -6.9078 \\
-  \ln(0.2)+\ln(0.1)+\ln(0.05) &\approx -6.9078 \\
-  e^{-6.9078} &\approx 0.001
-  \end{aligned}
-  $$
+  ```text
+  0.2 × 0.1 × 0.05             = 0.001
+  ln(0.001)                    ≈ -6.9078
+  ln(0.2) + ln(0.1) + ln(0.05) ≈ -6.9078
+  exp(-6.9078)                 ≈ 0.001
+  ```
 
   `0.001` 与 `-6.9078` 不相等；后者是前者的对数。取 `exp` 可以还原概率乘积。
 
   `ln` 单调递增，所以不会改变大小顺序：
 
-  $$
-  0.001>0.0001\quad\Longleftrightarrow\quad-6.9078>-9.2103
-  $$
+  ```text
+  0.001 > 0.0001  ⇔  -6.9078 > -9.2103
+  ```
 
   因而最大化概率乘积，等价于最大化对数概率之和：
 
-  $$
-  \arg\max\prod_i p_i=\arg\max\sum_i\ln p_i
-  $$
+  ```text
+  arg max(Πᵢ pᵢ) = arg max(Σᵢ ln(pᵢ))
+  ```
 
-  取对数还能避免大量小概率连乘造成数值下溢。正确 token 的概率越低，$-\ln(p)$ 越大，例如 $-\ln(0.1)\approx2.303$、$-\ln(0.01)\approx4.605$。
+  取对数还能避免大量小概率连乘造成数值下溢。正确 token 的概率越低，`-ln(p)` 越大，例如 `-ln(0.1) ≈ 2.303`、`-ln(0.01) ≈ 4.605`。
 
 * 对六个目标 token 的对数概率求平均：
 
@@ -307,9 +305,9 @@
 
   平均值用于消除 token 数量对损失大小的影响。本例有 `2 × 3 = 6` 个目标 token：
 
-  $$
-  \frac{1}{6}\sum_{i=1}^{6}\log p_i=-10.9791
-  $$
+  ```text
+  (1/6) × Σᵢ₌₁⁶ log(pᵢ) = -10.9791
+  ```
 
 * 图 5.7 展示了从 logits 到损失的过程：
 
@@ -329,14 +327,13 @@
   tensor(10.9791)
   ```
 
-  这一步不是取绝对值。因为 $0<p\leq1$，所以 $\log p\leq0$。训练原本要最大化平均对数概率；乘以 `-1` 后，就变成优化器熟悉的最小化问题：
+  这一步不是取绝对值。因为 `0 < p ≤ 1`，所以 `log(p) ≤ 0`。训练原本要最大化平均对数概率；乘以 `-1` 后，就变成优化器熟悉的最小化问题：
 
-  $$
-  L=-\frac{1}{B\times T}\sum_{b=1}^{B}\sum_{t=1}^{T}
-  \log p_\theta\left(y_{b,t}\mid x_{b,\leq t}\right)
-  $$
+  ```text
+  L = -(1 / (B × T)) × Σᵦ₌₁ᴮ Σₜ₌₁ᵀ log p_θ(y[b,t] | x[b,≤t])
+  ```
 
-  $B$ 是批次大小，$T$ 是序列长度。`abs(avg_log_probas)` 在这里数值相同，只是因为对数概率非正；损失的定义仍是负对数似然。
+  `B` 是批次大小，`T` 是序列长度。`abs(avg_log_probas)` 在这里数值相同，只是因为对数概率非正；损失的定义仍是负对数似然。
 
 * 对 one-hot 目标，交叉熵等于正确 token 的负对数概率。`cross_entropy` 需要二维 logits 和一维 targets，因此先合并批次维与序列维：
 
@@ -374,7 +371,7 @@
   perplexity ≈ 58635.76
   ```
 
-  该值由四舍五入后的 `10.9791` 估算。均匀预测时的损失约为 $\ln(50257)=10.8249$；当前损失更高，说明随机模型给正确 token 的平均概率低于均匀分布。困惑度主要用于比较训练前后的相对变化。
+  该值由四舍五入后的 `10.9791` 估算。均匀预测时的损失约为 `ln(50257) = 10.8249`；当前损失更高，说明随机模型给正确 token 的平均概率低于均匀分布。困惑度主要用于比较训练前后的相对变化。
 
 * 整体流程：
 
@@ -855,9 +852,9 @@
 
 模型参数的基本更新可以写成：
 
-$$
-\theta_{t+1}=\theta_t-\eta_t g_t
-$$
+```text
+θₜ₊₁ = θₜ - ηₜgₜ
+```
 
 其中：
 
@@ -894,21 +891,21 @@ AdamW 虽然带有偏差修正，但前几个 step 的动量估计仍建立在�
 
 预热阶段（0 ≤ t < `N_w`）：
 
-$$
-\eta_t=\eta_{init}+\frac{t}{N_w}(\eta_{peak}-\eta_{init})
-$$
+```text
+ηₜ = η_init + (t / N_w) × (η_peak - η_init)
+```
 
 预热结束后（t ≥ `N_w`）：
 
-$$
-\eta_t=\eta_{peak}
-$$
+```text
+ηₜ = η_peak
+```
 
 因此每一步的增量为：
 
-$$
-\Delta\eta=\frac{\eta_{peak}-\eta_{init}}{N_w}
-$$
+```text
+Δη = (η_peak - η_init) / N_w
+```
 
 在当前代码中，`step=0` 使用 `initial_lr`，到达 `warmup_steps` 后使用峰值学习率。优化器创建时配置的 `lr` 就是峰值：
 
@@ -1022,10 +1019,11 @@ cosine decay： peak_lr    → min_lr
 
 预热结束后，先计算衰减阶段已经进行的比例：
 
-$$
-p=\frac{global\_step-warmup\_steps}
-        {total\_training\_steps-warmup\_steps}
-$$
+```text
+    global_step - warmup_steps
+p = ─────────────────────────────────────
+    total_training_steps - warmup_steps
+```
 
 代码对应为：
 
@@ -1040,9 +1038,9 @@ progress = (
 
 然后用余弦函数生成衰减系数：
 
-$$
-c(p)=\frac{1+\cos(\pi p)}{2}
-$$
+```text
+c(p) = (1 + cos(πp)) / 2
+```
 
 | `progress` | `π × progress` | `cos(π × progress)` | `(1 + cos) / 2` |
 | ---: | ---: | ---: | ---: |
@@ -1054,10 +1052,11 @@ $$
 
 最终学习率为：
 
-$$
-lr=min\_lr+(peak\_lr-min\_lr)
-   \frac{1+\cos(\pi\cdot progress)}{2}
-$$
+```text
+lr = min_lr
+     + (peak_lr - min_lr)
+     × (1 + cos(π × progress)) / 2
+```
 
 这里不是直接用余弦值当学习率，而是先用余弦函数生成衰减系数，再把学习率从 `peak_lr` 平滑映射到 `min_lr`：
 
@@ -1270,9 +1269,9 @@ return train_losses, val_losses, tokens_seen_at_eval
 
 总的来说，学习率衰减就是一个从大到小的过程。训练进度从 `0` 走到 `1` 时，经过转换的余弦系数
 
-$$
-\frac{1+\cos(\pi\cdot progress)}{2}
-$$
+```text
+(1 + cos(π × progress)) / 2
+```
 
 刚好会从 `1` 平滑下降到 `0`。用它乘以学习率的可变化范围 `peak_lr - min_lr`，再加上最终要衰减到的目标小值 `min_lr`，就能让整个学习率逐渐变小：
 
@@ -1296,84 +1295,72 @@ $$
 
 ##### L2 范数与缩放公式
 
-把模型的全部参数梯度展平成一个向量 $G$，其 L2 范数为：
+把模型的全部参数梯度展平成一个向量 `G`，其 L2 范数为：
 
-$$
-\|G\|_2=\sqrt{\sum_i g_i^2}
-$$
+```text
+‖G‖₂ = √(Σᵢ gᵢ²)
+```
 
 给定最大范数 `max_norm`，裁剪后的梯度为：
 
-$$
-G'
-=G\cdot\min\left(1,\frac{max\_norm}{\|G\|_2}\right)
-$$
+```text
+G′ = G × min(1, max_norm / ‖G‖₂)
+```
 
 这个 `min(1, ...)` 不能省略：
 
-- 当 $\|G\|_2\le max\_norm$ 时，缩放系数为 `1`，梯度不变。
-- 当 $\|G\|_2>max\_norm$ 时，缩放系数为 $max\_norm/\|G\|_2$，把总体范数压到阈值。
+- 当 `‖G‖₂ ≤ max_norm` 时，缩放系数为 `1`，梯度不变。
+- 当 `‖G‖₂ > max_norm` 时，缩放系数为 `max_norm / ‖G‖₂`，把总体范数压到阈值。
 
 以截图中的梯度矩阵为例：
 
-$$
-G=
-\begin{bmatrix}
-1 & 2\\
-2 & 4
-\end{bmatrix}
-$$
+```text
+    ┌      ┐
+G = │ 1  2 │
+    │ 2  4 │
+    └      ┘
+```
 
 其 L2 范数是：
 
-$$
-\|G\|_2
-=\sqrt{1^2+2^2+2^2+4^2}
-=\sqrt{25}
-=5
-$$
+```text
+‖G‖₂ = √(1² + 2² + 2² + 4²)
+      = √25
+      = 5
+```
 
 若 `max_norm=1`，缩放系数就是：
 
-$$
-\frac{max\_norm}{\|G\|_2}
-=\frac{1}{5}
-$$
+```text
+max_norm / ‖G‖₂ = 1 / 5
+```
 
-所以整个矩阵都乘以 $1/5$：
+所以整个矩阵都乘以 `1/5`：
 
-$$
-G'
-=\frac{1}{5}G
-=
-\begin{bmatrix}
-\frac{1}{5} & \frac{2}{5}\\
-\frac{2}{5} & \frac{4}{5}
-\end{bmatrix}
-$$
+```text
+G′ = (1/5) × G
+
+     ┌          ┐
+   = │ 1/5  2/5 │
+     │ 2/5  4/5 │
+     └          ┘
+```
 
 缩放后的范数为：
 
-$$
-\begin{aligned}
-\|G'\|_2
-&=\sqrt{
-\left(\frac{1}{5}\right)^2+
-\left(\frac{2}{5}\right)^2+
-\left(\frac{2}{5}\right)^2+
-\left(\frac{4}{5}\right)^2
-}\\
-&=\sqrt{\frac{25}{25}}=1
-\end{aligned}
-$$
+```text
+‖G′‖₂ = √((1/5)² + (2/5)² + (2/5)² + (4/5)²)
+       = √(25/25)
+       = 1
+```
 
 这是因为范数满足：
 
-$$
-\|cG\|_2=|c|\|G\|_2
-$$
+```text
+‖cG‖₂ = |c| × ‖G‖₂
+```
 
-因此截图中的理解是正确的：当 $\|G\|_2$ 超过阈值时，矩阵需要乘以 $max\_norm/\|G\|_2$。更完整地说，还要加上“超过阈值时”这个条件，否则范数较小的梯度反而会被放大。
+因此截图中的理解是正确的：当 `‖G‖₂` 超过阈值时，矩阵需要乘以 `max_norm / ‖G‖₂`。更完整地说，还要加上“超过阈值时”这个条件，否则范数较小的梯度反而会被放大。
 
 PyTorch 的 `clip_grad_norm_` 计算的是所有参数梯度的总体范数，可以理解为先把各层的 `.grad` 拼成一个长向量再计算，而不是让每个权重矩阵分别裁剪到 `max_norm`。
 
@@ -1593,11 +1580,11 @@ train_losses, val_losses, tokens_seen = train_causal_lm(
 
   这次采样仍得到 `forward`，是因为它的概率最高。区别在于 `argmax` 每次都选它，而 `multinomial` 只是更容易选它，其他 token 仍有机会被选中。
 
-* 温度缩放是在 Softmax 前将 logits 除以温度 $T$：
+* 温度缩放是在 Softmax 前将 logits 除以温度 `T`：
 
-  $$
-  p_i=\frac{\exp(z_i/T)}{\sum_j\exp(z_j/T)}
-  $$
+  ```text
+  pᵢ = exp(zᵢ / T) / Σⱼ exp(zⱼ / T)
+  ```
 
   ```python
   def softmax_with_temperature(logits, temperature):
@@ -1611,7 +1598,7 @@ train_losses, val_losses, tokens_seen = train_causal_lm(
 
   ![](https://raw.githubusercontent.com/Garden12138/picbed-cloud/main/ai/ballm51.png)
 
-  公式要求 $T>0$。后面的生成函数将 `temperature=0` 单独处理为贪心解码，不会执行除以 0。
+  公式要求 `T > 0`。后面的生成函数将 `temperature=0` 单独处理为贪心解码，不会执行除以 0。
 
 #### Top-k 采样
 
