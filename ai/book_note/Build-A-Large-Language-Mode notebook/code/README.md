@@ -12,7 +12,7 @@ code/
 │   ├── attention.py       # 因果多头注意力
 │   ├── model.py           # LayerNorm、GELU、TransformerBlock、GPTModel
 │   ├── generation.py      # 编解码、贪心/温度/Top-k/EOS 生成
-│   ├── training.py        # 损失、评估、线性预热、余弦衰减与训练
+│   ├── training.py        # 损失、评估、学习率调度、梯度裁剪与训练
 │   ├── checkpoint.py      # 模型权重与训练检查点
 │   ├── openai_weights.py  # OpenAI GPT-2 权重下载与映射
 │   ├── classification.py  # 短信分类数据、损失、训练与推理

@@ -1,4 +1,4 @@
-"""因果语言模型的损失、评估、学习率调度与训练循环。"""
+"""因果语言模型的损失、评估、学习率调度、梯度裁剪与训练循环。"""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ __all__ = [
     "generate_and_print_sample",
     "linear_warmup_lr",
     "cosine_decay_lr",
+    "clip_gradient_norm",
     "train_causal_lm",
     "plot_losses",
 ]
@@ -248,6 +249,23 @@ def cosine_decay_lr(
     return min_lr + (peak_lr - min_lr) * cosine_factor
 
 
+def clip_gradient_norm(
+    model: nn.Module,
+    max_norm: float = 1.0,
+) -> torch.Tensor:
+    """按所有参数梯度的总体 L2 范数进行原地裁剪。
+
+    返回裁剪前的总体梯度范数；梯度未超过 ``max_norm`` 时保持不变。
+    """
+    if not math.isfinite(max_norm) or max_norm <= 0:
+        raise ValueError("max_norm 必须是有限的正数")
+    return torch.nn.utils.clip_grad_norm_(
+        model.parameters(),
+        max_norm=max_norm,
+        norm_type=2.0,
+    )
+
+
 def train_causal_lm(
     model: nn.Module,
     train_loader: Any,
@@ -263,13 +281,15 @@ def train_causal_lm(
     warmup_steps: int = 0,
     initial_lr: float = 0.0,
     min_lr: float | None = None,
+    max_grad_norm: float | None = None,
 ) -> tuple[list[float], list[float], list[int]]:
     """执行书中使用的简洁因果语言模型训练循环。
 
     优化器中配置的学习率是每个参数组的峰值学习率。``warmup_steps``
     大于 0 时，前若干次参数更新会从 ``initial_lr`` 线性升至各组峰值；
     传入 ``min_lr`` 后，预热结束的学习率会沿半个余弦周期降至该下限。
-    ``warmup_steps=0`` 且 ``min_lr=None`` 时保持原来的固定学习率行为。
+    传入 ``max_grad_norm`` 后，会在预热结束后、参数更新前裁剪总体梯度
+    L2 范数。三个可选功能均未启用时保持原来的训练行为。
     """
     if num_epochs <= 0:
         raise ValueError("num_epochs 必须为正整数")
@@ -279,6 +299,10 @@ def train_causal_lm(
         raise ValueError("eval_iter 必须为正整数")
     if warmup_steps < 0:
         raise ValueError("warmup_steps 不能为负数")
+    if max_grad_norm is not None and (
+        not math.isfinite(max_grad_norm) or max_grad_norm <= 0
+    ):
+        raise ValueError("max_grad_norm 必须是有限的正数或 None")
     if (start_context is None) != (tokenizer is None):
         raise ValueError("start_context 与 tokenizer 必须同时提供或同时省略")
     if len(train_loader) == 0:
@@ -353,6 +377,11 @@ def train_causal_lm(
                 device,
             )
             loss.backward()
+            if (
+                max_grad_norm is not None
+                and global_step > warmup_steps
+            ):
+                clip_gradient_norm(model, max_grad_norm)
             optimizer.step()
 
             tokens_seen += input_batch.numel()

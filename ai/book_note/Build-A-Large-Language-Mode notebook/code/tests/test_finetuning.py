@@ -33,6 +33,7 @@ from llm_from_scratch.model import GPTModel
 from llm_from_scratch.openai_weights import assign_parameter
 from llm_from_scratch.training import (
     causal_lm_loader_loss,
+    clip_gradient_norm,
     cosine_decay_lr,
     linear_warmup_lr,
     train_causal_lm,
@@ -347,6 +348,40 @@ def test_cosine_decay_lr_rejects_invalid_values(
         cosine_decay_lr(**kwargs)
 
 
+def test_clip_gradient_norm_rescales_total_l2_norm() -> None:
+    model = nn.Linear(2, 2, bias=False)
+    original_gradient = torch.tensor([[1.0, 2.0], [2.0, 4.0]])
+    model.weight.grad = original_gradient.clone()
+
+    norm_before_clipping = clip_gradient_norm(model, max_norm=1.0)
+
+    assert norm_before_clipping.item() == pytest.approx(5.0)
+    assert torch.linalg.vector_norm(model.weight.grad).item() == pytest.approx(
+        1.0,
+        abs=1e-6,
+    )
+    torch.testing.assert_close(
+        model.weight.grad,
+        original_gradient / 5.0,
+        rtol=1e-5,
+        atol=1e-6,
+    )
+
+
+def test_clip_gradient_norm_keeps_small_gradient_and_validates_threshold() -> None:
+    model = nn.Linear(2, 1, bias=False)
+    original_gradient = torch.tensor([[0.3, 0.4]])
+    model.weight.grad = original_gradient.clone()
+
+    norm_before_clipping = clip_gradient_norm(model, max_norm=1.0)
+
+    assert norm_before_clipping.item() == pytest.approx(0.5)
+    torch.testing.assert_close(model.weight.grad, original_gradient)
+    for invalid_max_norm in (0.0, -1.0, float("inf"), float("nan")):
+        with pytest.raises(ValueError, match="max_norm"):
+            clip_gradient_norm(model, max_norm=invalid_max_norm)
+
+
 def test_train_causal_lm_applies_warmup_before_optimizer_step() -> None:
     class TrainableLanguageModel(nn.Module):
         def __init__(self) -> None:
@@ -426,6 +461,56 @@ def test_train_causal_lm_applies_cosine_decay_after_warmup() -> None:
     )
 
     assert optimizer.learning_rates == pytest.approx([0.0, 1.0, 0.55])
+
+
+def test_train_causal_lm_clips_gradients_after_warmup() -> None:
+    class TrainableLanguageModel(nn.Module):
+        def __init__(self) -> None:
+            super().__init__()
+            self.embedding = nn.Embedding(8, 4)
+            self.output = nn.Linear(4, 8)
+
+        def forward(self, input_ids: torch.Tensor) -> torch.Tensor:
+            return self.output(self.embedding(input_ids))
+
+    class GradientRecordingSGD(torch.optim.SGD):
+        def __init__(self, parameters: object, lr: float) -> None:
+            super().__init__(parameters, lr=lr)
+            self.gradient_norms: list[float] = []
+
+        def step(self, closure: object = None) -> object:
+            gradients = [
+                parameter.grad.detach().flatten()
+                for group in self.param_groups
+                for parameter in group["params"]
+                if parameter.grad is not None
+            ]
+            total_norm = torch.linalg.vector_norm(torch.cat(gradients))
+            self.gradient_norms.append(float(total_norm))
+            return super().step(closure)
+
+    torch.manual_seed(123)
+    model = TrainableLanguageModel()
+    batch = (torch.tensor([[0, 1, 2]]), torch.tensor([[1, 2, 3]]))
+    loader = [batch, batch, batch]
+    optimizer = GradientRecordingSGD(model.parameters(), lr=0.1)
+
+    train_causal_lm(
+        model,
+        loader,
+        loader,
+        optimizer,
+        "cpu",
+        num_epochs=1,
+        eval_freq=3,
+        eval_iter=1,
+        warmup_steps=1,
+        max_grad_norm=0.1,
+    )
+
+    assert optimizer.gradient_norms[0] > 0.1
+    assert optimizer.gradient_norms[1] > 0.1
+    assert optimizer.gradient_norms[2] == pytest.approx(0.1, abs=1e-6)
 
 
 def test_instruction_responses_are_sliced_by_token(monkeypatch: pytest.MonkeyPatch) -> None:

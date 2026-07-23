@@ -1275,6 +1275,209 @@ $$
 
 一句话概括：余弦衰减不是把余弦值直接当成学习率，而是用半个余弦周期生成一个从 `1` 平滑下降到 `0` 的系数，再把学习率从 `peak_lr` 平滑降到 `min_lr`。
 
+#### 梯度裁剪
+
+> 阅读资料：[附录 D.3：梯度裁剪](https://skindhu.github.io/Build-A-Large-Language-Model-CN/#/./cn-Book/%E9%99%84%E5%BD%95D.%E7%BB%99%E8%AE%AD%E7%BB%83%E5%BE%AA%E7%8E%AF%E6%B7%BB%E5%8A%A0%E9%AB%98%E7%BA%A7%E6%8A%80%E5%B7%A7?id=d3-%e6%a2%af%e5%ba%a6%e8%a3%81%e5%89%aa)
+
+这里准确的名称是梯度裁剪（gradient clipping），不是“梯度递减”。学习率衰减会随训练进度逐步减小学习率；梯度裁剪则只检查当前反向传播得到的梯度，范数超过阈值时才把它等比例缩小，未超过时保持不变。
+
+梯度过大会使参数单次更新幅度突然增大，严重时会造成损失剧烈波动、梯度爆炸或 `NaN`。梯度裁剪给总体梯度设置一个最大范数，在保留梯度方向和各元素相对比例的同时限制其长度。
+
+##### L2 范数与缩放公式
+
+把模型的全部参数梯度展平成一个向量 \(G\)，其 L2 范数为：
+
+$$
+\|G\|_2=\sqrt{\sum_i g_i^2}
+$$
+
+给定最大范数 `max_norm`，裁剪后的梯度为：
+
+$$
+G'
+=G\cdot\min\left(1,\frac{max\_norm}{\|G\|_2}\right)
+$$
+
+这个 `min(1, ...)` 不能省略：
+
+- 当 \(\|G\|_2\le max\_norm\) 时，缩放系数为 `1`，梯度不变。
+- 当 \(\|G\|_2>max\_norm\) 时，缩放系数为 \(max\_norm/\|G\|_2\)，把总体范数压到阈值。
+
+以截图中的梯度矩阵为例：
+
+$$
+G=
+\begin{bmatrix}
+1 & 2\\
+2 & 4
+\end{bmatrix}
+$$
+
+其 L2 范数是：
+
+$$
+\|G\|_2
+=\sqrt{1^2+2^2+2^2+4^2}
+=\sqrt{25}
+=5
+$$
+
+若 `max_norm=1`，缩放系数就是：
+
+$$
+\frac{max\_norm}{\|G\|_2}
+=\frac{1}{5}
+$$
+
+所以整个矩阵都乘以 \(1/5\)：
+
+$$
+G'
+=\frac{1}{5}G
+=
+\begin{bmatrix}
+\frac{1}{5} & \frac{2}{5}\\
+\frac{2}{5} & \frac{4}{5}
+\end{bmatrix}
+$$
+
+缩放后的范数为：
+
+$$
+\begin{aligned}
+\|G'\|_2
+&=\sqrt{
+\left(\frac{1}{5}\right)^2+
+\left(\frac{2}{5}\right)^2+
+\left(\frac{2}{5}\right)^2+
+\left(\frac{4}{5}\right)^2
+}\\
+&=\sqrt{\frac{25}{25}}=1
+\end{aligned}
+$$
+
+这是因为范数满足：
+
+$$
+\|cG\|_2=|c|\|G\|_2
+$$
+
+因此截图中的理解是正确的：当 \(\|G\|_2\) 超过阈值时，矩阵需要乘以 \(max\_norm/\|G\|_2\)。更完整地说，还要加上“超过阈值时”这个条件，否则范数较小的梯度反而会被放大。
+
+PyTorch 的 `clip_grad_norm_` 计算的是所有参数梯度的总体范数，可以理解为先把各层的 `.grad` 拼成一个长向量再计算，而不是让每个权重矩阵分别裁剪到 `max_norm`。
+
+##### 训练模块中的实现
+
+[`training.py`](./code/llm_from_scratch/training.py) 封装了 `clip_gradient_norm`：
+
+```python
+def clip_gradient_norm(model, max_norm=1.0):
+    if not math.isfinite(max_norm) or max_norm <= 0:
+        raise ValueError("max_norm 必须是有限的正数")
+
+    return torch.nn.utils.clip_grad_norm_(
+        model.parameters(),
+        max_norm=max_norm,
+        norm_type=2.0,
+    )
+```
+
+`clip_grad_norm_` 会原地修改各参数的 `.grad`，并返回裁剪前的总体梯度范数。返回值可用于观察训练是否频繁触发裁剪：
+
+```python
+norm_before_clipping = clip_gradient_norm(
+    model,
+    max_norm=1.0,
+)
+print("裁剪前的总体梯度范数：", norm_before_clipping.item())
+```
+
+PyTorch 内部会加入很小的数值稳定项，因此实际裁剪后的范数可能略小于 `max_norm`，不影响公式含义。
+
+##### `train_causal_lm` 的具体修改
+
+训练函数新增可选参数 `max_grad_norm`：
+
+```python
+def train_causal_lm(
+    ...,
+    warmup_steps=0,
+    initial_lr=0.0,
+    min_lr=None,
+    max_grad_norm=None,
+):
+```
+
+- `max_grad_norm=None`：关闭梯度裁剪，保持原来的训练行为。
+- `max_grad_norm=1.0`：预热结束后，把总体梯度的 L2 范数限制在 `1.0` 以内。
+- 阈值必须是有限正数；`0`、负数、`inf` 和 `nan` 都不是有效设置。
+
+梯度裁剪必须放在 `backward()` 和 `optimizer.step()` 之间：
+
+```python
+optimizer.zero_grad(set_to_none=True)
+loss = causal_lm_batch_loss(
+    input_batch,
+    target_batch,
+    model,
+    device,
+)
+loss.backward()
+
+if (
+    max_grad_norm is not None
+    and global_step > warmup_steps
+):
+    clip_gradient_norm(model, max_grad_norm)
+
+optimizer.step()
+```
+
+执行顺序为：
+
+```text
+zero_grad
+→ forward / loss
+→ backward：计算并写入参数的 .grad
+→ clip：必要时等比例缩小 .grad
+→ optimizer.step：使用裁剪后的梯度更新参数
+```
+
+在 `backward()` 前还没有本批次梯度可裁剪；在 `optimizer.step()` 后再裁剪，又已经来不及影响本次参数更新。
+
+这里沿用附录的条件 `global_step > warmup_steps`，只在预热结束后启用裁剪。严格来说，梯度裁剪也可以在预热阶段使用；当前写法是让预热期先由较小学习率限制更新幅度，达到峰值学习率后再用梯度裁剪防止异常大梯度。由于条件使用 `>`，`global_step == warmup_steps` 的边界 step 不裁剪，从下一个 step 开始裁剪。
+
+完整调用方式：
+
+```python
+train_losses, val_losses, tokens_seen = train_causal_lm(
+    model=model,
+    train_loader=train_loader,
+    val_loader=val_loader,
+    optimizer=optimizer,
+    device=device,
+    num_epochs=num_epochs,
+    eval_freq=5,
+    eval_iter=1,
+    start_context="Every effort moves you",
+    tokenizer=tokenizer,
+    warmup_steps=warmup_steps,
+    initial_lr=1e-5,
+    min_lr=1e-5,
+    max_grad_norm=1.0,
+)
+```
+
+预热、余弦衰减和梯度裁剪控制的是不同对象：
+
+| 技巧 | 控制对象 | 作用 |
+| --- | --- | --- |
+| 线性预热 | 学习率 | 训练初期从小学习率逐步升到峰值 |
+| 余弦衰减 | 学习率 | 预热结束后从峰值平滑降到下限 |
+| 梯度裁剪 | 当前梯度 | 梯度总体范数超出阈值时等比例缩小 |
+
+梯度裁剪不会改变梯度方向，也不会让梯度随训练时间持续变小；它只是给每个 step 的总体梯度长度加一道上限。
+
 #### 绘制损失曲线
 
 * 将 epoch、累计 token 数、训练损失和验证损失绘制在同一张图中：
