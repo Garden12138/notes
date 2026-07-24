@@ -14,6 +14,13 @@ from .generation import (
     text_to_token_ids,
     token_ids_to_text,
 )
+from .lora import (
+    LinearWithLoRA,
+    LoRALayer,
+    apply_lora,
+    count_trainable_parameters,
+    replace_linear_with_lora,
+)
 from .model import FeedForward, GELU, GPTModel, LayerNorm, TransformerBlock
 
 __all__ = [
@@ -33,4 +40,9 @@ __all__ = [
     "token_ids_to_text",
     "generate_token_ids",
     "generate_text_simple",
+    "LoRALayer",
+    "LinearWithLoRA",
+    "replace_linear_with_lora",
+    "apply_lora",
+    "count_trainable_parameters",
 ]

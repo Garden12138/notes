@@ -865,3 +865,256 @@
   ```
 
   该文件只保存参数，不包含 `GPTModel`、`GPTConfig`、分词器和 `SpamDataset`。在新进程中使用时，需要先按本章代码创建模型并替换成 `Linear(768, 2)` 分类头，然后才能加载权重。
+
+### 使用 LoRA 高效微调
+
+> 阅读资料：[附录 E.4：使用 LoRA 高效微调](https://skindhu.github.io/Build-A-Large-Language-Model-CN/#/./cn-Book/%E9%99%84%E5%BD%95E.%E4%BD%BF%E7%94%A8LoRA%E7%9A%84%E5%8F%82%E6%95%B0%E9%AB%98%E6%95%88%E5%BE%AE%E8%B0%83?id=e4-%e4%bd%bf%e7%94%a8-lora-%e9%ab%98%e6%95%88%e5%be%ae%e8%b0%83)
+
+这里应称为 LoRA 参数高效微调，不是“梯度递减”。梯度裁剪限制当前梯度的范数；LoRA 改变的是参与训练的参数：冻结原始模型，只学习一组规模较小的低秩矩阵。
+
+#### 从完整权重更新到低秩更新
+
+普通微调会为线性层的完整权重矩阵 `W` 学习同形状的更新量 `ΔW`：
+
+```text
+W_updated = W + ΔW
+```
+
+LoRA 假设任务微调所需的更新可以用两个低秩矩阵近似：
+
+```text
+ΔW ≈ (alpha / rank) × A × B
+
+W_updated ≈ W + (alpha / rank) × A × B
+```
+
+对输入 `x`，不必真的改写冻结的 `W`，而是在前向传播时把两条路径相加：
+
+```text
+output = linear(x) + (alpha / rank) × x × A × B
+```
+
+矩阵形状为：
+
+```text
+x: [batch, ..., in_dim]
+A: [in_dim, rank]
+B: [rank, out_dim]
+
+x × A × B: [batch, ..., out_dim]
+```
+
+`rank` 是中间维度。若完整线性层权重包含 `in_dim × out_dim` 个参数，LoRA 只新增：
+
+```text
+rank × (in_dim + out_dim)
+```
+
+以 `768 → 768` 的线性层和 `rank=16` 为例：
+
+| 更新方式 | 参数数量 |
+| --- | ---: |
+| 完整权重更新 | `768 × 768 = 589824` |
+| LoRA 更新 | `16 × (768 + 768) = 24576` |
+
+`rank` 越小，新增参数越少，但可表达的权重更新也更受限制。`alpha` 控制 LoRA 分支的影响强度；除以 `rank` 后，不同 rank 的输出尺度更容易比较。
+
+#### LoRA 层
+
+[`lora.py`](./code/llm_from_scratch/lora.py) 中的 `LoRALayer` 负责计算低秩增量：
+
+```python
+class LoRALayer(torch.nn.Module):
+    def __init__(self, in_dim, out_dim, rank, alpha):
+        super().__init__()
+
+        self.A = torch.nn.Parameter(
+            torch.empty(in_dim, rank)
+        )
+        self.B = torch.nn.Parameter(
+            torch.zeros(rank, out_dim)
+        )
+        torch.nn.init.kaiming_uniform_(
+            self.A,
+            a=math.sqrt(5),
+        )
+
+        self.rank = rank
+        self.alpha = alpha
+        self.scaling = alpha / rank
+
+    def forward(self, x):
+        return self.scaling * (x @ self.A @ self.B)
+```
+
+`A` 使用 Kaiming 初始化，`B` 初始化为全零，因此刚加入 LoRA 时：
+
+```text
+A × B = 0
+linear(x) + LoRA(x) = linear(x)
+```
+
+模型的初始输出不会因为包装线性层而改变。第一次反向传播时，`B` 可以获得梯度；由于此时 `B=0`，`A` 的梯度可能为零。等 `B` 更新为非零后，`A` 也会开始学习。
+
+#### 保留原线性层并叠加 LoRA
+
+`LinearWithLoRA` 同时保留原始 `nn.Linear` 和 LoRA 分支：
+
+```python
+class LinearWithLoRA(torch.nn.Module):
+    def __init__(self, linear, rank, alpha):
+        super().__init__()
+        self.linear = linear
+        self.lora = LoRALayer(
+            linear.in_features,
+            linear.out_features,
+            rank,
+            alpha,
+        )
+
+    def forward(self, x):
+        return self.linear(x) + self.lora(x)
+```
+
+训练模块中的实现还会把新建的 LoRA 参数移动到原线性层所在的设备和数据类型，避免原模型在 CUDA、LoRA 层却留在 CPU。
+
+#### 递归替换线性层
+
+`replace_linear_with_lora` 遍历模型的子模块，把所有 `nn.Linear` 替换成 `LinearWithLoRA`：
+
+```python
+def replace_linear_with_lora(model, rank, alpha):
+    replacements = 0
+
+    for name, child in list(model.named_children()):
+        if isinstance(child, LinearWithLoRA):
+            continue
+
+        if isinstance(child, torch.nn.Linear):
+            setattr(
+                model,
+                name,
+                LinearWithLoRA(child, rank, alpha),
+            )
+            replacements += 1
+        else:
+            replacements += replace_linear_with_lora(
+                child,
+                rank,
+                alpha,
+            )
+
+    return replacements
+```
+
+递归替换会覆盖注意力中的 Q、K、V 和输出投影、前馈网络的线性层，以及分类输出头。Embedding、LayerNorm 等非线性层不会被包装。
+
+`apply_lora` 把“冻结原模型”和“替换线性层”合在一起：
+
+```python
+def apply_lora(model, rank=16, alpha=16.0):
+    for parameter in model.parameters():
+        parameter.requires_grad = False
+
+    return replace_linear_with_lora(
+        model,
+        rank=rank,
+        alpha=alpha,
+    )
+```
+
+执行顺序很重要：
+
+```text
+加载 GPT-2 预训练权重
+→ 替换为二分类输出头
+→ 冻结现有参数
+→ 为全部线性层添加 LoRA
+→ 只优化 LoRA 的 A、B
+```
+
+必须先加载 GPT-2 权重，再包装线性层，因为现有 OpenAI 权重映射代码按 `nn.Linear.weight` 和 `bias` 的结构写入参数。恢复 LoRA 检查点时则相反：先重建相同的分类模型并用相同 `rank/alpha` 应用 LoRA，再加载 LoRA 结构对应的 `state_dict`。
+
+#### 在分类微调中启用 LoRA
+
+本章前面的 DataLoader、分类损失、准确率和训练循环都可以原样复用：
+
+```python
+from llm_from_scratch.lora import (
+    apply_lora,
+    count_trainable_parameters,
+)
+
+
+# 1. 先加载 GPT-2 预训练权重
+model, _ = load_pretrained_gpt2(
+    "gpt2-small (124M)",
+    models_dir="gpt2",
+    script_path="gpt_download.py",
+    device=device,
+)
+
+# 2. 把语言模型输出头替换为二分类头
+configure_classifier(model)
+
+# 3. 冻结原参数，并给全部线性层添加 LoRA
+replaced_layers = apply_lora(
+    model,
+    rank=16,
+    alpha=16,
+)
+model.to(device)
+
+print("替换的线性层数量：", replaced_layers)
+print(
+    "LoRA 可训练参数：",
+    count_trainable_parameters(model),
+)
+
+# 4. 优化器只接收 LoRA 参数
+optimizer = torch.optim.AdamW(
+    (
+        parameter
+        for parameter in model.parameters()
+        if parameter.requires_grad
+    ),
+    lr=8e-4,
+    weight_decay=0.1,
+)
+
+# 5. 分类训练循环不需要修改
+train_losses, val_losses, train_accs, val_accs, examples_seen = (
+    train_classifier(
+        model,
+        train_loader,
+        val_loader,
+        optimizer,
+        device,
+        num_epochs=5,
+        eval_freq=50,
+        eval_iter=5,
+    )
+)
+```
+
+官方 GPT-2 small 二分类示例中的参数统计为：
+
+```console
+冻结前可训练参数：     124,441,346
+冻结后可训练参数：               0
+添加 LoRA 后可训练参数：  2,666,528
+```
+
+LoRA 可训练参数约为原模型参数的 `2.14%`。这减少的是需要保存梯度和优化器状态的参数量；完整 GPT-2 仍要参与前向、反向计算，所以训练显存和耗时不会严格缩小到 `2.14%`。
+
+官方示例使用 `rank=16`、`alpha=16`、`lr=8e-4` 训练 5 个 epoch。训练日志最后一次基于 5 个批次的快速评估为训练、验证准确率均 `100%`；训练完成后遍历完整数据集得到：
+
+```console
+Training accuracy:   99.81%
+Validation accuracy: 97.99%
+Test accuracy:       96.67%
+```
+
+这些数值来自官方 notebook，不是本地实践输出；实际结果仍受数据划分、设备、PyTorch 版本和随机状态影响。
+
+LoRA 不会改变分类损失的定义，也不需要修改 `train_classifier`。`loss.backward()` 会经过完整模型计算梯度，但冻结参数的 `requires_grad=False`，优化器最终只更新 LoRA 的 `A`、`B`。

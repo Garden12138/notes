@@ -13,6 +13,7 @@ code/
 │   ├── model.py           # LayerNorm、GELU、TransformerBlock、GPTModel
 │   ├── generation.py      # 编解码、贪心/温度/Top-k/EOS 生成
 │   ├── training.py        # 损失、评估、学习率调度、梯度裁剪与训练
+│   ├── lora.py            # 低秩适配层、线性层替换与参数冻结
 │   ├── checkpoint.py      # 模型权重与训练检查点
 │   ├── openai_weights.py  # OpenAI GPT-2 权重下载与映射
 │   ├── classification.py  # 短信分类数据、损失、训练与推理

@@ -29,6 +29,12 @@ from llm_from_scratch.instruction import (
     format_instruction_prompt,
     generate_instruction_responses,
 )
+from llm_from_scratch.lora import (
+    LinearWithLoRA,
+    LoRALayer,
+    apply_lora,
+    count_trainable_parameters,
+)
 from llm_from_scratch.model import GPTModel
 from llm_from_scratch.openai_weights import assign_parameter
 from llm_from_scratch.training import (
@@ -170,6 +176,67 @@ def test_configure_classifier_only_unfreezes_expected_layers() -> None:
     assert all(parameter.requires_grad for parameter in model.trf_blocks[-1].parameters())
     assert all(parameter.requires_grad for parameter in model.final_norm.parameters())
     assert all(parameter.requires_grad for parameter in model.out_head.parameters())
+
+
+def test_lora_layer_starts_with_zero_update() -> None:
+    torch.manual_seed(123)
+    layer = LoRALayer(in_dim=3, out_dim=2, rank=2, alpha=4.0)
+    inputs = torch.randn(5, 3)
+
+    torch.testing.assert_close(layer(inputs), torch.zeros(5, 2))
+    assert layer.A.shape == (3, 2)
+    assert layer.B.shape == (2, 2)
+    assert layer.scaling == pytest.approx(2.0)
+
+
+def test_apply_lora_preserves_initial_output_and_freezes_base_model() -> None:
+    torch.manual_seed(123)
+    model = nn.Sequential(
+        nn.Linear(3, 4),
+        nn.ReLU(),
+        nn.Sequential(nn.Linear(4, 2)),
+    )
+    inputs = torch.randn(5, 3)
+    output_before = model(inputs).detach()
+
+    replacements = apply_lora(model, rank=2, alpha=4.0)
+    output_after = model(inputs)
+
+    assert replacements == 2
+    assert sum(
+        isinstance(module, LinearWithLoRA)
+        for module in model.modules()
+    ) == 2
+    torch.testing.assert_close(output_before, output_after)
+
+    wrapped_layers = [
+        module
+        for module in model.modules()
+        if isinstance(module, LinearWithLoRA)
+    ]
+    assert all(
+        not parameter.requires_grad
+        for layer in wrapped_layers
+        for parameter in layer.linear.parameters()
+    )
+    assert all(
+        parameter.requires_grad
+        for layer in wrapped_layers
+        for parameter in layer.lora.parameters()
+    )
+    assert count_trainable_parameters(model) == 26
+
+
+def test_apply_lora_rejects_invalid_or_repeated_configuration() -> None:
+    with pytest.raises(ValueError, match="rank"):
+        LoRALayer(in_dim=3, out_dim=2, rank=0, alpha=1.0)
+    with pytest.raises(ValueError, match="alpha"):
+        LoRALayer(in_dim=3, out_dim=2, rank=1, alpha=float("inf"))
+
+    model = nn.Sequential(nn.Linear(3, 2))
+    apply_lora(model, rank=1, alpha=1.0)
+    with pytest.raises(ValueError, match="已经包含"):
+        apply_lora(model, rank=1, alpha=1.0)
 
 
 def test_spam_dataset_uses_training_length_for_padding(tmp_path: object) -> None:
