@@ -4,11 +4,15 @@
 >
 > 阅读资料：[《Hello-Agents》第六章 6.2：AutoGen](https://datawhalechina.github.io/hello-agents/#/./chapter6/%E7%AC%AC%E5%85%AD%E7%AB%A0%20%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E5%AE%9E%E8%B7%B5?id=_62-%e6%a1%86%e6%9e%b6%e4%b8%80%ef%bc%9aautogen)
 >
+> 阅读资料：[《Hello-Agents》第六章 6.3：AgentScope](https://datawhalechina.github.io/hello-agents/#/./chapter6/%E7%AC%AC%E5%85%AD%E7%AB%A0%20%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E5%AE%9E%E8%B7%B5?id=_63-%e6%a1%86%e6%9e%b6%e4%ba%8c%ef%bc%9aagentscope)
+>
 > 阅读资料：[《Hello-Agents》第六章 6.4：CAMEL](https://datawhalechina.github.io/hello-agents/#/./chapter6/%E7%AC%AC%E5%85%AD%E7%AB%A0%20%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E5%AE%9E%E8%B7%B5?id=_64-%e6%a1%86%e6%9e%b6%e4%b8%89%ef%bc%9acamel)
 >
 > 阅读资料：[《Hello-Agents》第六章 6.5：LangGraph](https://datawhalechina.github.io/hello-agents/#/./chapter6/%E7%AC%AC%E5%85%AD%E7%AB%A0%20%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E5%AE%9E%E8%B7%B5?id=_65-%e6%a1%86%e6%9e%b6%e5%9b%9b%ef%bc%9alanggraph)
 >
 > 实践：使用 AutoGen 组织产品经理、工程师、代码审查员和测试工程师，协作设计比特币价格展示应用。
+>
+> 实践：使用 AgentScope 组织学习规划师和计划审核员，通过消息广播完成“制定—审核—修订”。
 >
 > 实践：使用 CAMEL 组织心理学家与心理学科普作家，协作编写《拖延症心理学》。
 >
@@ -258,6 +262,293 @@ flowchart LR
 AutoGen 已经处理了异步调用、消息流、轮询和终止检查，但团队能否稳定工作仍取决于角色边界和交接协议。多 Agent 不应该只是让多个模型轮流写长文，而应该让不同角色操作可验证的共享产物，并用真实工具结果决定下一步。
 
 本次实践中最有效的设计是限定终止消息来源；最需要改进的地方则是缺少代码执行能力和条件路由。框架解决了“如何让角色持续对话”，下一步要解决的是“如何让对话受到工程证据约束”。
+
+### AgentScope：用消息连接多个 Agent
+
+AgentScope 把 `Msg` 作为 Agent 之间的统一交互单元，再用 `MsgHub` 和 Pipeline 组织广播、顺序执行与并发执行。业务逻辑不需要直接操作另一个 Agent 的内部状态，只需要发送或接收消息。
+
+#### 分层架构
+
+```mermaid
+flowchart TB
+    APP["应用编排<br/>业务流程与终止规则"] --> COOP["多 Agent 协作<br/>MsgHub、Sequential Pipeline、Fanout Pipeline"]
+    COOP --> AGENT["Agent 基础设施<br/>ReActAgent、状态、钩子与异步执行"]
+    AGENT --> BASE["基础组件<br/>Message、Memory、Model、Tool"]
+    BASE --> MODEL["DeepSeek 等模型服务"]
+    DEV["Runtime、Studio、Tracing"] -. "开发、部署与观测" .-> APP
+```
+
+| 组件 | 作用 |
+| --- | --- |
+| `Msg` | 保存发送者名称、协议角色、内容和元数据 |
+| `ReActAgent` | 封装模型、提示词、记忆和 ReAct 循环 |
+| `InMemoryMemory` | 保存单个 Agent 观察到的短期消息 |
+| `MsgHub` | 把参与者回复自动广播给其他参与者 |
+| `sequential_pipeline` | 让前一个 Agent 的结果依次进入下一个 Agent |
+| `fanout_pipeline` | 把同一条消息并发分发给多个 Agent |
+| Pydantic Schema | 约束模型返回的结构化字段和取值范围 |
+
+这里的“消息驱动”并不表示代码里没有函数调用。开发者仍会执行 `await agent(msg)`，区别是 Agent 的输入和输出被统一封装成消息，`MsgHub` 可以继续路由、广播和记录这些消息。这样做比让对象直接读写彼此变量更容易追踪，也更适合扩展到并发和远程执行。
+
+#### 教材案例为什么显得庞大
+
+“三国狼人杀”同时包含六个玩家、昼夜阶段、身份隐藏、私密与公开频道、胜负判断、并发投票以及三国人物性格。它能集中展示 `MsgHub`、`fanout_pipeline` 和结构化输出，但读代码时还要先理解大量游戏规则。
+
+这个案例适合展示框架上限，不适合作为第一次实践。运行成本也不只是“六个 Agent 各调用一次”：每个昼夜阶段都有讨论、投票和角色技能，轮数增加后，消息和 Token 会快速增长。因此本次不复刻游戏，改用双 Agent 学习计划助手。
+
+### 实践：学习计划的制定与审核
+
+用户给出学习目标、学习天数和每天可投入时间。学习规划师生成按天计划，计划审核员检查目标覆盖、时间预算、任务顺序和每日产出；不通过时再广播修改指令。
+
+```mermaid
+flowchart LR
+    U["用户目标、天数、每日时间"] --> HUB["MsgHub 广播任务"]
+    HUB --> P["学习规划师<br/>生成完整计划"]
+    P -->|"自动广播计划"| R["计划审核员<br/>返回结构化审核"]
+    R --> C{"approved 为 true<br/>且 score 等于 10？"}
+    C -->|"是"| END["结束"]
+    C -->|"否，最多修订 2 次"| CTRL["流程控制器广播修改指令"]
+    CTRL --> P
+    C -->|"达到上限"| STOP["停止并提示未通过"]
+```
+
+完整代码见 [`agentscope_study_planner.py`](./code/agentscope_study_planner.py)。这个案例保留了四个关键点：
+
+- 两个 `ReActAgent` 分别拥有独立提示词和短期记忆。
+- `MsgHub` 将任务、计划、审核结果和修改指令广播给参与者。
+- 审核员输出 JSON，代码再用 `PlanReview` 校验评分、优点、问题和修改建议。
+- 是否结束由代码判断，不把控制权完全交给模型生成的自然语言。
+
+#### 版本和 DeepSeek 配置
+
+教材使用 AgentScope 1.x 的 `ReActAgent`、`Msg` 和 `MsgHub` 接口。AgentScope 主分支现已进入 2.0，入口类和消息 API 已经变化，因此本次固定为 `1.0.18`，避免安装后出现接口不一致。该版本要求 Python 3.10+：
+
+```bash
+pip install "agentscope==1.0.18" python-dotenv
+```
+
+环境变量沿用 [`.env.example`](./code/.env.example)：
+
+```text
+LLM_API_KEY=""
+LLM_MODEL_ID="deepseek-v4-flash"
+LLM_BASE_URL="https://api.deepseek.com"
+```
+
+AgentScope 1.x 没有单独的 DeepSeek 模型客户端，而是使用兼容 OpenAI 协议的 `OpenAIChatModel`，再配合 DeepSeek 的多 Agent 消息格式化器：
+
+```python
+model = OpenAIChatModel(
+    model_name=model_id,
+    api_key=api_key,
+    stream=False,
+    client_kwargs={"base_url": base_url},
+    generate_kwargs={
+        "temperature": 0.3,
+        "max_tokens": 4096,
+    },
+)
+
+planner = ReActAgent(
+    name="学习规划师",
+    sys_prompt="根据目标和时间预算制定按天学习计划……",
+    model=model,
+    formatter=DeepSeekMultiAgentFormatter(),
+    memory=InMemoryMemory(),
+    max_iters=3,
+)
+```
+
+`OpenAIChatModel` 负责 API 请求，`DeepSeekMultiAgentFormatter` 负责把多个具名 Agent 的历史消息整理成 DeepSeek 能处理的格式。两者解决的是不同问题，不能只配置模型而忽略 formatter。
+
+#### `run_planning()` 如何驱动消息流
+
+`run_planning()` 是流程控制器，不是第三个 Agent。它负责决定下一步调用谁、是否继续修订；`MsgHub` 只负责建立订阅关系和投递消息，不会自动安排规划师与审核员轮流执行。
+
+```mermaid
+sequenceDiagram
+    participant C as "run_planning 控制器"
+    participant H as "MsgHub"
+    participant P as "学习规划师"
+    participant R as "计划审核员"
+
+    C->>H: "进入上下文，携带 announcement=task"
+    H->>P: "observe(task)：写入规划师记忆"
+    H->>R: "observe(task)：写入审核员记忆"
+    C->>P: "await planner()"
+    P->>P: "读取记忆，生成并保存初稿"
+    P-->>R: "自动广播 plan_msg"
+    P-->>C: "返回 plan_msg（本流程未直接使用）"
+    C->>R: "await reviewer()"
+    R->>R: "读取任务和初稿，生成并保存 review_msg"
+    R-->>P: "自动广播 review_msg"
+    R-->>C: "直接返回 review_msg"
+    C->>C: "解析 JSON，并执行 10 分验收"
+
+    alt "验收通过"
+        C->>H: "退出上下文"
+    else "验收未通过且仍可修订"
+        C->>H: "broadcast(修改指令)"
+        H->>P: "observe(修改指令)"
+        H->>R: "observe(修改指令)"
+        C->>P: "await planner()：根据审核意见生成完整新版"
+        P-->>R: "自动广播 revised_plan_msg"
+        C->>R: "await reviewer()：审核最新版本"
+    end
+```
+
+消息的投递和“消费”过程如下：
+
+| 消息 | 生产者 | 投递方式 | 接收者 | 何时被使用 |
+| --- | --- | --- | --- | --- |
+| `task` | `run_planning()` | 进入 Hub 时以 `announcement` 广播 | 规划师、审核员 | 分别写入两者记忆；规划师生成初稿，审核员核对原始约束 |
+| `plan_msg` | 规划师 | `await planner()` 返回后由 Hub 自动广播 | 审核员 | 下一次 `await reviewer()` 读取记忆时用于审核 |
+| `review_msg` | 审核员 | 自动广播，同时作为函数返回值交给控制器 | 规划师、`run_planning()` | 规划师在修订时读取；控制器解析 JSON 并判断是否结束 |
+| 修改指令 | `run_planning()` | 显式调用 `hub.broadcast()` | 规划师、审核员 | 告诉双方本轮未通过；规划师据此提交完整新版 |
+| `revised_plan_msg` | 规划师 | Hub 自动广播 | 审核员 | 下一轮审核只需调用 `await reviewer()`，无须再显式传参 |
+
+这里最容易困惑的是两个不带参数的调用：
+
+```python
+await planner()
+review_msg = await reviewer()
+```
+
+它们不是“没有输入”，而是输入已经通过 `observe()` 写进各自的 `InMemoryMemory`。调用 Agent 时，`ReActAgent` 会读取当前记忆，交给 formatter 组织为模型上下文，然后生成回复。回复一方面作为函数结果返回，另一方面由 Hub 自动投递给其他参与者。
+
+“消费”也不是消息队列中的取出和删除。`observe()` 会把消息追加到记忆，后续调用读取的是累积历史：
+
+```text
+规划师记忆：task → 自己的初稿 → 审核意见 → 修改指令 → 自己的修订稿
+审核员记忆：task → 初稿 → 自己的审核 → 修改指令 → 修订稿 → 自己的复审
+```
+
+Hub 自动广播时不会把回复再发给发送者自己；发送者的回复由 `ReActAgent` 在生成时写入自己的记忆。DeepSeek 输出的 `thinking` 块只在当前 Agent 的控制台展示，AgentScope 广播前会将其移除，另一个 Agent 接收到的是最终回复。
+
+#### 广播和结构化审核
+
+进入 `MsgHub` 时，用户任务会作为 announcement 发送给规划师和审核员。规划师回复后，消息中心自动把计划交给审核员：
+
+```python
+async with MsgHub(
+    participants=[planner, reviewer],
+    announcement=task,
+) as hub:
+    await planner()
+    review_msg = await reviewer()
+    review = parse_review(review_msg)
+```
+
+这里没有使用 `structured_model=PlanReview`。实际运行发现，AgentScope 会把这个参数转换成带 `tool_choice` 的请求，而 DeepSeek 思考模式不支持该组合，会返回 `Thinking mode does not support this tool_choice`。因此审核员按提示词返回 JSON 文本，应用层提取 JSON 后再交给 Pydantic 验证字段类型和评分范围：
+
+```python
+class PlanReview(BaseModel):
+    approved: bool
+    score: int = Field(ge=1, le=10)
+    strengths: list[str]
+    issues: list[str]
+    revision_advice: list[str]
+
+
+def parse_review(msg: Msg) -> PlanReview:
+    data = extract_first_json_object(msg.get_text_content())
+    return PlanReview.model_validate(data)
+```
+
+这样仍然保留了结构校验，但不会触发模型工具调用。结构合法不代表结论可靠，所以代码再做一次验收：
+
+```python
+accepted = review.approved and review.score == 10
+```
+
+将门槛设为满分是本次实践中的主动选择：DeepSeek 经常在初稿阶段直接给出 8～9 分，若按“不低于 8 分”结束，就看不到审核意见如何进入下一轮。现在即使审核员返回 `approved=true、score=9`，流程控制器仍会判定未通过。审核员提示词也同步要求只有 10 分才能设置 `approved=true`。
+
+这个规则适合观察消息闭环，不代表生产环境必须追求 10 分。严格门槛会增加调用次数，也可能让已经可用的计划反复修改。代码最多允许两次修订，因此外层流程最多执行三次规划和三次审核，共六次 Agent 调用，不会无限循环。一次 `ReActAgent` 调用内部可能包含多次模型请求，不能把六次 Agent 调用直接等同于六次 API 调用。
+
+#### 实际运行结果
+
+本次任务是“7 天内掌握 LangGraph 状态与条件边，并完成一个小项目”，每天最多投入 2 小时。第一版已经覆盖状态、条件边和项目实践，审核员给出 9 分，但建议增加项目选题；10 分门槛使流程进入第二轮。规划师收到审核意见后，把第 5 天的单一“简易问答机器人”扩展为三个可选方向，复审得到 10 分后结束。
+
+| 阶段 | 审核或修改结果 | 流程动作 |
+| --- | --- | --- |
+| 初稿 | `approved=true`、9 分；建议增加项目选择 | 代码因分数不等于 10 判定未通过 |
+| 修订 | 第 5 天由单一项目改为问答机器人、任务优先级排序、数据处理流水线三个方向 | 修订稿自动广播给审核员 |
+| 复审 | `approved=true`、10 分，无遗留问题 | 验收通过并结束 |
+
+下面摘录实际控制台输出，省略两版计划中未变化的长段正文：
+
+```text
+AgentScope 学习计划助手启动
+请为目标“掌握 LangGraph 状态与条件边，并完成一个小项目”制定学习计划。
+周期为 7 天，每天最多 2 小时。
+
+学习规划师:
+### LangGraph 状态与条件边学习计划（初稿）
+……
+#### 第5天：项目设计与骨架搭建
+- 项目选题：推荐“简易问答机器人”。
+……
+
+计划审核员:
+{"approved":true,"score":9,
+ "strengths":["计划覆盖了从基础到项目完整的学习路径","每天都有具体可验证的产出"],
+ "issues":["无阻塞性问题，但可增加更多项目选题以供选择"],
+ "revision_advice":["可以考虑在第5天提供多个项目选题，增加灵活性"]}
+
+--- 第 1 次审核 ---
+评分：9/10
+模型结论：通过
+问题：无阻塞性问题，但可增加更多项目选题以供选择
+修改建议：可以考虑在第5天提供多个项目选题，增加灵活性
+
+学习规划师:
+已收到审核意见……将第5天的“项目选题”从单一的“简易问答机器人”
+扩展为三个可选方向：问答机器人、任务优先级排序、数据处理流水线。
+
+计划审核员:
+{"approved":true,"score":10,
+ "strengths":["计划全面覆盖了从基础到项目实践的全过程",
+              "项目提供了三个可选方向，增加了灵活性"],
+ "issues":[],"revision_advice":[]}
+
+--- 第 2 次审核 ---
+评分：10/10
+模型结论：通过
+优点：计划全面覆盖了从基础到项目实践的全过程；
+项目提供了三个可选方向，增加了灵活性
+
+✅ 学习计划已通过审核。
+```
+
+这份日志运行时已经把验收表达式改成 `score == 10`，但打印函数仍按模型的 `approved` 显示“模型结论：通过”，所以第一轮看起来像“通过后仍继续”。当前代码把两种结论分开输出：`审核员 approved` 表示模型字段，`流程验收` 表示代码是否真正结束。
+
+#### 运行方式
+
+使用默认任务：
+
+```bash
+cd code
+python agentscope_study_planner.py
+```
+
+也可以指定目标和时间预算：
+
+```bash
+python agentscope_study_planner.py \
+  --goal "掌握 LangGraph 状态与条件边，并完成一个小项目" \
+  --days 7 \
+  --hours-per-day 2
+```
+
+本案例没有使用工具、并发扇出和分布式 Runtime。它验证的是最小协作闭环：消息广播、独立记忆、结构化审核和有上限的修订。若要扩展，可以用 `fanout_pipeline` 同时加入内容审核员与时间预算审核员，再汇总两份意见。
+
+#### 实践边界
+
+- `MsgHub` 会把参与者回复广播给其他参与者，适合共享上下文；涉及私密消息时应建立不同 Hub，不能默认全员可见。
+- Pydantic 只能保证“有这些字段且类型正确”，不能证明审核意见正确。
+- 两个 Agent 共用同一个 DeepSeek 模型，角色差异主要来自提示词和各自记忆，不等于获得了两个独立信息源。
+- 多 Agent 格式化器会持续合并历史消息。修订轮数越多，输入上下文和成本越高。
+- 这是一条确定的“规划—审核—修订”路径。复杂分支仍应由显式工作流控制，不能只靠 Agent 自己讨论。
 
 ### CAMEL：用角色扮演推动双 Agent 协作
 
@@ -734,6 +1025,11 @@ Checkpointer 通过 `thread_id` 区分状态。当前 CLI 为每个问题生成�
 - [AutoGen AgentChat Quickstart](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/quickstart.html)
 - [AutoGen Termination Conditions](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/termination.html)
 - [AutoGen 0.2 到 0.4 迁移说明](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/migration-guide.html)
+- [AgentScope 1.0.18](https://pypi.org/project/agentscope/1.0.18/)
+- [AgentScope 消息](https://doc.agentscope.io/tutorial/quickstart_message.html)
+- [AgentScope 模型配置](https://doc.agentscope.io/tutorial/task_model.html)
+- [AgentScope Pipeline 与 `MsgHub`](https://doc.agentscope.io/tutorial/task_pipeline.html)
+- [AgentScope 结构化输出](https://doc.agentscope.io/tutorial/task_agent.html#structured-output)
 - [CAMEL Societies：AI User 与 AI Assistant](https://docs.camel-ai.org/key_modules/societies)
 - [CAMEL `RolePlaying` API](https://docs.camel-ai.org/reference/camel.societies.role_playing)
 - [CAMEL 模型配置](https://docs.camel-ai.org/key_modules/models)
