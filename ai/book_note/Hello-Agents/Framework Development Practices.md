@@ -4,7 +4,11 @@
 >
 > 阅读资料：[《Hello-Agents》第六章 6.2：AutoGen](https://datawhalechina.github.io/hello-agents/#/./chapter6/%E7%AC%AC%E5%85%AD%E7%AB%A0%20%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E5%AE%9E%E8%B7%B5?id=_62-%e6%a1%86%e6%9e%b6%e4%b8%80%ef%bc%9aautogen)
 >
+> 阅读资料：[《Hello-Agents》第六章 6.5：LangGraph](https://datawhalechina.github.io/hello-agents/#/./chapter6/%E7%AC%AC%E5%85%AD%E7%AB%A0%20%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E5%AE%9E%E8%B7%B5?id=_65-%e6%a1%86%e6%9e%b6%e5%9b%9b%ef%bc%9alanggraph)
+>
 > 实践：使用 AutoGen 组织产品经理、工程师、代码审查员和测试工程师，协作设计比特币价格展示应用。
+>
+> 实践：使用 LangGraph 构建“理解 → 搜索 → 回答”的三步问答助手。
 
 ### 从手动实现到框架开发
 
@@ -131,7 +135,7 @@ $$
 P_{24h}=\frac{P_{now}}{1+r/100}, \qquad \Delta P=P_{now}-P_{24h}
 $$
 
-其中 $P_{now}$ 是当前价格，$r$ 是 24 小时涨跌幅。这个结果可能与交易平台直接提供的涨跌额存在少量采样误差。
+其中 `P_now` 是当前价格，`r` 是 24 小时涨跌幅。这个结果可能与交易平台直接提供的涨跌额存在少量采样误差。
 
 #### 固定轮询流程
 
@@ -251,6 +255,243 @@ AutoGen 已经处理了异步调用、消息流、轮询和终止检查，但团
 
 本次实践中最有效的设计是限定终止消息来源；最需要改进的地方则是缺少代码执行能力和条件路由。框架解决了“如何让角色持续对话”，下一步要解决的是“如何让对话受到工程证据约束”。
 
+### LangGraph：用状态图控制执行流程
+
+AutoGen 主要通过角色对话推进任务，LangGraph 则要求开发者明确写出状态、节点和边。它更像一个面向 Agent 工作流的状态机运行时：节点负责计算，边负责调度，状态负责在节点之间传递数据。
+
+#### 状态、节点和边
+
+| 组成 | 含义 | 三步问答助手中的实现 |
+| --- | --- | --- |
+| State | 整个流程共享的数据 | 消息、用户需求、搜索词、搜索结果、最终答案、当前步骤 |
+| Node | 读取状态并产生更新的函数 | `understand`、`search`、`answer` |
+| Edge | 决定节点执行顺序 | 三个节点按固定顺序连接 |
+| Reducer | 决定字段如何接收节点更新 | `messages` 使用 `add_messages` 合并 |
+| Checkpointer | 按线程保存执行状态 | `InMemorySaver` |
+
+三步问答助手的图很简单：
+
+```mermaid
+flowchart LR
+    START(["START"]) --> U["understand<br/>理解需求并生成搜索词"]
+    U --> S["search<br/>调用 Tavily"]
+    S --> A["answer<br/>生成最终答案"]
+    A --> END(["END"])
+    S -. "搜索失败：step = search_failed" .-> A
+```
+
+搜索失败不会改变图的走向，流程仍然进入 `answer`。区别在于 `search` 会把 `step` 写成 `search_failed`，回答节点据此改用模型已有知识。这属于“节点内部根据状态选择策略”，还不是条件边。
+
+#### 实践环境
+
+完整代码见 [`langgraph_search_assistant.py`](./code/langgraph_search_assistant.py)，需要 Python 3.10+：
+
+```bash
+pip install -U langgraph langchain-openai tavily-python python-dotenv
+```
+
+`.env` 配置如下，不要提交真实密钥：
+
+```text
+LLM_API_KEY=""
+LLM_MODEL_ID="deepseek-v4-flash"
+LLM_BASE_URL="https://api.deepseek.com"
+TAVILY_API_KEY=""
+```
+
+DeepSeek 官方提供 OpenAI 兼容接口，模型名为 `deepseek-v4-flash`。代码把它设为默认模型，同时保留 `LLM_MODEL_ID` 和 `LLM_BASE_URL`，因此也能切换到其他 OpenAI 兼容服务：
+
+```python
+model = os.getenv("LLM_MODEL_ID", "").strip() or "deepseek-v4-flash"
+base_url = os.getenv("LLM_BASE_URL", "").strip() or "https://api.deepseek.com"
+
+llm = ChatOpenAI(
+    model=model,
+    api_key=os.getenv("LLM_API_KEY"),
+    base_url=base_url,
+    temperature=0.7,
+)
+```
+
+运行方式：
+
+```bash
+cd code
+python langgraph_search_assistant.py
+```
+
+#### 实际运行结果
+
+输入“明天我要去北京，天气怎么样？有合适的景点吗？”后，三个节点依次完成需求理解、实时搜索和答案整理：
+
+```text
+python langgraph_search_assistant.py
+🔍 智能搜索助手启动！
+我会使用 Tavily API 搜索最新信息。
+输入 quit、q、exit 或 退出可结束程序。
+
+🤔 您想了解什么：明天我要去北京，天气怎么样？有合适的景点吗?
+
+============================================================
+🧠 理解阶段：我理解您的需求：理解：用户想知道明天北京的天气情况，并希望获得适合游玩的景点推荐。
+
+搜索词：北京明天天气 景点推荐
+🔍 正在搜索：北京明天天气 景点推荐
+🔍 搜索阶段：✅ 搜索完成！正在为您整理答案……
+
+💡 最终回答：
+根据搜索结果，为您整理北京明天的天气情况及适合游玩的景点推荐如下：
+
+### ☀️ 明日北京天气概况
+
+- **天气状况**：**多云间晴**（Partly Cloudy）
+- **最高气温**：约 **31°C**
+- **降水量**：**无降水**
+- **穿衣建议**：建议穿着轻薄的夏季衣物（如棉质T恤、短裤），注意防晒。
+
+> 数据来源：中国气象局及综合天气信息
+
+### 🏛️ 适合游玩的景点推荐
+
+天气晴好、无雨，非常适合户外及文化景点游览。以下是推荐的热门目的地：
+
+1. **故宫博物院** – 北京必访的历史文化地标，适合半日或一日深度游览。
+2. **颐和园** – 皇家园林，景色宜人，适合散步、拍照。
+3. **天安门广场** – 周边可与故宫一同游览。
+4. **慕田峪长城 / 八达岭长城** – 如果计划去郊区，长城是不错的选择（气温比市区略低，建议带件薄外套）。
+
+> 参考来源：KKday北京旅游攻略
+============================================================
+```
+
+运行结果能直接看到状态的传递：`understand` 将自然语言问题改写为“北京明天天气 景点推荐”，`search` 使用该关键词调用 Tavily，`answer` 再把天气与景点信息整理成最终回复。
+
+“明天”依赖程序运行日期，天气也会持续变化。最终回答虽然写出了来源名称，但没有展示天气数据的具体链接和发布时间，实际出行前仍应打开权威天气页面复核。
+
+#### 三个节点如何分工
+
+| 节点 | 读取的主要字段 | 返回的更新 |
+| --- | --- | --- |
+| `understand` | `messages` 中最新的 `HumanMessage` | 需求总结、搜索词、步骤和一条提示消息 |
+| `search` | `search_query` | Tavily 结果、搜索状态和一条提示消息 |
+| `answer` | `user_query`、`search_results`、`step` | 最终答案、完成状态和一条回答消息 |
+
+图的构建代码只描述执行关系：
+
+```python
+workflow = StateGraph(SearchState)
+workflow.add_node("understand", understand_query_node)
+workflow.add_node("search", tavily_search_node)
+workflow.add_node("answer", generate_answer_node)
+
+workflow.add_edge(START, "understand")
+workflow.add_edge("understand", "search")
+workflow.add_edge("search", "answer")
+workflow.add_edge("answer", END)
+```
+
+业务计算留在节点中，流程顺序留在图中，这正是 LangGraph 的核心分工。
+
+#### `Annotated[list, add_messages]` 是什么类型
+
+实践代码使用了更完整的写法：
+
+```python
+class SearchState(TypedDict):
+    messages: Annotated[list[AnyMessage], add_messages]
+    user_query: str
+    search_query: str
+    search_results: str
+    final_answer: str
+    step: str
+```
+
+`Annotated[T, metadata]` 不会创建一种新的容器类型，它是在基础类型 `T` 后附加元数据：
+
+- `list[AnyMessage]` 是字段的基础类型，运行时保存的仍然是普通列表。
+- `AnyMessage` 表示列表元素是 LangChain 消息，例如 `HumanMessage` 或 `AIMessage`。
+- `add_messages` 是给 LangGraph 读取的 reducer，规定新消息如何并入旧消息。
+
+因此，`Annotated[list, add_messages]` 可以理解为“一个由 `add_messages` 管理更新方式的列表”，但它在 Python 运行时不是 `AddMessagesList` 之类的新类型。
+
+`add_messages` 通常会追加新消息；如果新旧消息的 ID 相同，则用新消息更新旧消息。它还会把兼容的字典消息转换为 LangChain 消息对象，所以比简单的 `operator.add` 更适合对话状态。
+
+#### 为什么节点返回字典，而不是 `SearchState`
+
+原理对前文示例中的 `AgentState` 和本案例的 `SearchState` 完全相同。这里容易混淆“状态结构”和“状态更新”：
+
+- `SearchState` 是 `TypedDict` 定义的状态 Schema，说明完整状态允许有哪些字段以及字段类型。
+- 节点收到的是当前完整状态。
+- 节点返回的是本次产生的部分更新，不需要复制所有字段。
+- `TypedDict` 只提供类型约束，运行时的状态对象本身仍然是普通 `dict`。
+
+LangGraph 官方对节点签名的概括是 `State -> Partial<State>`。Python 没有直接对应的 `Partial` 类型，因此本次节点明确写成：
+
+```python
+def understand_query_node(
+    state: SearchState,
+) -> dict[str, object]:
+    return {
+        "search_query": "LangGraph reducer",
+        "step": "understood",
+        "messages": [AIMessage(content="开始搜索")],
+    }
+```
+
+是的，这里存在自动更新机制。编译后的 LangGraph 运行时会接收节点返回的字典，逐字段写回共享状态：
+
+```mermaid
+flowchart LR
+    OLD["当前 SearchState"] --> NODE["节点读取状态"]
+    NODE --> UPDATE["返回部分更新 dict"]
+    UPDATE --> REDUCER["LangGraph 按字段应用 reducer"]
+    REDUCER --> NEW["生成下一节点看到的新状态"]
+```
+
+具体规则如下：
+
+| 节点返回情况 | LangGraph 的处理 |
+| --- | --- |
+| 返回 `messages` | 调用 `add_messages(旧消息, 新消息)` |
+| 返回 `step`、`search_query` 等普通字段 | 新值覆盖旧值 |
+| 没有返回某个字段 | 保留该字段当前值 |
+| 返回状态 Schema 之外的字段 | 不能作为正常状态字段使用 |
+| 返回列表等非字典对象 | 抛出 `InvalidUpdateError` |
+
+例如，节点只返回：
+
+```python
+{
+    "step": "searched",
+    "messages": [AIMessage(content="搜索完成")],
+}
+```
+
+运行时会覆盖 `step`、合并 `messages`，但保留 `user_query`、`search_query` 和其他未返回字段。这就是观察到“返回字典字段与 `SearchState` 一致，随后状态自动更新”的原因。
+
+节点不应直接修改传入的状态。尤其是带 reducer 的 `messages`：如果先在原列表上追加消息，再把完整状态返回，运行时还会执行一次 `add_messages`，容易产生重复或难以追踪的副作用。返回最小的更新字典更清楚。
+
+#### Checkpointer 不等于自动多轮对话
+
+本案例使用：
+
+```python
+app = workflow.compile(checkpointer=InMemorySaver())
+```
+
+Checkpointer 通过 `thread_id` 区分状态。当前 CLI 为每个问题生成新的 `search-session-N`，所以多个问题彼此独立；“可以持续交互”只表示程序会继续接收输入，不代表后一个问题自动继承前一个问题的语境。
+
+如果要做真正的上下文对话，需要为同一会话复用 `thread_id`，并设计哪些历史消息继续进入下一轮。本次代码保持原案例的一问一答边界，没有扩展成多轮聊天助手。
+
+#### 这次实践的认识
+
+- LangGraph 不负责自动规划流程，它负责可靠地执行开发者定义的流程。
+- 显式状态让中间结果可检查，节点失败时也容易定位问题。
+- 当前流程虽然调用了 LLM 和搜索工具，但图本身是确定的，尚未体现 LangGraph 的条件边和循环优势。
+- `step` 目前只控制回答策略。若要在搜索失败时重试、改写关键词或转人工，应使用条件边建立真正的分支或循环。
+- 提示词文本解析仍有脆弱性。生产环境可以改用结构化输出，但这不属于本次原案例范围。
+- `InMemorySaver` 只保存在进程内，程序退出后状态消失；长期运行需要持久化 checkpointer。
+
 ### 参考资料
 
 - [Hello-Agents 第六章：框架开发实践](https://datawhalechina.github.io/hello-agents/#/./chapter6/%E7%AC%AC%E5%85%AD%E7%AB%A0%20%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E5%AE%9E%E8%B7%B5)
@@ -259,3 +500,7 @@ AutoGen 已经处理了异步调用、消息流、轮询和终止检查，但团
 - [AutoGen AgentChat Quickstart](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/quickstart.html)
 - [AutoGen Termination Conditions](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/termination.html)
 - [AutoGen 0.2 到 0.4 迁移说明](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/migration-guide.html)
+- [LangGraph 官方概览](https://docs.langchain.com/oss/python/langgraph/overview)
+- [LangGraph Graph API](https://docs.langchain.com/oss/python/langgraph/use-graph-api)
+- [LangGraph `add_messages` API](https://reference.langchain.com/python/langgraph/graph/message)
+- [DeepSeek 模型与 API 地址](https://api-docs.deepseek.com/quick_start/pricing)
