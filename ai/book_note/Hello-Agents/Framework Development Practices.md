@@ -4,9 +4,13 @@
 >
 > 阅读资料：[《Hello-Agents》第六章 6.2：AutoGen](https://datawhalechina.github.io/hello-agents/#/./chapter6/%E7%AC%AC%E5%85%AD%E7%AB%A0%20%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E5%AE%9E%E8%B7%B5?id=_62-%e6%a1%86%e6%9e%b6%e4%b8%80%ef%bc%9aautogen)
 >
+> 阅读资料：[《Hello-Agents》第六章 6.4：CAMEL](https://datawhalechina.github.io/hello-agents/#/./chapter6/%E7%AC%AC%E5%85%AD%E7%AB%A0%20%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E5%AE%9E%E8%B7%B5?id=_64-%e6%a1%86%e6%9e%b6%e4%b8%89%ef%bc%9acamel)
+>
 > 阅读资料：[《Hello-Agents》第六章 6.5：LangGraph](https://datawhalechina.github.io/hello-agents/#/./chapter6/%E7%AC%AC%E5%85%AD%E7%AB%A0%20%E6%A1%86%E6%9E%B6%E5%BC%80%E5%8F%91%E5%AE%9E%E8%B7%B5?id=_65-%e6%a1%86%e6%9e%b6%e5%9b%9b%ef%bc%9alanggraph)
 >
 > 实践：使用 AutoGen 组织产品经理、工程师、代码审查员和测试工程师，协作设计比特币价格展示应用。
+>
+> 实践：使用 CAMEL 组织心理学家与心理学科普作家，协作编写《拖延症心理学》。
 >
 > 实践：使用 LangGraph 构建“理解 → 搜索 → 回答”的三步问答助手。
 
@@ -255,6 +259,182 @@ AutoGen 已经处理了异步调用、消息流、轮询和终止检查，但团
 
 本次实践中最有效的设计是限定终止消息来源；最需要改进的地方则是缺少代码执行能力和条件路由。框架解决了“如何让角色持续对话”，下一步要解决的是“如何让对话受到工程证据约束”。
 
+### CAMEL：用角色扮演推动双 Agent 协作
+
+CAMEL 的 `RolePlaying` 为两个 Agent 建立固定的协作协议：AI User 负责生成指令、推动任务，AI Assistant 负责执行指令、返回结果。`user` 和 `assistant` 在这里首先是协议位置，不等同于现实产品中的真人用户和聊天助手。
+
+#### 协议角色不等于业务角色
+
+| 协议位置 | 框架职责 | 本次业务角色 |
+| --- | --- | --- |
+| AI User | 提出下一步指令、审阅结果、推动任务 | 心理学家 |
+| AI Assistant | 执行指令、提交本轮产物 | 心理学科普作家 |
+
+心理学家掌握学科知识，适合规划内容、提出专业要求、核查事实并负责终审；科普作家擅长组织语言和叙事，适合撰写及修改正文。这种映射同时符合 CAMEL 的对话协议和职业直觉：
+
+```mermaid
+flowchart LR
+    P["心理学家<br/>AI User / 指令发起者"] -->|"专业要求、事实核查、修订意见"| W["心理学科普作家<br/>AI Assistant / 指令执行者"]
+    W -->|"章节草稿、修改稿"| P
+    P -->|"终审通过并输出 CAMEL_TASK_DONE"| END["结束"]
+    LIMIT["最多 30 轮"] -. "安全上限" .-> END
+```
+
+教材案例采用了相反的映射：
+
+```python
+user_role_name = "作家"
+assistant_role_name = "心理学家"
+```
+
+这能运行，因为 AI User 本来就负责发指令；但运行结果会变成“作家要求心理学家写正文”。框架机制只能解释程序为何这样运行，不能证明职业分工合理。若坚持这种顺序，至少应把“作家”改名为“心理学内容主编”；本次则直接调整为：
+
+```python
+user_role_name = "心理学家"
+assistant_role_name = "心理学科普作家"
+```
+
+这里需要区分两件事：理解 CAMEL 的 `user/assistant` 协议，不等于接受命名与职责错位的案例设计。
+
+#### 改造后的 AI 科普电子书案例
+
+实践目标仍是合作编写约 8000～10000 字的《拖延症心理学》，面向普通读者解释拖延机制、常见类型和影响因素，并提供可执行的改善建议。提示词额外写清了两类约束：
+
+- 心理学家负责框架、专业审查和最终验收，不承担正文写作。
+- 科普作家负责成稿，不虚构研究，也不把写作任务反向交回心理学家。
+
+完整代码见 [`camel_ebook.py`](./code/camel_ebook.py)。本次沿用教材的 CAMEL 版本，模型后端改为 DeepSeek：
+
+```bash
+pip install "camel-ai==0.2.75" python-dotenv
+```
+
+环境变量复用 [`.env.example`](./code/.env.example) 中的配置：
+
+```text
+LLM_API_KEY=""
+LLM_MODEL_ID="deepseek-v4-flash"
+LLM_BASE_URL="https://api.deepseek.com"
+```
+
+代码将 `deepseek-v4-flash` 和 DeepSeek 官方 API 地址设为默认值，因此必须配置的只有 `LLM_API_KEY`。仍然保留模型和地址环境变量，方便切换到 `deepseek-v4-pro` 或代理地址。
+
+运行方式：
+
+```bash
+cd code
+python camel_ebook.py
+```
+
+模型和会话的关键配置如下：
+
+```python
+model = ModelFactory.create(
+    model_platform=ModelPlatformType.DEEPSEEK,
+    model_type=model_id,
+    url=base_url,
+    api_key=api_key,
+    model_config_dict={
+        "temperature": 0.3,
+        "max_tokens": 8192,
+    },
+)
+
+session = RolePlaying(
+    user_role_name="心理学家",
+    assistant_role_name="心理学科普作家",
+    task_prompt=TASK_PROMPT,
+    model=model,
+    with_task_specify=False,
+)
+```
+
+`with_task_specify=False` 表示不再让额外的任务细化 Agent 改写需求。角色职责、内容结构和完成条件已经写进 `TASK_PROMPT`，关闭它可以减少一次模型调用，也避免细化阶段重新解释角色分工。
+
+#### 对话循环和终止条件
+
+`init_chat()` 生成启动消息；此后每轮调用 `step(input_msg)`。方法返回 `assistant_response` 和 `user_response`，下一轮再把本轮 Assistant 的消息作为输入：
+
+```python
+input_msg = session.init_chat()
+
+for turn in range(1, chat_turn_limit + 1):
+    assistant_response, user_response = session.step(input_msg)
+    ...
+    input_msg = assistant_response.msg
+```
+
+返回值顺序容易造成误解：虽然元组里 `assistant_response` 在前，但一轮对话的业务顺序仍是心理学家先提出要求，科普作家再执行。控制台因此按“心理学家 → 科普作家”的顺序显示消息。
+
+本次设置了三层结束保护：
+
+1. 任一 Agent 被 CAMEL 标记为 `terminated` 时停止，并显示框架给出的原因。
+2. 只有心理学家将 `<CAMEL_TASK_DONE>` 作为独立一行输出，才算终审通过。
+3. 最多执行 30 轮，避免模型无法达成一致时持续消耗 Token。
+
+完成标记只检查 AI User 的响应。科普作家即使在提示词复述或正文中提到该文本，也无权提前结束任务。这与 AutoGen 实践中限定 `TERMINATE` 来源是同一个思路：完成条件不仅要有文本，还要有明确的签发者。
+
+#### 实际运行结果
+
+运行 `python camel_ebook.py` 后，两个 Agent 共协作 9 轮，完成了大纲、引言、五个章节和总结。模型在终稿中自述全文约 9500 字；控制台没有输出 Token 或耗时统计，因此这里只记录对话过程，不推算调用成本。
+
+| 轮次 | 心理学家的主要指令 | 科普作家的产出 |
+| --- | --- | --- |
+| 1 | 规划结构并指定可用理论 | 引言、五章和总结的大纲 |
+| 2 | 要求以生活场景开篇，区分拖延与懒惰 | 引言草稿 |
+| 3 | 简化神经学术语、核查普遍率数据 | 修订引言并撰写第一章 |
+| 4 | 补充研究出处、统一术语和章节衔接 | 修订前文并撰写第二章 |
+| 5 | 指定完美主义、自我效能、人格与动机四部分 | 第三章草稿 |
+| 6 | 要求补充冲动性的研究依据 | 修订第三章并撰写第四章 |
+| 7 | 细化文化差异和数字干扰的证据 | 修订第四章并撰写第五章 |
+| 8 | 解释 ACT“去融合”，完成全书收束 | 修订第五章并撰写总结 |
+| 9 | 独立输出 `<CAMEL_TASK_DONE>` | 确认全书完成，程序结束 |
+
+关键控制台输出如下：
+
+```text
+======================== 第 1 轮 ========================
+
+心理学家（AI User / 指令发起者）：
+Instruction: 请撰写全书大纲草案……
+
+心理学科普作家（AI Assistant / 指令执行者）：
+Solution: 以下是我根据您的要求起草的《拖延症心理学》全书大纲草案……
+
+...
+
+======================== 第 9 轮 ========================
+
+心理学家（AI User / 指令发起者）：
+<CAMEL_TASK_DONE>
+
+心理学科普作家（AI Assistant / 指令执行者）：
+我已按照所有要求完成了《拖延症心理学》全书……
+
+心理学家已完成终审，电子书协作结束。
+```
+
+这次结果验证了调整后的职责关系。心理学家没有代写正文，而是反复检查引用、术语和逻辑，例如要求为“大学生拖延比例”“拖延与创造力”“冲动性”和数字干扰补充依据；科普作家则根据意见持续成稿。
+
+运行也暴露了三个问题：
+
+- 首轮出现 `Model provided globally` 警告，因为同一个模型实例被传给两个 Agent。这符合本案例的配置方式，不影响执行。
+- 原配置没有设置 `max_tokens`，CAMEL 将其回退为 `999_999_999` 并连续告警两次。代码现已明确设置为 `8192`，足以覆盖本次单轮章节输出，也避免不合理的默认上限。
+- 日志中有少量汉字显示为 `�`。仅凭粘贴后的日志无法判断是模型响应、终端显示还是复制过程造成的；若要保存正式书稿，应把响应按 UTF-8 直接写入文件后再检查。
+
+第 9 轮还有一个协议细节：`RolePlaying.step()` 会先生成心理学家的指令，再生成科普作家的响应，最后才把两条消息一起返回。因此心理学家已经给出完成标记时，科普作家仍会产生一条确认回复，外层循环随后才能结束。若要省掉这次额外调用，需要拆开两个 Agent 的执行步骤，而不是继续使用封装后的 `step()`。
+
+虽然心理学家多次要求补充研究出处，模型声称“引用真实”仍不能当作外部核验结果。正式发布前仍应逐条检查论文、统计数字和理论归属，尤其是“超过 80% 的大学生拖延”和“实施意图使执行率提高两到三倍”等量化表述。
+
+#### 这类协作的边界
+
+- `RolePlaying` 是严格的“发指令—执行”协作，不是两个地位完全对等的共同作者。若任务需要自由讨论，应改用群聊或显式流程。
+- 心理学家仍由语言模型扮演，没有检索工具时只能做模型内部的事实审查。涉及研究结论和引用时，还需要接入可靠资料源并保留出处。
+- 8000～10000 字的长文在多轮对话中容易出现章节重复、术语漂移和上下文增长。更稳妥的工程方案是按结构生成章节，再增加一次全书合并与一致性检查。
+- 文本完成标记仍可能被模型误用。生产流程应把验收结果改成结构化字段，而不是只依赖字符串匹配。
+
+这次修改没有改变 CAMEL 的运行机制，只是让业务角色与机制中的职责对齐。角色名称不是装饰，它会影响提示词理解、输出质量，也决定读者能否准确看懂协作关系。
+
 ### LangGraph：用状态图控制执行流程
 
 AutoGen 主要通过角色对话推进任务，LangGraph 则要求开发者明确写出状态、节点和边。它更像一个面向 Agent 工作流的状态机运行时：节点负责计算，边负责调度，状态负责在节点之间传递数据。
@@ -500,6 +680,10 @@ Checkpointer 通过 `thread_id` 区分状态。当前 CLI 为每个问题生成�
 - [AutoGen AgentChat Quickstart](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/quickstart.html)
 - [AutoGen Termination Conditions](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/tutorial/termination.html)
 - [AutoGen 0.2 到 0.4 迁移说明](https://microsoft.github.io/autogen/stable/user-guide/agentchat-user-guide/migration-guide.html)
+- [CAMEL Societies：AI User 与 AI Assistant](https://docs.camel-ai.org/key_modules/societies)
+- [CAMEL `RolePlaying` API](https://docs.camel-ai.org/reference/camel.societies.role_playing)
+- [CAMEL 模型配置](https://docs.camel-ai.org/key_modules/models)
+- [CAMEL 安装说明](https://docs.camel-ai.org/get_started/installation)
 - [LangGraph 官方概览](https://docs.langchain.com/oss/python/langgraph/overview)
 - [LangGraph Graph API](https://docs.langchain.com/oss/python/langgraph/use-graph-api)
 - [LangGraph `add_messages` API](https://reference.langchain.com/python/langgraph/graph/message)
