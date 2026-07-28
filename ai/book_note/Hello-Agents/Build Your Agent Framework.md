@@ -4,7 +4,9 @@
 >
 > 阅读资料：[《Hello-Agents》第七章 7.2：HelloAgentsLLM 扩展](https://datawhalechina.github.io/hello-agents/#/./chapter7/%E7%AC%AC%E4%B8%83%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E4%BD%A0%E7%9A%84Agent%E6%A1%86%E6%9E%B6?id=_72-helloagentsllm%e6%89%a9%e5%b1%95)
 >
-> 实践：沿着章节的演进路线升级同一个 `HelloAgentsLLM`，统一接入云端服务、vLLM 和 Ollama。
+> 阅读资料：[《Hello-Agents》第七章 7.3：框架接口实现](https://datawhalechina.github.io/hello-agents/#/./chapter7/%E7%AC%AC%E4%B8%83%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E4%BD%A0%E7%9A%84Agent%E6%A1%86%E6%9E%B6?id=_73-%e6%a1%86%e6%9e%b6%e6%8e%a5%e5%8f%a3%e5%ae%9e%e7%8e%b0)
+>
+> 实践：沿着章节的演进路线持续完善 `HelloAgents`，实现统一 LLM、Message、Config、异常和 Agent 抽象接口。
 
 ### 框架整体架构设计
 
@@ -369,19 +371,21 @@ HelloAgents/
 │   ├── __init__.py
 │   └── core/
 │       ├── __init__.py
+│       ├── agent.py
+│       ├── config.py
 │       ├── exceptions.py
-│       └── llm.py
+│       ├── llm.py
+│       └── message.py
 └── examples/
     ├── __init__.py
+    ├── core_interfaces_demo.py
     └── llm_provider_demo.py
 ```
-
-这个目录与 7.1 的框架蓝图一致。后续学习 Message、Agent 和工具系统时，可以继续在 `hello_agents/` 包内增加模块，不需要迁移本章代码。
 
 安装客户端依赖：
 
 ```bash
-python -m pip install openai python-dotenv
+python -m pip install openai python-dotenv pydantic
 ```
 
 复制并填写本章环境变量：
@@ -466,10 +470,162 @@ CLI 没有提供 `--api-key` 参数，避免密钥进入终端历史。云端 Ke
 
 规则推断可以减少本地演示的配置量，但显式配置更适合生产环境，因为配置文件和启动命令能够直接说明请求将被发往哪里。
 
+### 框架接口实现
+
+`HelloAgentsLLM` 解决了模型调用问题，7.3 继续补齐框架内部的公共约定：
+
+| 组件 | 负责什么 | 不负责什么 |
+| --- | --- | --- |
+| `Message` | 统一消息格式，保存角色、正文和附加信息 | 不管理整段对话 |
+| `Config` | 集中保存框架配置，支持从环境变量读取 | 不主动修改已经创建的 LLM |
+| `Agent` | 规定构造参数、`run()` 入口和历史管理方法 | 不实现具体推理流程 |
+| `exceptions` | 建立统一异常类型 | 不决定异常如何恢复 |
+
+这一层只定义稳定接口。SimpleAgent、ReAct、Reflection 和 Plan-and-Solve 的执行逻辑仍留到后续章节实现。
+
+#### Message：统一消息格式
+
+模型 API 接收的是字典，框架内部还需要时间、元数据和类型约束。如果始终直接传递字典，字段拼写错误和附加信息混入 API 请求都不容易发现。
+
+```python
+MessageRole = Literal["user", "assistant", "system", "tool"]
+
+class Message(BaseModel):
+    content: str
+    role: MessageRole
+    timestamp: datetime = Field(default_factory=datetime.now)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, str]:
+        return {"role": self.role, "content": self.content}
+```
+
+`Message` 采用“对内丰富、对外兼容”的设计：
+
+- `role` 只允许四种标准角色，Pydantic 会在运行时校验非法值。
+- `timestamp` 和 `metadata` 留在框架内部，可用于日志、追踪和后续上下文工程。
+- `to_dict()` 只输出模型需要的 `role` 与 `content`，避免把内部字段发送给 API。
+- `Field(default_factory=...)` 为每条消息分别创建时间和元数据，避免共享可变默认值。
+
+完整代码见 [`message.py`](./code/HelloAgents/hello_agents/core/message.py)。
+
+#### Config：集中配置
+
+`Config` 将散落在 Agent 中的参数收拢到一个对象中：
+
+```python
+class Config(BaseModel):
+    default_model: str = "gpt-3.5-turbo"
+    default_provider: str = "openai"
+    temperature: float = 0.7
+    max_tokens: int | None = None
+    debug: bool = False
+    log_level: str = "INFO"
+    max_history_length: int = 100
+```
+
+直接使用 `Config()` 会读取类中的默认值；需要加载环境变量时，应显式调用 `Config.from_env()`：
+
+```python
+config = Config.from_env()
+```
+
+环境变量配置已补充到 [`.env.example`](./code/HelloAgents/.env.example)。`to_dict()` 同时兼容 Pydantic v1 的 `dict()` 和 v2 的 `model_dump()`。
+
+这里有两个容易混淆的边界：
+
+- `Config` 只是配置数据，不会自动把 `temperature` 写入已经创建的 `HelloAgentsLLM`。
+- `max_history_length` 是预留配置，当前 `Agent.add_message()` 还没有执行截断。
+
+它们需要由后续具体 Agent 在构造和运行时接入。完整代码见 [`config.py`](./code/HelloAgents/hello_agents/core/config.py)。
+
+#### Agent：定义统一入口
+
+`Agent` 继承 `ABC`，并用 `@abstractmethod` 约束所有子类实现 `run()`：
+
+```python
+class Agent(ABC):
+    def __init__(self, name, llm, system_prompt=None, config=None):
+        self.name = name
+        self.llm = llm
+        self.system_prompt = system_prompt
+        self.config = config or Config()
+        self._history: list[Message] = []
+
+    @abstractmethod
+    def run(self, input_text: str, **kwargs) -> str:
+        raise NotImplementedError
+```
+
+基类提供 `add_message()`、`get_history()` 和 `clear_history()`，具体子类只需关注如何组织消息、调用模型和生成答案。`get_history()` 返回列表副本，外部清空或追加这个副本不会改变 Agent 内部历史。
+
+`Agent` 本身不会自动插入系统提示词，也不会自动调用 LLM。后续子类的典型消息流是：
+
+```mermaid
+sequenceDiagram
+    participant U as "调用方"
+    participant C as "具体 Agent.run()"
+    participant A as "Agent 基类能力"
+    participant M as "Message"
+    participant L as "HelloAgentsLLM"
+
+    U->>C: "输入文本"
+    C->>M: "构造 user Message"
+    C->>A: "add_message()"
+    C->>A: "get_history()"
+    A-->>C: "历史副本"
+    C->>M: "逐条 to_dict()"
+    C->>L: "invoke() 或 think()"
+    L-->>C: "模型回复"
+    C->>M: "构造 assistant Message"
+    C->>A: "add_message()"
+    C-->>U: "返回最终文本"
+```
+
+这张图描述的是子类应该实现的流程，不是基类已经完成的隐式行为。完整接口见 [`agent.py`](./code/HelloAgents/hello_agents/core/agent.py)。
+
+#### 异常边界
+
+所有框架异常都继承 `HelloAgentsException`：
+
+```text
+HelloAgentsException
+├── LLMException
+├── AgentException
+├── ConfigException
+└── ToolException
+```
+
+调用方可以只捕获基类统一处理，也可以针对模型、Agent、配置和工具错误分别恢复。7.3 先建立类型边界，具体模块将在后续迭代中逐步使用这些细分异常。代码见 [`exceptions.py`](./code/HelloAgents/hello_agents/core/exceptions.py)。
+
+#### 接口实践
+
+[`core_interfaces_demo.py`](./code/HelloAgents/examples/core_interfaces_demo.py) 实现了一个最小 `EchoAgent`。它使用确定性的 `DemoLLM`，只验证消息转换、抽象接口和历史管理，不发起模型请求。
+
+```bash
+cd code/HelloAgents
+python -m examples.core_interfaces_demo
+```
+
+运行结果：
+
+```text
+Agent(name=接口演示助手, provider=mock)
+已收到：解释 Message 的作用
+历史消息：
+[user] 解释 Message 的作用
+[assistant] 已收到：解释 Message 的作用
+外部清空副本后，内部历史仍有 2 条
+```
+
+这一步验证的是框架契约，而不是 Agent 的智能程度。真正的推理循环会在后续的 `Agent` 接口继续实现。
+
 ### 参考资料
 
 - [《Hello-Agents》第七章：构建你的智能体框架](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter7/%E7%AC%AC%E4%B8%83%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E4%BD%A0%E7%9A%84Agent%E6%A1%86%E6%9E%B6.md)
 - [HelloAgents `learn_version`：`core/llm.py`](https://github.com/jjyaoao/HelloAgents/blob/learn_version/hello_agents/core/llm.py)
+- [HelloAgents `learn_version`：`core` 接口](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/core)
+- [Pydantic Migration Guide](https://docs.pydantic.dev/latest/migration/)
 - [vLLM OpenAI-Compatible Server](https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/)
 - [Ollama OpenAI compatibility](https://docs.ollama.com/api/openai-compatibility)
 - [Ollama `qwen3:0.6b`](https://ollama.com/library/qwen3:0.6b)
@@ -480,6 +636,6 @@ CLI 没有提供 `--api-key` 参数，避免密钥进入终端历史。云端 Ke
 - 核心接口保持稳定，具体 Agent 和工具才能独立扩展。
 - “万物皆工具”统一了调用方式，但不能忽略 Memory、RAG 和协议组件的状态与生命周期。
 - HelloAgentsLLM 隔离了 Agent 与模型部署细节，云端服务、vLLM 和 Ollama 可以复用同一调用入口。
-- 实践代码应持续升级 `hello_agents.core.llm.HelloAgentsLLM`，避免为单节内容建立平行实现。
-- 示例代码必须核对真实的构造函数签名；框架演进时，再有计划地扩展接口并兼容旧参数。
 - Provider 自动检测只是确定性规则匹配；显式选择比隐式推断更容易排查和复现。
+- `Message` 统一内部消息格式，`Config` 集中保存配置，但两者都不替具体 Agent 执行业务逻辑。
+- `Agent` 基类只规定依赖、历史管理和 `run()` 入口，具体的消息编排与推理循环由子类实现。

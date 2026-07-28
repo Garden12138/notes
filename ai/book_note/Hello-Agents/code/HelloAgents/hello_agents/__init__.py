@@ -1,5 +1,29 @@
 """HelloAgents learning framework."""
 
-from .core.llm import HelloAgentsLLM, SUPPORTED_PROVIDERS
+from .core import (
+    Agent,
+    AgentException,
+    Config,
+    ConfigException,
+    HelloAgentsException,
+    HelloAgentsLLM,
+    LLMException,
+    Message,
+    MessageRole,
+    SUPPORTED_PROVIDERS,
+    ToolException,
+)
 
-__all__ = ["HelloAgentsLLM", "SUPPORTED_PROVIDERS"]
+__all__ = [
+    "Agent",
+    "AgentException",
+    "Config",
+    "ConfigException",
+    "HelloAgentsException",
+    "HelloAgentsLLM",
+    "LLMException",
+    "Message",
+    "MessageRole",
+    "SUPPORTED_PROVIDERS",
+    "ToolException",
+]
