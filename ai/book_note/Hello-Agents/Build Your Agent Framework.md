@@ -407,6 +407,32 @@ python -m examples.llm_provider_demo \
   --prompt "请解释什么是 ReAct Agent。"
 ```
 
+控制台输出：
+
+```bash
+python -m examples.llm_provider_demo \
+  --provider vllm \
+  --prompt "请解释什么是 ReAct Agent。"
+当前连接：provider=vllm, model=Qwen/Qwen1.5-0.5B-Chat, base_url=http://127.0.0.1:8000/v1
+🧠 正在调用 Qwen/Qwen1.5-0.5B-Chat 模型...
+✅ 大语言模型响应成功:
+ReAct Agent 是一种用于模拟和预测的机器学习模型，它能够根据输入数据进行自我调整和优化，以达到最佳的预测结果。它通常用于预测未来事件，例如股票价格、天气预报等。ReAct Agent 通过使用神经网络来模拟人类大脑中的神经元网络，从而实现预测和学习。
+
+python -m examples.llm_provider_demo \
+  --provider ollama \
+  --prompt "请解释什么是 ReAct Agent。"
+当前连接：provider=ollama, model=qwen3:0.6b, base_url=http://127.0.0.1:11434/v1
+🧠 正在调用 qwen3:0.6b 模型...
+✅ 大语言模型响应成功:
+ReAct Agent 是一种基于强化学习的多智能体协作系统，通过模拟人类交互方式，实现自主学习与协作。其核心特点包括：
+
+1. **多智能体协作**：通过多个智能体的交互，实现复杂任务的自动化执行。
+2. **强化学习机制**：通过奖励信号不断优化决策策略。
+3. **动态适应性**：能够根据环境变化实时调整策略。
+
+应用场景包括但不限于工业自动化、智能客服等场景，强调在复杂环境中实现高效协作。
+```
+
 CLI 没有提供 `--api-key` 参数，避免密钥进入终端历史。云端 Key 只从 `.env` 读取。完整入口见 [`examples/llm_provider_demo.py`](./code/HelloAgents/examples/llm_provider_demo.py)，配置模板见 [`.env.example`](./code/HelloAgents/.env.example)。
 
 #### Provider 规则推断
