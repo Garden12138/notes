@@ -6,7 +6,7 @@
 >
 > 阅读资料：[《Hello-Agents》第七章 7.3：框架接口实现](https://datawhalechina.github.io/hello-agents/#/./chapter7/%E7%AC%AC%E4%B8%83%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E4%BD%A0%E7%9A%84Agent%E6%A1%86%E6%9E%B6?id=_73-%e6%a1%86%e6%9e%b6%e6%8e%a5%e5%8f%a3%e5%ae%9e%e7%8e%b0)
 >
-> 实践：沿着章节的演进路线持续完善 `HelloAgents`，实现统一 LLM、Message、Config、异常和 Agent 抽象接口。
+> 实践：沿着章节的演进路线持续完善 `HelloAgents`，实现统一 LLM、Message、Config、异常、Agent 抽象接口，以及文章后续示例依赖的四个具体 Agent 父类。
 
 ### 框架整体架构设计
 
@@ -481,7 +481,58 @@ CLI 没有提供 `--api-key` 参数，避免密钥进入终端历史。云端 Ke
 | `Agent` | 规定构造参数、`run()` 入口和历史管理方法 | 不实现具体推理流程 |
 | `exceptions` | 建立统一异常类型 | 不决定异常如何恢复 |
 
-这一层只定义稳定接口。SimpleAgent、ReAct、Reflection 和 Plan-and-Solve 的执行逻辑仍留到后续章节实现。
+#### 先补齐文章缺失的继承链
+
+7.3 到 `Agent` 抽象类便结束了。紧接着的 7.4 却直接编写 `MySimpleAgent(SimpleAgent)`、`MyReActAgent(ReActAgent)` 等子类，没有先展示四个父类的完整实现。只复制正文代码，会出现两个问题：
+
+- `SimpleAgent`、`ReActAgent`、`ReflectionAgent`、`PlanAndSolveAgent` 无处导入。
+- 子类调用的 `_get_enhanced_system_prompt()`、`_parse_tool_calls()`、`planner`、`executor` 等成员也没有来源。
+
+官方 `learn_version` 分支保存了这些父类。本次实践以该分支为依据补齐实现，而不是重新设计另一套 Agent：
+
+```mermaid
+classDiagram
+    class Agent {
+        +name
+        +llm
+        +system_prompt
+        +config
+        +run(input_text)*
+        +add_message(message)
+        +get_history()
+        +clear_history()
+    }
+    class SimpleAgent {
+        +run(input_text)
+        +stream_run(input_text)
+        +add_tool(tool)
+    }
+    class ReActAgent {
+        +run(input_text)
+        +add_tool(tool)
+    }
+    class ReflectionAgent {
+        +run(input_text)
+        +memory
+    }
+    class PlanAndSolveAgent {
+        +run(input_text)
+        +planner
+        +executor
+    }
+
+    Agent <|-- SimpleAgent
+    Agent <|-- ReActAgent
+    Agent <|-- ReflectionAgent
+    Agent <|-- PlanAndSolveAgent
+```
+
+这里要区分两层“基类”：
+
+- `Agent` 是抽象基类，只定义框架契约，不能直接实例化。
+- 四种范式类已经实现 `run()`，可以直接使用；它们同时也是 7.4 中 `MySimpleAgent` 等定制类的父类。
+
+这样既保持了 7.3 的接口边界，也让后续继承示例拥有真实、可运行的基础。
 
 #### Message：统一消息格式
 
@@ -559,7 +610,7 @@ class Agent(ABC):
 
 基类提供 `add_message()`、`get_history()` 和 `clear_history()`，具体子类只需关注如何组织消息、调用模型和生成答案。`get_history()` 返回列表副本，外部清空或追加这个副本不会改变 Agent 内部历史。
 
-`Agent` 本身不会自动插入系统提示词，也不会自动调用 LLM。后续子类的典型消息流是：
+`Agent` 本身不会自动插入系统提示词，也不会自动调用 LLM。具体父类负责消费输入、组织消息并调用模型：
 
 ```mermaid
 sequenceDiagram
@@ -582,7 +633,108 @@ sequenceDiagram
     C-->>U: "返回最终文本"
 ```
 
-这张图描述的是子类应该实现的流程，不是基类已经完成的隐式行为。完整接口见 [`agent.py`](./code/HelloAgents/hello_agents/core/agent.py)。
+这张图描述的是具体 Agent 的实现职责，不是 `Agent` 基类已经完成的隐式行为。完整接口见 [`agent.py`](./code/HelloAgents/hello_agents/core/agent.py)。
+
+#### 四种 Agent 父类
+
+四种实现共享相同的构造依赖和 `run(input_text, **kwargs) -> str` 入口，但消息编排方式不同：
+
+| 父类 | 核心循环 | 额外依赖 | 终止方式 |
+| --- | --- | --- | --- |
+| `SimpleAgent` | 用户消息 → LLM → 回复 | 可选 `ToolRegistry` | 模型不再输出工具标记，或达到工具迭代上限 |
+| `ReActAgent` | Thought → Action → Observation | `ToolRegistry` | 输出 `Finish[...]`，或达到 `max_steps` |
+| `ReflectionAgent` | 初稿 → 反思 → 修改 | 短期 `Memory` | 独立输出“无需改进”，或达到 `max_iterations` |
+| `PlanAndSolveAgent` | 生成静态计划 → 逐步执行 | `Planner`、`Executor` | 所有计划步骤执行完毕，或计划解析失败 |
+
+**SimpleAgent**
+
+`SimpleAgent` 是普通对话入口。它先放入系统提示词，再拼接 `_history` 和当前用户消息；如果没有启用工具，调用一次 `llm.invoke()` 即可。
+
+启用工具后，它沿用文章的文本协议：
+
+```text
+[TOOL_CALL:工具名:参数]
+```
+
+父类解析标记、执行工具，再把结果作为新的用户消息交还给模型。这个协议便于观察，但依赖模型严格输出文本格式，不如原生 Function Calling 稳定。实现见 [`simple_agent.py`](./code/HelloAgents/hello_agents/agents/simple_agent.py)。
+
+```mermaid
+flowchart LR
+    U["用户输入"] --> M["组装系统提示、历史和当前消息"]
+    M --> L["调用 LLM"]
+    L --> J{"包含 TOOL_CALL？"}
+    J -- "否" --> R["保存并返回回答"]
+    J -- "是" --> T["解析参数并执行工具"]
+    T --> O["追加工具结果"]
+    O --> L
+```
+
+**ReActAgent**
+
+`ReActAgent` 每轮要求模型输出 `Thought` 和 `Action`。`Action` 只能是 `tool[input]` 或 `Finish[answer]`。工具执行结果记录为 `Observation`，并在下一轮重新放入提示词。
+
+```text
+Thought: 需要把文本转换成大写。
+Action: upper[hello]
+Observation: HELLO
+```
+
+`current_history` 是单次任务的推理轨迹，每次 `run()` 都会重置；框架的 `_history` 只保存最终用户消息和答案。这样不会把内部推理过程混入普通对话历史。实现见 [`react_agent.py`](./code/HelloAgents/hello_agents/agents/react_agent.py)。
+
+**ReflectionAgent**
+
+`ReflectionAgent` 先生成初稿，然后重复“评审—修改”。它用一个很小的 `Memory` 保存 `execution` 和 `reflection` 记录，下一轮修改只读取最近一次执行结果。
+
+停止协议必须判断完整反馈，而不是判断是否包含“无需改进”。例如：
+
+```text
+还需补充例子；目前不满足“无需改进”的条件。
+```
+
+这句话显然要求继续修改。如果使用 `"无需改进" in feedback`，却会被错误终止。实践代码先去除首尾空白和句末标点，再要求结果精确等于“无需改进”；实现见 [`reflection_agent.py`](./code/HelloAgents/hello_agents/agents/reflection_agent.py)。
+
+**PlanAndSolveAgent**
+
+`PlanAndSolveAgent` 将规划和执行拆成两个对象：
+
+```mermaid
+sequenceDiagram
+    participant U as "调用方"
+    participant A as "PlanAndSolveAgent"
+    participant P as "Planner"
+    participant E as "Executor"
+    participant L as "LLM"
+
+    U->>A: "提交复杂任务"
+    A->>P: "plan(question)"
+    P->>L: "请求 Python 列表计划"
+    L-->>P: "步骤列表"
+    loop "逐个步骤"
+        A->>E: "执行当前步骤"
+        E->>L: "问题 + 完整计划 + 已有结果 + 当前步骤"
+        L-->>E: "当前步骤结果"
+    end
+    E-->>A: "最后一步结果"
+    A-->>U: "最终答案"
+```
+
+`Planner` 用 `ast.literal_eval()` 解析带 `python` 标识的代码围栏，避免使用 `eval()`。`Executor` 把每一步结果累积到 `history`，下一步因此能消费前面的产出。计划生成后不会动态调整，这是该范式与 ReAct 的主要区别。实现见 [`plan_solve_agent.py`](./code/HelloAgents/hello_agents/agents/plan_solve_agent.py)。
+
+#### 最小工具依赖
+
+`SimpleAgent` 和 `ReActAgent` 依赖工具注册表。为了让四个父类能够独立运行，本次同步实现了两项最小能力：
+
+- [`base.py`](./code/HelloAgents/hello_agents/tools/base.py)：`ToolParameter` 和抽象 `Tool`。
+- [`registry.py`](./code/HelloAgents/hello_agents/tools/registry.py)：注册、查找、执行和列出工具，同时支持直接注册字符串函数。
+
+工具链、异步执行器、内置搜索、Memory、RAG 和 MCP 不属于 7.3 的接口实践，暂不提前实现。当前依赖关系是：
+
+```mermaid
+flowchart TB
+    APP["后续 My*Agent 子类与应用"] --> AGENTS["agents<br/>四种具体父类"]
+    AGENTS --> CORE["core<br/>Agent、Message、Config、LLM"]
+    AGENTS --> TOOLS["tools<br/>Tool、ToolRegistry"]
+```
 
 #### 异常边界
 
@@ -598,33 +750,64 @@ HelloAgentsException
 
 调用方可以只捕获基类统一处理，也可以针对模型、Agent、配置和工具错误分别恢复。7.3 先建立类型边界，具体模块将在后续迭代中逐步使用这些细分异常。代码见 [`exceptions.py`](./code/HelloAgents/hello_agents/core/exceptions.py)。
 
-#### 接口实践
+#### 代码实践
 
-[`core_interfaces_demo.py`](./code/HelloAgents/examples/core_interfaces_demo.py) 实现了一个最小 `EchoAgent`。它使用确定性的 `DemoLLM`，只验证消息转换、抽象接口和历史管理，不发起模型请求。
+当前代码结构为：
+
+```text
+code/HelloAgents/
+├── hello_agents/
+│   ├── core/
+│   │   ├── agent.py
+│   │   ├── config.py
+│   │   ├── exceptions.py
+│   │   ├── llm.py
+│   │   └── message.py
+│   ├── agents/
+│   │   ├── simple_agent.py
+│   │   ├── react_agent.py
+│   │   ├── reflection_agent.py
+│   │   └── plan_solve_agent.py
+│   └── tools/
+│       ├── base.py
+│       └── registry.py
+└── examples/
+    ├── core_interfaces_demo.py
+    └── agent_paradigms_demo.py
+```
+
+[`core_interfaces_demo.py`](./code/HelloAgents/examples/core_interfaces_demo.py) 保留最小 `EchoAgent`，用于检查 `Message`、抽象接口和历史副本。新增的 [`agent_paradigms_demo.py`](./code/HelloAgents/examples/agent_paradigms_demo.py) 使用确定性 Fake LLM，一次覆盖四个父类，不调用真实模型：
 
 ```bash
 cd code/HelloAgents
-python -m examples.core_interfaces_demo
+python -m examples.agent_paradigms_demo
 ```
 
 运行结果：
 
 ```text
-Agent(name=接口演示助手, provider=mock)
-已收到：解释 Message 的作用
-历史消息：
-[user] 解释 Message 的作用
-[assistant] 已收到：解释 Message 的作用
-外部清空副本后，内部历史仍有 2 条
+SimpleAgent: 工具结果是 HELLO。
+ReActAgent: HELLO
+ReflectionAgent: 加入例子后的第二版答案（轨迹 4 条）
+PlanAndSolveAgent: 最终结论（上一步结果已传递：True）
 ```
 
-这一步验证的是框架契约，而不是 Agent 的智能程度。真正的推理循环会在后续的 `Agent` 接口继续实现。
+这组结果分别确认了：
+
+- `SimpleAgent` 能识别文本工具调用并把结果送回模型。
+- `ReActAgent` 会消费 Observation，再通过 `Finish[...]` 结束。
+- Reflection 第一条反馈虽然含有“无需改进”，但没有误终止；第二轮收到独立完成信号后才停止。
+- Plan-and-Solve 的第二步提示词中包含第一步结果。
+
+这些测试只验证控制流和继承基础。模型质量、提示词稳定性、工具安全和真实网络异常仍需要接入实际模型后评估。
 
 ### 参考资料
 
 - [《Hello-Agents》第七章：构建你的智能体框架](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter7/%E7%AC%AC%E4%B8%83%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E4%BD%A0%E7%9A%84Agent%E6%A1%86%E6%9E%B6.md)
 - [HelloAgents `learn_version`：`core/llm.py`](https://github.com/jjyaoao/HelloAgents/blob/learn_version/hello_agents/core/llm.py)
 - [HelloAgents `learn_version`：`core` 接口](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/core)
+- [HelloAgents `learn_version`：四种 Agent 实现](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/agents)
+- [HelloAgents `learn_version`：工具接口与注册表](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/tools)
 - [Pydantic Migration Guide](https://docs.pydantic.dev/latest/migration/)
 - [vLLM OpenAI-Compatible Server](https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/)
 - [Ollama OpenAI compatibility](https://docs.ollama.com/api/openai-compatibility)
@@ -638,4 +821,6 @@ Agent(name=接口演示助手, provider=mock)
 - HelloAgentsLLM 隔离了 Agent 与模型部署细节，云端服务、vLLM 和 Ollama 可以复用同一调用入口。
 - Provider 自动检测只是确定性规则匹配；显式选择比隐式推断更容易排查和复现。
 - `Message` 统一内部消息格式，`Config` 集中保存配置，但两者都不替具体 Agent 执行业务逻辑。
-- `Agent` 基类只规定依赖、历史管理和 `run()` 入口，具体的消息编排与推理循环由子类实现。
+- `Agent` 只规定依赖、历史管理和 `run()` 入口；四种具体父类分别实现普通对话、ReAct、Reflection 和 Plan-and-Solve 的控制流。
+- 正文后续直接继承四种 Agent，却没有展示其父类源码；补齐继承链后，`My*Agent` 示例才具备完整上下文。
+- 文本协议适合教学和观察，但依赖模型严格遵循格式；工具调用上限和范式自身的终止条件都不能省略。
