@@ -6,7 +6,9 @@
 >
 > 阅读资料：[《Hello-Agents》第七章 7.3：框架接口实现](https://datawhalechina.github.io/hello-agents/#/./chapter7/%E7%AC%AC%E4%B8%83%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E4%BD%A0%E7%9A%84Agent%E6%A1%86%E6%9E%B6?id=_73-%e6%a1%86%e6%9e%b6%e6%8e%a5%e5%8f%a3%e5%ae%9e%e7%8e%b0)
 >
-> 实践：沿着章节的演进路线持续完善 `HelloAgents`，实现统一 LLM、Message、Config、异常、Agent 抽象接口，以及文章后续示例依赖的四个具体 Agent 父类。
+> 阅读资料：[《Hello-Agents》第七章 7.4.5：FunctionCallAgent](https://datawhalechina.github.io/hello-agents/#/./chapter7/%E7%AC%AC%E4%B8%83%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E4%BD%A0%E7%9A%84Agent%E6%A1%86%E6%9E%B6?id=_745-functioncallagent)
+>
+> 实践：沿着章节的演进路线持续完善 `HelloAgents`，实现统一 LLM、Message、Config、异常、Agent 抽象接口，补齐四种任务组织方式及 Function Calling 工具协议。
 
 ### 框架整体架构设计
 
@@ -520,17 +522,24 @@ classDiagram
         +planner
         +executor
     }
+    class FunctionCallAgent {
+        <<tool-call protocol>>
+        +run(input_text)
+        +add_tool(tool)
+    }
 
     Agent <|-- SimpleAgent
     Agent <|-- ReActAgent
     Agent <|-- ReflectionAgent
     Agent <|-- PlanAndSolveAgent
+    Agent <|-- FunctionCallAgent
 ```
 
 这里要区分两层“基类”：
 
 - `Agent` 是抽象基类，只定义框架契约，不能直接实例化。
 - 四种范式类已经实现 `run()`，可以直接使用；它们同时也是 7.4 中 `MySimpleAgent` 等定制类的父类。
+- `FunctionCallAgent` 在继承结构上也是具体 Agent，但它解决的是工具调用协议问题，不属于新的推理范式。
 
 这样既保持了 7.3 的接口边界，也让后续继承示例拥有真实、可运行的基础。
 
@@ -720,9 +729,64 @@ sequenceDiagram
 
 `Planner` 用 `ast.literal_eval()` 解析带 `python` 标识的代码围栏，避免使用 `eval()`。`Executor` 把每一步结果累积到 `history`，下一步因此能消费前面的产出。计划生成后不会动态调整，这是该范式与 ReAct 的主要区别。实现见 [`plan_solve_agent.py`](./code/HelloAgents/hello_agents/agents/plan_solve_agent.py)。
 
+#### FunctionCallAgent：工具调用协议，而非第五种推理范式
+
+把 `FunctionCallAgent` 和前四种 Agent 并排列出，容易把两个维度混在一起：
+
+| 维度 | 回答的问题 | 本章实现 |
+| --- | --- | --- |
+| 任务组织与控制流 | Agent 如何完成任务、何时停止 | Simple、ReAct、Reflection、Plan-and-Solve |
+| 工具调用协议 | 模型如何表达工具名和参数，结果如何回传 | 文本标记、`Action` 文本、原生 `tool_calls` |
+
+因此，`FunctionCallAgent` 更准确的定位是“使用 OpenAI 兼容原生函数调用协议的 Agent”。它目前的控制流最接近启用工具后的 `SimpleAgent`：都在“模型—工具—模型”之间循环，区别主要在消息格式。
+
+| 对比项 | `SimpleAgent` | `ReActAgent` | `FunctionCallAgent` |
+| --- | --- | --- | --- |
+| 工具描述 | 写入提示词 | 写入提示词 | 作为 `tools` JSON Schema 传入 API |
+| 调用表达 | `[TOOL_CALL:name:params]` | `Action: name[input]` | `assistant.tool_calls` |
+| 参数解析 | 正则和自定义文本解析 | 从方括号提取字符串 | 解析 `function.arguments` JSON |
+| 结果回传 | 普通 user 消息 | `Observation` 文本 | `role="tool"` 与 `tool_call_id` |
+| 前提 | 模型能遵守提示词 | 模型能遵守 ReAct 格式 | 模型和服务端支持结构化工具调用 |
+
+所谓“原生函数调用”并不是模型替应用执行 Python 函数。模型只返回“希望调用哪个工具以及使用哪些参数”；真正的参数校验、权限判断、函数执行和异常处理仍由应用完成。
+
+```mermaid
+sequenceDiagram
+    participant U as "用户"
+    participant A as "FunctionCallAgent"
+    participant M as "模型 API"
+    participant T as "ToolRegistry"
+
+    U->>A: "提交任务"
+    A->>A: "把 ToolParameter 转成 JSON Schema"
+    A->>M: "messages + tools + tool_choice"
+    M-->>A: "assistant.tool_calls"
+    A->>A: "解析并校验 JSON 参数"
+    A->>T: "执行工具"
+    T-->>A: "工具结果"
+    A->>M: "原 assistant.tool_calls + tool 消息"
+    Note over A,M: "tool_call_id 关联调用与结果"
+    M-->>A: "最终文本或下一批 tool_calls"
+    A-->>U: "最终回答"
+```
+
+父类包含五个关键步骤：
+
+- `_build_tool_schemas()`：把 `Tool` 元数据转换为 Chat Completions 的 `tools` Schema；轻量函数统一暴露一个 `input` 字符串参数。
+- `_extract_message_content()`：兼容纯字符串、空内容和列表式内容。
+- `_parse_function_call_arguments()`：将模型返回的 JSON 字符串解析为字典。
+- `_convert_parameter_types()`：根据 `ToolParameter` 恢复整数、浮点数和布尔值。
+- `_invoke_with_tools()`：保留 SDK 返回的 `tool_calls` 结构，驱动后续执行循环。
+
+这里出现了一个值得保留的“抽象泄漏”：现有 `HelloAgentsLLM.invoke()` 只返回文本，会丢失 `tool_calls`，所以 `FunctionCallAgent` 必须访问 `llm._client`。当前实现与文章保持一致；后续若继续完善框架，更合理的方向是让 LLM 层返回统一的结构化响应，而不是让 Agent 依赖 SDK 私有客户端。
+
+`tool_choice` 默认使用 `"auto"`，允许模型自行决定是否调用工具；达到 `max_tool_iterations` 后，最后一次请求改为 `"none"`，要求模型停止调用并整理答案。即使接口声称兼容 OpenAI，也不代表所选模型一定支持 `tools`，实际使用前仍需检查模型能力。
+
+完整实现见 [`function_call_agent.py`](./code/HelloAgents/hello_agents/agents/function_call_agent.py)。
+
 #### 最小工具依赖
 
-`SimpleAgent` 和 `ReActAgent` 依赖工具注册表。为了让四个父类能够独立运行，本次同步实现了两项最小能力：
+`SimpleAgent`、`ReActAgent` 和 `FunctionCallAgent` 依赖工具注册表。为了让这些 Agent 能够独立运行，本次同步实现了两项最小能力：
 
 - [`base.py`](./code/HelloAgents/hello_agents/tools/base.py)：`ToolParameter` 和抽象 `Tool`。
 - [`registry.py`](./code/HelloAgents/hello_agents/tools/registry.py)：注册、查找、执行和列出工具，同时支持直接注册字符串函数。
@@ -731,7 +795,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TB
-    APP["后续 My*Agent 子类与应用"] --> AGENTS["agents<br/>四种具体父类"]
+    APP["后续 My*Agent 子类与应用"] --> AGENTS["agents<br/>具体 Agent"]
     AGENTS --> CORE["core<br/>Agent、Message、Config、LLM"]
     AGENTS --> TOOLS["tools<br/>Tool、ToolRegistry"]
 ```
@@ -764,6 +828,7 @@ code/HelloAgents/
 │   │   ├── llm.py
 │   │   └── message.py
 │   ├── agents/
+│   │   ├── function_call_agent.py
 │   │   ├── simple_agent.py
 │   │   ├── react_agent.py
 │   │   ├── reflection_agent.py
@@ -776,7 +841,7 @@ code/HelloAgents/
     └── agent_paradigms_demo.py
 ```
 
-[`core_interfaces_demo.py`](./code/HelloAgents/examples/core_interfaces_demo.py) 保留最小 `EchoAgent`，用于检查 `Message`、抽象接口和历史副本。新增的 [`agent_paradigms_demo.py`](./code/HelloAgents/examples/agent_paradigms_demo.py) 使用确定性 Fake LLM，一次覆盖四个父类，不调用真实模型：
+[`core_interfaces_demo.py`](./code/HelloAgents/examples/core_interfaces_demo.py) 保留最小 `EchoAgent`，用于检查 `Message`、抽象接口和历史副本。[`agent_paradigms_demo.py`](./code/HelloAgents/examples/agent_paradigms_demo.py) 使用确定性 Fake LLM，覆盖四种任务控制流和原生函数调用协议，不调用真实模型：
 
 ```bash
 cd code/HelloAgents
@@ -788,6 +853,7 @@ python -m examples.agent_paradigms_demo
 ```text
 SimpleAgent: 工具结果是 HELLO。
 ReActAgent: HELLO
+FunctionCallAgent: HELLO（原生 tool 消息已回传：True）
 ReflectionAgent: 加入例子后的第二版答案（轨迹 4 条）
 PlanAndSolveAgent: 最终结论（上一步结果已传递：True）
 ```
@@ -796,6 +862,7 @@ PlanAndSolveAgent: 最终结论（上一步结果已传递：True）
 
 - `SimpleAgent` 能识别文本工具调用并把结果送回模型。
 - `ReActAgent` 会消费 Observation，再通过 `Finish[...]` 结束。
+- `FunctionCallAgent` 能生成工具 Schema，并使用 `tool_call_id` 把执行结果回传给对应调用。
 - Reflection 第一条反馈虽然含有“无需改进”，但没有误终止；第二轮收到独立完成信号后才停止。
 - Plan-and-Solve 的第二步提示词中包含第一步结果。
 
@@ -806,8 +873,9 @@ PlanAndSolveAgent: 最终结论（上一步结果已传递：True）
 - [《Hello-Agents》第七章：构建你的智能体框架](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter7/%E7%AC%AC%E4%B8%83%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E4%BD%A0%E7%9A%84Agent%E6%A1%86%E6%9E%B6.md)
 - [HelloAgents `learn_version`：`core/llm.py`](https://github.com/jjyaoao/HelloAgents/blob/learn_version/hello_agents/core/llm.py)
 - [HelloAgents `learn_version`：`core` 接口](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/core)
-- [HelloAgents `learn_version`：四种 Agent 实现](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/agents)
+- [HelloAgents `learn_version`：Agent 实现](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/agents)
 - [HelloAgents `learn_version`：工具接口与注册表](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/tools)
+- [OpenAI Function Calling Guide](https://developers.openai.com/api/docs/guides/function-calling)
 - [Pydantic Migration Guide](https://docs.pydantic.dev/latest/migration/)
 - [vLLM OpenAI-Compatible Server](https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/)
 - [Ollama OpenAI compatibility](https://docs.ollama.com/api/openai-compatibility)
@@ -824,3 +892,4 @@ PlanAndSolveAgent: 最终结论（上一步结果已传递：True）
 - `Agent` 只规定依赖、历史管理和 `run()` 入口；四种具体父类分别实现普通对话、ReAct、Reflection 和 Plan-and-Solve 的控制流。
 - 正文后续直接继承四种 Agent，却没有展示其父类源码；补齐继承链后，`My*Agent` 示例才具备完整上下文。
 - 文本协议适合教学和观察，但依赖模型严格遵循格式；工具调用上限和范式自身的终止条件都不能省略。
+- `FunctionCallAgent` 不是第五种推理范式，而是以 JSON Schema、`tool_calls` 和 `tool_call_id` 实现的结构化工具调用方式；工具最终仍由应用执行。

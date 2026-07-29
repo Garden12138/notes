@@ -1,10 +1,12 @@
-"""Offline checks for the four concrete Agent parents used by chapter 7."""
+"""Offline checks for chapter 7 Agent flows and tool-call protocols."""
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 from typing import Any
 
 from hello_agents import (
+    FunctionCallAgent,
     PlanAndSolveAgent,
     ReActAgent,
     ReflectionAgent,
@@ -30,6 +32,47 @@ class SequenceLLM:
         del kwargs
         self.prompts.append(messages[-1]["content"])
         return next(self.responses)
+
+
+class FakeCompletions:
+    """Mimic the SDK surface used by FunctionCallAgent."""
+
+    def __init__(self, responses: list[Any]) -> None:
+        self.responses = iter(responses)
+        self.requests: list[dict[str, Any]] = []
+
+    def create(self, **kwargs: Any) -> Any:
+        self.requests.append(kwargs)
+        return next(self.responses)
+
+
+class FunctionCallLLM:
+    """Expose a fake ``_client.chat.completions`` hierarchy."""
+
+    provider = "mock"
+    model = "mock-function-model"
+    temperature = 0.0
+    max_tokens = None
+
+    def __init__(self, responses: list[Any]) -> None:
+        self.completions = FakeCompletions(responses)
+        self._client = SimpleNamespace(
+            chat=SimpleNamespace(completions=self.completions),
+        )
+
+
+def make_response(
+    content: str | None,
+    tool_calls: list[Any] | None = None,
+) -> Any:
+    """Build the response shape returned by Chat Completions."""
+    message = SimpleNamespace(
+        content=content,
+        tool_calls=tool_calls,
+    )
+    return SimpleNamespace(
+        choices=[SimpleNamespace(message=message)],
+    )
 
 
 def build_registry() -> ToolRegistry:
@@ -69,6 +112,37 @@ def run_react_agent() -> str:
     return agent.run("把 hello 转成大写")
 
 
+def run_function_call_agent() -> tuple[str, bool]:
+    tool_call = SimpleNamespace(
+        id="call_1",
+        type="function",
+        function=SimpleNamespace(
+            name="upper",
+            arguments='{"input": "hello"}',
+        ),
+    )
+    llm = FunctionCallLLM(
+        [
+            make_response(None, [tool_call]),
+            make_response("HELLO"),
+        ],
+    )
+    agent = FunctionCallAgent(
+        name="Function Call",
+        llm=llm,  # type: ignore[arg-type]
+        tool_registry=build_registry(),
+    )
+    result = agent.run("把 hello 转成大写")
+    second_messages = llm.completions.requests[1]["messages"]
+    tool_message_preserved = any(
+        message.get("role") == "tool"
+        and message.get("tool_call_id") == "call_1"
+        and message.get("content") == "HELLO"
+        for message in second_messages
+    )
+    return result, tool_message_preserved
+
+
 def run_reflection_agent() -> tuple[str, int]:
     llm = SequenceLLM(
         [
@@ -105,6 +179,13 @@ def run_plan_and_solve_agent() -> tuple[str, bool]:
 def main() -> None:
     print(f"SimpleAgent: {run_simple_agent()}")
     print(f"ReActAgent: {run_react_agent()}")
+
+    function_result, tool_message_preserved = run_function_call_agent()
+    print(
+        "FunctionCallAgent: "
+        f"{function_result}（原生 tool 消息已回传："
+        f"{tool_message_preserved}）",
+    )
 
     reflection_result, reflection_records = run_reflection_agent()
     print(

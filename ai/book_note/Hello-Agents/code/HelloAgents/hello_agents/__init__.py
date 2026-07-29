@@ -16,6 +16,7 @@ from .core import (
 from .tools import Tool, ToolParameter, ToolRegistry, global_registry
 from .agents import (
     Executor,
+    FunctionCallAgent,
     Memory,
     PlanAndSolveAgent,
     Planner,
@@ -30,6 +31,7 @@ __all__ = [
     "Config",
     "ConfigException",
     "Executor",
+    "FunctionCallAgent",
     "HelloAgentsException",
     "HelloAgentsLLM",
     "LLMException",
