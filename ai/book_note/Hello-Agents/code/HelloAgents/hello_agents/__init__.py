@@ -13,7 +13,21 @@ from .core import (
     SUPPORTED_PROVIDERS,
     ToolException,
 )
-from .tools import Tool, ToolParameter, ToolRegistry, global_registry
+from .tools import (
+    AsyncToolExecutor,
+    CalculatorTool,
+    SearchTool,
+    Tool,
+    ToolChain,
+    ToolChainManager,
+    ToolParameter,
+    ToolRegistry,
+    calculate,
+    create_calculator_registry,
+    create_research_chain,
+    global_registry,
+    my_calculate,
+)
 from .agents import (
     Executor,
     FunctionCallAgent,
@@ -28,6 +42,8 @@ from .agents import (
 __all__ = [
     "Agent",
     "AgentException",
+    "AsyncToolExecutor",
+    "CalculatorTool",
     "Config",
     "ConfigException",
     "Executor",
@@ -43,10 +59,17 @@ __all__ = [
     "ReActAgent",
     "ReflectionAgent",
     "SUPPORTED_PROVIDERS",
+    "SearchTool",
     "SimpleAgent",
     "Tool",
+    "ToolChain",
+    "ToolChainManager",
     "ToolException",
     "ToolParameter",
     "ToolRegistry",
+    "calculate",
+    "create_calculator_registry",
+    "create_research_chain",
     "global_registry",
+    "my_calculate",
 ]

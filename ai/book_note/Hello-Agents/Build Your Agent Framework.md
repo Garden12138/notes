@@ -8,7 +8,9 @@
 >
 > 阅读资料：[《Hello-Agents》第七章 7.4.5：FunctionCallAgent](https://datawhalechina.github.io/hello-agents/#/./chapter7/%E7%AC%AC%E4%B8%83%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E4%BD%A0%E7%9A%84Agent%E6%A1%86%E6%9E%B6?id=_745-functioncallagent)
 >
-> 实践：沿着章节的演进路线持续完善 `HelloAgents`，实现统一 LLM、Message、Config、异常、Agent 抽象接口，补齐四种任务组织方式及 Function Calling 工具协议。
+> 阅读资料：[《Hello-Agents》第七章 7.5：工具系统](https://datawhalechina.github.io/hello-agents/#/./chapter7/%E7%AC%AC%E4%B8%83%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E4%BD%A0%E7%9A%84Agent%E6%A1%86%E6%9E%B6?id=_75-%e5%b7%a5%e5%85%b7%e7%b3%bb%e7%bb%9f)
+>
+> 实践：沿着章节的演进路线持续完善 `HelloAgents`，实现统一 LLM、Message、Config、异常、Agent 抽象接口，补齐四种任务组织方式、Function Calling 协议以及工具注册、计算、搜索、链式和异步执行能力。
 
 ### 框架整体架构设计
 
@@ -784,14 +786,14 @@ sequenceDiagram
 
 完整实现见 [`function_call_agent.py`](./code/HelloAgents/hello_agents/agents/function_call_agent.py)。
 
-#### 最小工具依赖
+#### 工具系统的前置接口
 
-`SimpleAgent`、`ReActAgent` 和 `FunctionCallAgent` 依赖工具注册表。为了让这些 Agent 能够独立运行，本次同步实现了两项最小能力：
+`SimpleAgent`、`ReActAgent` 和 `FunctionCallAgent` 都依赖工具注册表。7.3 先提供两项基础能力，7.5 再在此之上补齐具体工具、工具链和异步执行器：
 
 - [`base.py`](./code/HelloAgents/hello_agents/tools/base.py)：`ToolParameter` 和抽象 `Tool`。
 - [`registry.py`](./code/HelloAgents/hello_agents/tools/registry.py)：注册、查找、执行和列出工具，同时支持直接注册字符串函数。
 
-工具链、异步执行器、内置搜索、Memory、RAG 和 MCP 不属于 7.3 的接口实践，暂不提前实现。当前依赖关系是：
+Memory、RAG 和 MCP 仍留给后续章节。当前依赖关系是：
 
 ```mermaid
 flowchart TB
@@ -834,11 +836,17 @@ code/HelloAgents/
 │   │   ├── reflection_agent.py
 │   │   └── plan_solve_agent.py
 │   └── tools/
+│       ├── builtin/
+│       │   ├── calculator.py
+│       │   └── search_tool.py
+│       ├── async_executor.py
 │       ├── base.py
+│       ├── chain.py
 │       └── registry.py
 └── examples/
     ├── core_interfaces_demo.py
-    └── agent_paradigms_demo.py
+    ├── agent_paradigms_demo.py
+    └── tool_system_demo.py
 ```
 
 [`core_interfaces_demo.py`](./code/HelloAgents/examples/core_interfaces_demo.py) 保留最小 `EchoAgent`，用于检查 `Message`、抽象接口和历史副本。[`agent_paradigms_demo.py`](./code/HelloAgents/examples/agent_paradigms_demo.py) 使用确定性 Fake LLM，覆盖四种任务控制流和原生函数调用协议，不调用真实模型：
@@ -868,6 +876,200 @@ PlanAndSolveAgent: 最终结论（上一步结果已传递：True）
 
 这些测试只验证控制流和继承基础。模型质量、提示词稳定性、工具安全和真实网络异常仍需要接入实际模型后评估。
 
+### 工具系统
+
+#### 统一接口、参数描述与注册表
+
+工具系统负责把模型的“调用意图”接到真实代码上。一个完整调用至少经过四层：
+
+```mermaid
+flowchart LR
+    A["Agent<br/>生成工具名与参数"] --> R["ToolRegistry<br/>查找与分发"]
+    R --> T["Tool.run(dict)<br/>复杂工具"]
+    R --> F["func(str)<br/>轻量函数"]
+    T --> O["字符串结果"]
+    F --> O
+    O --> A
+```
+
+`Tool` 统一复杂工具的接口：
+
+- `name` 和 `description` 负责工具发现。
+- `get_parameters()` 返回 `ToolParameter`，描述参数名、JSON 类型、必填项和默认值。
+- `run(parameters)` 接收字典并返回字符串，使不同 Agent 可以复用同一执行入口。
+- `to_openai_schema()` 把上述元数据转换为 Function Calling 所需的 JSON Schema。
+
+`ToolParameter` 继承 Pydantic，只能保证“参数描述对象”本身结构正确；正文当前的 `validate_parameters()` 只检查必填参数是否存在，并不会自动验证调用值的 Python 类型。运行时类型转换和业务校验仍要由 Agent 或具体工具完成。
+
+```python
+def to_openai_schema(self):
+    properties = {}
+    required = []
+    for parameter in self.get_parameters():
+        properties[parameter.name] = {
+            "type": parameter.type,
+            "description": parameter.description,
+        }
+        if parameter.required:
+            required.append(parameter.name)
+
+    return {
+        "type": "function",
+        "function": {
+            "name": self.name,
+            "description": self.description,
+            "parameters": {
+                "type": "object",
+                "properties": properties,
+                "required": required,
+            },
+        },
+    }
+```
+
+本次将正文提到但本地基类缺失的 `to_openai_schema()` 补进 [`base.py`](./code/HelloAgents/hello_agents/tools/base.py)，并让 `FunctionCallAgent` 直接调用它，避免同一套 Schema 转换逻辑散落在 Agent 中。
+
+`ToolRegistry` 保留两种注册方式：
+
+| 注册方式 | 输入接口 | 适合场景 | 能否生成完整参数 Schema |
+| --- | --- | --- | --- |
+| `register_tool(Tool)` | `dict` | 搜索客户端、数据库等有状态或多参数工具 | 可以 |
+| `register_function(...)` | `str` | 计算、文本处理等单输入函数 | 只能统一为 `input: string` |
+
+注册表只做保存、发现和分发，不负责决定“什么时候调用哪个工具”。这个决策属于 Agent 或模型。
+
+#### 计算器：AST 白名单，而不是 `eval`
+
+正文使用 `ast.parse(..., mode="eval")` 解析表达式，这个方向是对的，但示例仍有几个未闭合的分支：
+
+- `except:` 会吞掉所有异常，无法区分语法错误和程序错误。
+- 不支持的运算符会得到 `None`，随后才在调用时失败。
+- `ast.Constant` 没有限定数字，字符串和布尔值也会进入计算。
+- 函数调用直接访问 `node.func.id`，属性调用并没有被明确拒绝。
+
+实践代码用 AST 白名单补齐这些边界，只接受数字、`+ - * /`、`sqrt()` 和常量 `pi`，不使用 Python 的 `eval()`。危险表达式、未知函数、除零、非数值常量和超长输入都会返回明确的失败结果。
+
+[`calculator.py`](./code/HelloAgents/hello_agents/tools/builtin/calculator.py) 同时提供两种用法：
+
+```python
+# 与正文一致：把单输入函数快速注册为工具
+registry = create_calculator_registry()
+registry.execute_tool("my_calculator", "sqrt(16) + 2 * 3")
+
+# 框架对象方式：可描述参数并生成 Function Calling Schema
+registry.register_tool(CalculatorTool())
+```
+
+两种方式复用同一个安全求值函数，因此不会出现示例代码和内置工具行为不一致的问题。
+
+#### 多源搜索：按规则选择与失败降级
+
+`SearchTool` 把 Tavily 和 SerpApi 包装成相同的 `run({"input": query})` 接口。所谓“自动选择”并不是模型判断，而是固定规则：
+
+```mermaid
+flowchart TD
+    Q["收到搜索词"] --> M{"backend"}
+    M -->|"tavily"| T["调用 Tavily"]
+    M -->|"serpapi"| S["调用 SerpApi"]
+    M -->|"hybrid"| A{"Tavily 可用？"}
+    A -->|"是"| T
+    T -->|"成功"| U["统一格式化结果"]
+    T -->|"失败且 SerpApi 可用"| S
+    A -->|"否"| B{"SerpApi 可用？"}
+    B -->|"是"| S
+    B -->|"否"| E["返回配置提示"]
+    S -->|"成功"| U
+    S -->|"失败"| E2["返回搜索失败原因"]
+```
+
+`hybrid` 模式优先 Tavily，异常时再尝试 SerpApi；显式指定后端时不会静默换源。不同服务返回的 `answer/results/content/url` 和 `organic_results/snippet/link` 会被整理为统一文本，Agent 无须理解各家的响应结构。
+
+正文只展示了构造器、降级方法和部分格式化逻辑。本次补齐了：
+
+- 后端取值校验、环境变量读取和可选依赖导入。
+- `run()`、`search()` 与 `get_parameters()`。
+- Tavily、SerpApi 的完整请求和结果格式化。
+- 空查询、缺少依赖、缺少密钥、单后端失败和双后端失败的返回路径。
+- 可注入客户端，便于离线测试降级逻辑。
+
+SerpApi 使用 `from serpapi import GoogleSearch`，对应 `google-search-results` 包的调用方式。真实搜索需要额外安装依赖并配置密钥：
+
+```bash
+pip install tavily-python google-search-results
+```
+
+```dotenv
+TAVILY_API_KEY=""
+SERPAPI_API_KEY=""
+```
+
+完整实现见 [`search_tool.py`](./code/HelloAgents/hello_agents/tools/builtin/search_tool.py)。
+
+#### 工具链：用上下文连接固定步骤
+
+`ToolChain` 不是另一种 Agent。它没有规划和动态选路，只按预先声明的顺序运行工具。每一步包含：
+
+- `tool_name`：注册表中的工具名。
+- `input_template`：使用 `str.format()` 从上下文拼出本步输入。
+- `output_key`：把结果写回上下文，供后续步骤引用。
+
+```mermaid
+flowchart LR
+    I["input<br/>请计算 sqrt(16) + 2 * 3"] --> N["normalize_expression"]
+    N -->|"expression"| C["my_calculator"]
+    C -->|"calculation"| F["format_result"]
+    F --> O["最终结果"]
+```
+
+正文的 `搜索 → 计算` 示例把整段自然语言搜索结果直接交给 AST 计算器，只有搜索结果本身恰好是表达式时才可执行。工具链机制没有问题，问题在于相邻工具的数据契约不匹配。实践因此改为三步确定性链：规范表达式、计算、格式化；每一步输出都能被下一步直接消费。
+
+[`chain.py`](./code/HelloAgents/hello_agents/tools/chain.py) 还补充了空链和模板变量缺失的处理，并复制外部 `context`，避免执行时意外修改调用方字典。工具执行错误仍以字符串进入上下文，这与当前 `ToolRegistry` 的返回协议一致；若以后需要自动中断，应该把结果改成包含 `ok/error/data` 的结构，而不是依赖错误文本。
+
+#### 异步执行：让同步 I/O 工具并行
+
+`ToolRegistry` 是同步接口。`AsyncToolExecutor` 使用 `ThreadPoolExecutor` 把多个独立调用移出事件循环，再通过 `asyncio.gather()` 等待结果：
+
+```python
+results = await executor.execute_tools_parallel([
+    {"tool_name": "search", "input_data": "Python"},
+    {"tool_name": "search", "input_data": "LangGraph"},
+])
+```
+
+它适合网络请求、文件读取等等待时间较长的同步 I/O 工具；纯 Python 的 CPU 密集计算通常受 GIL 影响，线程池未必能加速。`gather()` 返回值顺序与任务输入顺序一致，不代表任务按该顺序完成。
+
+正文只在 `__del__()` 中关闭线程池，资源释放时机不稳定。本次在 [`async_executor.py`](./code/HelloAgents/hello_agents/tools/async_executor.py) 中增加 `close()` 和上下文管理器，实践代码通过 `with` 确保线程池及时关闭。
+
+#### 代码实践
+
+[`tool_system_demo.py`](./code/HelloAgents/examples/tool_system_demo.py) 不调用真实模型和搜索 API，使用 Fake Tavily 与 Fake SerpApi 验证主搜索源失败后的降级路径，同时覆盖 Schema、计算器安全、三步工具链和并行执行：
+
+```bash
+cd code/HelloAgents
+python3 -m examples.tool_system_demo
+```
+
+实际输出：
+
+```text
+=== Tool、Schema 与注册表 ===
+Schema：python_calculator，必填参数 ['input']
+计算器：sqrt(16) + 2 * 3 = 10.0
+危险表达式：已拒绝
+
+=== 多源搜索降级 ===
+混合搜索：Tavily 失败后切换到 SerpApi Fake 客户端
+无密钥搜索：返回配置提示，未发起网络请求
+
+=== 工具链 ===
+三步工具链：最终结果：sqrt(16) + 2 * 3 = 10.0
+
+=== 异步执行器 ===
+并行执行：['AGENT', '11']
+```
+
+这次实践验证的是框架控制流和异常边界，不代表真实 Tavily、SerpApi 的网络质量。接入真实服务后还需要继续测试限流、超时、重试和返回字段变化。
+
 ### 参考资料
 
 - [《Hello-Agents》第七章：构建你的智能体框架](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter7/%E7%AC%AC%E4%B8%83%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E4%BD%A0%E7%9A%84Agent%E6%A1%86%E6%9E%B6.md)
@@ -875,6 +1077,7 @@ PlanAndSolveAgent: 最终结论（上一步结果已传递：True）
 - [HelloAgents `learn_version`：`core` 接口](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/core)
 - [HelloAgents `learn_version`：Agent 实现](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/agents)
 - [HelloAgents `learn_version`：工具接口与注册表](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/tools)
+- [HelloAgents `learn_version`：内置工具](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/tools/builtin)
 - [OpenAI Function Calling Guide](https://developers.openai.com/api/docs/guides/function-calling)
 - [Pydantic Migration Guide](https://docs.pydantic.dev/latest/migration/)
 - [vLLM OpenAI-Compatible Server](https://docs.vllm.ai/en/latest/serving/online_serving/openai_compatible_server/)
@@ -893,3 +1096,6 @@ PlanAndSolveAgent: 最终结论（上一步结果已传递：True）
 - 正文后续直接继承四种 Agent，却没有展示其父类源码；补齐继承链后，`My*Agent` 示例才具备完整上下文。
 - 文本协议适合教学和观察，但依赖模型严格遵循格式；工具调用上限和范式自身的终止条件都不能省略。
 - `FunctionCallAgent` 不是第五种推理范式，而是以 JSON Schema、`tool_calls` 和 `tool_call_id` 实现的结构化工具调用方式；工具最终仍由应用执行。
+- `Tool` 统一复杂工具接口，`ToolRegistry` 同时容纳对象工具和单输入函数，`to_openai_schema()` 则把工具元数据接到 Function Calling。
+- 工具安全不能交给模型保证：计算器需要 AST 白名单，搜索工具需要空输入、依赖、密钥、失败降级等完整边界。
+- 工具链适合数据契约明确的固定流水线；异步执行器适合彼此独立且以等待为主的同步 I/O 工具。

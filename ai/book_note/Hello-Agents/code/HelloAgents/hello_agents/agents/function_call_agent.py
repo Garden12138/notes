@@ -16,21 +16,6 @@ from ..tools.registry import ToolRegistry
 ToolChoice = str | dict[str, Any]
 
 
-def _map_parameter_type(parameter_type: str) -> str:
-    """Map framework parameter names to JSON Schema primitive types."""
-    normalized = (parameter_type or "").lower()
-    if normalized in {
-        "string",
-        "number",
-        "integer",
-        "boolean",
-        "array",
-        "object",
-    }:
-        return normalized
-    return "string"
-
-
 class FunctionCallAgent(Agent):
     """Run a SimpleAgent-like loop with structured ``tool_calls``."""
 
@@ -79,35 +64,7 @@ class FunctionCallAgent(Agent):
 
         schemas: list[dict[str, Any]] = []
         for tool in self.tool_registry.get_all_tools():
-            properties: dict[str, Any] = {}
-            required: list[str] = []
-            for parameter in tool.get_parameters():
-                property_schema: dict[str, Any] = {
-                    "type": _map_parameter_type(parameter.type),
-                    "description": parameter.description or "",
-                }
-                if parameter.default is not None:
-                    property_schema["default"] = parameter.default
-                properties[parameter.name] = property_schema
-                if parameter.required:
-                    required.append(parameter.name)
-
-            parameters_schema: dict[str, Any] = {
-                "type": "object",
-                "properties": properties,
-            }
-            if required:
-                parameters_schema["required"] = required
-            schemas.append(
-                {
-                    "type": "function",
-                    "function": {
-                        "name": tool.name,
-                        "description": tool.description or "",
-                        "parameters": parameters_schema,
-                    },
-                },
-            )
+            schemas.append(tool.to_openai_schema())
 
         function_map = getattr(self.tool_registry, "_functions", {})
         for name, info in function_map.items():

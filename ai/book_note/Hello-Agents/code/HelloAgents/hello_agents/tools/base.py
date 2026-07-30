@@ -1,4 +1,4 @@
-"""Minimal tool interface required by the chapter's Agent paradigms."""
+"""Core interfaces shared by the HelloAgents tool system."""
 
 from __future__ import annotations
 
@@ -66,6 +66,54 @@ class Tool(ABC):
             "name": self.name,
             "description": self.description,
             "parameters": parameters,
+        }
+
+    def to_openai_schema(self) -> Dict[str, Any]:
+        """Convert this Tool to a Chat Completions function schema."""
+        supported_types = {
+            "array",
+            "boolean",
+            "integer",
+            "number",
+            "object",
+            "string",
+        }
+        properties: Dict[str, Any] = {}
+        required: List[str] = []
+
+        for parameter in self.get_parameters():
+            parameter_type = parameter.type.lower()
+            if parameter_type not in supported_types:
+                parameter_type = "string"
+
+            description = parameter.description
+            if parameter.default is not None:
+                description = (
+                    f"{description}（默认值：{parameter.default}）"
+                )
+
+            property_schema: Dict[str, Any] = {
+                "type": parameter_type,
+                "description": description,
+            }
+            if parameter_type == "array":
+                property_schema["items"] = {"type": "string"}
+
+            properties[parameter.name] = property_schema
+            if parameter.required:
+                required.append(parameter.name)
+
+        return {
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "description": self.description,
+                "parameters": {
+                    "type": "object",
+                    "properties": properties,
+                    "required": required,
+                },
+            },
         }
 
     def __str__(self) -> str:
