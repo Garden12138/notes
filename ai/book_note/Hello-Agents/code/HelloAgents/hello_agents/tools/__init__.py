@@ -4,6 +4,7 @@ from .async_executor import AsyncToolExecutor
 from .base import Tool, ToolParameter
 from .builtin import (
     CalculatorTool,
+    MemoryTool,
     SearchTool,
     calculate,
     create_calculator_registry,
@@ -15,6 +16,7 @@ from .registry import ToolRegistry, global_registry
 __all__ = [
     "AsyncToolExecutor",
     "CalculatorTool",
+    "MemoryTool",
     "SearchTool",
     "Tool",
     "ToolChain",

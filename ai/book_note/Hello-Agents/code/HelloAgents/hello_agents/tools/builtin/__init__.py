@@ -7,9 +7,11 @@ from .calculator import (
     my_calculate,
 )
 from .search_tool import SearchTool
+from .memory_tool import MemoryTool
 
 __all__ = [
     "CalculatorTool",
+    "MemoryTool",
     "SearchTool",
     "calculate",
     "create_calculator_registry",

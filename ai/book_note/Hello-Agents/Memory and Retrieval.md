@@ -4,7 +4,9 @@
 >
 > 阅读资料：[《Hello-Agents》第八章 8.2.1：记忆系统的工作流程](https://datawhalechina.github.io/hello-agents/#/./chapter8/%E7%AC%AC%E5%85%AB%E7%AB%A0%20%E8%AE%B0%E5%BF%86%E4%B8%8E%E6%A3%80%E7%B4%A2?id=_821-%e8%ae%b0%e5%bf%86%e7%b3%bb%e7%bb%9f%e7%9a%84%e5%b7%a5%e4%bd%9c%e6%b5%81%e7%a8%8b)
 >
-> 8.1 建立记忆与 RAG 的概念边界和分层架构，8.2.1 进一步拆解记忆的完整工作流程；具体类与存储实现留待后续小节。
+> 阅读资料：[《Hello-Agents》第八章 8.2：记忆系统——让智能体拥有记忆](https://datawhalechina.github.io/hello-agents/#/./chapter8/%E7%AC%AC%E5%85%AB%E7%AB%A0%20%E8%AE%B0%E5%BF%86%E4%B8%8E%E6%A3%80%E7%B4%A2?id=_82-%e8%ae%b0%e5%bf%86%e7%b3%bb%e7%bb%9f%ef%bc%9a%e8%ae%a9%e6%99%ba%e8%83%bd%e4%bd%93%e6%8b%a5%e6%9c%89%e8%ae%b0%e5%bf%86)
+>
+> 8.1 建立记忆与 RAG 的概念边界，8.2 再把编码、存储、检索、整合和遗忘落实到 `MemoryTool`、`MemoryManager` 与四种记忆实现中。
 
 ### 从认知科学到智能体记忆
 
@@ -259,9 +261,196 @@ flowchart TB
 
 评估记忆系统时，不能只问“有没有召回内容”，还要问“召回的是否正确、是否属于当前用户、是否仍然有效、是否值得占用当前上下文”。
 
+### 记忆系统的代码实现
+
+#### 从 MemoryTool 进入系统
+
+`MemoryTool` 是 Agent 能看到的统一接口，具体记忆类型和存储后端都藏在工具内部。它支持以下动作：
+
+| action | 作用 | 关键参数 |
+| --- | --- | --- |
+| `add` | 添加工作、情景、语义或感知记忆 | `content`、`memory_type`、`importance` |
+| `search` | 跨类型或按类型检索 | `query`、`memory_types`、`limit`、`min_importance` |
+| `summary` / `stats` | 查看内容摘要和数量、重要性等统计 | `limit_per_type` |
+| `update` / `remove` | 修改或删除指定记忆 | `memory_id` |
+| `forget` | 按重要性、时间或容量清理 | `strategy`、`threshold`、`max_age_days` |
+| `consolidate` | 将重要短期记忆转为长期记忆 | `from_type`、`to_type`、`importance_threshold` |
+| `clear_all` | 清除当前用户的全部记忆 | 无 |
+
+原文快速体验使用 `memory_tool.run("add", content=...)`，工具系统的标准接口却是 `run(parameters: dict)`。实践代码同时兼容两种写法：
+
+```python
+memory_tool.run(
+    "add",
+    content="用户是一名前端工程师",
+    memory_type="semantic",
+    importance=0.9,
+)
+
+memory_tool.run({
+    "action": "search",
+    "query": "前端工程师",
+    "memory_types": ["semantic"],
+    "limit": 3,
+})
+```
+
+前者适合直接练习，后者可以由 `ToolRegistry` 和 Agent 正常分发。完整实现见 [memory_tool.py](./code/HelloAgents/hello_agents/tools/builtin/memory_tool.py)。
+
+工具只处理参数、会话元数据和输出格式，不直接访问数据库。写入时会补充 `session_id` 与 RFC 3339 时间；感知记忆若提供 `file_path`，还会根据扩展名推断 `image`、`audio`、`video` 或 `text` 模态。
+
+`auto_classify=True` 只是根据“刚才、昨天、模态”等关键词执行确定性路由，不是模型完成的智能分类。长期偏好、敏感信息和高价值经验更适合由调用方明确指定类型。
+
+#### MemoryManager 负责路由和跨类型操作
+
+`MemoryManager` 根据配置创建已启用的记忆类型，统一处理写入、跨类型检索、更新、删除、遗忘和整合。其核心不是“保存一个列表”，而是维护稳定的调度边界：
+
+```mermaid
+sequenceDiagram
+    participant A as "Agent / 调用方"
+    participant T as "MemoryTool"
+    participant M as "MemoryManager"
+    participant W as "WorkingMemory"
+    participant L as "长期记忆模块"
+    participant S as "存储与索引"
+
+    A->>T: "action + 参数"
+    T->>M: "标准化请求"
+    alt "写入工作记忆"
+        M->>W: "add(MemoryItem)"
+    else "写入长期记忆"
+        M->>L: "add(MemoryItem)"
+        L->>S: "文档 + 向量 + 可选图索引"
+    end
+    A->>T: "search(query, types)"
+    T->>M: "retrieve_memories"
+    par "从选中的类型召回"
+        M->>W: "词法相关性 + 时间衰减"
+        M->>L: "结构化过滤 + 混合检索"
+    end
+    M->>M: "按全局得分合并、去重、截断"
+    M-->>T: "MemoryItem[]"
+    T-->>A: "格式化结果"
+```
+
+每类记忆先返回带 `_retrieval_score` 的候选项，Manager 再做全局排序。不能只按 `importance` 排序：重要但与当前问题无关的记忆，不应压过真正相关的内容。
+
+整合也不是复制。实践中会创建目标记忆，写入 `consolidated_from` 和 `source_memory_id`，再删除来源记忆；目标重要性提升 10%，但上限固定为 1.0。若来源删除失败，会回滚新写入，避免同时留下两份不一致记录。完整调度代码见 [manager.py](./code/HelloAgents/hello_agents/memory/manager.py)。
+
+#### 统一数据结构与存储边界
+
+`MemoryItem` 统一了四种记忆的数据形态：
+
+```python
+class MemoryItem(BaseModel):
+    id: str
+    content: str
+    memory_type: str
+    user_id: str
+    timestamp: datetime
+    importance: float
+    metadata: dict[str, Any]
+```
+
+实现时还补上了几个容易遗漏的约束：`content` 不能为空；`memory_type` 只能是四个已知值；`importance` 必须落在 `[0, 1]`；时间统一保存为带时区的 UTC 时间；可变的 `metadata` 和模态列表通过 `default_factory` 创建，避免不同对象共享同一个默认字典或列表。
+
+本地实践的存储关系如下：
+
+```mermaid
+flowchart TB
+    MM["MemoryManager"] --> WM["WorkingMemory<br/>进程内 OrderedDict"]
+    MM --> EM["EpisodicMemory"]
+    MM --> SM["SemanticMemory"]
+    MM --> PM["PerceptualMemory"]
+
+    EM --> DOC["SQLiteDocumentStore<br/>统一记忆记录"]
+    EM --> VEC["SQLiteVectorStore<br/>TF-IDF 候选检索"]
+    SM --> DOC
+    SM --> VEC
+    SM --> GRAPH["SQLiteGraphStore<br/>实体与关系索引"]
+    PM --> DOC
+    PM --> VEC
+    PM --> NS["按 modality 分命名空间"]
+```
+
+章节的目标后端是 SQLite + Qdrant + Neo4j。本地代码没有把外部服务和密钥变成运行前提，而是用 SQLite 实现相同的文档、向量、图三层接口，并用轻量 TF-IDF 完成候选检索。这样可以完整验证控制流；接入 Qdrant、Neo4j 或云端 Embedding 时，只需替换存储和嵌入实现，不需要改 `MemoryTool`、`MemoryManager` 或四种记忆的职责。
+
+这里必须区分能力边界：TF-IDF 是稀疏词法相似度，不具备稠密向量模型的语义泛化；感知记忆保存媒体路径、模态和文本描述，并按模态检索，但没有加载 CLIP、CLAP，因此不能宣称已经完成图文或音文的跨模态语义对齐。
+
+#### 四种记忆的检索侧重点
+
+| 类型 | 保存内容 | 生命周期 | 检索与评分 |
+| --- | --- | --- | --- |
+| `WorkingMemory` | 当前对话、计划和中间状态 | 纯内存；默认 50 条；TTL 到期或重启即消失 | TF-IDF 70% + 关键词 30%，再乘时间衰减和重要性权重 |
+| `EpisodicMemory` | 具体事件和交互经历 | SQLite 持久化 | 向量相似度 80% + 时间近因性 20% |
+| `SemanticMemory` | 稳定事实、偏好、概念和规则 | SQLite 持久化 | 向量相似度 70% + 图关系 30% |
+| `PerceptualMemory` | 媒体描述、路径和模态元数据 | SQLite 持久化、模态隔离 | 同模态相似度 80% + 时间近因性 20% |
+
+四种评分都使用温和的重要性权重 `0.8 + importance × 0.4`，因此重要性只把分数缩放到原来的 0.8～1.2 倍，不会完全盖过相关性。
+
+工作记忆的最终分数为：
+
+`score = relevance × time_decay × (0.8 + importance × 0.4)`
+
+其中 `relevance = tfidf × 0.7 + keyword × 0.3`。检索前先清理 TTL 已过期内容；超过容量时淘汰重要性最低的项，重要性相同再淘汰较早写入的项。它不写入 SQLite，因此“重启后为空”是正确行为，而不是持久化失败。
+
+情景与感知记忆使用相同的融合形式：
+
+`score = (vector × 0.8 + recency × 0.2) × (0.8 + importance × 0.4)`
+
+情景记忆还能先按用户、时间、重要性和会话元数据过滤；感知记忆再增加 `modality` 过滤。时间不是唯一依据：近期但无查询交集的候选不会因为近因分而被强行返回。
+
+语义记忆的评分为：
+
+`score = (vector × 0.7 + graph × 0.3) × (0.8 + importance × 0.4)`
+
+本地实现用规则提取常见的“是、喜欢、擅长、使用、负责、学习”等关系并写入图索引。这只是可替换的确定性兜底，不等同于通用实体关系抽取；生产环境仍应接入 spaCy、LLM 抽取器或已有知识图谱。
+
+#### 遗忘与整合必须同步所有索引
+
+`forget` 的三种策略对应三个不同问题：
+
+- `importance`：删除低于阈值的低价值记录。
+- `time`：删除超过指定天数的旧记录。
+- `capacity`：超过容量时，优先删除重要性低且更早的记录。
+
+无论由哪个策略触发，删除都必须同时作用于文档记录、向量索引和图关系；否则下一次检索可能返回“主记录已删除、索引仍存在”的幽灵记忆。用户主动删除同样需要走这条完整链路。
+
+整合常见的两条路径是 `working → episodic` 和 `episodic → semantic`。前者保留值得复盘的具体经历，后者应在去重和抽象后才沉淀为稳定事实。当前实现按重要性阈值完成迁移，但没有让 LLM 自动摘要，因此不会擅自把多条经历概括成新知识。
+
+#### 我的代码实践
+
+代码放在 [hello_agents/memory/](./code/HelloAgents/hello_agents/memory/)，示例见 [memory_system_demo.py](./code/HelloAgents/examples/memory_system_demo.py)。它不调用 LLM，也不访问外部服务：
+
+```bash
+cd code/HelloAgents
+pip install pydantic python-dotenv openai
+python examples/memory_system_demo.py
+```
+
+实践依次完成注册工具、写入四类记忆、检索、更新、工作记忆整合、删除感知记忆、按重要性遗忘、重启召回、用户隔离和清空。去掉每次随机生成的 UUID 后，实际输出如下：
+
+```text
+已注册工具： ['memory']
+写入后数量： {'working': 1, 'episodic': 0, 'semantic': 1, 'perceptual': 1}
+检索结果： ['用户是一名前端工程师，喜欢 Python 和 TypeScript。']
+已更新记忆：<UUID>
+整合完成：working → episodic，迁移 1 条记忆。
+已删除记忆：<UUID>
+遗忘完成：semantic=1
+维护后数量： {'working': 0, 'episodic': 1, 'semantic': 1, 'perceptual': 0}
+重启后召回： ['用户是一名前端工程师，主要使用 Python 和 TypeScript。']
+重启后工作记忆： 0
+其他用户召回： 0
+清理完成：working=0, episodic=1, semantic=1, perceptual=0
+```
+
+这组结果验证了三件事：长期记忆能跨实例恢复；工作记忆保持会话级生命周期；相同数据库中的不同用户仍由 `user_id` 隔离。它还说明“Agent 注册了 MemoryTool”不等于系统会自动记住所有对话：Agent 仍需显式调用工具，或由应用在对话结束后调用 `auto_record_conversation()`。是否自动写入应由产品规则决定，不能默认把每句话永久保存。
+
 ### 参考资料
 
 - [《Hello-Agents》第八章：记忆与检索](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter8/%E7%AC%AC%E5%85%AB%E7%AB%A0%20%E8%AE%B0%E5%BF%86%E4%B8%8E%E6%A3%80%E7%B4%A2.md)
+- [HelloAgents `learn_version`：memory 模块源码](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/memory)
 - [Atkinson & Shiffrin (1968), *Human Memory: A Proposed System and Its Control Processes*](https://escholarship.org/uc/item/5kd4s4j3)
 - [Miller (1956), *The Magical Number Seven, Plus or Minus Two*](https://pubmed.ncbi.nlm.nih.gov/13310704/)
 - [Cowan (2001), *The Magical Number 4 in Short-Term Memory*](https://pubmed.ncbi.nlm.nih.gov/11515286/)
@@ -274,4 +463,7 @@ flowchart TB
 - HelloAgents 将记忆和 RAG 封装为工具，复用第七章的 Agent 与 `ToolRegistry`，同时在内部保持分层和存储抽象。
 - 记忆生命周期由编码、存储、检索、整合和遗忘构成，检索与新行动会继续产生新信息，因此它是闭环而非单向流水线。
 - 工作、情景、语义和感知是记忆类型；编码、检索和遗忘是对这些记忆执行的操作，两个维度不能混淆。
+- `MemoryTool` 统一对外动作，`MemoryManager` 负责路由和全局排序，具体记忆实现负责各自的生命周期、评分和存储一致性。
+- 工作记忆是带 TTL 的进程内缓存；情景、语义和感知记忆持久化保存，并分别强调时间、实体关系和模态隔离。
+- 本地 TF-IDF 与规则图索引用于跑通架构，不等同于稠密语义检索或跨模态对齐；生产后端可在不改变上层协议的前提下替换。
 - 可持久不等于有效记忆；一个可用系统还要解决筛选、召回、冲突、遗忘、隔离和用户删除权。
