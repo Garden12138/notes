@@ -99,3 +99,22 @@ When blocked on visual location, ask the user for a screenshot of the current pa
 - The operation menu is row-scoped; do not click `...` for a different product row.
 - Some Youzan controls may be icon-only or custom components; use snapshots plus DOM/evaluate inspection, and coordinate clicks only after confirming the target region.
 - Avoid blind repeated clicks. After every dropdown/dialog action, inspect visible state before continuing.
+
+## 产品筛选规则（关键！）
+
+**必须使用从商品编辑页获取的完整商品名称进行筛选**，不得使用部分关键词。
+
+原因：有赞商品管理列表中可能存在多个名称相似的商品（如同一商品的不同分销版本、不同命名格式等）。使用部分关键词筛选时可能返回多条结果，但只有一条是本次刚完成上架/编辑的目标商品。
+
+执行流程：
+
+1. 在进入商品管理页面之前，必须从商品编辑页的 `商品名称` 输入框读取**完整商品名称**。
+2. 将该完整商品名称逐个字符（包括空格、标点）复制到商品筛选搜索框。
+3. 点击筛选后，验证搜索结果中第一条的商品名称与目标商品名称完全一致。
+4. 如果返回多条结果，必须比对每一条的商品名称，只选择与目标名称完全匹配的那一条。
+5. 如果筛选结果包含多条且无法唯一确定，立即停止并报告。
+
+示例：
+
+- 错误：搜索 `<PRODUCT_KEYWORD>` → 返回多个相似商品，可能选错
+- 正确：搜索 `<FULL_PRODUCT_NAME>`（完整名称）→ 只返回一条精确匹配的结果，不会选错

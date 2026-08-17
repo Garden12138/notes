@@ -1,0 +1,50 @@
+{
+  "gateway": {
+    "mode": "local",
+    "bind": "loopback"
+  },
+  "plugins": {
+    "entries": {
+      "ai-content-ops-attempt": {
+        "enabled": true,
+        "config": {
+          "bridgeUrl": "http://127.0.0.1:18791"
+        }
+      }
+    }
+  },
+  "skills": {
+    "load": {
+      "extraDirs": ["/absolute/path/to/ai-content-ops/workers/openclaw/skills"],
+      "watch": true
+    },
+    "entries": {
+      "xiaohongshu-browser-worker": {
+        "enabled": true
+      }
+    }
+  },
+  "agents": {
+    "list": [
+      {
+        "id": "xiaohongshu-browser-worker",
+        "workspace": "/absolute/path/to/ai-content-ops/workers/openclaw",
+        "skills": ["xiaohongshu-browser-worker"],
+        "sandbox": {
+          "mode": "off"
+        },
+        "tools": {
+          "profile": "full",
+          "allow": [
+            "ai_content_ops_attempt_context",
+            "ai_content_ops_attempt_step",
+            "ai_content_ops_attempt_finish"
+          ],
+          "elevated": {
+            "enabled": false
+          }
+        }
+      }
+    ]
+  }
+}
