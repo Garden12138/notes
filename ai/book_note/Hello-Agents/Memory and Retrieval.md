@@ -6,7 +6,9 @@
 >
 > 阅读资料：[《Hello-Agents》第八章 8.2：记忆系统——让智能体拥有记忆](https://datawhalechina.github.io/hello-agents/#/./chapter8/%E7%AC%AC%E5%85%AB%E7%AB%A0%20%E8%AE%B0%E5%BF%86%E4%B8%8E%E6%A3%80%E7%B4%A2?id=_82-%e8%ae%b0%e5%bf%86%e7%b3%bb%e7%bb%9f%ef%bc%9a%e8%ae%a9%e6%99%ba%e8%83%bd%e4%bd%93%e6%8b%a5%e6%9c%89%e8%ae%b0%e5%bf%86)
 >
-> 8.1 建立记忆与 RAG 的概念边界，8.2 再把编码、存储、检索、整合和遗忘落实到 `MemoryTool`、`MemoryManager` 与四种记忆实现中。
+> 阅读资料：[《Hello-Agents》第八章 8.3：RAG 系统——知识检索增强](https://datawhalechina.github.io/hello-agents/#/./chapter8/%E7%AC%AC%E5%85%AB%E7%AB%A0%20%E8%AE%B0%E5%BF%86%E4%B8%8E%E6%A3%80%E7%B4%A2?id=_83-rag%e7%b3%bb%e7%bb%9f%ef%bc%9a%e7%9f%a5%e8%af%86%e6%a3%80%e7%b4%a2%e5%a2%9e%e5%bc%ba)
+>
+> 8.1 建立记忆与 RAG 的概念边界，8.2 实现记忆生命周期，8.3 再补齐外部文档的解析、切分、索引、检索和增强生成流程。
 
 ### 从认知科学到智能体记忆
 
@@ -447,10 +449,212 @@ python examples/memory_system_demo.py
 
 这组结果验证了三件事：长期记忆能跨实例恢复；工作记忆保持会话级生命周期；相同数据库中的不同用户仍由 `user_id` 隔离。它还说明“Agent 注册了 MemoryTool”不等于系统会自动记住所有对话：Agent 仍需显式调用工具，或由应用在对话结束后调用 `auto_record_conversation()`。是否自动写入应由产品规则决定，不能默认把每句话永久保存。
 
+### RAG 系统：知识检索增强
+
+#### RAG 解决的是外部知识问题
+
+RAG（Retrieval-Augmented Generation）在模型生成前先检索外部知识，再把命中的内容放进提示词。它没有更新模型参数，也不能自动保证事实正确；答案质量仍取决于知识源、分块、检索和模型是否遵守上下文。
+
+RAG 可以拆成三个动作：
+
+- **检索**：从知识库找出与问题相关的片段。
+- **增强**：把有限片段连同来源放进当前提示词。
+- **生成**：要求 LLM 只基于这些证据组织答案。
+
+从朴素 RAG 到高级、模块化 RAG，变化主要发生在检索前后：关键词检索逐渐加入稠密向量、查询改写、混合检索、重排序和上下文压缩；各环节又被拆成可替换模块。模块越多并不代表效果一定越好，必须结合召回率、准确率、延迟和成本评估。
+
+#### 数据准备和在线查询是两条流程
+
+```mermaid
+flowchart LR
+    subgraph INDEX["离线或增量建库"]
+        D["外部文档"] --> M["MarkItDown<br/>统一为 Markdown"]
+        M --> C["标题感知分块<br/>大小 + 重叠"]
+        C --> E["Embedding"]
+        E --> V["向量存储<br/>内容 + 元数据 + 来源"]
+    end
+
+    subgraph QUERY["在线问答"]
+        Q["用户问题"] --> X["可选 MQE / HyDE"]
+        X --> R["检索、合并、去重"]
+        V --> R
+        R --> B["构建有限上下文"]
+        B --> L["LLM 基于证据回答"]
+        L --> A["答案 + 引用"]
+    end
+```
+
+文章把系统概括为“五层七步”：用户层由 `RAGTool` 提供统一动作；应用层负责搜索、问答和管理；处理层完成解析、Markdown 转换、分块和向量化；存储层保存分块与索引；基础层提供 Embedding、LLM 和数据库。
+
+落实成步骤就是：解析文档、统一格式、切分、向量化、索引、检索并构建上下文、生成答案。建库不应在每次提问时重复执行；只有新增或变更的文档需要重新处理。
+
+#### 文档统一为 Markdown 后再切分
+
+`Document` 保存规范化后的 Markdown 和来源信息，`DocumentChunk` 保存分块内容、文档 ID、块序号、标题路径和字符位置，`DocumentProcessor` 负责转换与切分。完整代码见 [document.py](./code/HelloAgents/hello_agents/memory/rag/document.py)。
+
+```python
+processor = DocumentProcessor(chunk_size=800, chunk_overlap=100)
+document = processor.load_file(
+    "manual.pdf",
+    document_id="product_manual",
+)
+chunks = processor.process_document(document)
+```
+
+PDF、Office、图片和音频依赖 MarkItDown 的解析、OCR 或转录能力；代码文件、Markdown 和普通文本可以直接读取。没有安装 MarkItDown 时，二进制文件会返回明确错误，而不是把二进制内容强行按文本解码。
+
+分块采用以下顺序：
+
+1. 识别 `#` 到 `######`，为后续段落维护 `heading_path`。
+2. 以空行形成段落，尽量保持局部语义完整。
+3. 用 CJK 字符数加英文词数近似 Token，控制块大小。
+4. 单个段落超过上限时继续按句子边界切分。
+5. 新块保留上一块末尾的一小段重叠，减少边界信息丢失。
+
+`chunk_size` 和 `chunk_overlap` 是近似 Token，不是字符数。重叠过小容易切断定义和条件，过大则增加索引、召回重复和上下文成本。实践实现要求 `0 <= chunk_overlap < chunk_size`，并保证每轮至少消费一段文本，避免重叠内容导致切分循环不前进。
+
+分块 ID 由文档 ID、块序号和内容稳定生成。再次写入同一个 `document_id` 会先替换该文档原有分块，而不是不断累积重复索引。
+
+#### 向量化和存储保持可替换
+
+索引项不仅包含用于匹配的表示，还必须保留原始内容和可追溯元数据：
+
+```text
+chunk_id / doc_id / content
+source_path / heading_path / chunk_index
+namespace / collection_name / indexed_at
+```
+
+查询与文档向量通常使用余弦相似度排序：`similarity = dot(q, d) / (norm(q) × norm(d))`。相似度只表示在当前表示空间中接近，不表示片段真实、完整或足以回答问题。
+
+文章使用统一 Embedding 接口和 Qdrant。本地实践复用已有 `EmbeddingModel`，默认以 TF-IDF 完成词法检索，并用 [SQLiteRAGStore](./code/HelloAgents/hello_agents/memory/rag/store.py) 持久化分块。它保留了 `collection_name → namespace → document → chunk` 的隔离关系，能离线验证完整控制流；生产环境可以在相同边界接入稠密 Embedding 和 Qdrant。
+
+`qdrant_url` 和 `qdrant_api_key` 仅为兼容文章中的构造接口而保留。本地实现收到这两个参数会明确报错，不会表面接受配置、实际仍写入 SQLite；当前代码并未实现 Qdrant 连接。
+
+TF-IDF 对字面相同的术语有效，但不能替代稠密语义检索。例如“费用”和“价格”没有共同词项时可能互相召回不到。笔记中的本地结果只能说明管道正确，不代表已经达到云端 Embedding 的语义效果。
+
+#### 基础检索、MQE 和 HyDE
+
+基础检索直接用原问题查询。高级检索采用文章的“扩展—检索—合并”流程：
+
+```mermaid
+flowchart LR
+    Q["原问题"] --> O["保留原查询"]
+    Q --> M["MQE<br/>生成多种等价表述"]
+    Q --> H["HyDE<br/>生成假设答案段落"]
+    O --> S["分别检索候选池"]
+    M --> S
+    H --> S
+    S --> D["按 chunk_id 去重<br/>保留最高分"]
+    D --> K["Top-K 片段"]
+```
+
+MQE 用多种问法缓解用户用词与文档用词不一致；HyDE 先生成一段“可能的答案”，用陈述式文本缩小问题与文档的表达差异。二者都需要额外 LLM 调用，会增加延迟和成本。
+
+HyDE 生成的段落可能含有错误，只能当作检索查询，不能直接进入最终答案充当证据。最终上下文必须来自真实命中的知识库分块。若扩展模型不可用或返回无效内容，[RAGPipeline](./code/HelloAgents/hello_agents/memory/rag/pipeline.py) 会保留原查询并退化为基础检索。
+
+当前合并策略按 `chunk_id` 去重，并保留该片段在所有扩展查询中的最高分。这与文章代码一致，但不同查询产生的分数未必完全可比；数据规模变大后可以再加入 RRF、重排序模型或来源多样性约束。
+
+#### RAGTool 的问答链路
+
+`RAGTool` 延续“万物皆工具”，没有新建 RAGAgent。它支持六个动作：
+
+| action | 作用 | 关键参数 |
+| --- | --- | --- |
+| `add_document` | 解析文件并建索引 | `file_path`、`document_id`、分块参数 |
+| `add_text` | 直接加入 Markdown 或纯文本 | `text`、`document_id` |
+| `search` | 返回相关片段和来源 | `query`、`limit`、`min_score` |
+| `ask` | 检索后调用 LLM 生成答案 | `question`、`max_chars`、`include_citations` |
+| `stats` | 查看文档、分块和来源数量 | `namespace` |
+| `clear` | 清除指定命名空间 | `namespace`、`confirm=true` |
+
+```mermaid
+sequenceDiagram
+    participant A as "Agent / 调用方"
+    participant T as "RAGTool"
+    participant P as "RAGPipeline"
+    participant S as "VectorStore"
+    participant L as "LLM"
+
+    A->>T: "ask(question)"
+    T->>P: "基础或扩展检索"
+    P->>L: "可选 MQE / HyDE"
+    P->>S: "对每个查询召回候选"
+    S-->>P: "片段 + 分数 + 来源"
+    P->>P: "去重、排序、按预算构建上下文"
+    P-->>T: "context + citations"
+    T->>L: "问题 + 真实检索上下文"
+    L-->>T: "基于证据的答案"
+    T-->>A: "答案 + 引用来源"
+```
+
+上下文构建按 `max_chars` 截断，并优先在句末或换行处停止。提示词明确要求上下文不足时说明缺失信息，不能用模型参数中的旧知识偷偷补全。引用显示的是检索来源，不代表模型生成的每句话都已经被逐句验证。
+
+`namespace` 用于隔离项目。清空操作只删除当前 `collection_name + namespace` 下的分块，并要求 `confirm=true`；不能像直接清空整个向量集合那样误删其他项目。
+
+完整工具实现见 [rag_tool.py](./code/HelloAgents/hello_agents/tools/builtin/rag_tool.py)。它同时支持章节中的直接调用和 `ToolRegistry` 字典接口：
+
+```python
+rag_tool.execute(
+    "add_text",
+    text="# Python\n\nPython 于 1991 年首次发布。",
+    document_id="python_intro",
+)
+
+rag_tool.run({
+    "action": "ask",
+    "question": "Python 何时首次发布？",
+    "include_citations": True,
+})
+```
+
+#### 我的代码实践
+
+离线示例见 [rag_system_demo.py](./code/HelloAgents/examples/rag_system_demo.py)。它使用 Markdown 文档、SQLite、TF-IDF 和确定性的 `DemoLLM`，不调用收费 API：
+
+```bash
+cd code/HelloAgents
+pip install pydantic python-dotenv openai
+python -m examples.rag_system_demo
+```
+
+若要处理 PDF、Office、图片或音频，再安装可选解析依赖：
+
+```bash
+pip install "markitdown[all]"
+```
+
+实际输出如下：
+
+```text
+已注册工具： ['rag']
+已添加文档：python_guide.md
+分块数量：2
+命名空间：study
+已添加文本：rag_concept
+分块数量：1
+命名空间：study
+基础检索： ['Python 指南 > 起源', 'Python 指南 > 设计特点']
+扩展查询数： 4
+高级检索： ['Python 指南 > 起源', 'Python 指南 > 设计特点']
+问答： Python 由 Guido van Rossum 创建，1991 年首次发布。[1][2]
+命名空间计数： {'study': 3, 'private': 1}
+重启后召回： ['Python 指南 > 起源']
+已清空命名空间 study，删除 3 个分块。
+清理后计数： {'study': 0, 'private': 1}
+```
+
+这次实践验证了文件和直接文本两种入库方式、标题路径保留、基础与扩展检索、上下文问答、SQLite 跨实例恢复和命名空间隔离。`DemoLLM` 的固定答案只能验证消息流和引用拼接，不能作为真实模型回答质量的评测。
+
+检查 RAG 效果时需要把问题拆开：先看相关片段是否进入候选集，再看排序是否把正确证据放到前面，最后看模型是否忠实使用证据。只检查最终答案，会分不清错误来自知识源、分块、检索还是生成。
+
 ### 参考资料
 
 - [《Hello-Agents》第八章：记忆与检索](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter8/%E7%AC%AC%E5%85%AB%E7%AB%A0%20%E8%AE%B0%E5%BF%86%E4%B8%8E%E6%A3%80%E7%B4%A2.md)
 - [HelloAgents `learn_version`：memory 模块源码](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/memory)
+- [HelloAgents `learn_version`：RAG 管道源码](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/memory/rag)
+- [HelloAgents `learn_version`：RAGTool 源码](https://github.com/jjyaoao/HelloAgents/blob/learn_version/hello_agents/tools/builtin/rag_tool.py)
+- [Microsoft MarkItDown](https://github.com/microsoft/markitdown)
 - [Atkinson & Shiffrin (1968), *Human Memory: A Proposed System and Its Control Processes*](https://escholarship.org/uc/item/5kd4s4j3)
 - [Miller (1956), *The Magical Number Seven, Plus or Minus Two*](https://pubmed.ncbi.nlm.nih.gov/13310704/)
 - [Cowan (2001), *The Magical Number 4 in Short-Term Memory*](https://pubmed.ncbi.nlm.nih.gov/11515286/)
@@ -466,4 +670,8 @@ python examples/memory_system_demo.py
 - `MemoryTool` 统一对外动作，`MemoryManager` 负责路由和全局排序，具体记忆实现负责各自的生命周期、评分和存储一致性。
 - 工作记忆是带 TTL 的进程内缓存；情景、语义和感知记忆持久化保存，并分别强调时间、实体关系和模态隔离。
 - 本地 TF-IDF 与规则图索引用于跑通架构，不等同于稠密语义检索或跨模态对齐；生产后端可在不改变上层协议的前提下替换。
+- RAG 分为建库和查询两条流程；Markdown 统一格式、标题感知分块和来源元数据共同决定知识能否被可靠召回。
+- MQE 扩展问题表达，HyDE 用假设答案帮助检索；二者产生的是查询，不是最终证据，失败时应退化为原查询。
+- `RAGTool` 将检索、上下文预算、生成和引用串成一条管道，命名空间则负责隔离不同知识库。
+- RAG 能补充外部知识，但不能替代知识源治理、检索评测和回答忠实度检查。
 - 可持久不等于有效记忆；一个可用系统还要解决筛选、召回、冲突、遗忘、隔离和用户删除权。

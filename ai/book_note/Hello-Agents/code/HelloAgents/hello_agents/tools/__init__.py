@@ -5,6 +5,7 @@ from .base import Tool, ToolParameter
 from .builtin import (
     CalculatorTool,
     MemoryTool,
+    RAGTool,
     SearchTool,
     calculate,
     create_calculator_registry,
@@ -17,6 +18,7 @@ __all__ = [
     "AsyncToolExecutor",
     "CalculatorTool",
     "MemoryTool",
+    "RAGTool",
     "SearchTool",
     "Tool",
     "ToolChain",
