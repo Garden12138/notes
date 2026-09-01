@@ -1,0 +1,4 @@
+interface:
+  display_name: "Xiaohongshu Browser Worker"
+  short_description: "Execute leased Xiaohongshu browser tasks safely"
+  default_prompt: "Use $xiaohongshu-browser-worker to execute a validated, already-leased Xiaohongshu browser task."

@@ -1,0 +1,184 @@
+{
+  "capabilities": [
+    {
+      "name": "xiaohongshu.check_login",
+      "version": "1.0",
+      "input_schema": "xiaohongshu.check_login.input@1.0",
+      "output_schema": "xiaohongshu.check_login.output@1.0",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Inspect the assigned Profile's Xiaohongshu login and blocker state."
+    },
+    {
+      "name": "xiaohongshu.search_notes",
+      "version": "1.0",
+      "input_schema": "xiaohongshu.search_notes.input@1.0",
+      "output_schema": "xiaohongshu.search_notes.output@1.0",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Navigate a bounded keyword search and return structured public note results."
+    },
+    {
+      "name": "xiaohongshu.collect_note_detail",
+      "version": "0.1",
+      "input_schema": "xiaohongshu.collect_note_detail.input@0.1",
+      "output_schema": "xiaohongshu.collect_note_detail.output@0.1",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Extract public fields from one explicitly assigned note."
+    },
+    {
+      "name": "xiaohongshu.collect_comments",
+      "version": "0.1",
+      "input_schema": "xiaohongshu.collect_comments.input@0.1",
+      "output_schema": "xiaohongshu.collect_comments.output@0.1",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Collect a bounded, duplicate-free set of public top-level comments from one note."
+    },
+    {
+      "name": "xiaohongshu.search_notes",
+      "version": "1.1",
+      "input_schema": "xiaohongshu.search_notes.input@1.1",
+      "output_schema": "xiaohongshu.search_notes.output@1.1",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Fallback or explicit Agent wrapper for normalized deterministic note-list collection."
+    },
+    {
+      "name": "xiaohongshu.collect_note_detail",
+      "version": "0.2",
+      "input_schema": "xiaohongshu.collect_note_detail.input@0.2",
+      "output_schema": "xiaohongshu.collect_note_detail.output@0.2",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Fallback or explicit Agent wrapper for normalized deterministic note-detail collection."
+    },
+    {
+      "name": "xiaohongshu.collect_comments",
+      "version": "0.2",
+      "input_schema": "xiaohongshu.collect_comments.input@0.2",
+      "output_schema": "xiaohongshu.collect_comments.output@0.2",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Fallback or explicit Agent wrapper for bounded hierarchy-aware comment collection."
+    },
+    {
+      "name": "metrics.collect",
+      "version": "1.0",
+      "input_schema": "metrics.collect.input@1.0",
+      "output_schema": "metrics.collect.output@1.0",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Read one immutable published post at an assigned metric timepoint without platform writes."
+    },
+    {
+      "name": "metrics.collect",
+      "version": "1.1",
+      "input_schema": "metrics.collect.input@1.1",
+      "output_schema": "metrics.collect.output@1.1",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Read one immutable published post with token-free exact-note search recovery and no platform writes."
+    },
+    {
+      "name": "metrics.collect",
+      "version": "1.2",
+      "input_schema": "metrics.collect.input@1.2",
+      "output_schema": "metrics.collect.output@1.2",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Read one exact frozen-ID or unique exact-title note row from the official creator statistics table with explicit NATURAL or user-approved ACCELERATED_REAL_READ timing provenance and no platform writes."
+    },
+    {
+      "name": "xiaohongshu.publisher_login_check",
+      "version": "1.0",
+      "input_schema": "xiaohongshu.publisher_login_check.input@1.0",
+      "output_schema": "xiaohongshu.publisher_login_check.output@1.0",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Read the creator account identity and compare it exactly with the frozen PublishTask account."
+    },
+    {
+      "name": "xiaohongshu.publisher_image_upload",
+      "version": "1.0",
+      "input_schema": "xiaohongshu.publisher_image_upload.input@1.0",
+      "output_schema": "xiaohongshu.publisher_image_upload.output@1.0",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Validate frozen image bytes and perform one deterministic ordered editor upload without saving or publishing."
+    },
+    {
+      "name": "xiaohongshu.publisher_form_fill",
+      "version": "1.0",
+      "input_schema": "xiaohongshu.publisher_form_fill.input@1.0",
+      "output_schema": "xiaohongshu.publisher_form_fill.output@1.0",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Fill frozen title, body, and ordered topics with exact readback without saving or publishing."
+    },
+    {
+      "name": "xiaohongshu.publisher_draft_save",
+      "version": "1.0",
+      "input_schema": "xiaohongshu.publisher_draft_save.input@1.0",
+      "output_schema": "xiaohongshu.publisher_draft_save.output@1.0",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Execute one explicitly authorized reversible draft save with full readback and no final publication."
+    },
+    {
+      "name": "xiaohongshu.publisher_final_publish",
+      "version": "1.0",
+      "input_schema": "xiaohongshu.publisher_final_publish.input@1.0",
+      "output_schema": "xiaohongshu.publisher_final_publish.output@1.0",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "After one per-task user confirmation, click the verified final control exactly once and recover the exact-title note-management result without any autonomous retry."
+    },
+    {
+      "name": "xiaohongshu.publisher_final_status_sync",
+      "version": "1.0",
+      "input_schema": "xiaohongshu.publisher_final_status_sync.input@1.0",
+      "output_schema": "xiaohongshu.publisher_final_status_sync.output@1.0",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "After an authorized publication remains under review, read only the exact-title note-management row and recover its final identity without opening the editor or clicking publish."
+    },
+    {
+      "name": "browser_profile.prepare",
+      "version": "1.0",
+      "input_schema": "browser_profile.prepare.input@1.0",
+      "output_schema": "browser_profile.prepare.output@1.0",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Prepare one exact dedicated Chrome user-data directory and open the human login window without exposing local paths or session material."
+    },
+    {
+      "name": "browser_profile.cleanup",
+      "version": "1.0",
+      "input_schema": "browser_profile.cleanup.input@1.0",
+      "output_schema": "browser_profile.cleanup.output@1.0",
+      "status": "active",
+      "enabled": true,
+      "gateway_advertised": true,
+      "summary": "Remove one explicitly confirmed archived Profile directory after every binding, lease, job, and browser-process safety gate passes."
+    }
+  ]
+}
