@@ -648,13 +648,197 @@ pip install "markitdown[all]"
 
 检查 RAG 效果时需要把问题拆开：先看相关片段是否进入候选集，再看排序是否把正确证据放到前面，最后看模型是否忠实使用证据。只检查最终答案，会分不清错误来自知识源、分块、检索还是生成。
 
+### 构建智能文档问答助手
+
+#### 从组件实现进入应用编排
+
+8.2 和 8.3 分别完成了 Memory 与 RAG，8.4 不再增加新的底层算法，而是把两套工具编排成一个学习助手：RAG 管文档知识，Memory 管用户自己的学习过程，Gradio 提供交互界面。
+
+原文以 `Happy-LLM-0727.pdf` 为例，希望支持文档解析、高级检索、学习记忆和报告生成。落到实际代码，核心对象是 `PDFLearningAssistant`：
+
+```text
+PDFLearningAssistant
+├── RAGTool：文档入库、检索、基于证据回答
+├── MemoryTool：记录加载事件、问题、问答经历和笔记
+├── Session：关联一次学习过程
+├── Stats：记录文档、问题和笔记数量
+└── Report：汇总会话、记忆、知识库和学习记录
+```
+
+这里的“结合”不是把 RAG 数据复制进 Memory。文档正文仍留在 RAG 知识库，Memory 只保存用户行为和学习成果，两者的数据语义没有混在一起。
+
+#### 五步流程形成学习闭环
+
+```mermaid
+flowchart TD
+    D["1. 加载 PDF"] --> R["MarkItDown、分块、建立 RAG 索引"]
+    R --> E["情景记忆：记录加载事件"]
+    Q["2. 用户提问"] --> W["工作记忆：记录当前问题"]
+    W --> A["RAG 检索并回答"]
+    A --> H["情景记忆：记录问答经历"]
+    N["3. 添加学习笔记"] --> S["语义记忆：保存概念理解"]
+    U["4. 问答或回顾"] --> C{"关键词路由"}
+    C -->|"普通问题"| Q
+    C -->|"之前 / 回顾 / 历史"| M["检索个人记忆"]
+    E --> P["5. 汇总统计与报告"]
+    H --> P
+    S --> P
+    P --> U
+```
+
+图中的路由需要准确命名：原文代码通过“之前、学过、回顾、历史、记得”等关键词决定调用 `recall()` 还是 `ask()`，这是确定性的规则匹配，不是 LLM 自动理解意图。规则简单、可控，但“请结合之前的笔记回答文档问题”这类混合请求可能被直接分到回顾分支。
+
+原文目标还提到感知记忆、个性化推荐、记忆整合和选择性遗忘，但展示的 `PDFLearningAssistant` 实际只使用工作、情景和语义记忆，也没有实现推荐、整合和遗忘。阅读时应区分“目标清单”和“已经连通的代码路径”。
+
+#### 初始化要同时隔离用户、知识库和会话
+
+完整实现见 [document_qa.py](./code/HelloAgents/hello_agents/applications/document_qa.py)。它保留文章的类名和六个公开方法，并将运行数据集中到指定目录：
+
+```python
+assistant = PDFLearningAssistant(
+    user_id="garden",
+    data_dir="./document_qa_data",
+)
+```
+
+三个标识解决的问题不同：
+
+| 标识 | 隔离对象 | 示例 |
+| --- | --- | --- |
+| `user_id` | 用户的长期记忆 | `garden` |
+| `rag_namespace` | 用户的文档知识库 | `pdf_garden` |
+| `session_id` | 本次学习过程中的事件 | `session_...` |
+
+仅设置 `user_id` 不足以隔离 RAG，只有命名空间也无法区分两次学习会话。实现还让 `MemoryTool.session_id` 与助手会话保持一致，避免调用方传入的会话标识被工具自身的默认值覆盖。
+
+#### 文档加载成功后才能更新状态
+
+文章中的 `RAGTool.run()` 返回字符串，但示例没有检查字符串内容：只要没有抛出异常，即使工具返回“错误：文件解析失败”，也会把 `current_document` 和文档计数更新为成功状态。
+
+补全后的顺序是：
+
+1. 检查文件、`chunk_size` 和 `chunk_overlap`。
+2. 用规范化绝对路径生成稳定 `document_id`，再次加载同一路径时替换旧分块。
+3. 调用 `RAGTool.add_document`。
+4. 检查工具是否返回错误，失败时不修改当前文档和统计。
+5. 成功后记录情景记忆，再更新应用状态。
+
+```python
+result = assistant.load_document(
+    "Happy-LLM-0727.pdf",
+    chunk_size=1000,
+    chunk_overlap=200,
+)
+if not result["success"]:
+    print(result["message"])
+```
+
+PDF 仍通过 8.3 的 MarkItDown 路径转换；Web 页面只允许上传 PDF。核心类同时接受 Markdown 和文本文件，主要用于离线测试文档处理以外的应用流程，并没有改变 PDF 案例的主线。
+
+#### 一次问答会写入两种记忆
+
+```mermaid
+sequenceDiagram
+    participant U as "用户"
+    participant A as "PDFLearningAssistant"
+    participant M as "MemoryTool"
+    participant R as "RAGTool"
+    participant L as "LLM"
+
+    U->>A: "ask(question)"
+    A->>M: "写入 working：当前问题"
+    A->>R: "ask + MQE / HyDE"
+    R->>L: "查询扩展与基于上下文生成"
+    L-->>R: "带引用回答"
+    R-->>A: "答案 + 来源"
+    A->>M: "写入 episodic：问题与回答"
+    A->>A: "questions_asked += 1"
+    A-->>U: "返回回答"
+```
+
+工作记忆保存“现在正在处理什么”，情景记忆保存“发生过什么”。用户主动整理出的结论则通过 `add_note()` 写入语义记忆：
+
+```python
+assistant.add_note(
+    "查询决定关注目标，键用于匹配，值承载被聚合的信息。",
+    concept="attention",
+)
+```
+
+完整实现会检查空问题、空笔记和工具错误。只有 RAG 返回有效结果后，才增加成功问答计数并记录问答事件；Memory 写入失败不会伪装成成功，而是进入报告的 `memory_warnings`。
+
+#### 回顾和报告使用的是用户学习数据
+
+`recall()` 按 `user_id` 检索跨会话 Memory，不查询 PDF 原文；`ask()` 查询当前用户的 RAG 命名空间，不把个人笔记当作文档证据。两者保持分工：
+
+```python
+answer = assistant.ask("注意力机制如何利用上下文？")
+history = assistant.recall("注意力机制")
+report = assistant.generate_report(save_to_file=True)
+```
+
+报告包含：
+
+- 用户、会话开始时间、生成时间和持续时长；
+- 成功加载的文档及来源路径；
+- 问答记录和是否启用高级检索；
+- 学习笔记与概念标签；
+- Memory 摘要、RAG 状态和写入警告。
+
+时间使用带时区的 RFC 3339 格式。JSON 先写入临时文件再替换目标文件，避免进程在写入中途退出后留下半份报告。
+
+#### Gradio 是界面层，不承担业务状态
+
+Web 入口见 [document_qa_assistant.py](./code/HelloAgents/examples/document_qa_assistant.py)：
+
+```bash
+cd code/HelloAgents
+pip install pydantic python-dotenv openai "gradio>=6,<7" "markitdown[all]"
+python -m examples.document_qa_assistant
+```
+
+浏览器访问 `http://127.0.0.1:7860`。模型仍读取项目已有的 `.env` 配置。
+
+实现保留原文的四个页签，但修正了两个 Web 边界：
+
+- `gr.File(type="filepath")` 的回调值就是路径字符串，不再访问旧文件对象的 `.name`。
+- `gr.Chatbot(type="messages")` 使用 `role/content` 字典，不再使用 Gradio 6 已移除的二元组历史。
+
+原文把当前助手放在闭包中的一个全局字典字段，后初始化的用户会覆盖先前用户。当前实现由浏览器 `gr.State` 保存随机会话键，服务端再用该键查找助手实例，避免不同浏览器会话共享“当前助手”。持久化数据仍分别通过 `user_id` 和 RAG 命名空间隔离。
+
+#### 我的代码实践
+
+离线示例见 [document_qa_assistant_demo.py](./code/HelloAgents/examples/document_qa_assistant_demo.py)。它用一段 Markdown 摘录代替 PDF，只跳过 MarkItDown 解析环节，其余仍使用真实的 `PDFLearningAssistant`、`MemoryTool`、`RAGTool`、SQLite 和 TF-IDF；确定性的 `DemoLLM` 代替收费模型：
+
+```bash
+python -m examples.document_qa_assistant_demo
+```
+
+实际输出如下：
+
+```text
+加载结果： True happy_llm_excerpt.md
+问答结果： 注意力机制会计算词元之间的相关性，并按权重聚合上下文；多头注意力还能并行关注不同关系。[1][2]
+笔记写入： True
+学习回顾： True
+学习统计： {'会话时长': '0秒', '加载文档': 1, '提问次数': 1, '学习笔记': 1, '当前文档': 'happy_llm_excerpt.md'}
+报告指标： {'documents_loaded': 1, 'questions_asked': 1, 'concepts_learned': 1}
+报告已生成： True
+跨会话回顾： True
+```
+
+这次实践验证的是应用编排和状态一致性，不是 PDF 解析效果、真实语义检索质量或模型回答质量。真实案例还需要换成 Happy-LLM PDF、安装 MarkItDown、配置模型，并分别评估解析、召回和生成三个阶段。
+
 ### 参考资料
 
 - [《Hello-Agents》第八章：记忆与检索](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter8/%E7%AC%AC%E5%85%AB%E7%AB%A0%20%E8%AE%B0%E5%BF%86%E4%B8%8E%E6%A3%80%E7%B4%A2.md)
 - [HelloAgents `learn_version`：memory 模块源码](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/memory)
 - [HelloAgents `learn_version`：RAG 管道源码](https://github.com/jjyaoao/HelloAgents/tree/learn_version/hello_agents/memory/rag)
 - [HelloAgents `learn_version`：RAGTool 源码](https://github.com/jjyaoao/HelloAgents/blob/learn_version/hello_agents/tools/builtin/rag_tool.py)
+- [HelloAgents：智能文档问答助手示例](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter8/11_Q%26A_Assistant.py)
 - [Microsoft MarkItDown](https://github.com/microsoft/markitdown)
+- [Gradio Chatbot 文档](https://www.gradio.app/main/docs/gradio/chatbot)
+- [Gradio 6 迁移指南](https://www.gradio.app/guides/gradio-6-migration-guide)
 - [Atkinson & Shiffrin (1968), *Human Memory: A Proposed System and Its Control Processes*](https://escholarship.org/uc/item/5kd4s4j3)
 - [Miller (1956), *The Magical Number Seven, Plus or Minus Two*](https://pubmed.ncbi.nlm.nih.gov/13310704/)
 - [Cowan (2001), *The Magical Number 4 in Short-Term Memory*](https://pubmed.ncbi.nlm.nih.gov/11515286/)
@@ -674,4 +858,8 @@ pip install "markitdown[all]"
 - MQE 扩展问题表达，HyDE 用假设答案帮助检索；二者产生的是查询，不是最终证据，失败时应退化为原查询。
 - `RAGTool` 将检索、上下文预算、生成和引用串成一条管道，命名空间则负责隔离不同知识库。
 - RAG 能补充外部知识，但不能替代知识源治理、检索评测和回答忠实度检查。
+- 文档问答助手的核心是应用编排：RAG 保存外部文档，Memory 保存用户的学习过程，二者不应混成同一类数据。
+- 加载、问答和笔记只有在底层工具成功后才能更新应用状态；字符串返回协议尤其需要显式识别错误。
+- 原案例真正连通的是工作、情景和语义记忆；感知记忆、个性化推荐、整合与遗忘仍是待实现能力。
+- Gradio 只负责交互，用户、知识库和浏览器会话还需要分别隔离；关键词路由也不等于模型理解意图。
 - 可持久不等于有效记忆；一个可用系统还要解决筛选、召回、冲突、遗忘、隔离和用户删除权。

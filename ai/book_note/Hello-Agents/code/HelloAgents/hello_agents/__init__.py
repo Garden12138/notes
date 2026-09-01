@@ -57,6 +57,7 @@ from .agents import (
     ReflectionAgent,
     SimpleAgent,
 )
+from .applications import PDFLearningAssistant, create_gradio_app
 
 __all__ = [
     "Agent",
@@ -83,6 +84,7 @@ __all__ = [
     "MemoryItem",
     "MemoryManager",
     "MemoryTool",
+    "PDFLearningAssistant",
     "PlanAndSolveAgent",
     "Planner",
     "PerceptualMemory",
@@ -104,6 +106,7 @@ __all__ = [
     "WorkingMemory",
     "calculate",
     "create_calculator_registry",
+    "create_gradio_app",
     "create_research_chain",
     "create_rag_pipeline",
     "global_registry",
