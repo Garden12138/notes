@@ -13,6 +13,7 @@ from .core import (
     SUPPORTED_PROVIDERS,
     ToolException,
 )
+from .context import ContextBuilder, ContextConfig, ContextPacket
 from .tools import (
     AsyncToolExecutor,
     CalculatorTool,
@@ -67,6 +68,9 @@ __all__ = [
     "CalculatorTool",
     "Config",
     "ConfigException",
+    "ContextBuilder",
+    "ContextConfig",
+    "ContextPacket",
     "Document",
     "DocumentChunk",
     "DocumentProcessor",

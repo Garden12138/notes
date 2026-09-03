@@ -4,7 +4,9 @@
 >
 > 阅读资料：[《Hello-Agents》第九章 9.2：为什么上下文工程重要](https://datawhalechina.github.io/hello-agents/#/./chapter9/%E7%AC%AC%E4%B9%9D%E7%AB%A0%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B?id=_92-%e4%b8%ba%e4%bb%80%e4%b9%88%e4%b8%8a%e4%b8%8b%e6%96%87%e5%b7%a5%e7%a8%8b%e9%87%8d%e8%a6%81)
 >
-> 本次阅读范围为 9.1、9.2，重点理解上下文工程的边界、有限注意力预算、JIT 检索和长时程任务策略。
+> 阅读资料：[《Hello-Agents》第九章 9.3：在 Hello-Agents 中的实践——ContextBuilder](https://datawhalechina.github.io/hello-agents/#/./chapter9/%E7%AC%AC%E4%B9%9D%E7%AB%A0%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B?id=_93-%e5%9c%a8-hello-agents-%e4%b8%ad%e7%9a%84%e5%ae%9e%e8%b7%b5%ef%bc%9acontextbuilder)
+>
+> 当前阅读范围为 9.1～9.3：先理解上下文工程的边界和必要性，再用 ContextBuilder 实现 GSSC 流水线。
 
 ### 什么是上下文工程
 
@@ -213,6 +215,209 @@ JIT 不是预检索的全面替代。任务固定且资料很少时，直接加�
 
 子代理带来的主要价值是关注点隔离和并行探索，不是凭空增加正确性。任务边界不清或结果无法合并时，多代理只会放大通信成本。
 
+### 在 Hello-Agents 中的实践：ContextBuilder
+
+前面的 Memory 和 RAG 负责保存、检索信息，`ContextBuilder` 负责在一次模型调用前把候选信息变成可用上下文。它不替代信息源，也不负责生成答案，职责是执行 GSSC：Gather、Select、Structure、Compress。
+
+完整实现见：
+
+- [ContextBuilder 与数据结构](./code/HelloAgents/hello_agents/context/builder.py)
+- [context 模块导出](./code/HelloAgents/hello_agents/context/__init__.py)
+- [基础构建与 Agent 集成示例](./code/HelloAgents/examples/context_builder_demo.py)
+
+#### 设计目标
+
+| 目标 | 解决的问题 |
+| --- | --- |
+| 统一入口 | 各 Agent 不必重复编写记忆检索、RAG 检索和历史拼装逻辑 |
+| 稳定形态 | 固定分区便于模型理解，也便于日志检查和 A/B 测试 |
+| 预算守护 | 在 `max_tokens` 内优先保留系统指令和高价值信息 |
+| 最小规则 | 只使用相关性和新近性评分，避免过早引入复杂优先级体系 |
+
+构建结果使用固定语义骨架：
+
+```text
+[Role & Policies]  角色与规则
+[Task]             当前问题
+[State]            任务状态
+[Evidence]         RAG 等外部证据
+[Context]          对话历史与记忆
+[Output]           输出要求
+```
+
+其中 `[Task]`、`[Output]` 始终存在，其余分区在有内容时生成。分区不是装饰：它把不同语义的信息隔开，调试时也能直接判断问题来自指令、证据还是历史。
+
+#### 两个核心数据结构
+
+`ContextPacket` 是候选信息的统一单位：
+
+```python
+@dataclass
+class ContextPacket:
+    content: str
+    timestamp: datetime
+    token_count: int
+    relevance_score: float = 0.5
+    metadata: dict[str, Any] = field(default_factory=dict)
+```
+
+`content` 是正文，`timestamp` 用于计算新近性，`token_count` 用于预算选择，`relevance_score` 表示与任务的相关程度，`metadata["type"]` 决定信息最终进入哪个分区。
+
+`ContextConfig` 管理构建策略：
+
+| 参数 | 默认值 | 作用 |
+| --- | ---: | --- |
+| `max_tokens` | 3000 | 最终上下文预算 |
+| `reserve_ratio` | 0.2 | 为系统指令预留的比例 |
+| `min_relevance` | 0.1 | 过滤低相关候选项 |
+| `enable_compression` | `True` | 超限时是否压缩 |
+| `relevance_weight` | 0.7 | 相关性权重 |
+| `recency_weight` | 0.3 | 新近性权重 |
+
+两个权重之和必须为 1。实践代码使用显式 `ValueError` 校验，而不是原文中的 `assert`，因为 Python 以优化模式运行时会移除断言，配置校验也会随之失效。
+
+#### GSSC 流水线
+
+```mermaid
+flowchart LR
+    Q["用户问题"] --> G["Gather<br/>汇集系统指令、记忆、RAG、历史、自定义信息"]
+    G --> S["Select<br/>过滤、评分并按预算选择"]
+    S --> ST["Structure<br/>组织为固定语义分区"]
+    ST --> C{"是否超过预算？"}
+    C -->|"否"| O["结构化上下文"]
+    C -->|"是"| CP["Compress<br/>按分区截断"]
+    CP --> O
+    O --> L["LLM 推理"]
+```
+
+##### Gather：汇集候选信息
+
+信息来自五个入口：
+
+1. 系统指令，相关性固定为 1，在选择阶段始终优先保留；
+2. `MemoryTool` 检索出的相关记忆；
+3. `RAGTool` 返回的知识片段及来源；
+4. 最近 5 条对话历史；
+5. 调用者通过 `custom_packets` 传入的任务状态或临时知识。
+
+Memory 或 RAG 失败只跳过对应来源，不中断整次构建。当前框架的两个工具已经能返回结构化对象，因此实现直接保留记忆时间、检索分数和 RAG 来源；只有面对其他只返回字符串的兼容工具时，才把整段结果包装成一个 Packet。
+
+##### Select：选择高价值信息
+
+系统指令以外的候选项使用相关性与新近性的加权分数：
+
+```text
+综合分数 = 0.7 × 相关性分数 + 0.3 × 新近性分数
+
+新近性分数 = exp(-0.1 × 信息年龄小时数 / 24)
+```
+
+选择过程先过滤低于 `min_relevance` 的信息，再按综合分数降序填充预算。实现仍沿用原文的关键词重叠思路，没有另加向量模型；为了让中文文本可以比较，分词时同时提取英文单词和汉字。
+
+`reserve_ratio` 的实际含义是给系统指令留位置：普通信息最多使用 `max_tokens - max(系统指令 Token, 预留 Token)`。某个大 Packet 放不下时只跳过它，继续检查后面较小的 Packet；如果直接 `break`，仍能装入的小块信息也会被误删。
+
+##### Structure：固定上下文形态
+
+被选中的 Packet 根据 `metadata["type"]` 分流：
+
+| Packet 类型 | 目标分区 |
+| --- | --- |
+| `system_instruction` | `[Role & Policies]` |
+| `state`、`task_state` | `[State]` |
+| `rag_result`、`knowledge` | `[Evidence]` |
+| 历史、记忆和普通信息 | `[Context]` |
+
+原文的目标骨架列出了 `[State]`，但展示的 `_structure()` 没有生成它；实践代码补齐了这一分区。选择阶段会改变 Packet 的排序，而多轮对话必须保持先后关系，所以历史消息在写入 `[Context]` 前按时间重新升序排列。
+
+##### Compress：最后一道预算保护
+
+Select 按 Packet 的估算 Token 选择，但 `[Task]`、分区标题、分隔符和 `[Output]` 也会占用空间，因此 Structure 后仍需检查一次总长度。
+
+当前实现沿用原文“无额外模型调用、按分区截断”的思路，并补充了固定骨架保护，优先保留 `[Output]`、`[Task]` 和 `[Role & Policies]`。这只是兜底措施：截断无法理解语义，重要信息仍可能位于被删除的后半段。若后续改用 LLM 摘要，应同时考虑额外延迟、费用和摘要失真，不能把“压缩后更短”等同于“上下文更好”。
+
+代码中的 Token 数是轻量估算值，适合演示预算流程，不等同于具体模型 Tokenizer 的精确结果。接入生产模型时，应替换成对应模型的 Tokenizer，并为最终输入和输出继续保留安全余量。
+
+#### 与 Agent 的消息流程
+
+示例中的 `ContextAwareAgent` 继承 `SimpleAgent`，但模型调用前先交给 `ContextBuilder`：
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant A as ContextAwareAgent
+    participant B as ContextBuilder
+    participant M as MemoryTool
+    participant R as RAGTool
+    participant L as LLM
+
+    U->>A: input_text
+    A->>B: build(input_text, history, system_prompt)
+    B->>M: 检索相关记忆
+    M-->>B: 记忆 Packet
+    B->>R: 检索相关知识
+    R-->>B: 证据 Packet
+    B-->>A: 优化后的结构化上下文
+    A->>L: system=context, user=input_text
+    L-->>A: response
+    A->>A: 追加 user/assistant 历史
+    A->>M: 写入本轮情景记忆
+    A-->>U: response
+```
+
+这条链路中，当前问题既出现在 `[Task]`，也作为 `user` 消息发送。前者给结构化上下文提供完整任务语义，后者保留标准 Chat Completions 消息边界，与原文的集成方式一致。
+
+#### 实践运行结果
+
+示例使用临时目录保存 Memory 与 RAG 数据，并用确定性 `DemoLLM` 避免调用真实 API。运行命令：
+
+```bash
+cd code/HelloAgents
+python3 examples/context_builder_demo.py
+```
+
+构建出的主要内容如下：
+
+```text
+[Role & Policies]
+你是一位资深 Python 数据工程顾问，请给出可执行建议。
+
+[Task]
+如何优化 Pandas 的内存占用？
+
+[State]
+当前状态：CSV 读取已完成，尚未处理内存优化。
+
+[Evidence]
+如何优化 Pandas 的内存占用？可以使用 category 类型、数值 downcast、
+chunksize 分块读取，并及时删除不再使用的中间 DataFrame。
+来源：text:pandas-memory-guide
+
+[Context]
+user: 我已经完成 CSV 读取模块。
+assistant: 接下来可以处理数据类型和大文件读取。
+记忆：用户正在使用 Python 和 Pandas 开发数据分析工具。
+
+[Output]
+请基于以上信息，提供准确、有据的回答。
+```
+
+随后 `ContextAwareAgent` 返回：
+
+```text
+可以先将低基数字符串列转换为 category，再通过 downcast 缩小数值列类型；
+大文件使用 chunksize 分块读取。
+```
+
+结果说明四类候选信息没有直接混成一段文本：当前进度进入 `[State]`，RAG 内容和来源进入 `[Evidence]`，对话与用户记忆进入 `[Context]`。这正是 ContextBuilder 相比手写字符串拼接的价值。
+
+#### 实现边界
+
+- 默认相关性仍是轻量关键词重叠，适合教学和小规模任务；语义改写较大时可能漏选。
+- `relevance_score=0.5` 同时是默认值和合法分数，当前实现沿用原文并把它视为“需要重新计算”；更严格的接口可以改用 `None` 表示未评分。
+- 截断压缩不会生成摘要，不保证关键语义完整。
+- Memory 和 RAG 的检索质量决定 Gather 的上限；ContextBuilder 只能筛选候选信息，不能补回从未召回的证据。
+- 相关性权重、新近性权重与阈值没有通用最优值，需要结合任务成功率、Token 消耗和延迟做日志分析或 A/B 测试。
+
 ### 如何判断上下文是否有效
 
 上下文工程不能只统计用了多少 Token，还需要观察它是否真正改善任务结果：
@@ -245,4 +450,6 @@ JIT 不是预检索的全面替代。任务固定且资料很少时，直接加�
 - 系统提示、工具和示例都应追求最小必要信息，而不是无限增加规则、能力和样本。
 - 预加载适合小而稳定的资料，JIT 检索适合动态或大规模信息，复杂任务通常使用混合策略。
 - 长时程任务可以通过压缩整合、结构化笔记和子代理延续，但三者都需要处理信息损失和状态一致性。
+- ContextBuilder 将信息获取、选择、结构化和压缩统一为 GSSC 流水线，并通过固定分区守住上下文形态。
+- 相关性与新近性评分只是筛选规则，不会把低质量检索结果自动变成可靠证据；实际效果仍取决于上游信息源和参数评估。
 - 上下文工程的目标不是填满窗口，而是在每次调用前为当前决策提供高信号、可追溯且不冲突的信息。
