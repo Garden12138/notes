@@ -10,7 +10,9 @@
 >
 > 阅读资料：[《Hello-Agents》第九章 9.5：TerminalTool——即时文件系统访问](https://datawhalechina.github.io/hello-agents/#/./chapter9/%E7%AC%AC%E4%B9%9D%E7%AB%A0%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B?id=_95-terminaltool%ef%bc%9a%e5%8d%b3%e6%97%b6%e6%96%87%e4%bb%b6%e7%b3%bb%e7%bb%9f%e8%ae%bf%e9%97%ae)
 >
-> 当前阅读范围为 9.1～9.5：ContextBuilder 组织本轮上下文，NoteTool 保存长期任务状态，TerminalTool 按需读取文件系统中的即时信息。
+> 阅读资料：[《Hello-Agents》第九章 9.6：长程智能体实战——代码库维护助手](https://datawhalechina.github.io/hello-agents/#/./chapter9/%E7%AC%AC%E4%B9%9D%E7%AB%A0%20%E4%B8%8A%E4%B8%8B%E6%96%87%E5%B7%A5%E7%A8%8B?id=_96-%e9%95%bf%e7%a8%8b%e6%99%ba%e8%83%bd%e4%bd%93%e5%ae%9e%e6%88%98%ef%bc%9a%e4%bb%a3%e7%a0%81%e5%ba%93%e7%bb%b4%e6%8a%a4%e5%8a%a9%e6%89%8b)
+>
+> 当前阅读范围为 9.1～9.6：ContextBuilder 组织本轮上下文，NoteTool 保存任务状态，TerminalTool 即时读取文件，最终组合成长程代码库维护助手。
 
 ### 什么是上下文工程
 
@@ -755,6 +757,206 @@ TODO 搜索：
 - 本实现面向类 Unix 命令环境；不同系统的命令、参数和输出格式可能不同，不能假设同一条命令跨平台完全一致。
 - TerminalTool 返回的是文件当前状态，不自动判断内容真假或重要性；进入 ContextBuilder 前仍需筛选、标注来源并控制长度。
 
+### 长程智能体实战：代码库维护助手
+
+9.3～9.5 分别解决“怎样组织上下文”“怎样保存长期状态”和“怎样即时读取代码库”，9.6 将三者放进同一个循环，并加入 MemoryTool 保存交互经历。目标不是让 LLM 一次读完整个仓库，而是让它在多轮、多会话中持续知道：当前代码是什么状态、已经发现什么、接下来做什么。
+
+完整代码见：
+
+- [CodebaseMaintainer](./code/HelloAgents/hello_agents/applications/codebase_maintainer.py)
+- [跨会话离线实践](./code/HelloAgents/examples/codebase_maintainer_demo.py)
+
+#### 分层不是堆叠四份相同信息
+
+```mermaid
+flowchart TB
+    U["用户：探索、分析或规划"] --> A["CodebaseMaintainer"]
+    A --> T["即时层：TerminalTool<br/>当前目录、代码、日志"]
+    A --> M["会话层：MemoryTool<br/>交互经历与稳定发现"]
+    A --> N["持久层：NoteTool<br/>状态、阻塞、行动和结论"]
+    T --> P["ContextPacket"]
+    M --> C["ContextBuilder<br/>Gather / Select / Structure / Compress"]
+    N --> P
+    P --> C
+    C --> L["本轮 LLM 调用"]
+    L --> R["回答"]
+    R --> M
+    R --> N
+```
+
+| 层次 | 生命周期 | 保存内容 | 不应保存 |
+| --- | --- | --- | --- |
+| TerminalTool | 单次读取 | 当前文件、目录、日志和搜索结果 | 已过时的副本 |
+| 对话历史 | 当前实例 | 最近 10 轮 user/assistant 消息 | 全部工具原始输出 |
+| MemoryTool | 跨实例 | 每轮交互经历、可复用事实 | 需要人工维护的正式计划 |
+| NoteTool | 跨实例 | `task_state`、`blocker`、`action`、`conclusion` | 无筛选的临时搜索结果 |
+| ContextBuilder | 单次调用 | 从以上来源选出的高价值信息 | 数据源的永久副本 |
+
+同一事实不应在每层重复一遍。TerminalTool 的输出先作为候选上下文；只有已确认且以后仍有价值的发现才进入 Memory，只有需要跟踪和人工修改的状态才进入 NoteTool。
+
+#### 四种模式控制预处理
+
+| mode | 调用前收集的信息 | 主要用途 |
+| --- | --- | --- |
+| `explore` | 前 20 个 Python 文件路径 | 了解模块和入口 |
+| `analyze` | Python 文件行数、TODO/FIXME、用户点名的文件片段 | 发现具体代码问题 |
+| `plan` | 最近 3 条 `task_state` 标题，并优先加载 blocker 正文 | 安排后续任务 |
+| `auto` | 用关键词规则路由到前三种模式 | 减少调用者手动选择 |
+
+`auto` 不是模型自主判断。实现明确使用规则：出现“计划、下一步、任务”进入 `plan`，出现“分析、问题、错误、TODO/FIXME、复杂度”进入 `analyze`，其余进入 `explore`。规则可解释、可测试，但也可能误判，调用方始终可以显式指定模式。
+
+分析模式没有沿用原文的：
+
+```bash
+find . -name '*.py' -exec wc -l {} +
+```
+
+因为 `find -exec` 与 9.5 的“不可派生执行”原则冲突。完整实现先用安全的 `find` 取得文件列表，再把经过引用处理的路径交给 `wc -l`；最多统计 50 个文件并限制命令长度。这样仍保留原文的行数统计目的，不为 TerminalTool 打开任意执行入口。
+
+#### 一轮请求的六步消息流
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant A as CodebaseMaintainer
+    participant T as TerminalTool
+    participant N as NoteTool
+    participant M as MemoryTool
+    participant C as ContextBuilder
+    participant L as LLM
+
+    U->>A: user_input + mode
+    A->>A: auto 规则路由
+    A->>T: 按模式执行 find/grep/head/wc
+    T-->>A: 即时代码信息
+    A->>N: list(blocker) + search(query)
+    N-->>A: 元数据与相关结果
+    A->>N: read(blocker_id)
+    N-->>A: blocker 完整正文
+    A->>C: 历史 + Memory + 笔记包 + 终端包
+    C-->>A: 结构化、预算内上下文
+    A->>L: system=context, user=user_input
+    L-->>A: response
+    A->>N: 按规则创建 blocker 或 action
+    A->>M: 保存本轮情景记忆
+    A->>A: 追加并裁剪对话历史
+    A-->>U: response
+```
+
+核心调用保持原文六个阶段：
+
+```python
+pre_context = self._preprocess_by_mode(query, effective_mode)
+notes = self._retrieve_relevant_notes(query)
+note_packets = self._notes_to_packets(notes)
+
+context = self.context_builder.build(
+    user_query=query,
+    conversation_history=self.conversation_history,
+    system_instructions=self._build_system_instructions(effective_mode),
+    custom_packets=[*note_packets, *pre_context],
+)
+
+response = self.llm.invoke([
+    {"role": "system", "content": context},
+    {"role": "user", "content": query},
+])
+
+self._postprocess_response(query, response, effective_mode)
+self._update_history(query, response)
+self._record_interaction(query, response)
+```
+
+当前框架的 `HelloAgentsLLM.invoke()` 接收消息列表，不能直接传入原文展示的 `context` 字符串。当前问题虽然已经位于 ContextBuilder 的 `[Task]`，仍作为独立 `user` 消息发送，以保留标准聊天协议的角色边界。
+
+#### 笔记检索与自动记录
+
+每轮都先取最多 2 条 blocker，再按用户问题搜索其他笔记。`list` 只有元数据，所以 blocker 必须继续调用 `read` 补齐正文，之后才能转换成 ContextPacket。相关性保持原文顺序：
+
+```text
+blocker 0.90 > action 0.80 > task_state 0.75 > conclusion 0.70
+```
+
+回答后使用原文的轻量规则记录状态：回答中出现“问题、bug、错误、阻塞”时创建 blocker；规划模式或输入中出现“计划、下一步、任务、todo”时创建 action。它只是自动归档规则，不是问题真的被验证。实践实现只有在 NoteTool 返回有效 ID 后才增加统计值，写入失败则保留主回答并输出警告。
+
+原文的结果分析称关键信息会自动进入 Memory，但展示代码没有实际写入。完整实现把每轮 user/assistant 对保存为 episodic memory，使重新实例化后的 ContextBuilder 能检索上一会话经历；当前实例的对话历史仍只保留最近 20 条消息。
+
+#### 哪些状态能跨会话
+
+| 状态 | 是否持久化 | 新实例中的表现 |
+| --- | --- | --- |
+| Markdown 笔记与 JSON 索引 | 是 | 可继续读取 blocker、action 和 task_state |
+| SQLite 记忆 | 是 | 可检索上一会话的交互经历 |
+| 对话历史列表 | 否 | 新实例从空历史开始 |
+| TerminalTool 当前目录 | 否 | 重新回到代码库根目录 |
+| 会话统计和 session ID | 否 | 每个实例重新计数 |
+
+默认状态目录为 `./<project_name>_maintainer/`，也可通过 `state_path` 显式指定。笔记、记忆和报告都放在该目录下，与被分析的代码库分开。`generate_report()` 将会话 ID、持续时间、命令次数、自动笔记数、问题数和笔记摘要原子写入 JSON。
+
+#### 实践运行结果
+
+示例在临时目录构造一个 Flask 风格小项目，通过确定性 DemoLLM 检查每种模式所需信息是否真的进入上下文，不调用外部模型：
+
+```bash
+cd code/HelloAgents
+python3 examples/codebase_maintainer_demo.py
+```
+
+第一次会话的主要输出：
+
+```text
+👤 用户：请探索 . 的代码结构
+🔍 探索代码库结构...
+探索结论：当前代码库按 models、services 和 tests 分层；建议先查看用户模型和订单服务，再核对相应测试。
+
+👤 用户：请分析代码质量，重点关注 TODO 和 FIXME
+📊 分析代码质量...
+📝 已自动创建问题笔记
+分析结论：发现代码问题：user.py 尚未落实邮箱唯一约束，order_service.py 仍有订单校验 FIXME。应先补失败测试，再分别修改模型约束和服务校验。
+
+👤 用户：根据当前进度，规划下一步任务
+📋 加载任务规划...
+📝 已自动创建行动计划笔记
+规划结论：下一步任务：第一，补充邮箱重复和非法订单测试；第二，修改模型与服务；第三，运行测试并把通过结果记录为 conclusion。
+
+命令执行数：4
+本会话创建笔记数：3
+发现问题数：1
+持久笔记总数：3
+```
+
+关闭助手并使用相同 `state_path` 创建新实例后：
+
+```text
+👤 用户：请回顾上一会话发现的代码问题
+🧭 规则路由：auto → analyze
+恢复结论：已恢复上一会话状态：当前 blocker 是邮箱唯一约束和订单校验，已有行动计划要求先补测试再修改实现。
+恢复后笔记总数：3
+恢复后情景记忆数：4
+```
+
+第二个实例没有继承 Python 对象中的历史列表，却仍能同时看到持久笔记和前三轮情景记忆；回答完成后又记录了当前轮，所以情景记忆数变为 4。这才是本例“跨会话”的实际含义，不是让单个上下文窗口永久增长。
+
+#### 原文说明代码中补齐的部分
+
+- `from typing import Dict， Any` 使用了中文逗号，无法通过 Python 语法解析。
+- 原文直接 `llm.invoke(context)` 与当前框架接口不一致，已改成标准消息列表。
+- blocker 来自 `list` 时不含正文，已通过 `read` 补齐再注入上下文。
+- `find -exec` 与 TerminalTool 的安全边界冲突，已改为分两步统计。
+- 原文的 `auto` 实际总是探索代码库；完整实现将其明确为可解释的规则路由。
+- MemoryTool 原本只参与检索却没有写入，本实现保存每轮情景记忆，形成跨会话闭环。
+- 报告写入使用临时文件替换，避免中途中断留下不完整 JSON。
+
+#### 实现边界
+
+- 示例只能根据文件列表、行数、TODO/FIXME 和明确点名的 Python 文件做初步分析，没有计算圈复杂度、测试覆盖率，也没有运行测试。
+- DemoLLM 用于验证消息链路，不代表真实模型的代码分析质量；接入真实模型后仍需检查其结论是否有文件和行号依据。
+- 自动模式和笔记分类都是关键词规则，不能替代意图分类、问题确认或人工审核。
+- TerminalTool 仍是只读工具，助手会提出修改计划但不会直接编辑代码；若以后加入写工具，应增加差异预览、审批、测试和回滚。
+- blocker 每轮优先加载有助于避免遗忘，也可能让已解决问题反复进入上下文；解决后必须更新为 conclusion 或删除。
+- 自动记录没有做语义去重，多次讨论同一问题可能产生重复笔记。生产实现需要稳定任务 ID、状态迁移和幂等写入。
+- “跨会话”依赖复用相同的 `project_name` 与 `state_path`；迁移或删除状态目录后，助手无法自行恢复旧状态。
+
 ### 如何判断上下文是否有效
 
 上下文工程不能只统计用了多少 Token，还需要观察它是否真正改善任务结果：
@@ -792,5 +994,7 @@ TODO 搜索：
 - 笔记只有经过检索、补齐正文并转换为 ContextPacket，才会成为当前模型调用可见的上下文。
 - TerminalTool 通过白名单命令即时探索文件系统；只有经过路径、选项、超时和输出检查的结果才能返回给 Agent。
 - TerminalTool 适合短期即时信息，稳定事实进入 Memory，项目状态进入 NoteTool，三者最后由 ContextBuilder 按当前任务筛选。
+- CodebaseMaintainer 把模式预处理、笔记检索、上下文构建、模型调用和状态回写连成六步循环，并用持久笔记与情景记忆支持跨会话恢复。
+- 长程不等于无限保留历史：Terminal 结果按需读取，对话历史有长度上限，只有需要复用或跟踪的信息才进入 Memory 和 NoteTool。
 - 相关性与新近性评分只是筛选规则，不会把低质量检索结果自动变成可靠证据；实际效果仍取决于上游信息源和参数评估。
 - 上下文工程的目标不是填满窗口，而是在每次调用前为当前决策提供高信号、可追溯且不冲突的信息。

@@ -60,7 +60,11 @@ from .agents import (
     ReflectionAgent,
     SimpleAgent,
 )
-from .applications import PDFLearningAssistant, create_gradio_app
+from .applications import (
+    CodebaseMaintainer,
+    PDFLearningAssistant,
+    create_gradio_app,
+)
 
 __all__ = [
     "Agent",
@@ -68,6 +72,7 @@ __all__ = [
     "AsyncToolExecutor",
     "BaseMemory",
     "CalculatorTool",
+    "CodebaseMaintainer",
     "Config",
     "ConfigException",
     "ContextBuilder",
