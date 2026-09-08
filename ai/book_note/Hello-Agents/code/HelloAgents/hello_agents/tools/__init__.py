@@ -3,7 +3,10 @@
 from .async_executor import AsyncToolExecutor
 from .base import Tool, ToolParameter
 from .builtin import (
+    A2ATool,
+    ANPTool,
     CalculatorTool,
+    MCPTool,
     MemoryTool,
     NoteTool,
     RAGTool,
@@ -17,9 +20,12 @@ from .chain import ToolChain, ToolChainManager, create_research_chain
 from .registry import ToolRegistry, global_registry
 
 __all__ = [
+    "A2ATool",
+    "ANPTool",
     "AsyncToolExecutor",
     "CalculatorTool",
     "MemoryTool",
+    "MCPTool",
     "NoteTool",
     "RAGTool",
     "SearchTool",

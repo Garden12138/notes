@@ -15,9 +15,12 @@ from .core import (
 )
 from .context import ContextBuilder, ContextConfig, ContextPacket
 from .tools import (
+    A2ATool,
+    ANPTool,
     AsyncToolExecutor,
     CalculatorTool,
     MemoryTool,
+    MCPTool,
     NoteTool,
     RAGTool,
     SearchTool,
@@ -32,6 +35,15 @@ from .tools import (
     create_research_chain,
     global_registry,
     my_calculate,
+)
+from .protocols import (
+    A2AClient,
+    ANPDiscovery,
+    BuiltinMCPServer,
+    MCPClient,
+    Protocol,
+    ProtocolType,
+    ServiceInfo,
 )
 from .memory import (
     BaseMemory,
@@ -67,10 +79,15 @@ from .applications import (
 )
 
 __all__ = [
+    "A2AClient",
+    "A2ATool",
     "Agent",
     "AgentException",
     "AsyncToolExecutor",
+    "ANPDiscovery",
+    "ANPTool",
     "BaseMemory",
+    "BuiltinMCPServer",
     "CalculatorTool",
     "CodebaseMaintainer",
     "Config",
@@ -95,9 +112,13 @@ __all__ = [
     "MemoryItem",
     "MemoryManager",
     "MemoryTool",
+    "MCPClient",
+    "MCPTool",
     "NoteTool",
     "PDFLearningAssistant",
     "PlanAndSolveAgent",
+    "Protocol",
+    "ProtocolType",
     "Planner",
     "PerceptualMemory",
     "RAGPipeline",
@@ -106,6 +127,7 @@ __all__ = [
     "ReflectionAgent",
     "SUPPORTED_PROVIDERS",
     "SearchTool",
+    "ServiceInfo",
     "TerminalTool",
     "SemanticMemory",
     "SimpleAgent",

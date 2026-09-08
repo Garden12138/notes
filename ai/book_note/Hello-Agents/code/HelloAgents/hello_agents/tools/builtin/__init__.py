@@ -11,9 +11,13 @@ from .memory_tool import MemoryTool
 from .note_tool import NoteTool
 from .rag_tool import RAGTool
 from .terminal_tool import TerminalTool
+from .protocol_tools import A2ATool, ANPTool, MCPTool
 
 __all__ = [
+    "A2ATool",
+    "ANPTool",
     "CalculatorTool",
+    "MCPTool",
     "MemoryTool",
     "NoteTool",
     "RAGTool",
