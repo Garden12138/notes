@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+import asyncio
+import json
+import os
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Awaitable, Callable, Dict, List
 
 from ...protocols import (
     A2AClient,
@@ -14,60 +18,241 @@ from ...protocols import (
 from ..base import Tool, ToolParameter
 
 
+MCP_SERVER_ENV_MAP = {
+    "server-github": ["GITHUB_PERSONAL_ACCESS_TOKEN"],
+    "server-slack": ["SLACK_BOT_TOKEN", "SLACK_TEAM_ID"],
+    "server-gdrive": [
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "GOOGLE_REFRESH_TOKEN",
+    ],
+    "server-google-drive": [
+        "GOOGLE_CLIENT_ID",
+        "GOOGLE_CLIENT_SECRET",
+        "GOOGLE_REFRESH_TOKEN",
+    ],
+    "server-postgres": ["POSTGRES_CONNECTION_STRING"],
+    "server-filesystem": [],
+    "server-sqlite": [],
+}
+
+
+def _run_async(factory: Callable[[], Awaitable[Any]]) -> Any:
+    """Run an async MCP operation from normal or already-async code."""
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(factory())
+
+    def run_in_thread() -> Any:
+        return asyncio.run(factory())
+
+    with ThreadPoolExecutor(max_workers=1) as executor:
+        return executor.submit(run_in_thread).result()
+
+
 class MCPTool(Tool):
-    """Expose section 10.1's MCP discovery/call experience as a Tool."""
+    """Expose MCP Tools, Resources and Prompts through HelloAgents Tool."""
 
     def __init__(
         self,
         name: str = "mcp",
-        description: str = "通过 MCP 发现并调用外部能力",
+        description: str | None = None,
         server_command: List[str] | None = None,
+        server_args: List[str] | None = None,
+        server: Any = None,
+        auto_expand: bool = True,
+        env: Dict[str, str] | None = None,
+        env_keys: List[str] | None = None,
+        transport_type: str | None = None,
         client: MCPClient | None = None,
     ) -> None:
-        super().__init__(name=name, description=description)
         self.server_command = list(server_command) if server_command else None
-        if client is not None:
-            self._client = client
-        elif self.server_command is None:
-            self._client = MCPClient(create_builtin_server())
-        else:
-            self._client = None
+        self.server_args = list(server_args or ())
+        self.server = server
+        self.transport_type = transport_type
+        self.env = self._prepare_env(env, env_keys, self.server_command)
+        self._provided_client = client
+        self.auto_expand = auto_expand
+        self.prefix = f"{name}_" if auto_expand else ""
+        self._available_tools: List[Dict[str, Any]] = []
+        self._discovery_error: str | None = None
+
+        if self.server is None and self.server_command is None and client is None:
+            self.server = create_builtin_server()
+        self._discover_tools()
+
+        if description is None:
+            if self._available_tools:
+                description = (
+                    "MCP 能力服务器，提供 "
+                    f"{len(self._available_tools)} 个工具"
+                )
+            else:
+                description = (
+                    "通过 MCP 发现工具、资源和提示词并执行调用"
+                )
+        super().__init__(
+            name=name,
+            description=description,
+            expandable=auto_expand,
+        )
+
+    @staticmethod
+    def _prepare_env(
+        env: Dict[str, str] | None,
+        env_keys: List[str] | None,
+        server_command: List[str] | None,
+    ) -> Dict[str, str]:
+        """Resolve server variables with explicit values taking precedence."""
+        resolved: Dict[str, str] = {}
+        if server_command:
+            server_name = next(
+                (
+                    part.rsplit("/", 1)[-1]
+                    for part in server_command
+                    if "server-" in part
+                ),
+                None,
+            )
+            for key in MCP_SERVER_ENV_MAP.get(server_name or "", ()):
+                value = os.getenv(key)
+                if value:
+                    resolved[key] = value
+        for key in env_keys or ():
+            value = os.getenv(key)
+            if value:
+                resolved[key] = value
+        if env:
+            resolved.update(env)
+        return resolved
+
+    def _new_client(self) -> MCPClient:
+        if self._provided_client is not None:
+            return self._provided_client
+        source = self.server if self.server is not None else self.server_command
+        if source is None:
+            raise RuntimeError("未配置 MCP Server")
+        return MCPClient(
+            source,
+            server_args=self.server_args,
+            transport_type=self.transport_type,
+            env=self.env,
+        )
+
+    def _discover_tools(self) -> None:
+        async def discover() -> List[Dict[str, Any]]:
+            async with self._new_client() as client:
+                return await client.list_tools()
+
+        try:
+            self._available_tools = _run_async(discover)
+            self._discovery_error = None
+        except Exception as exc:
+            self._available_tools = []
+            self._discovery_error = str(exc)
+
+    def get_expanded_tools(self) -> List[Tool]:
+        """Wrap every discovered server tool as an independent Tool."""
+        if not self.auto_expand:
+            return []
+        from .mcp_wrapper_tool import MCPWrappedTool
+
+        return [
+            MCPWrappedTool(
+                mcp_tool=self,
+                tool_info=tool_info,
+                prefix=self.prefix,
+            )
+            for tool_info in self._available_tools
+        ]
+
+    @staticmethod
+    def _format_value(value: Any) -> str:
+        if isinstance(value, str):
+            return value
+        if isinstance(value, (dict, list, tuple)):
+            return json.dumps(value, ensure_ascii=False, indent=2)
+        return str(value)
 
     def run(self, parameters: Dict[str, Any]) -> str:
-        """List or call tools exposed by the configured MCP endpoint."""
+        """Execute one synchronous facade operation against the MCP client."""
         action = str(parameters.get("action", "")).strip().lower()
         if not action and parameters.get("tool_name"):
             action = "call_tool"
         if not action:
             return "错误：必须指定 action 参数"
-        if self._client is None:
-            command = " ".join(self.server_command or [])
-            return (
-                "错误：10.1 仅实现内存快速体验；外部 MCP 传输将在 10.2 接入。"
-                f" 当前命令: {command}"
-            )
+
+        async def execute() -> Any:
+            async with self._new_client() as client:
+                if action == "list_tools":
+                    return await client.list_tools()
+                if action == "call_tool":
+                    tool_name = str(parameters.get("tool_name", "")).strip()
+                    if not tool_name:
+                        raise ValueError("call_tool 必须指定 tool_name")
+                    arguments = parameters.get("arguments", {})
+                    return await client.call_tool(tool_name, arguments)
+                if action == "list_resources":
+                    return await client.list_resources()
+                if action == "read_resource":
+                    uri = str(parameters.get("uri", "")).strip()
+                    if not uri:
+                        raise ValueError("read_resource 必须指定 uri")
+                    return await client.read_resource(uri)
+                if action == "list_prompts":
+                    return await client.list_prompts()
+                if action == "get_prompt":
+                    prompt_name = str(
+                        parameters.get("prompt_name", ""),
+                    ).strip()
+                    if not prompt_name:
+                        raise ValueError("get_prompt 必须指定 prompt_name")
+                    prompt_arguments = parameters.get(
+                        "prompt_arguments",
+                        {},
+                    )
+                    return await client.get_prompt(
+                        prompt_name,
+                        prompt_arguments,
+                    )
+                if action == "ping":
+                    return await client.ping()
+                raise ValueError(f"不支持的 MCP 操作 '{action}'")
 
         try:
+            result = _run_async(execute)
             if action == "list_tools":
-                tools = self._client.list_tools()
-                if not tools:
+                if not result:
                     return "没有找到可用工具"
-                lines = [f"找到 {len(tools)} 个工具:"]
+                lines = [f"找到 {len(result)} 个工具:"]
                 lines.extend(
-                    f"- {tool['name']}: {tool['description']}" for tool in tools
+                    f"- {tool['name']}: {tool['description']}"
+                    for tool in result
                 )
                 return "\n".join(lines)
-
-            if action == "call_tool":
-                tool_name = str(parameters.get("tool_name", "")).strip()
-                arguments = parameters.get("arguments", {})
-                if not tool_name:
-                    return "错误：call_tool 必须指定 tool_name"
-                result = self._client.call_tool(tool_name, arguments)
-                return str(result)
-
-            return f"错误：不支持的 MCP 操作 '{action}'"
-        except (TypeError, ValueError) as exc:
+            if action == "list_resources":
+                if not result:
+                    return "没有找到可用资源"
+                return "\n".join(
+                    [f"找到 {len(result)} 个资源:"]
+                    + [
+                        f"- {item['uri']}: {item['name']}"
+                        for item in result
+                    ]
+                )
+            if action == "list_prompts":
+                if not result:
+                    return "没有找到可用提示词"
+                return "\n".join(
+                    [f"找到 {len(result)} 个提示词:"]
+                    + [
+                        f"- {item['name']}: {item['description']}"
+                        for item in result
+                    ]
+                )
+            return self._format_value(result)
+        except Exception as exc:
             return f"MCP 操作失败: {exc}"
 
     def get_parameters(self) -> List[ToolParameter]:
@@ -75,7 +260,10 @@ class MCPTool(Tool):
             ToolParameter(
                 name="action",
                 type="string",
-                description="操作类型：list_tools 或 call_tool",
+                description=(
+                    "操作类型：list_tools、call_tool、list_resources、"
+                    "read_resource、list_prompts、get_prompt 或 ping"
+                ),
                 required=True,
             ),
             ToolParameter(
@@ -90,41 +278,131 @@ class MCPTool(Tool):
                 description="call_tool 的结构化参数",
                 required=False,
             ),
+            ToolParameter(
+                name="uri",
+                type="string",
+                description="read_resource 要读取的资源 URI",
+                required=False,
+            ),
+            ToolParameter(
+                name="prompt_name",
+                type="string",
+                description="get_prompt 要渲染的提示词名称",
+                required=False,
+            ),
+            ToolParameter(
+                name="prompt_arguments",
+                type="object",
+                description="提示词模板参数",
+                required=False,
+            ),
         ]
 
 
 class A2ATool(Tool):
-    """Hold a validated peer endpoint behind the same Tool interface."""
+    """Expose a peer Agent's card, messages and tasks as one Tool."""
 
     def __init__(
         self,
-        agent_url: str,
+        agent_url: str | None = None,
         name: str = "a2a",
         description: str = "连接远程 Agent 并与其协作",
+        client: A2AClient | None = None,
     ) -> None:
         super().__init__(name=name, description=description)
-        self.client = A2AClient(agent_url)
+        if client is None:
+            if not agent_url:
+                raise ValueError("必须提供 agent_url 或 client")
+            client = A2AClient(agent_url)
+        self.client = client
         self.agent_url = self.client.agent_url
 
     def run(self, parameters: Dict[str, Any]) -> str:
-        """Describe the endpoint; task exchange is implemented in section 10.3."""
-        action = str(parameters.get("action", "describe")).strip().lower()
-        if action == "describe":
-            return self.client.describe()
-        return (
-            f"错误：10.1 只完成 A2A 端点配置，不执行 '{action}'；"
-            "真实任务通信将在 10.3 接入。"
-        )
+        """Run one synchronous facade operation against the A2A client."""
+        action = str(parameters.get("action", "")).strip().lower()
+        if not action:
+            action = "execute_skill" if parameters.get("skill_name") else (
+                "send_message" if parameters.get("input") else "describe"
+            )
+
+        try:
+            if action == "describe":
+                return self.client.describe()
+            if action == "get_agent_card":
+                return json.dumps(
+                    self.client.get_agent_card(),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            if action in {"send_message", "execute_skill"}:
+                text = str(
+                    parameters.get("input", parameters.get("text", "")),
+                ).strip()
+                if not text:
+                    raise ValueError(f"{action} 必须提供 input")
+                if action == "execute_skill":
+                    skill_name = str(
+                        parameters.get("skill_name", ""),
+                    ).strip()
+                    if not skill_name:
+                        raise ValueError("execute_skill 必须提供 skill_name")
+                    result = self.client.execute_skill(skill_name, text)
+                else:
+                    result = self.client.send_message(text)
+                if result.get("status") == "failed":
+                    return f"A2A 任务失败: {result.get('error', '未知错误')}"
+                return str(result.get("result", result))
+            if action == "get_task":
+                task_id = str(parameters.get("task_id", "")).strip()
+                if not task_id:
+                    raise ValueError("get_task 必须提供 task_id")
+                return json.dumps(
+                    self.client.get_task(task_id),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            if action == "cancel_task":
+                task_id = str(parameters.get("task_id", "")).strip()
+                if not task_id:
+                    raise ValueError("cancel_task 必须提供 task_id")
+                return json.dumps(
+                    self.client.cancel_task(task_id),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            raise ValueError(f"不支持的 A2A 操作 '{action}'")
+        except Exception as exc:
+            return f"A2A 操作失败: {exc}"
 
     def get_parameters(self) -> List[ToolParameter]:
         return [
             ToolParameter(
                 name="action",
                 type="string",
-                description="当前支持 describe；后续扩展任务通信",
+                description=(
+                    "操作类型：describe、get_agent_card、send_message、"
+                    "execute_skill、get_task 或 cancel_task"
+                ),
                 required=False,
-                default="describe",
-            )
+            ),
+            ToolParameter(
+                name="skill_name",
+                type="string",
+                description="execute_skill 要调用的兼容层 skill 名称",
+                required=False,
+            ),
+            ToolParameter(
+                name="input",
+                type="string",
+                description="发送给远程 Agent 的任务内容",
+                required=False,
+            ),
+            ToolParameter(
+                name="task_id",
+                type="string",
+                description="get_task 或 cancel_task 使用的远程任务 ID",
+                required=False,
+            ),
         ]
 
 

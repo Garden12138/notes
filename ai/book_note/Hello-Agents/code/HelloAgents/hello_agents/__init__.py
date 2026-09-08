@@ -37,13 +37,19 @@ from .tools import (
     my_calculate,
 )
 from .protocols import (
+    A2A_AVAILABLE,
     A2AClient,
+    A2AServer,
+    A2ASkillDefinition,
     ANPDiscovery,
     BuiltinMCPServer,
+    FASTMCP_AVAILABLE,
     MCPClient,
+    MCPServer,
     Protocol,
     ProtocolType,
     ServiceInfo,
+    create_builtin_server,
 )
 from .memory import (
     BaseMemory,
@@ -79,7 +85,10 @@ from .applications import (
 )
 
 __all__ = [
+    "A2A_AVAILABLE",
     "A2AClient",
+    "A2AServer",
+    "A2ASkillDefinition",
     "A2ATool",
     "Agent",
     "AgentException",
@@ -99,6 +108,7 @@ __all__ = [
     "DocumentChunk",
     "DocumentProcessor",
     "Executor",
+    "FASTMCP_AVAILABLE",
     "EmbeddingModel",
     "EpisodicMemory",
     "FunctionCallAgent",
@@ -113,6 +123,7 @@ __all__ = [
     "MemoryManager",
     "MemoryTool",
     "MCPClient",
+    "MCPServer",
     "MCPTool",
     "NoteTool",
     "PDFLearningAssistant",
@@ -141,6 +152,7 @@ __all__ = [
     "WorkingMemory",
     "calculate",
     "create_calculator_registry",
+    "create_builtin_server",
     "create_gradio_app",
     "create_research_chain",
     "create_rag_pipeline",
