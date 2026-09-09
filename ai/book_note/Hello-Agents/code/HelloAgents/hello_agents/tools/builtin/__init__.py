@@ -12,6 +12,7 @@ from .note_tool import NoteTool
 from .rag_tool import RAGTool
 from .terminal_tool import TerminalTool
 from .protocol_tools import A2ATool, ANPTool, MCPTool
+from .rl_training_tool import RLTrainingTool
 
 __all__ = [
     "A2ATool",
@@ -21,6 +22,7 @@ __all__ = [
     "MemoryTool",
     "NoteTool",
     "RAGTool",
+    "RLTrainingTool",
     "SearchTool",
     "TerminalTool",
     "calculate",
