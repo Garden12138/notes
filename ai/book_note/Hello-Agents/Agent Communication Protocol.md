@@ -2,7 +2,11 @@
 
 > 阅读资料：[《Hello-Agents》第十章 10.1：智能体通信协议基础](https://datawhalechina.github.io/hello-agents/#/./chapter10/%E7%AC%AC%E5%8D%81%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE?id=_101-%e6%99%ba%e8%83%bd%e4%bd%93%e9%80%9a%e4%bf%a1%e5%8d%8f%e8%ae%ae%e5%9f%ba%e7%a1%80)、[10.2：MCP 协议实战](https://datawhalechina.github.io/hello-agents/#/./chapter10/%E7%AC%AC%E5%8D%81%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE?id=_102-mcp-%e5%8d%8f%e8%ae%ae%e5%ae%9e%e6%88%98)、[10.3：A2A 协议实战](https://datawhalechina.github.io/hello-agents/#/./chapter10/%E7%AC%AC%E5%8D%81%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE?id=_103-a2a-%e5%8d%8f%e8%ae%ae%e5%ae%9e%e6%88%98)
 >
-> 当前阅读范围为 10.1—10.3：先区分 MCP、A2A 与 ANP 的职责，再分别完成 MCP 能力调用和 A2A Agent 协作闭环。
+> 补充阅读：[10.4：ANP 协议实战](https://datawhalechina.github.io/hello-agents/#/./chapter10/%E7%AC%AC%E5%8D%81%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE?id=_104-anp-%e5%8d%8f%e8%ae%ae%e5%ae%9e%e6%88%98)
+>
+> 补充阅读：[10.5：构建自定义 MCP 服务器](https://datawhalechina.github.io/hello-agents/#/./chapter10/%E7%AC%AC%E5%8D%81%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE?id=_105-%e6%9e%84%e5%bb%ba%e8%87%aa%e5%ae%9a%e4%b9%89-mcp-%e6%9c%8d%e5%8a%a1%e5%99%a8)
+>
+> 当前阅读范围为 10.1—10.5：先区分 MCP、A2A 与 ANP 的职责，再完成 MCP 能力调用、自定义 Server、A2A Agent 协作以及 ANP 服务发现与路由实践。
 
 ### 为什么 Agent 需要通信协议
 
@@ -157,7 +161,7 @@ hello_agents/
 - `A2ATool` 校验并保存对等 Agent 地址，本节只验证端点配置，不虚构远程 Agent 的回复。
 - 三种能力都通过现有 `Tool.run(parameters)` 接口进入框架。
 
-这使 10.1 展示的代码完整可执行，但不等于已经实现完整标准。10.2 在这个骨架上补入 FastMCP 和真实传输，10.3 再补入 A2A Agent Card、任务事件和产物；网络化 ANP 仍留到后续小节。
+这使 10.1 展示的代码完整可执行，但不等于已经实现完整标准。10.2 在这个骨架上补入 FastMCP 和真实传输，10.3 补入 A2A Agent Card、任务事件和产物，10.4 则完成文章中的 ANP 服务目录、节点图和元数据路由。
 
 #### MCP：先发现，再调用
 
@@ -239,12 +243,12 @@ python3 examples/protocol_basics_demo.py
 ```text
 === MCP：统一发现与调用工具 ===
 找到 6 个工具:
-- add: 计算两个数的和
-- subtract: 计算两个数的差
-- multiply: 计算两个数的积
-- divide: 计算两个数的商
-- greet: 生成友好问候
-- get_system_info: 获取非敏感的运行环境信息
+- add: 计算两个数的和。
+- subtract: 计算两个数的差。
+- multiply: 计算两个数的积。
+- divide: 计算两个数的商。
+- greet: 生成友好问候。
+- get_system_info: 获取非敏感的运行环境信息。
 MCP 计算结果: 30.0
 
 === ANP：注册并发现服务 ===
@@ -274,7 +278,7 @@ A2A 工具创建成功
 | --- | --- | --- |
 | MCP | FastMCP 可选集成、Stdio/HTTP 连接、Tools/Resources/Prompts | 生产级认证、重试、超时、审计和持久会话 |
 | A2A | Agent Card、Message、Task、Artifact、流式状态与取消 | 身份认证、持久化任务、重试、审计和跨组织治理 |
-| ANP | 单进程服务注册与过滤 | 网络身份、认证、分布式发现、路由、健康检查与失效清理 |
+| ANP | 内存服务目录、能力过滤、节点图和元数据路由 | DID 认证、公开描述文档、网络搜索、健康检查与失效清理 |
 | 通用能力 | Tool 参数检查与错误文本 | 超时、重试、幂等、鉴权、审计、指标和链路追踪 |
 
 协议让系统互通，也扩大了信任边界。外部服务的描述不一定准确，返回内容也可能包含恶意指令；Agent 在执行写文件、数据库更新或网络操作前仍需权限控制和人工确认。
@@ -856,6 +860,463 @@ tasks/get: completed
 - Artifact 可能包含文件、URL 或结构化数据，接收方仍要做类型、大小、来源和内容校验。
 - Agent 直接互联会扩大信任边界。涉及付款、发布、删除或敏感数据时，应保留最小权限和人工确认。
 
+### ANP 协议实战
+
+#### 从“知道地址”到开放网络发现
+
+A2A 解决已知 Agent 之间怎样交换任务，ANP 关注更开放的问题：网络里有大量陌生 Agent 时，如何确认身份、描述能力、找到服务并选择交互接口。
+
+原文把目标归纳为三点：
+
+- **服务发现**：按服务类型或能力找到候选 Agent。
+- **路由选择**：候选较多时，结合负载、成本和资源选择节点。
+- **动态扩展**：新 Agent 发布描述后，可以被其他 Agent 或搜索服务发现。
+
+这三点并非都由一个“发现中心”完成。当前 ANP 体系复用普通 Web 基础设施，并将身份、描述、发现与业务接口分层：
+
+| 概念 | 回答的问题 | 典型内容 |
+| --- | --- | --- |
+| WNS Handle | 人怎样记住 Agent | `alice.example.com` |
+| DID | Agent 的可验证身份是什么 | `did:wba:...` |
+| DID Document | 用什么公钥验签、服务入口在哪里 | verification methods、service endpoints |
+| Agent Description | Agent 是谁、能做什么 | 名称、描述、Information、Interface |
+| Discovery | 怎样找到公开描述文档 | 搜索服务、Handle、`.well-known/agent-descriptions` |
+| Interface | 找到以后怎样交互 | 自然语言接口、OpenRPC 等结构化接口 |
+
+文章实践使用 `ServiceInfo` 直接保存名称、能力、端点和元数据，是对“描述、索引、筛选”环节的教学性压缩，不包含 DID Document、签名验证和公开网页爬取。
+
+#### 完整的发现与调用链
+
+```mermaid
+sequenceDiagram
+    participant B as 服务 Agent B
+    participant D as Web / 发现服务
+    participant A as 请求 Agent A
+
+    B->>D: 发布 Agent Description URL
+    D->>B: 抓取 /.well-known/agent-descriptions
+    A->>D: 按语义或能力搜索
+    D-->>A: 返回 Agent Description URL
+    A->>B: 读取 Agent Description
+    B-->>A: DID、Information、Interfaces
+    A->>B: 解析 DID Document
+    B-->>A: 公钥与权威服务端点
+    A->>B: 使用私钥签名业务请求
+    B->>B: 解析请求方 DID 并验证签名
+    B-->>A: 按已声明接口返回结果
+```
+
+主动发现时，域名可在 `/.well-known/agent-descriptions` 发布 Agent Description URL 集合，搜索爬虫沿分页链接建立索引；被动发现时，Agent 读取搜索服务自己的 Description，再调用它公开的注册接口提交 URL。发现结果只是候选，安全敏感的端点和公钥仍应以 DID Document 为准。
+
+基于 DID 的认证也不是“请求里带一个 DID”就结束。请求方要用对应私钥签名，服务方解析 DID Document、确认该密钥具备认证用途，再验证请求完整性。本节没有自行实现密码学流程；真实部署应使用 ANP 官方参考 SDK，而不是把教学注册表包装成已认证网络。
+
+#### 本次代码边界
+
+本次严格补齐原文出现的四个接口：
+
+```text
+hello_agents/protocols/anp/
+└── implementation.py
+    ├── ServiceInfo             # 服务描述
+    ├── ANPDiscovery            # 内存注册、发现和选择
+    ├── register_service        # 原文注册辅助函数
+    ├── discover_service        # 原文发现辅助函数
+    └── ANPNetwork              # 节点与连接关系图
+
+hello_agents/tools/builtin/
+└── protocol_tools.py
+    └── ANPTool                 # Agent 的统一工具入口
+```
+
+完整实现见 [`implementation.py`](./code/HelloAgents/hello_agents/protocols/anp/implementation.py)，工具适配见 [`protocol_tools.py`](./code/HelloAgents/hello_agents/tools/builtin/protocol_tools.py)。
+
+#### 服务注册与发现
+
+原文的导入方式现在可以直接运行：
+
+```python
+from hello_agents.protocols import (
+    ANPDiscovery,
+    discover_service,
+    register_service,
+)
+
+discovery = ANPDiscovery()
+register_service(
+    discovery=discovery,
+    service_id="nlp_agent_1",
+    service_name="NLP处理专家A",
+    service_type="nlp",
+    capabilities=["text_analysis", "sentiment_analysis", "ner"],
+    endpoint="http://localhost:8001",
+    metadata={"load": 0.3, "price": 0.01, "version": "1.0.0"},
+)
+
+services = discover_service(discovery, service_type="nlp")
+```
+
+`ServiceInfo` 会检查必填字段与 HTTP(S) 端点，对能力去重，并验证 metadata 可以序列化为 JSON。相同 `service_id` 再次注册表示更新；查询结果按 ID 排序，运行和测试结果保持稳定。
+
+发现条件分为三个层次：
+
+1. `service_type` 先限制服务类别。
+2. `required_capabilities` 要求候选服务包含全部必要能力。
+3. `filters` 对 metadata 做精确匹配，如 `{"gpu": true}`。
+
+它们只负责生成候选集合，不会凭空理解“训练大模型”需要 GPU。需求到筛选条件的转换可以由 Agent 完成，也可以由业务规则明确配置。
+
+#### 元数据路由不是自动智能
+
+当候选集合为 $C$，按负载选择的规则只是：
+
+$$
+s^* = \operatorname*{arg\,min}_{s \in C}\operatorname{load}(s)
+$$
+
+代码中的 `select_service()` 支持按一个数值型 metadata 字段升序或降序选择。例如训练任务先筛选 GPU 节点，再取负载最低者；高内存任务则按 `memory_gb` 降序取第一名。
+
+```python
+best = discovery.select_service(
+    "compute",
+    filters={"gpu": True},
+    required_capabilities=["ml_training"],
+    sort_by="load",
+    ascending=True,
+)
+```
+
+这里的“智能路由”应拆开理解：LLM 可以从自然语言中判断应关注 GPU、内存还是负载，真正的筛选与排序仍是确定性逻辑。若多个指标需要综合权重、成本约束或历史成功率，应在应用层定义可解释的评分函数，不能把单字段 `min()` 描述成自主优化。
+
+#### Agent 网络图
+
+原文还创建了 `ANPNetwork`：
+
+```python
+from hello_agents.protocols import ANPNetwork
+
+network = ANPNetwork(network_id="ai_cluster")
+for service in discovery.list_all_services():
+    network.add_node(service.service_id, service.endpoint)
+
+network.connect_nodes("nlp_agent_1", "nlp_agent_2")
+stats = network.get_network_stats()
+```
+
+本次补齐节点添加、删除、连接、断开、邻居查询、最短路径和网络统计，并检查未知节点与自连接：
+
+```mermaid
+flowchart LR
+    D["ANPDiscovery"] --> N1["nlp_agent_1"]
+    D --> N2["nlp_agent_2"]
+    N1 <-->|"connect_nodes"| N2
+    N1 --> E1["http://localhost:8001"]
+    N2 --> E2["http://localhost:8002"]
+```
+
+这个类保存的是应用内拓扑，不会建立 Socket、检查端点健康或自动转发消息。`connect_nodes()` 表示允许或计划建立协作关系，而不是一次真实网络握手。
+
+#### ANPTool 与任务调度 Agent
+
+文章中的调度器需要先列出节点，再根据硬件和负载选择服务。原有 `ANPTool` 的发现结果只返回 ID、类型和地址，Agent 看不到用于决策的 GPU、内存与负载。本次让查看与选择动作返回 metadata 和 capabilities，并补充以下动作：
+
+| action | 用途 |
+| --- | --- |
+| `register_service` / `unregister_service` | 增删目录项 |
+| `get_service` / `list_services` | 查看单个或全部服务 |
+| `discover_services` | 按类型、能力和 metadata 筛选 |
+| `select_service` | 按一个数值字段选择候选节点 |
+| `update_metadata` | 更新负载等动态信息 |
+
+```mermaid
+flowchart LR
+    Q["任务描述"] --> A["调度 Agent"]
+    A -->|"提取 GPU、内存、负载要求"| T["ANPTool"]
+    T --> D["ANPDiscovery"]
+    D -->|"筛选候选 + 确定性排序"| S["选中 ServiceInfo"]
+    S --> A
+    A --> O["节点与选择理由"]
+```
+
+实现仍沿用现有 `SimpleAgent → ToolRegistry → Tool.run()` 调用链，没有新增另一套 Agent 框架。
+
+#### 实践一：发现、组网和负载均衡
+
+[`anp_protocol_demo.py`](./code/HelloAgents/examples/anp_protocol_demo.py) 先注册两个 NLP Agent，按负载选择节点并建立连接；随后注册五个 API Server，连续分配十个请求。为让运行结果可复核，示例使用固定初始负载，不使用原文的随机数。
+
+```bash
+cd code/HelloAgents
+PYTHONPATH=. python3 examples/anp_protocol_demo.py
+```
+
+实际输出：
+
+```text
+=== 服务注册、发现与选择 ===
+已注册: 2
+NLP 服务: NLP处理专家A, NLP处理专家B
+最低负载: NLP处理专家A (0.30)
+网络: nodes=2, edges=1
+路径: nlp_agent_1 -> nlp_agent_2
+
+=== 基于负载元数据的请求分配 ===
+请求 01 -> API服务器0 (分配前负载 0.15)
+请求 02 -> API服务器0 (分配前负载 0.25)
+请求 03 -> API服务器1 (分配前负载 0.25)
+请求 04 -> API服务器0 (分配前负载 0.35)
+请求 05 -> API服务器1 (分配前负载 0.35)
+请求 06 -> API服务器2 (分配前负载 0.35)
+请求 07 -> API服务器0 (分配前负载 0.45)
+请求 08 -> API服务器1 (分配前负载 0.45)
+请求 09 -> API服务器2 (分配前负载 0.45)
+请求 10 -> API服务器3 (分配前负载 0.45)
+```
+
+每次分配后通过 `update_metadata()` 将选中节点的负载增加 `0.1`。这解释了请求逐渐分散到其他节点的原因，也避免示例绕过目录直接修改已返回的 metadata。
+
+#### 实践二：调度 Agent 消费发现结果
+
+[`anp_task_scheduler_demo.py`](./code/HelloAgents/examples/anp_task_scheduler_demo.py) 按原文建立计算节点目录，并让 `SimpleAgent` 调用 `ANPTool`。为了验证调度链而不调用收费模型，本次使用确定性假模型将三种任务转换成三组规则：
+
+| 任务 | 候选条件 | 排序规则 |
+| --- | --- | --- |
+| 大模型训练 | `ml_training` 且 `gpu=true` | `load` 升序 |
+| 大量文本 | `data_processing` | `memory_gb` 降序 |
+| 轻量分析 | `data_processing` | `load` 升序 |
+
+```bash
+PYTHONPATH=. python3 examples/anp_task_scheduler_demo.py
+```
+
+实际输出：
+
+```text
+=== ANPTool 任务调度 ===
+任务: 训练一个大型深度学习模型，需要GPU支持
+结果: 选择 计算节点4（compute_node_4），负载 0.23，CPU 8 核，内存 32 GB，GPU=True。
+任务: 处理大量文本数据，需要高内存
+结果: 选择 计算节点1（compute_node_1），负载 0.42，CPU 16 核，内存 64 GB，GPU=True。
+任务: 运行轻量级数据分析任务
+结果: 选择 计算节点5（compute_node_5），负载 0.12，CPU 4 核，内存 16 GB，GPU=False。
+```
+
+假模型只替代自然语言到筛选规则的转换，服务注册、Tool 调用、候选过滤、排序和结果回传都经过真实代码。替换为 `HelloAgentsLLM` 后，协议层无需变化，但生产环境应验证模型生成的筛选参数，不能让它任意指定未知字段。
+
+#### 文章说明代码中补齐或修正的部分
+
+| 原文说明代码留下的问题 | 本次处理 |
+| --- | --- |
+| `register_service`、`discover_service` 未实现 | 补齐并从包入口导出 |
+| `ANPNetwork` 只有调用示例 | 补齐节点、边、路径与统计 |
+| 发现只能按类型和 metadata 精确匹配 | 增加必要能力过滤和单字段选择 |
+| `ANPTool` 不返回负载、内存和 GPU | 返回完整的可序列化服务描述 |
+| 调度示例的节点属性完全随机 | 使用固定数据生成可复核的实际输出 |
+| 负载均衡直接修改 `server.metadata` | 通过目录的 `update_metadata()` 更新 |
+| 非法端点、未知节点和非数值排序未处理 | 增加校验与可读错误 |
+| 讲解 DID 签名但没有实现 | 明确留给正式 ANP SDK，不伪造认证成功 |
+
+#### 不能把内存目录当成完整 ANP
+
+本次代码忠实完成文章实践，但它仍是单进程模拟：
+
+- `ANPDiscovery` 是一个 Python 字典，既不是公开搜索服务，也不是去中心化注册协议。
+- 示例地址用于说明路由，程序没有访问 `http://node...` 或验证服务在线。
+- metadata 是某一时刻的快照。真实负载需要心跳、租约、时间戳和原子更新，否则多个调度器可能同时选中同一节点。
+- 服务描述由注册方提供，目录尚未验证 Agent Description、DID、签名、版本或所有者。
+- 动态扩展还需要过期清理、健康检查、缓存刷新、分页、索引和故障转移。
+- 节点选择只返回 endpoint；后续真正调用服务时，还要按 Agent Description 声明的结构化或自然语言接口发送请求。
+
+如果要进入开放互联网场景，应采用官方 AgentConnect/ANP SDK 发布 DID Document、Agent Description 与接口文档，并实现签名验证。自己拼接 `Authorization` 字符串不能替代 DID 身份认证。
+
+### 构建自定义 MCP 服务器
+
+#### 为什么需要自建 Server
+
+使用社区 MCP Server 适合通用能力；业务逻辑、私有数据和专有系统通常仍要自己封装。自建 Server 不是重新定义一种 Tool，而是把已有 Python 函数放到稳定的协议边界后面：客户端可以发现名称、说明与参数结构，再通过 stdio 或 HTTP 调用。
+
+| 需求 | 自建 Server 的作用 | 仍需应用负责 |
+| --- | --- | --- |
+| 封装业务流程 | 把多个内部步骤收敛为一个 MCP Tool | 事务、一致性和幂等 |
+| 访问私有数据 | 隐藏数据库或内部 API 的具体接法 | 身份认证和数据权限 |
+| 复用专有能力 | 让不同 Host 使用同一套接口 | 版本兼容和容量规划 |
+| 跨进程部署 | 用标准传输替代框架内直接导入 | 超时、重试、限流和审计 |
+
+本节沿用原文的天气查询案例，只实现三个工具，不额外扩展成天气平台：
+
+| 工具 | 参数 | 返回内容 |
+| --- | --- | --- |
+| `get_weather` | `city: str` | 温度、体感温度、湿度、天气、风速、能见度和时间 |
+| `list_supported_cities` | 无 | 内置中文城市映射及数量 |
+| `get_server_info` | 无 | Server 名称、版本、上游服务和工具列表 |
+
+#### Server 内部怎样工作
+
+[`server.py`](./code/HelloAgents/weather-mcp-server/server.py) 继续使用文章中的 `MCPServer.add_tool()` 接口。函数签名和类型注解会被 FastMCP 转换成 JSON Schema，工具说明来自 docstring。
+
+```python
+weather_server = MCPServer(
+    name="weather-server",
+    description="基于 wttr.in 的天气查询服务",
+)
+
+weather_server.add_tool(get_weather)
+weather_server.add_tool(list_supported_cities)
+weather_server.add_tool(get_server_info)
+```
+
+一次天气查询分成协议处理和业务处理两层：
+
+```mermaid
+flowchart LR
+    C["MCP Client"] -->|"call_tool: get_weather"| S["FastMCP Server"]
+    S --> V["校验 city 和超时"]
+    V --> P{"数据来源"}
+    P -->|"正常运行"| W["wttr.in JSON API"]
+    P -->|"验收测试"| F["固定天气数据"]
+    W --> N["检查响应并统一字段"]
+    F --> N
+    N --> J["JSON 字符串"]
+    J --> C
+```
+
+天气接口不是 MCP 的一部分。MCP 负责描述和调用工具，`get_weather_data()` 才负责访问 wttr.in、转换单位和检查字段。这样可以单独替换天气供应商，而不改变客户端看到的工具接口。
+
+原文直接读取 `data["current_condition"][0]`，一旦上游超时、返回非 JSON 或改变结构，工具只能抛出难以理解的异常。本次实现补充了：
+
+- 去除城市名前后空格，并拒绝空值和异常长输入；
+- 将请求超时放到 `WEATHER_MCP_TIMEOUT`，默认 10 秒；
+- 同时兼容 wttr.in 文档中的顶层结构和曾出现过的 `data` 包装层；
+- 逐项校验温度、湿度、风速和能见度，不把缺失值默认为零；
+- 失败时返回包含 `error` 与 `city` 的 JSON，Agent 可以明确说明失败；
+- 使用 `datetime.now().astimezone().isoformat()` 输出带时区时间。
+
+这里保留同步 `requests.get()`，与原文实现一致。FastMCP 会在线程池中执行同步工具，不会直接阻塞异步协议循环；如果上游请求量很高，再改成异步 HTTP 客户端更合适。
+
+#### Client 如何测试 Server
+
+[`client_demo.py`](./code/HelloAgents/weather-mcp-server/client_demo.py) 使用当前 Python 解释器启动子进程，经过真实 stdio 会话完成初始化、工具发现和调用：
+
+```python
+client = MCPClient([sys.executable, str(SERVER_FILE)], env=server_env)
+
+async with client:
+    tools = await client.list_tools()
+    info = await client.call_tool("get_server_info", {})
+    weather = await client.call_tool("get_weather", {"city": "北京"})
+```
+
+默认从 [`fixtures/weather.json`](./code/HelloAgents/weather-mcp-server/fixtures/weather.json) 读取固定数据。这不是模拟 MCP：Server 仍由客户端拉起，消息仍通过 stdio 传输，只把不稳定的第三方天气请求换成可复核输入。增加 `--live` 才会访问 wttr.in。
+
+```bash
+cd code/HelloAgents
+PYTHONPATH=. python weather-mcp-server/client_demo.py
+PYTHONPATH=. python weather-mcp-server/client_demo.py --live
+```
+
+使用 FastMCP 2.14.7 实际运行第一条命令，业务输出如下：
+
+```text
+Transport: stdio
+Tools: get_weather, list_supported_cities, get_server_info
+Server: Weather MCP Server v1.0.0
+Supported cities: 12
+北京: 24.0°C, 晴, humidity=48%
+深圳: 31.0°C, 多云, humidity=72%
+```
+
+FastMCP banner 和依赖弃用警告写到 stderr，不属于工具返回。测试还覆盖了空城市、固定数据中不存在的城市、上游嵌套响应和字段转换。
+
+#### 接入 Agent
+
+[`agent_demo.py`](./code/HelloAgents/weather-mcp-server/agent_demo.py) 保留原文的 `SimpleAgent + MCPTool` 组合。`MCPTool(name="mcp")` 先发现 Server 能力，再将三个远程工具展开为 `mcp_get_weather`、`mcp_list_supported_cities` 和 `mcp_get_server_info`，逐个注册到 Agent。
+
+```mermaid
+sequenceDiagram
+    participant U as 用户
+    participant A as 天气助手
+    participant T as MCPTool
+    participant S as Weather MCP Server
+    participant W as wttr.in
+
+    T->>S: 启动并 list_tools
+    S-->>T: 三个工具及 inputSchema
+    U->>A: 北京今天天气怎么样？
+    A->>T: mcp_get_weather(city="北京")
+    T->>S: call_tool
+    S->>W: GET /Beijing?format=j1&lang=zh
+    W-->>S: 天气 JSON
+    S-->>T: 规范化天气结果
+    T-->>A: 工具执行结果
+    A-->>U: 整理后的回答
+```
+
+运行 Agent 需要 `LLM_MODEL_ID`、`LLM_API_KEY` 和 `LLM_BASE_URL`：
+
+```bash
+PYTHONPATH=. python weather-mcp-server/agent_demo.py --demo
+```
+
+本次没有调用收费模型，因此不虚构 Agent 的自然语言输出。Server 和 Client 的协议闭环已经独立验证；模型只负责决定何时调用工具以及如何整理结果。
+
+#### stdio 与 Streamable HTTP
+
+同一份 Server 支持两种启动方式：
+
+```bash
+# 本地客户端负责拉起和回收进程
+PYTHONPATH=. python weather-mcp-server/server.py
+
+# 远程客户端连接独立运行的服务
+PYTHONPATH=. python weather-mcp-server/server.py \
+  --transport http --host 127.0.0.1 --port 8081
+```
+
+stdio 适合本机桌面应用或命令行 Host；Streamable HTTP 适合独立部署和多个客户端。HTTP 入口也已实际连接验证，客户端能够在 `/mcp` 发现三个工具并查询固定的北京天气。
+
+原文 Dockerfile 虽然 `EXPOSE 8081`，启动命令却仍是 `python server.py`；而 `weather_server.run()` 默认使用 stdio，因此容器不会监听 8081。本次 [`Dockerfile`](./code/HelloAgents/weather-mcp-server/Dockerfile) 显式传入 `--transport http --host 0.0.0.0 --port 8081`，端口声明与进程行为才一致。
+
+#### 整理和发布
+
+完整实践位于 [`weather-mcp-server/`](./code/HelloAgents/weather-mcp-server/)：
+
+```text
+weather-mcp-server/
+├── server.py             # 三个 MCP Tools 与 stdio/HTTP 入口
+├── client_demo.py        # 真实 stdio 验收
+├── agent_demo.py         # SimpleAgent 集成
+├── fixtures/weather.json # 可复核的离线天气输入
+├── pyproject.toml        # Python 包元数据和依赖
+├── requirements.txt
+├── Dockerfile
+├── .dockerignore
+├── LICENSE
+└── README.md
+```
+
+文章中的 Smithery 发布方式具有版本时效性。按当前 Smithery 文档，远程 Server 应先自行提供公开 HTTPS Streamable HTTP 地址，再发布 URL；本地 stdio Server 则发布 MCPB。旧版 `smithery.yaml` 和 `smithery install` 不能继续当成固定接口，因此本次没有生成可能误导的旧清单。
+
+```bash
+npm install -g smithery@latest
+smithery auth login
+smithery mcp publish "https://your-domain.example/mcp" \
+  -n your-namespace/weather-mcp-server
+```
+
+Smithery 是 MCP Server 的注册与分发平台，不是 MCP 规范本身。是否采用 Smithery 不影响 Server 与标准 MCP Client 直接通信。
+
+#### 从说明代码到完整实现
+
+| 原文中需要补齐或修正的地方 | 本次处理 |
+| --- | --- |
+| 城市参数和上游 JSON 未校验 | 增加输入、HTTP 状态、JSON 结构与字段校验 |
+| 测试完全依赖实时网络 | 保留 `--live`，默认注入固定数据验证协议 |
+| 测试脚本写死 `python` | 使用 `sys.executable`，保证客户端和 Server 使用同一环境 |
+| Server 只有默认 stdio 入口 | 增加显式 stdio/HTTP、host 和 port 参数 |
+| Docker 暴露端口但进程运行 stdio | 容器入口改为 Streamable HTTP |
+| Agent 可能在查询失败时编造天气 | 系统提示要求识别 `error`，不得补写不存在的数据 |
+| 发布步骤依赖旧 Smithery 配置 | 按当前 URL/MCPB 两条发布路径说明，不伪造发布成功 |
+
+当前 Server 适合教学和本地实践，不能直接视为生产服务。公开部署前至少还要补上 TLS、认证、限流、缓存、调用审计、上游服务配额和真正的健康检查；传给 Server 的环境变量也应只包含它需要的配置。
+
 ### 参考资料
 
 - [《Hello-Agents》第十章：智能体通信协议](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter10/%E7%AC%AC%E5%8D%81%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E9%80%9A%E4%BF%A1%E5%8D%8F%E8%AE%AE.md)
@@ -864,11 +1325,18 @@ tasks/get: completed
 - [FastMCP 2：Tools](https://gofastmcp.com/v2/servers/tools)
 - [FastMCP 2：Resources](https://gofastmcp.com/v2/servers/resources)
 - [FastMCP 2：Prompts](https://gofastmcp.com/v2/servers/prompts)
+- [FastMCP 2：运行 Server](https://gofastmcp.com/v2/deployment/running-server)
+- [FastMCP 2：HTTP 部署](https://gofastmcp.com/v2/deployment/http)
+- [wttr.in：JSON 输出与多语言参数](https://github.com/chubin/wttr.in/blob/master/README.md)
+- [Smithery：发布 MCP Server](https://smithery.ai/docs/build/publish)
+- [Smithery CLI](https://smithery.ai/docs/concepts/cli)
 - [A2A Protocol 规范](https://a2a-protocol.org/latest/specification/)
 - [A2A Python SDK](https://github.com/a2aproject/a2a-python)
 - [A2A Python SDK 1.0 迁移说明](https://github.com/a2aproject/a2a-python/blob/main/docs/v1.0-migration-guide.md)
 - [A2A Task 生命周期](https://a2a-protocol.org/latest/topics/life-of-a-task/)
 - [Agent Network Protocol 官方文档](https://agent-network-protocol.com/)
+- [ANP 官方中文入门指南](https://github.com/agent-network-protocol/AgentNetworkProtocol/blob/main/docs/chinese/ANP%E5%85%A5%E9%97%A8%E6%8C%87%E5%8D%97.md)
+- [AgentConnect：ANP SDK 与参考实现](https://github.com/agent-network-protocol/AgentConnect)
 
 ### 小结
 
@@ -879,4 +1347,6 @@ tasks/get: completed
 - 本次代码实际跑通离线完整链和 FastMCP stdio 子进程，同时保留原文 GitHub 搜索、Markdown 生成与文件 Server 保存的多 Agent 流程。
 - A2A 通过 Agent Card 发现能力，以 Message 交换输入和补充信息，以 Task 跟踪长任务，并把结果放入 Artifact；Skill 不是远程函数端点。
 - `execute_skill()` 是 HelloAgents 为文章示例保留的便利接口。真实 SDK 闭环已验证 `submitted → working → Artifact → completed` 和 `tasks/get`，协商等业务语义仍由应用定义。
+- ANP 面向开放网络中的身份、描述、发现与接口选择；本次代码完成原文的内存服务目录、能力筛选、节点图、元数据路由和 Agent 工具调用，但不把这些模拟成 DID 认证或公开网络发现。
+- 自定义 MCP Server 将业务函数封装为可发现、可跨进程调用的标准能力。本次天气服务实际跑通 stdio 和 Streamable HTTP；天气 API、模型决策和发布平台都是协议之外的依赖，需要分别测试和治理。
 - 协议并不提供默认安全信任。Host 仍要限制 Server 能看到的目录、凭据和写操作，并对高影响行为保留人工确认。

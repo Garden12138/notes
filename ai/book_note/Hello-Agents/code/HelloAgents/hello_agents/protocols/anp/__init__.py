@@ -1,5 +1,17 @@
 """ANP learning interfaces."""
 
-from .implementation import ANPDiscovery, ServiceInfo
+from .implementation import (
+    ANPDiscovery,
+    ANPNetwork,
+    ServiceInfo,
+    discover_service,
+    register_service,
+)
 
-__all__ = ["ANPDiscovery", "ServiceInfo"]
+__all__ = [
+    "ANPDiscovery",
+    "ANPNetwork",
+    "ServiceInfo",
+    "discover_service",
+    "register_service",
+]

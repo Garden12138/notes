@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "weather-mcp-server"
+version = "1.0.0"
+description = "Weather MCP server based on the HelloAgents learning framework"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "hello-agents>=0.2.1",
+    "fastmcp>=2,<3",
+    "requests>=2.31,<3",
+]
+
+[project.scripts]
+weather-mcp-server = "server:main"
+
+[tool.setuptools]
+py-modules = ["server"]

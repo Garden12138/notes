@@ -1,0 +1,20 @@
+{
+  "北京": {
+    "temperature": 24.0,
+    "feels_like": 25.0,
+    "humidity": 48,
+    "condition": "晴",
+    "wind_speed": 2.8,
+    "visibility": 10.0,
+    "timestamp": "2026-09-09T14:30:00+08:00"
+  },
+  "深圳": {
+    "temperature": 31.0,
+    "feels_like": 35.0,
+    "humidity": 72,
+    "condition": "多云",
+    "wind_speed": 3.6,
+    "visibility": 9.0,
+    "timestamp": "2026-09-09T14:30:00+08:00"
+  }
+}

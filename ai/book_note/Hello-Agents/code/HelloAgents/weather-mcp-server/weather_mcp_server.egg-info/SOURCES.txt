@@ -1,0 +1,10 @@
+LICENSE
+README.md
+pyproject.toml
+server.py
+weather_mcp_server.egg-info/PKG-INFO
+weather_mcp_server.egg-info/SOURCES.txt
+weather_mcp_server.egg-info/dependency_links.txt
+weather_mcp_server.egg-info/entry_points.txt
+weather_mcp_server.egg-info/requires.txt
+weather_mcp_server.egg-info/top_level.txt

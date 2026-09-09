@@ -42,6 +42,7 @@ from .protocols import (
     A2AServer,
     A2ASkillDefinition,
     ANPDiscovery,
+    ANPNetwork,
     BuiltinMCPServer,
     FASTMCP_AVAILABLE,
     MCPClient,
@@ -50,6 +51,8 @@ from .protocols import (
     ProtocolType,
     ServiceInfo,
     create_builtin_server,
+    discover_service,
+    register_service,
 )
 from .memory import (
     BaseMemory,
@@ -94,6 +97,7 @@ __all__ = [
     "AgentException",
     "AsyncToolExecutor",
     "ANPDiscovery",
+    "ANPNetwork",
     "ANPTool",
     "BaseMemory",
     "BuiltinMCPServer",
@@ -156,6 +160,8 @@ __all__ = [
     "create_gradio_app",
     "create_research_chain",
     "create_rag_pipeline",
+    "discover_service",
     "global_registry",
     "my_calculate",
+    "register_service",
 ]

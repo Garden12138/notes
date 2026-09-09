@@ -1,0 +1,60 @@
+# Weather MCP Server
+
+《Hello-Agents》第十章 10.5 的天气查询 MCP Server 实践。服务通过
+HelloAgents 的 `MCPServer` 暴露三个工具：
+
+- `get_weather(city)`：从 wttr.in 查询当前天气；
+- `list_supported_cities()`：列出内置中文城市映射；
+- `get_server_info()`：返回服务版本和工具列表。
+
+## 本地运行
+
+在 `code/HelloAgents` 下执行：
+
+```bash
+python -m pip install -r weather-mcp-server/requirements.txt
+PYTHONPATH=. python weather-mcp-server/client_demo.py
+```
+
+客户端示例默认使用 `fixtures/weather.json`，只验证真实 stdio 协议链，不访问天气服务。增加 `--live` 才会请求 wttr.in：
+
+```bash
+PYTHONPATH=. python weather-mcp-server/client_demo.py --live
+```
+
+使用模型运行天气助手前，还要配置 `LLM_MODEL_ID`、`LLM_API_KEY` 和 `LLM_BASE_URL`：
+
+```bash
+PYTHONPATH=. python weather-mcp-server/agent_demo.py --demo
+```
+
+直接启动本地 stdio Server：
+
+```bash
+PYTHONPATH=. python weather-mcp-server/server.py
+```
+
+启动 Streamable HTTP Server：
+
+```bash
+PYTHONPATH=. python weather-mcp-server/server.py \
+  --transport http --host 127.0.0.1 --port 8081
+```
+
+MCP 端点默认为 `http://127.0.0.1:8081/mcp`。
+
+## 容器和发布
+
+```bash
+docker build -t weather-mcp-server weather-mcp-server
+docker run --rm -p 8081:8081 weather-mcp-server
+```
+
+部署到公开 HTTPS 地址后，可按当前 Smithery CLI 发布 URL：
+
+```bash
+smithery mcp publish "https://your-domain.example/mcp" \
+  -n your-namespace/weather-mcp-server
+```
+
+生产环境需要在入口层补充 TLS、认证、限流、审计和健康检查。不要直接把无认证的开发服务暴露到公网。

@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+.env
+.git/
+.venv/
+fixtures/
+client_demo.py
+agent_demo.py

@@ -407,19 +407,36 @@ class A2ATool(Tool):
 
 
 class ANPTool(Tool):
-    """Expose the chapter's conceptual service registry as a Tool."""
+    """Expose the chapter's service directory and routing metadata as a Tool."""
 
     def __init__(
         self,
         name: str = "anp",
-        description: str = "注册和发现 Agent 网络服务",
+        description: str = "注册、发现和选择 Agent 网络服务",
         discovery: ANPDiscovery | None = None,
     ) -> None:
         super().__init__(name=name, description=description)
         self.discovery = discovery or ANPDiscovery()
 
+    @staticmethod
+    def _capabilities(parameters: Dict[str, Any]) -> List[str]:
+        capabilities = parameters.get("capabilities", ())
+        if isinstance(capabilities, str):
+            return [
+                item.strip()
+                for item in capabilities.split(",")
+                if item.strip()
+            ]
+        if not isinstance(capabilities, (list, tuple, set)):
+            raise TypeError("capabilities 必须是数组或逗号分隔字符串")
+        return [str(item).strip() for item in capabilities if str(item).strip()]
+
+    @staticmethod
+    def _format(value: Any) -> str:
+        return json.dumps(value, ensure_ascii=False, indent=2)
+
     def run(self, parameters: Dict[str, Any]) -> str:
-        """Register, unregister or discover services."""
+        """Register, discover, select or update Agent services."""
         action = str(parameters.get("action", "")).strip().lower()
         if not action:
             return "错误：必须指定 action 参数"
@@ -438,7 +455,7 @@ class ANPTool(Tool):
                     service_type=str(parameters["service_type"]),
                     endpoint=str(parameters["endpoint"]),
                     service_name=parameters.get("service_name"),
-                    capabilities=tuple(parameters.get("capabilities", ())),
+                    capabilities=tuple(self._capabilities(parameters)),
                     metadata=dict(parameters.get("metadata", {})),
                 )
                 self.discovery.register_service(service)
@@ -452,22 +469,80 @@ class ANPTool(Tool):
                     return f"已注销服务: {service_id}"
                 return f"错误：服务不存在: {service_id}"
 
-            if action == "discover_services":
+            if action == "get_service":
+                service_id = str(parameters.get("service_id", "")).strip()
+                if not service_id:
+                    raise ValueError("get_service 必须提供 service_id")
+                service = self.discovery.get_service(service_id)
+                if service is None:
+                    return f"错误：服务不存在: {service_id}"
+                return self._format(service.to_dict())
+
+            if action == "update_metadata":
+                service_id = str(parameters.get("service_id", "")).strip()
+                if not service_id:
+                    raise ValueError("update_metadata 必须提供 service_id")
+                updates = parameters.get("metadata")
+                if not isinstance(updates, dict):
+                    raise ValueError("update_metadata 必须提供 metadata 对象")
+                service = self.discovery.update_metadata(service_id, updates)
+                return self._format(service.to_dict())
+
+            if action in {"list_services", "discover_services"}:
                 services = self.discovery.discover_services(
-                    service_type=parameters.get("service_type"),
+                    service_type=(
+                        parameters.get("service_type")
+                        if action == "discover_services"
+                        else None
+                    ),
                     filters=parameters.get("filters"),
+                    required_capabilities=self._capabilities(parameters),
                 )
                 if not services:
                     return "没有找到服务"
-                lines = [f"找到 {len(services)} 个服务:"]
-                lines.extend(
-                    (
-                        f"- {service.service_id} | {service.service_type} | "
-                        f"{service.endpoint}"
+                limit = parameters.get("limit")
+                if limit is not None:
+                    limit = int(limit)
+                    if limit <= 0:
+                        raise ValueError("limit 必须大于 0")
+                    services = services[:limit]
+                if action == "discover_services":
+                    lines = [f"找到 {len(services)} 个服务:"]
+                    lines.extend(
+                        (
+                            f"- {service.service_id} | "
+                            f"{service.service_type} | {service.endpoint}"
+                        )
+                        for service in services
                     )
-                    for service in services
+                    return "\n".join(lines)
+                return self._format(
+                    [service.to_dict() for service in services],
                 )
-                return "\n".join(lines)
+
+            if action == "select_service":
+                service_type = str(
+                    parameters.get("service_type", ""),
+                ).strip()
+                if not service_type:
+                    raise ValueError("select_service 必须提供 service_type")
+                ascending = parameters.get("ascending", True)
+                if isinstance(ascending, str):
+                    ascending = ascending.strip().lower() in {
+                        "true",
+                        "1",
+                        "yes",
+                    }
+                selected = self.discovery.select_service(
+                    service_type,
+                    filters=parameters.get("filters"),
+                    required_capabilities=self._capabilities(parameters),
+                    sort_by=str(parameters.get("sort_by", "load")),
+                    ascending=bool(ascending),
+                )
+                if selected is None:
+                    return "没有找到服务"
+                return self._format(selected.to_dict())
 
             return f"错误：不支持的 ANP 操作 '{action}'"
         except (TypeError, ValueError) as exc:
@@ -479,8 +554,9 @@ class ANPTool(Tool):
                 name="action",
                 type="string",
                 description=(
-                    "操作类型：register_service、unregister_service 或 "
-                    "discover_services"
+                    "操作类型：register_service、unregister_service、"
+                    "get_service、update_metadata、list_services、"
+                    "discover_services 或 select_service"
                 ),
                 required=True,
             ),
@@ -493,7 +569,7 @@ class ANPTool(Tool):
             ToolParameter(
                 name="service_type",
                 type="string",
-                description="服务类型，也可用于发现过滤",
+                description="服务类型，也可用于发现和选择",
                 required=False,
             ),
             ToolParameter(
@@ -511,19 +587,39 @@ class ANPTool(Tool):
             ToolParameter(
                 name="capabilities",
                 type="array",
-                description="服务能力列表",
+                description="服务能力列表或发现时的必要能力",
                 required=False,
             ),
             ToolParameter(
                 name="metadata",
                 type="object",
-                description="服务元数据",
+                description="注册或更新服务时使用的元数据",
                 required=False,
             ),
             ToolParameter(
                 name="filters",
                 type="object",
                 description="发现服务时使用的元数据精确过滤条件",
+                required=False,
+            ),
+            ToolParameter(
+                name="sort_by",
+                type="string",
+                description="选择服务时排序的数值型 metadata 字段",
+                required=False,
+                default="load",
+            ),
+            ToolParameter(
+                name="ascending",
+                type="boolean",
+                description="选择服务时是否按字段升序排列",
+                required=False,
+                default=True,
+            ),
+            ToolParameter(
+                name="limit",
+                type="integer",
+                description="最多返回多少个服务",
                 required=False,
             ),
         ]
