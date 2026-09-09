@@ -89,7 +89,7 @@ def parser() -> argparse.ArgumentParser:
         "--stage",
         choices=("reward", "dataset", "sft", "grpo", "evaluate", "all"),
         default="reward",
-        help="reward is an offline smoke test; all follows the article's pipeline",
+        help="reward is a local smoke test; all follows the article's pipeline",
     )
     command.add_argument("--model-path", help="model or adapter path for evaluate")
     return command

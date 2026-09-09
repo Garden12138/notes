@@ -8,6 +8,24 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 RewardFunction = Callable[..., List[float]]
 
 
+def count_reasoning_steps(completion: Any) -> int:
+    """Count explicit reasoning steps, with non-empty lines as a fallback."""
+    text = _completion_text(completion)
+    explicit = re.findall(
+        r"(?im)^\s*(?:step\s*\d+|步骤\s*\d+|\d+[.)、])\s*[:：-]?",
+        text,
+    )
+    if explicit:
+        return len(explicit)
+    reasoning_lines = [
+        line
+        for line in text.splitlines()
+        if line.strip()
+        and not re.search(r"Final Answer|####|最终答案", line, re.IGNORECASE)
+    ]
+    return len(reasoning_lines)
+
+
 def _completion_text(completion: Any) -> str:
     """Accept both plain completions and conversational TRL completions."""
     if isinstance(completion, str):
@@ -103,7 +121,7 @@ class LengthPenaltyReward:
         self,
         base_reward_fn: RewardFunction,
         max_length: int = 1024,
-        penalty_weight: float = 0.1,
+        penalty_weight: float = 0.001,
     ) -> None:
         if max_length <= 0 or penalty_weight < 0:
             raise ValueError("invalid length-penalty configuration")
@@ -116,8 +134,11 @@ class LengthPenaltyReward:
         rewards = self.base_reward_fn(completions, **kwargs)
         adjusted = []
         for reward, completion in zip(rewards, completions):
+            if reward < 1.0:
+                adjusted.append(reward)
+                continue
             overflow = max(0, len(_completion_text(completion)) - self.max_length)
-            penalty = self.penalty_weight * overflow / self.max_length
+            penalty = self.penalty_weight * overflow
             adjusted.append(max(0.0, reward - penalty))
         return adjusted
 
@@ -129,25 +150,62 @@ class StepReward:
         self,
         base_reward_fn: RewardFunction,
         step_bonus: float = 0.1,
-        max_bonus: float = 0.5,
+        max_steps: int = 10,
     ) -> None:
-        if step_bonus < 0 or max_bonus < 0:
-            raise ValueError("step rewards cannot be negative")
+        if step_bonus < 0 or max_steps < 0:
+            raise ValueError("step bonus and max_steps cannot be negative")
         self.base_reward_fn = base_reward_fn
         self.step_bonus = step_bonus
-        self.max_bonus = max_bonus
+        self.max_steps = max_steps
         self.__name__ = type(self).__name__
 
     def __call__(self, completions: Sequence[Any], **kwargs: Any) -> List[float]:
         rewards = self.base_reward_fn(completions, **kwargs)
         result = []
         for reward, completion in zip(rewards, completions):
-            lines = [
-                line for line in _completion_text(completion).splitlines() if line.strip()
-            ]
-            bonus = min(self.step_bonus * max(0, len(lines) - 1), self.max_bonus)
-            result.append(reward + bonus)
+            if reward < 1.0:
+                result.append(reward)
+                continue
+            steps = min(count_reasoning_steps(completion), self.max_steps)
+            result.append(reward + self.step_bonus * steps)
         return result
+
+
+class CompositeReward:
+    """Balance correctness, concise output and explicit reasoning steps."""
+
+    def __init__(
+        self,
+        base_reward_fn: RewardFunction,
+        max_length: int = 1024,
+        penalty_weight: float = 0.001,
+        step_bonus: float = 0.1,
+        max_steps: int = 10,
+    ) -> None:
+        if max_length <= 0 or penalty_weight < 0:
+            raise ValueError("invalid length-penalty configuration")
+        if step_bonus < 0 or max_steps < 0:
+            raise ValueError("invalid step-reward configuration")
+        self.base_reward_fn = base_reward_fn
+        self.max_length = max_length
+        self.penalty_weight = penalty_weight
+        self.step_bonus = step_bonus
+        self.max_steps = max_steps
+        self.__name__ = type(self).__name__
+
+    def __call__(self, completions: Sequence[Any], **kwargs: Any) -> List[float]:
+        base_rewards = self.base_reward_fn(completions, **kwargs)
+        rewards = []
+        for base_reward, completion in zip(base_rewards, completions):
+            if base_reward < 1.0:
+                rewards.append(base_reward)
+                continue
+            overflow = max(0, len(_completion_text(completion)) - self.max_length)
+            penalty = self.penalty_weight * overflow
+            steps = min(count_reasoning_steps(completion), self.max_steps)
+            bonus = self.step_bonus * steps
+            rewards.append(max(0.0, base_reward - penalty + bonus))
+        return rewards
 
 
 def create_accuracy_reward(tolerance: float = 1e-4) -> AccuracyReward:
@@ -157,7 +215,7 @@ def create_accuracy_reward(tolerance: float = 1e-4) -> AccuracyReward:
 def create_length_penalty_reward(
     base_reward_fn: RewardFunction,
     max_length: int = 1024,
-    penalty_weight: float = 0.1,
+    penalty_weight: float = 0.001,
 ) -> LengthPenaltyReward:
     return LengthPenaltyReward(base_reward_fn, max_length, penalty_weight)
 
@@ -165,8 +223,25 @@ def create_length_penalty_reward(
 def create_step_reward(
     base_reward_fn: RewardFunction,
     step_bonus: float = 0.1,
+    max_steps: int = 10,
 ) -> StepReward:
-    return StepReward(base_reward_fn, step_bonus)
+    return StepReward(base_reward_fn, step_bonus, max_steps)
+
+
+def create_composite_reward(
+    base_reward_fn: RewardFunction,
+    max_length: int = 1024,
+    penalty_weight: float = 0.001,
+    step_bonus: float = 0.1,
+    max_steps: int = 10,
+) -> CompositeReward:
+    return CompositeReward(
+        base_reward_fn=base_reward_fn,
+        max_length=max_length,
+        penalty_weight=penalty_weight,
+        step_bonus=step_bonus,
+        max_steps=max_steps,
+    )
 
 
 def evaluate_rewards(

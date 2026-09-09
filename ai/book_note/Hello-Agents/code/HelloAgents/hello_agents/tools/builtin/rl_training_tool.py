@@ -10,7 +10,7 @@ from ..base import Tool, ToolParameter
 
 
 class RLTrainingTool(Tool):
-    """Expose the four Agentic-RL operations described in chapter 11.1."""
+    """Expose the dataset, reward, training and evaluation operations."""
 
     def __init__(self) -> None:
         super().__init__(
@@ -68,15 +68,18 @@ class RLTrainingTool(Tool):
         ).lower()
         split = str(parameters.get("split", "train"))
         max_samples = self._optional_positive_int(parameters.get("max_samples", 100))
+        model_name = str(parameters.get("model_name", "Qwen/Qwen3-0.6B"))
         if format_type == "sft":
-            dataset = create_sft_dataset(max_samples=max_samples, split=split)
+            dataset = create_sft_dataset(
+                max_samples=max_samples,
+                split=split,
+                model_name=model_name,
+            )
         elif format_type == "rl":
             dataset = create_rl_dataset(
                 max_samples=max_samples,
                 split=split,
-                model_name=str(
-                    parameters.get("model_name", "Qwen/Qwen3-0.6B")
-                ),
+                model_name=model_name,
             )
         else:
             raise ValueError("format must be 'sft' or 'rl'")
@@ -103,15 +106,24 @@ class RLTrainingTool(Tool):
         details: Dict[str, Any] = {}
         if reward_type == "accuracy":
             reward_fn = base_reward
+            description = "准确率奖励：答案正确为 1.0，错误为 0.0"
         elif reward_type == "length_penalty":
             details = {
                 "max_length": int(parameters.get("max_length", 1024)),
-                "penalty_weight": float(parameters.get("penalty_weight", 0.1)),
+                "penalty_weight": float(parameters.get("penalty_weight", 0.001)),
             }
             reward_fn = create_length_penalty_reward(base_reward, **details)
+            description = (
+                "长度惩罚：仅对正确但超过目标长度的回答扣分，"
+                "错误答案仍为 0.0"
+            )
         elif reward_type == "step":
-            details = {"step_bonus": float(parameters.get("step_bonus", 0.1))}
+            details = {
+                "step_bonus": float(parameters.get("step_bonus", 0.1)),
+                "max_steps": int(parameters.get("max_steps", 10)),
+            }
             reward_fn = create_step_reward(base_reward, **details)
+            description = "步骤奖励：只为答案正确的显式推理步骤加分"
         else:
             raise ValueError("reward_type must be accuracy, length_penalty or step")
 
@@ -121,6 +133,7 @@ class RLTrainingTool(Tool):
         return {
             "status": "success",
             "reward_type": reward_type,
+            "description": description,
             "registered_as": registered_name,
             **details,
         }
@@ -162,8 +175,10 @@ class RLTrainingTool(Tool):
             create_accuracy_reward,
             create_rl_dataset,
             create_sft_dataset,
+            ensure_sft_text_column,
             require_rl_dependencies,
             setup_training_environment,
+            validate_training_dataset,
         )
 
         require_rl_dependencies()
@@ -184,7 +199,10 @@ class RLTrainingTool(Tool):
         max_samples = self._optional_positive_int(parameters.get("max_samples"))
 
         if dataset is None and algorithm == "sft":
-            dataset = create_sft_dataset(max_samples=max_samples)
+            dataset = create_sft_dataset(
+                max_samples=max_samples,
+                model_name=config.model_name,
+            )
         elif dataset is None:
             dataset = create_rl_dataset(
                 max_samples=max_samples,
@@ -192,8 +210,10 @@ class RLTrainingTool(Tool):
             )
 
         if algorithm == "sft":
+            dataset = ensure_sft_text_column(dataset)
             trainer = SFTTrainerWrapper(config=config, dataset=dataset)
         else:
+            validate_training_dataset(dataset, "rl")
             reward = parameters.get("custom_reward")
             if isinstance(reward, str):
                 reward_name = reward
@@ -202,6 +222,8 @@ class RLTrainingTool(Tool):
                     raise ValueError(
                         f"unregistered reward function: {reward_name}"
                     )
+            if reward is None:
+                reward = self.custom_reward_functions.get(dataset_name)
             if reward is None:
                 reward = create_accuracy_reward()
             if not callable(reward):
@@ -356,6 +378,47 @@ class RLTrainingTool(Tool):
                 description="accuracy、length_penalty 或 step",
                 required=False,
                 default="accuracy",
+            ),
+            ToolParameter(
+                name="tolerance",
+                type="number",
+                description="数值答案比较的绝对误差容限",
+                required=False,
+                default=1e-4,
+            ),
+            ToolParameter(
+                name="max_length",
+                type="integer",
+                description="训练最大序列长度或长度奖励的目标长度",
+                required=False,
+                default=1024,
+            ),
+            ToolParameter(
+                name="penalty_weight",
+                type="number",
+                description="超出目标长度后每个字符的惩罚权重",
+                required=False,
+                default=0.001,
+            ),
+            ToolParameter(
+                name="step_bonus",
+                type="number",
+                description="答案正确时每个推理步骤的奖励",
+                required=False,
+                default=0.1,
+            ),
+            ToolParameter(
+                name="max_steps",
+                type="integer",
+                description="计入奖励的最大推理步骤数",
+                required=False,
+                default=10,
+            ),
+            ToolParameter(
+                name="register_as",
+                type="string",
+                description="保存本次创建的奖励函数所使用的注册名",
+                required=False,
             ),
             ToolParameter(
                 name="max_samples",

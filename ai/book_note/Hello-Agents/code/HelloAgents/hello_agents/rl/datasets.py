@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set
 
 
 def split_gsm8k_answer(answer: str) -> tuple[str, str]:
@@ -13,12 +13,29 @@ def split_gsm8k_answer(answer: str) -> tuple[str, str]:
     return reasoning.strip(), final_answer.strip()
 
 
-def format_sft_sample(example: Dict[str, Any]) -> Dict[str, str]:
+def _format_prompt(question: str, tokenizer: Any = None) -> str:
+    prompt_content = f"Question: {question}\n\nLet's solve this step by step:"
+    if tokenizer is None:
+        return f"{prompt_content}\n"
+    return tokenizer.apply_chat_template(
+        [{"role": "user", "content": prompt_content}],
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+
+
+def format_sft_sample(
+    example: Dict[str, Any],
+    tokenizer: Any = None,
+) -> Dict[str, str]:
     """Convert one GSM8K row to prompt/completion/text fields."""
     question = str(example["question"]).strip()
     reasoning, final_answer = split_gsm8k_answer(str(example["answer"]))
-    prompt = f"Question: {question}\n\nLet's solve this step by step:\n"
+    prompt = _format_prompt(question, tokenizer)
     completion = f"{reasoning}\n\nFinal Answer: {final_answer}"
+    eos_token = getattr(tokenizer, "eos_token", "") if tokenizer else ""
+    if eos_token and not completion.endswith(eos_token):
+        completion += eos_token
     return {
         "prompt": prompt,
         "completion": completion,
@@ -33,15 +50,7 @@ def format_rl_sample(
     """Convert one row to the prompt and reference answer expected by GRPO."""
     question = str(example["question"]).strip()
     _, final_answer = split_gsm8k_answer(str(example["answer"]))
-    prompt_content = f"Question: {question}\n\nLet's solve this step by step:"
-    if tokenizer is None:
-        prompt: Any = prompt_content
-    else:
-        prompt = tokenizer.apply_chat_template(
-            [{"role": "user", "content": prompt_content}],
-            tokenize=False,
-            add_generation_prompt=True,
-        )
+    prompt = _format_prompt(question, tokenizer)
     return {
         "prompt": prompt,
         "ground_truth": final_answer,
@@ -82,7 +91,7 @@ class GSM8KDataset:
 
     def get_dataset(self) -> Any:
         formatter = (
-            format_sft_sample
+            (lambda row: format_sft_sample(row, self.tokenizer))
             if self.format_type == "sft"
             else lambda row: format_rl_sample(row, self.tokenizer)
         )
@@ -97,7 +106,7 @@ class GSM8KDataset:
     def __getitem__(self, index: int) -> Dict[str, Any]:
         row = self.dataset[index]
         if self.format_type == "sft":
-            return format_sft_sample(row)
+            return format_sft_sample(row, self.tokenizer)
         return format_rl_sample(row, self.tokenizer)
 
 
@@ -105,7 +114,7 @@ def _load_tokenizer(model_name: str) -> Any:
     try:
         from transformers import AutoTokenizer
     except ImportError as exc:
-        raise ImportError("RL 格式需要安装 transformers") from exc
+        raise ImportError("应用模型对话模板需要安装 transformers") from exc
     return AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 
 
@@ -114,15 +123,17 @@ def create_math_dataset(
     split: str = "train",
     max_samples: Optional[int] = None,
     format_type: str = "sft",
+    model_name: str = "Qwen/Qwen3-0.6B",
     tokenizer: Any = None,
 ) -> Any:
     if dataset_name.lower() != "gsm8k":
         raise ValueError("currently only the gsm8k dataset is supported")
+    selected_tokenizer = tokenizer or _load_tokenizer(model_name)
     return GSM8KDataset(
         split=split,
         max_samples=max_samples,
         format_type=format_type,
-        tokenizer=tokenizer,
+        tokenizer=selected_tokenizer,
     ).get_dataset()
 
 
@@ -130,29 +141,34 @@ def format_math_dataset(
     dataset: Any,
     format_type: str = "sft",
     model_name: str = "Qwen/Qwen3-0.6B",
+    tokenizer: Any = None,
 ) -> Any:
     """Format a compatible custom dataset without reloading GSM8K."""
     required = {"question", "answer"}
     if not required.issubset(set(dataset.column_names)):
         raise ValueError("dataset must contain question and answer columns")
-    if format_type == "sft":
-        formatter = format_sft_sample
-    elif format_type == "rl":
-        tokenizer = _load_tokenizer(model_name)
-        formatter = lambda row: format_rl_sample(row, tokenizer)
-    else:
+    if format_type not in {"sft", "rl"}:
         raise ValueError("format_type must be 'sft' or 'rl'")
+    selected_tokenizer = tokenizer or _load_tokenizer(model_name)
+    if format_type == "sft":
+        formatter = lambda row: format_sft_sample(row, selected_tokenizer)
+    else:
+        formatter = lambda row: format_rl_sample(row, selected_tokenizer)
     return dataset.map(formatter, remove_columns=dataset.column_names)
 
 
 def create_sft_dataset(
     max_samples: Optional[int] = 1000,
     split: str = "train",
+    model_name: str = "Qwen/Qwen3-0.6B",
 ) -> Any:
+    tokenizer = _load_tokenizer(model_name)
     return create_math_dataset(
         split=split,
         max_samples=max_samples,
         format_type="sft",
+        model_name=model_name,
+        tokenizer=tokenizer,
     )
 
 
@@ -166,6 +182,7 @@ def create_rl_dataset(
         split=split,
         max_samples=max_samples,
         format_type="rl",
+        model_name=model_name,
         tokenizer=tokenizer,
     )
 
@@ -175,3 +192,44 @@ def preview_dataset(dataset: Any, num_samples: int = 3) -> List[Dict[str, Any]]:
     if num_samples < 0:
         raise ValueError("num_samples cannot be negative")
     return [dict(dataset[index]) for index in range(min(num_samples, len(dataset)))]
+
+
+def dataset_columns(dataset: Any) -> Set[str]:
+    """Read column names from a Hugging Face or sequence-like dataset."""
+    columns = getattr(dataset, "column_names", None)
+    if columns is not None:
+        return set(columns)
+    if len(dataset) == 0:
+        return set()
+    sample = dataset[0]
+    if not isinstance(sample, dict):
+        raise TypeError("dataset samples must be mappings")
+    return set(sample)
+
+
+def validate_training_dataset(dataset: Any, format_type: str) -> None:
+    """Validate the fields promised by the chapter before training starts."""
+    if len(dataset) == 0:
+        raise ValueError("dataset cannot be empty")
+    if format_type == "sft":
+        required = {"prompt", "completion"}
+    elif format_type == "rl":
+        required = {"question", "prompt", "ground_truth", "full_answer"}
+    else:
+        raise ValueError("format_type must be 'sft' or 'rl'")
+    missing = required - dataset_columns(dataset)
+    if missing:
+        names = ", ".join(sorted(missing))
+        raise ValueError(f"{format_type} dataset is missing columns: {names}")
+
+
+def ensure_sft_text_column(dataset: Any) -> Any:
+    """Create the optional SFT ``text`` field when a custom dataset omits it."""
+    validate_training_dataset(dataset, "sft")
+    if "text" in dataset_columns(dataset):
+        return dataset
+    if not hasattr(dataset, "map"):
+        raise TypeError("a dataset without text must provide a map() method")
+    return dataset.map(
+        lambda row: {"text": f"{row['prompt']}{row['completion']}"}
+    )
