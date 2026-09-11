@@ -1,0 +1,54 @@
+{
+  "model": {
+    "base_model": "Qwen/Qwen3-0.6B"
+  },
+  "data": {
+    "max_samples": 1000
+  },
+  "sft": {
+    "output_dir": "./output/agentic_rl/sft_model",
+    "num_epochs": 3,
+    "batch_size": 8,
+    "gradient_accumulation_steps": 4,
+    "learning_rate": 0.00005,
+    "warmup_ratio": 0.1,
+    "use_lora": true,
+    "lora_rank": 8,
+    "lora_alpha": 16
+  },
+  "grpo": {
+    "output_dir": "./output/agentic_rl/grpo_model",
+    "num_epochs": 3,
+    "batch_size": 4,
+    "gradient_accumulation_steps": 1,
+    "learning_rate": 0.000001,
+    "warmup_ratio": 0.1,
+    "num_generations": 4,
+    "max_new_tokens": 256,
+    "kl_coef": 0.05,
+    "clip_range": 0.2,
+    "use_lora": true,
+    "lora_rank": 16,
+    "lora_alpha": 32,
+    "reward_type": "accuracy"
+  },
+  "eval": {
+    "max_samples": 200,
+    "sft_accuracy_threshold": 0.4,
+    "metrics": [
+      "accuracy",
+      "average_length",
+      "average_steps",
+      "format_correctness"
+    ],
+    "max_new_tokens": 256,
+    "return_details": false,
+    "seed": 42
+  },
+  "monitoring": {
+    "use_wandb": false,
+    "use_tensorboard": true,
+    "wandb_project": "agentic-rl-pipeline"
+  },
+  "results_path": "./output/agentic_rl/training_results.json"
+}

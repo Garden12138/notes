@@ -181,16 +181,24 @@ class CompositeReward:
         penalty_weight: float = 0.001,
         step_bonus: float = 0.1,
         max_steps: int = 10,
+        accuracy_weight: float = 1.0,
+        length_weight: float = 1.0,
+        step_weight: float = 1.0,
     ) -> None:
         if max_length <= 0 or penalty_weight < 0:
             raise ValueError("invalid length-penalty configuration")
         if step_bonus < 0 or max_steps < 0:
             raise ValueError("invalid step-reward configuration")
+        if min(accuracy_weight, length_weight, step_weight) < 0:
+            raise ValueError("composite reward weights cannot be negative")
         self.base_reward_fn = base_reward_fn
         self.max_length = max_length
         self.penalty_weight = penalty_weight
         self.step_bonus = step_bonus
         self.max_steps = max_steps
+        self.accuracy_weight = accuracy_weight
+        self.length_weight = length_weight
+        self.step_weight = step_weight
         self.__name__ = type(self).__name__
 
     def __call__(self, completions: Sequence[Any], **kwargs: Any) -> List[float]:
@@ -198,13 +206,14 @@ class CompositeReward:
         rewards = []
         for base_reward, completion in zip(base_rewards, completions):
             if base_reward < 1.0:
-                rewards.append(base_reward)
+                rewards.append(self.accuracy_weight * base_reward)
                 continue
             overflow = max(0, len(_completion_text(completion)) - self.max_length)
-            penalty = self.penalty_weight * overflow
+            penalty = self.length_weight * self.penalty_weight * overflow
             steps = min(count_reasoning_steps(completion), self.max_steps)
-            bonus = self.step_bonus * steps
-            rewards.append(max(0.0, base_reward - penalty + bonus))
+            bonus = self.step_weight * self.step_bonus * steps
+            weighted_base = self.accuracy_weight * base_reward
+            rewards.append(max(0.0, weighted_base - penalty + bonus))
         return rewards
 
 
@@ -234,6 +243,9 @@ def create_composite_reward(
     penalty_weight: float = 0.001,
     step_bonus: float = 0.1,
     max_steps: int = 10,
+    accuracy_weight: float = 1.0,
+    length_weight: float = 1.0,
+    step_weight: float = 1.0,
 ) -> CompositeReward:
     return CompositeReward(
         base_reward_fn=base_reward_fn,
@@ -241,6 +253,9 @@ def create_composite_reward(
         penalty_weight=penalty_weight,
         step_bonus=step_bonus,
         max_steps=max_steps,
+        accuracy_weight=accuracy_weight,
+        length_weight=length_weight,
+        step_weight=step_weight,
     )
 
 

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Sequence, Set
 
 
 def split_gsm8k_answer(answer: str) -> tuple[str, str]:
@@ -192,6 +192,41 @@ def preview_dataset(dataset: Any, num_samples: int = 3) -> List[Dict[str, Any]]:
     if num_samples < 0:
         raise ValueError("num_samples cannot be negative")
     return [dict(dataset[index]) for index in range(min(num_samples, len(dataset)))]
+
+
+def check_dataset_quality(
+    dataset: Any,
+    required_fields: Optional[Sequence[str]] = None,
+    prompt_field: str = "prompt",
+) -> Dict[str, Any]:
+    """Check the structural data issues listed in section 11.6."""
+    fields = tuple(required_fields or ("prompt", "completion"))
+    columns = dataset_columns(dataset)
+    missing_fields = sorted(set(fields) - columns)
+    empty_sample_indices: List[int] = []
+    prompts: List[str] = []
+
+    if not missing_fields:
+        for index, sample in enumerate(dataset):
+            if any(not str(sample.get(field, "")).strip() for field in fields):
+                empty_sample_indices.append(index)
+            prompts.append(str(sample.get(prompt_field, "")).strip())
+
+    duplicate_count = len(prompts) - len(set(prompts)) if prompts else 0
+    issues = [f"缺少字段: {field}" for field in missing_fields]
+    if empty_sample_indices:
+        issues.append(f"发现 {len(empty_sample_indices)} 条空字段样本")
+    if duplicate_count:
+        issues.append(f"发现 {duplicate_count} 条重复 Prompt")
+    return {
+        "is_valid": not issues,
+        "num_samples": len(dataset),
+        "missing_fields": missing_fields,
+        "empty_sample_count": len(empty_sample_indices),
+        "empty_sample_indices": empty_sample_indices[:20],
+        "duplicate_prompt_count": duplicate_count,
+        "issues": issues,
+    }
 
 
 def dataset_columns(dataset: Any) -> Set[str]:

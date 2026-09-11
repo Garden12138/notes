@@ -2,6 +2,7 @@
 
 from .datasets import (
     GSM8KDataset,
+    check_dataset_quality,
     create_math_dataset,
     create_rl_dataset,
     create_sft_dataset,
@@ -13,6 +14,22 @@ from .datasets import (
     preview_dataset,
     split_gsm8k_answer,
     validate_training_dataset,
+)
+from .deployment import (
+    generate_math_response,
+    load_inference_model,
+    merge_lora_adapter,
+)
+from .evaluation import (
+    ERROR_TYPES,
+    SUPPORTED_EVALUATION_METRICS,
+    classify_error,
+    contains_arithmetic_error,
+    count_ground_truth_steps,
+    evaluate_prediction_records,
+    has_expected_format,
+    normalize_evaluation_metrics,
+    numerical_absolute_error,
 )
 from .rewards import (
     AccuracyReward,
@@ -27,7 +44,18 @@ from .rewards import (
     create_step_reward,
     evaluate_rewards,
 )
-from .trainers import GRPOTrainerWrapper, SFTTrainerWrapper
+from .pipeline import (
+    AgenticRLPipeline,
+    PipelineStageError,
+    create_default_pipeline_config,
+    load_pipeline_config,
+    validate_pipeline_config,
+)
+from .trainers import (
+    GRPOTrainerWrapper,
+    SFTTrainerWrapper,
+    compute_group_advantages,
+)
 from .utils import (
     RL_DEPENDENCIES,
     TrainingConfig,
@@ -40,17 +68,27 @@ TRL_AVAILABLE = "trl" not in missing_rl_dependencies()
 
 __all__ = [
     "AccuracyReward",
+    "AgenticRLPipeline",
     "CompositeReward",
+    "ERROR_TYPES",
     "GRPOTrainerWrapper",
     "GSM8KDataset",
     "LengthPenaltyReward",
     "MathRewardFunction",
+    "PipelineStageError",
     "RL_DEPENDENCIES",
     "SFTTrainerWrapper",
+    "SUPPORTED_EVALUATION_METRICS",
     "StepReward",
     "TRL_AVAILABLE",
     "TrainingConfig",
+    "check_dataset_quality",
+    "classify_error",
+    "compute_group_advantages",
+    "contains_arithmetic_error",
+    "count_ground_truth_steps",
     "create_accuracy_reward",
+    "create_default_pipeline_config",
     "count_reasoning_steps",
     "create_composite_reward",
     "create_length_penalty_reward",
@@ -59,15 +97,24 @@ __all__ = [
     "create_sft_dataset",
     "dataset_columns",
     "ensure_sft_text_column",
+    "evaluate_prediction_records",
     "create_step_reward",
     "evaluate_rewards",
     "format_math_dataset",
     "format_rl_sample",
     "format_sft_sample",
+    "generate_math_response",
+    "has_expected_format",
+    "load_inference_model",
+    "load_pipeline_config",
     "missing_rl_dependencies",
+    "merge_lora_adapter",
+    "normalize_evaluation_metrics",
+    "numerical_absolute_error",
     "preview_dataset",
     "require_rl_dependencies",
     "setup_training_environment",
     "split_gsm8k_answer",
     "validate_training_dataset",
+    "validate_pipeline_config",
 ]

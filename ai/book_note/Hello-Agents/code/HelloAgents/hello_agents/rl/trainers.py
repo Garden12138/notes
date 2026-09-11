@@ -3,10 +3,41 @@
 from __future__ import annotations
 
 import inspect
+import math
+import os
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Dict, Optional, Sequence, Type
 
 from .utils import TrainingConfig, require_rl_dependencies
+
+
+def compute_group_advantages(
+    rewards: Sequence[float],
+    scale_by_std: bool = False,
+    epsilon: float = 1e-4,
+) -> Dict[str, Any]:
+    """Compute the centered advantages used to explain one GRPO group."""
+    if not rewards:
+        raise ValueError("rewards cannot be empty")
+    values = [float(reward) for reward in rewards]
+    if not all(math.isfinite(reward) for reward in values):
+        raise ValueError("rewards must contain only finite numbers")
+    if epsilon <= 0:
+        raise ValueError("epsilon must be positive")
+
+    mean_reward = sum(values) / len(values)
+    centered = [reward - mean_reward for reward in values]
+    variance = sum(value * value for value in centered) / len(centered)
+    reward_std = math.sqrt(variance)
+    if scale_by_std and reward_std > 0:
+        advantages = [value / (reward_std + epsilon) for value in centered]
+    else:
+        advantages = centered
+    return {
+        "mean_reward": mean_reward,
+        "reward_std": reward_std,
+        "advantages": advantages,
+    }
 
 
 def _supported_kwargs(factory: Type[Any], values: Dict[str, Any]) -> Dict[str, Any]:
@@ -27,6 +58,25 @@ def _processing_kwargs(factory: Type[Any], tokenizer: Any) -> Dict[str, Any]:
     return {}
 
 
+def _warmup_kwargs(
+    factory: Type[Any],
+    config: TrainingConfig,
+) -> Dict[str, float | int]:
+    """Map ratio-based warmup across Transformers argument revisions."""
+    parameters = inspect.signature(factory).parameters
+    accepts_kwargs = any(
+        item.kind is inspect.Parameter.VAR_KEYWORD
+        for item in parameters.values()
+    )
+    if "warmup_ratio" in parameters or accepts_kwargs:
+        return {
+            "warmup_steps": config.warmup_steps,
+            "warmup_ratio": config.warmup_ratio,
+        }
+    warmup = config.warmup_steps or config.warmup_ratio
+    return {"warmup_steps": warmup}
+
+
 class BaseTrainerWrapper:
     """Common model setup and persistence for chapter 11 trainers."""
 
@@ -36,6 +86,7 @@ class BaseTrainerWrapper:
         self.model: Any = None
         self.tokenizer: Any = None
         self.trainer: Any = None
+        self.loaded_adapter = False
 
     def setup_model(self) -> None:
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -52,15 +103,31 @@ class BaseTrainerWrapper:
         )
         if self.tokenizer.pad_token is None:
             self.tokenizer.pad_token = self.tokenizer.eos_token
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.config.model_name,
-            **model_kwargs,
-        )
+        model_path = Path(self.config.model_name).expanduser()
+        adapter_config = model_path / "adapter_config.json"
+        if adapter_config.is_file():
+            if not self.config.use_lora:
+                raise ValueError(
+                    "a LoRA adapter checkpoint requires use_lora=True"
+                )
+            from peft import AutoPeftModelForCausalLM
+
+            self.model = AutoPeftModelForCausalLM.from_pretrained(
+                self.config.model_name,
+                is_trainable=True,
+                **model_kwargs,
+            )
+            self.loaded_adapter = True
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.config.model_name,
+                **model_kwargs,
+            )
         if self.config.gradient_checkpointing:
             self.model.config.use_cache = False
 
     def _peft_config(self) -> Any:
-        if not self.config.use_lora:
+        if not self.config.use_lora or self.loaded_adapter:
             return None
         from peft import LoraConfig, TaskType
 
@@ -84,6 +151,26 @@ class BaseTrainerWrapper:
     def train(self) -> Any:
         raise NotImplementedError
 
+    def parameter_summary(self) -> Dict[str, float | int]:
+        """Count total and trainable parameters after PEFT wrapping."""
+        model = getattr(self.trainer, "model", None)
+        if model is None:
+            model = self.model
+        if model is None:
+            raise RuntimeError("model has not been initialized")
+        total = sum(parameter.numel() for parameter in model.parameters())
+        trainable = sum(
+            parameter.numel()
+            for parameter in model.parameters()
+            if parameter.requires_grad
+        )
+        percentage = 100.0 * trainable / total if total else 0.0
+        return {
+            "trainable_parameters": trainable,
+            "total_parameters": total,
+            "trainable_percentage": percentage,
+        }
+
     def save_model(self, output_dir: Optional[str] = None) -> Path:
         if self.trainer is None:
             raise RuntimeError("trainer has not been initialized")
@@ -96,15 +183,17 @@ class BaseTrainerWrapper:
 
 
 class SFTTrainerWrapper(BaseTrainerWrapper):
-    """Supervised fine-tuning wrapper using the dataset's ``text`` column."""
+    """Supervised fine-tuning wrapper for prompt-completion data."""
 
     def __init__(
         self,
         config: Optional[TrainingConfig] = None,
         dataset: Any = None,
+        eval_dataset: Any = None,
     ) -> None:
         super().__init__(config)
         self.dataset = dataset
+        self.eval_dataset = eval_dataset
 
     def train(self) -> Any:
         from trl import SFTConfig, SFTTrainer
@@ -120,7 +209,9 @@ class SFTTrainerWrapper(BaseTrainerWrapper):
             "per_device_train_batch_size": self.config.per_device_train_batch_size,
             "gradient_accumulation_steps": self.config.gradient_accumulation_steps,
             "learning_rate": self.config.learning_rate,
-            "warmup_steps": self.config.warmup_steps,
+            "weight_decay": self.config.weight_decay,
+            "optim": self.config.optimizer,
+            "lr_scheduler_type": self.config.lr_scheduler_type,
             "logging_steps": self.config.logging_steps,
             "save_steps": self.config.save_steps,
             "fp16": self.config.use_fp16,
@@ -128,10 +219,29 @@ class SFTTrainerWrapper(BaseTrainerWrapper):
             "gradient_checkpointing": self.config.gradient_checkpointing,
             "max_length": self.config.max_length,
             "max_seq_length": self.config.max_length,
-            "dataset_text_field": "text",
             "report_to": self._report_to(),
             "seed": self.config.seed,
         }
+        config_values.update(_warmup_kwargs(SFTConfig, self.config))
+        sft_parameters = inspect.signature(SFTConfig).parameters
+        if "completion_only_loss" in sft_parameters:
+            config_values["completion_only_loss"] = True
+        else:
+            # Older TRL releases consume the compatibility ``text`` column.
+            config_values["dataset_text_field"] = "text"
+        if self.eval_dataset is not None:
+            config_values.update(
+                {
+                    "eval_strategy": "steps",
+                    "evaluation_strategy": "steps",
+                    "eval_steps": self.config.eval_steps
+                    or self.config.logging_steps,
+                }
+            )
+        else:
+            config_values.update(
+                {"eval_strategy": "no", "evaluation_strategy": "no"}
+            )
         training_args = SFTConfig(
             **_supported_kwargs(SFTConfig, config_values)
         )
@@ -139,6 +249,7 @@ class SFTTrainerWrapper(BaseTrainerWrapper):
             "model": self.model,
             "args": training_args,
             "train_dataset": self.dataset,
+            "eval_dataset": self.eval_dataset,
             "peft_config": self._peft_config(),
         }
         trainer_values.update(_processing_kwargs(SFTTrainer, self.tokenizer))
@@ -162,11 +273,17 @@ class GRPOTrainerWrapper(BaseTrainerWrapper):
         self.reward_fn = reward_fn
 
     def _validate_group_size(self) -> None:
-        effective_batch = self.config.effective_batch_size
+        try:
+            world_size = int(os.environ.get("WORLD_SIZE", "1"))
+        except ValueError as exc:
+            raise ValueError("WORLD_SIZE must be a positive integer") from exc
+        if world_size <= 0:
+            raise ValueError("WORLD_SIZE must be a positive integer")
+        effective_batch = self.config.effective_batch_size * world_size
         if effective_batch % self.config.num_generations != 0:
             raise ValueError(
                 "per_device_train_batch_size * gradient_accumulation_steps "
-                "must be divisible by num_generations on one process"
+                "* WORLD_SIZE must be divisible by num_generations"
             )
 
     def train(self) -> Any:
@@ -186,7 +303,9 @@ class GRPOTrainerWrapper(BaseTrainerWrapper):
             "per_device_train_batch_size": self.config.per_device_train_batch_size,
             "gradient_accumulation_steps": self.config.gradient_accumulation_steps,
             "learning_rate": self.config.learning_rate,
-            "warmup_steps": self.config.warmup_steps,
+            "weight_decay": self.config.weight_decay,
+            "optim": self.config.optimizer,
+            "lr_scheduler_type": self.config.lr_scheduler_type,
             "logging_steps": self.config.logging_steps,
             "save_steps": self.config.save_steps,
             "fp16": self.config.use_fp16,
@@ -196,10 +315,13 @@ class GRPOTrainerWrapper(BaseTrainerWrapper):
             "num_generations": self.config.num_generations,
             "temperature": self.config.temperature,
             "top_p": self.config.top_p,
+            "beta": self.config.kl_coef,
+            "epsilon": self.config.clip_range,
             "remove_unused_columns": False,
             "report_to": self._report_to(),
             "seed": self.config.seed,
         }
+        config_values.update(_warmup_kwargs(GRPOConfig, self.config))
         training_args = GRPOConfig(
             **_supported_kwargs(GRPOConfig, config_values)
         )

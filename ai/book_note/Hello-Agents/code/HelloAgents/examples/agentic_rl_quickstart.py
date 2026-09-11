@@ -50,24 +50,28 @@ def sft(tool: RLTrainingTool) -> Dict[str, Any]:
     )
 
 
-def grpo(tool: RLTrainingTool) -> Dict[str, Any]:
+def grpo(tool: RLTrainingTool, model_name: str) -> Dict[str, Any]:
     return run_tool(
         tool,
         {
             "action": "train",
             "algorithm": "grpo",
-            "model_name": "Qwen/Qwen3-0.6B",
+            "model_name": model_name,
             "output_dir": "./output/quick_test/grpo",
             "max_samples": 5,
             "num_epochs": 1,
             "batch_size": 2,
             "gradient_accumulation_steps": 4,
             "num_generations": 8,
+            "max_new_tokens": 256,
             "learning_rate": 1e-6,
+            "kl_coef": 0.05,
+            "clip_range": 0.2,
             "warmup_steps": 0,
             "use_lora": True,
             "lora_r": 8,
             "lora_alpha": 16,
+            "reward_type": "accuracy",
         },
     )
 
@@ -115,14 +119,18 @@ def main() -> None:
     elif args.stage == "sft":
         sft(tool)
     elif args.stage == "grpo":
-        grpo(tool)
+        if not args.model_path:
+            raise SystemExit(
+                "--model-path must point to an SFT model for GRPO"
+            )
+        grpo(tool, args.model_path)
     elif args.stage == "evaluate":
         if not args.model_path:
             raise SystemExit("--model-path is required for evaluate")
         evaluate(tool, args.model_path)
     else:
-        sft(tool)
-        grpo_result = grpo(tool)
+        sft_result = sft(tool)
+        grpo_result = grpo(tool, str(sft_result["model_path"]))
         evaluate(tool, str(Path(grpo_result["output_dir"])))
 
 
