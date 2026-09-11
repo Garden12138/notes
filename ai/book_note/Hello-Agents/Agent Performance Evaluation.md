@@ -1,8 +1,8 @@
 ## 智能体性能评估
 
-> 阅读资料：[《Hello-Agents》第十二章 12.1：智能体评估基础](https://datawhalechina.github.io/hello-agents/#/./chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0?id=_121-%e6%99%ba%e8%83%bd%e4%bd%93%e8%af%84%e4%bc%b0%e5%9f%ba%e7%a1%80)
+> 阅读资料：[《Hello-Agents》第十二章 12.1：智能体评估基础](https://datawhalechina.github.io/hello-agents/#/./chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0?id=_121-%e6%99%BA%E8%83%BD%E4%BD%93%E8%AF%84%E4%BC%B0%E5%9F%BA%E7%A1%80)、[12.2：BFCL——工具调用能力评估](https://datawhalechina.github.io/hello-agents/#/./chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0?id=_122-bfcl%ef%bc%9a%e5%b7%a5%e5%85%b7%e8%b0%83%e7%94%a8%e8%83%bd%e5%8a%9b%e8%af%84%e4%bc%b0)
 >
-> 本节先建立评估的基本概念和代码骨架。BFCL、GAIA、LLM Judge 与 Win Rate 只介绍定位，具体算法留到后续小节。
+> 本文先建立评估底座，再实现 BFCL 数据加载、调用抽取、结构匹配、指标、报告和官方结果导出。
 
 ### 为什么需要评估
 
@@ -175,9 +175,9 @@ flowchart TB
 3. Metrics 根据任务规则评分和聚合；
 4. Tool 再把评估能力接入 HelloAgents 的统一工具系统。
 
-12.1 只完成前三步所需的通用底座，`benchmarks/` 暂不实现具体算法。这样后续增加 BFCL、GAIA 时不需要复制运行、重试和报告逻辑。
+基础部分先完成前三步所需的通用底座；BFCL 再在 `benchmarks/` 中实现自己的数据结构和评分规则。后续增加 GAIA 时仍可复用通用的运行、计时和报告模型。
 
-### 代码实践
+### 基础代码实践
 
 #### 目录与接口
 
@@ -254,7 +254,7 @@ token_f1_example: 0.8571
 
 Token F1 示例中，`use search tool` 的三个 Token 都出现在 `use the search tool` 中，Precision 为 1，Recall 为 $3/4$，所以 $F_1=0.8571$。
 
-### 实践边界
+### 基础实践边界
 
 - 固定 Demo Agent 只用于验证评估代码，75% 不是任何真实模型的能力分数。
 - 当前 Exact Match 只做 Unicode、大小写和空白归一化；它不是 BFCL AST 匹配，也不是 GAIA 准精确匹配。
@@ -263,10 +263,284 @@ Token F1 示例中，`use search tool` 的三个 Token 都出现在 `use the sea
 - 响应时间由本机单进程测量，比较不同 Agent 时仍需固定硬件、并发和外部服务条件。
 - 12.1 基础实现不需要 `bfcl-eval`、`datasets` 或 Judge 模型。原文中的评估扩展依赖应在进入对应基准后再安装，避免提前引入版本冲突。
 
+### BFCL：工具调用能力评估
+
+BFCL（Berkeley Function Calling Leaderboard）不评价工具执行后的自然语言答案，而是检查模型能否把请求转换成正确的函数调用。核心链路是：理解请求、选择函数、填写参数、在复杂场景中决定调用数量和顺序。
+
+#### 四类基础任务
+
+| 类别 | 要解决的问题 | 典型错误 |
+| --- | --- | --- |
+| Simple | 已给出一个函数，构造一次正确调用 | 函数名或参数值错误 |
+| Multiple | 给出多个候选函数，选择正确的一个 | 选错功能相近的函数 |
+| Parallel | 同一请求需要多个互相独立的调用 | 漏调用、重复调用或参数串位 |
+| Irrelevance | 判断请求是否根本不需要现有函数 | 为了调用而调用 |
+
+这四类可以理解为难度递进，而不是四套互不相关的测试。Simple 先检查“会不会填”，Multiple 增加“会不会选”，Parallel 增加“会不会拆”，Irrelevance 再检查“会不会停”。当前 BFCL V4 还包含不同语言、Live、Multi-turn 和 Agentic 等更细类别；学习本节时先掌握上述单轮主线。
+
+#### 数据和 Ground Truth
+
+官方文件虽然使用 `.json` 后缀，实际采用 JSONL：每行是一条完整 JSON 记录。问题文件与 `possible_answer/` 下的答案文件通过 `id` 对齐：
+
+~~~text
+bfcl_eval/data/
+├── BFCL_v4_simple_python.json
+└── possible_answer/
+    └── BFCL_v4_simple_python.json
+~~~
+
+问题记录同时给出对话和函数 Schema：
+
+~~~json
+{
+  "id": "simple_python_0",
+  "question": [[{
+    "role": "user",
+    "content": "Find the area of a triangle with a base of 10 units and height of 5 units."
+  }]],
+  "function": [{
+    "name": "calculate_triangle_area",
+    "parameters": {
+      "type": "dict",
+      "properties": {
+        "base": {"type": "integer"},
+        "height": {"type": "integer"}
+      },
+      "required": ["base", "height"]
+    }
+  }]
+}
+~~~
+
+对应答案不是普通的 `name + arguments`，而是“函数名映射到参数可接受值集合”：
+
+~~~json
+{
+  "id": "simple_python_0",
+  "ground_truth": [{
+    "calculate_triangle_area": {
+      "base": [10],
+      "height": [5],
+      "unit": ["units", ""]
+    }
+  }]
+}
+~~~
+
+数组表示多个可接受值，不是让模型把参数传成数组；空字符串表示这个可选参数可以省略。因此，Ground Truth 不能直接和预测字典做字符串比较。加载器还要检查两边 ID 是否唯一且一一对应，否则少一行答案也可能让后面的样本错位。
+
+#### 评估流程
+
+~~~mermaid
+flowchart LR
+    D["BFCL 问题 JSONL"] --> L["Dataset 按 ID 合并"]
+    G["possible_answer JSONL"] --> L
+    L --> P["问题 + 函数 Schema<br/>构造 Prompt"]
+    P --> A["Agent 生成调用"]
+    A --> X["抽取 JSON / Python / TOOL_CALL"]
+    X --> N["统一为 name + arguments"]
+    N --> M["结构匹配"]
+    M --> R["准确率、分类结果<br/>参数诊断与报告"]
+    N --> E["导出官方 JSONL envelope"]
+    E --> O["BFCL 官方评估器"]
+~~~
+
+每条 BFCL 样本彼此独立。若复用 `SimpleAgent` 实例，历史对话会不断累积，使后面的样本看到前面的题目。本地评估器因此会在每题前调用 `clear_history()`；它只重置会话，不重建模型客户端。
+
+#### AST 匹配在匹配什么
+
+这里的重点不是比较源码字符串，而是先把不同输出归一化为结构：
+
+~~~python
+{
+    "name": "calculate_triangle_area",
+    "arguments": {"height": 5, "base": 10},
+}
+~~~
+
+本地实现支持三类教学输出：
+
+~~~text
+{"name":"get_weather","arguments":{"city":"Beijing"}}
+get_weather(city="Beijing")
+[TOOL_CALL:get_weather:city=Beijing]
+~~~
+
+匹配规则如下：
+
+- 函数名必须准确，`get_weather` 和 `get_temperature` 不等价；
+- 关键字参数按名称比较，不受书写顺序影响；
+- Ground Truth 中同一参数的多个候选值任选其一；
+- 参数候选值包含空字符串时，允许省略该参数；
+- Parallel 的调用列表按无序多重集合匹配，但调用数必须一致；
+- Irrelevance 的正确结果是没有抽取到任何调用；
+- Python 调用中的常量算术会在受限 AST 内求值，所以 `x=2+3` 可与 `x=5` 匹配；不会执行函数、变量访问或任意代码。
+
+最后一条不能用 Python `eval()` 实现。评估数据和模型输出都属于外部输入，直接执行会把评分器变成代码执行入口。本地解析器只接受字面量以及有限的加减乘除、取模和幂运算。
+
+若第 $i$ 个样本的结构匹配结果为 $m_i\in\{0,1\}$，则：
+
+$$
+\operatorname{Accuracy}
+=\operatorname{ASTMatchRate}
+=\frac{1}{N}\sum_{i=1}^{N}m_i
+$$
+
+分类准确率用于定位 Simple、Multiple、Parallel、Irrelevance 中哪一层出了问题；加权准确率用于汇总类别，但必须同时保存权重。`parameter_accuracy`、函数名准确率和调用级 F1 是本地诊断指标，能区分“选对函数但填错参数”和“完全选错函数”，不应冒充 BFCL 官方榜单指标。
+
+### BFCL 代码实践
+
+#### 实现结构
+
+~~~text
+hello_agents/evaluation/benchmarks/bfcl/
+├── dataset.py
+├── ast_matcher.py
+├── metrics.py
+└── evaluator.py
+
+hello_agents/tools/builtin/
+└── bfcl_evaluation_tool.py
+~~~
+
+- [dataset.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/bfcl/dataset.py) 同时兼容 JSON 数组和官方 JSONL，按 ID 合并问题与答案。
+- [ast_matcher.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/bfcl/ast_matcher.py) 抽取 JSON、Python 调用和 HelloAgents 文本协议，并执行安全的结构匹配。
+- [metrics.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/bfcl/metrics.py) 汇总整体、分类、函数名、参数和调用级 F1。
+- [evaluator.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/bfcl/evaluator.py) 负责构造 Prompt、隔离样本、调用 Agent、计时、导出 JSONL 和生成报告。
+- [bfcl_evaluation_tool.py](./code/HelloAgents/hello_agents/tools/builtin/bfcl_evaluation_tool.py) 把完整流程接入统一 `Tool` 接口。
+- [bfcl_evaluation_demo.py](./code/HelloAgents/examples/bfcl_evaluation_demo.py) 使用五条本地样例覆盖四类任务，不调用模型或网络。
+- [bfcl_evaluate.py](./code/HelloAgents/examples/bfcl_evaluate.py) 从环境变量创建真实 `SimpleAgent`，用于显式运行小样本或完整评估。
+
+获取完整数据时仍以官方仓库为准：
+
+~~~bash
+git clone https://github.com/ShishirPatil/gorilla.git temp_gorilla
+cd temp_gorilla/berkeley-function-call-leaderboard
+ls bfcl_eval/data/BFCL_v4_*.json
+ls bfcl_eval/data/possible_answer/BFCL_v4_*.json
+~~~
+
+加载一个类别：
+
+~~~python
+from hello_agents import BFCLDataset
+
+dataset = BFCLDataset(
+    bfcl_data_dir="./temp_gorilla/berkeley-function-call-leaderboard/bfcl_eval/data",
+    category="simple_python",
+)
+samples = dataset.load(max_samples=5)
+print(dataset.get_available_categories())
+~~~
+
+直接使用评估器：
+
+~~~python
+from hello_agents import BFCLEvaluator
+
+evaluator = BFCLEvaluator(dataset, category="simple_python")
+result = evaluator.evaluate(agent, max_samples=5)
+print(result["overall_accuracy"])
+~~~
+
+也可以通过 Tool 一次完成本地评估、结果导出和报告生成。当前 `Tool.run()` 的统一接口接收参数字典，因此不是 `run(agent=...)`：
+
+~~~python
+from hello_agents import BFCLEvaluationTool
+
+tool = BFCLEvaluationTool(
+    "./temp_gorilla/berkeley-function-call-leaderboard/bfcl_eval/data"
+)
+result = tool.run({
+    "agent": agent,
+    "category": "simple_python",
+    "max_samples": 5,
+    "output_dir": "./evaluation_results",
+    "run_official_eval": False,
+})
+~~~
+
+真实模型入口会读取现有 LLM 环境变量；只有执行这条命令才会调用模型：
+
+~~~bash
+PYTHONPATH=. python examples/bfcl_evaluate.py \
+  --data-dir ./temp_gorilla/berkeley-function-call-leaderboard/bfcl_eval/data \
+  --category simple_python \
+  --max-samples 5
+~~~
+
+导出文件仍采用 `.json` 后缀，但内容是官方结果 envelope 的 JSONL：
+
+~~~json
+{"id":"simple_python_0","result":"calculate_triangle_area(base=10, height=5)","latency":0.12}
+~~~
+
+`result` 保留 Agent 的原始响应，由官方的模型 Handler 负责解码。不同模型的原生 Function Calling 返回结构并不完全相同，因此导出成功只表示文件结构可交接，不等于已经得到官方分数。
+
+#### 本地实践结果
+
+运行：
+
+~~~bash
+cd code/HelloAgents
+PYTHONPATH=. python examples/bfcl_evaluation_demo.py
+~~~
+
+控制台输出：
+
+~~~text
+=== 12.2 BFCL 工具调用评估实践 ===
+available_categories: ['demo']
+samples: 5
+accuracy: 80.00%
+ast_match_rate: 80.00%
+weighted_accuracy: 87.50%
+function_name_accuracy: 100.00%
+parameter_accuracy: 85.71%
+call_f1: 80.00%
+category_accuracy:
+  irrelevance: 100.00%
+  multiple: 100.00%
+  parallel: 100.00%
+  simple: 50.00%
+constant_arithmetic_match: True
+official_jsonl_records: 5
+report_generated: True
+official_evaluation: not_run
+~~~
+
+五条样本中故意保留一条错误：题目要求查询 Beijing，固定 Agent 却传入 Shanghai，所以总体准确率为 80%，Simple 为 50%。其余样本验证了参数换序、从候选函数中选择、并行调用换序以及无需调用。四个类别默认等权，因此加权准确率是 $(50\%+100\%+100\%+100\%)/4=87.5\%$，它和按五条样本计算的微平均 80% 含义不同。
+
+函数名准确率仍为 100%，说明错误样本选对了 `get_weather`；参数准确率下降到 85.71%，把问题定位到了参数值。`constant_arithmetic_match: True` 则确认 `2+3` 与 `5` 能在安全常量表达式范围内匹配。
+
+#### 本地评分与官方评分的边界
+
+本地 Matcher 用于理解算法、调试输出格式和做小规模回归，不是官方 BFCL Evaluator 的等价重写。官方实现还会结合函数 Schema、语言、模型 Handler、类别和版本执行更完整的类型转换及判定。要报告可与排行榜比较的成绩，必须固定 Gorilla 仓库提交、模型 Handler、数据版本和生成参数，并使用该版本自带的官方评估器。
+
+`BFCLEvaluationTool` 因此默认 `run_official_eval=False`。只有显式提供 `model_name`、官方仓库目录并确认本机已安装对应 CLI 时，才会复制结果并运行原文章节所示命令：
+
+~~~bash
+bfcl evaluate \
+  --model Qwen/Qwen3-8B \
+  --test-category simple_python \
+  --partial-eval
+~~~
+
+`--partial-eval` 只对结果文件中已有的样本评分，适合冒烟测试，不能与完整类别分数混用。CLI 参数和支持的模型名会随 BFCL 版本变化，运行前应查看当前检出版本的 README 与 `bfcl evaluate --help`。
+
+本地 Dataset、Matcher 和 Metrics 不新增第三方依赖；完整官方评分环境应按所检出 Gorilla/BFCL 版本的安装说明配置，不把某个时期的包名或参数写死到 HelloAgents 中。
+
+实践时可以按以下顺序推进：先用 5 条样本检查输出能否解析，再扩大到 50 条定位主要错误类型，最后运行完整类别；类别顺序从 Simple、Multiple 到 Parallel、Irrelevance。比较两个 Agent 时，除模型和 Prompt 外，还要固定数据提交、最大步骤、工具 Schema、温度、重试和样本数。
+
+原文使用 `SimpleAgent` 复现文本调用协议，这适合观察 Prompt 和解析器。若改用原生 Function Calling，不能只调用当前 `FunctionCallAgent.run()`：它会执行工具并返回最终文本，原始 `tool_calls` 已不在返回值中。正式适配时应在执行前捕获 SDK 的结构化调用，再交给 BFCL 对应模型 Handler，避免把“工具执行后的回答”当成“待评分的函数调用”。
+
 ### 参考资料
 
 - [《Hello-Agents》第十二章：智能体性能评估源文件](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0.md)
 - [Gorilla / BFCL 论文](https://arxiv.org/abs/2305.15334)
+- [Gorilla / BFCL 官方仓库](https://github.com/ShishirPatil/gorilla)
+- [BFCL 数据目录说明](https://github.com/ShishirPatil/gorilla/blob/main/berkeley-function-call-leaderboard/bfcl_eval/data/README.md)
+- [BFCL 官方 AST Checker](https://github.com/ShishirPatil/gorilla/blob/main/berkeley-function-call-leaderboard/bfcl_eval/eval_checker/ast_eval/ast_checker.py)
 - [ToolLLM / ToolBench 论文](https://arxiv.org/abs/2307.16789)
 - [API-Bank 论文](https://arxiv.org/abs/2304.08244)
 - [GAIA 论文](https://arxiv.org/abs/2311.12983)
@@ -276,4 +550,4 @@ Token F1 示例中，`use search tool` 的三个 Token 都出现在 `use the sea
 
 ### 小结
 
-Agent 评估不是给一次回答打分，而是在固定任务、环境和运行配置下，持续收集可比较的证据。不同任务需要不同评分器：工具调用看结构和执行，短答案可用精确或准精确匹配，开放式内容再考虑 Judge 和人工验证；准确性还要和响应时间、Token、执行失败及恢复能力一起分析。本节代码完成了通用样本、指标、运行和报告底座，并用确定性样例验证了准确率、分类指标、重试恢复和使用量统计，具体 BFCL、GAIA 与数据生成评估留给后续章节实现。
+Agent 评估要在固定任务、环境和运行配置下收集可比较的证据。通用底座负责样本、运行、重试、计时和用量；具体基准负责定义“什么算正确”。BFCL 把工具调用归一化为函数名和参数结构，再检查调用选择、参数候选、调用数量及无需调用等行为。本节代码补齐了 BFCL 的 JSONL 加载、调用抽取、安全常量解析、无序结构匹配、分类指标、报告和官方结果导出，并用确定性样例验证流程。80% 是本地回归样例的结果，不代表真实模型成绩；可对外比较的分数仍须由固定版本的 BFCL 官方评估器产生。

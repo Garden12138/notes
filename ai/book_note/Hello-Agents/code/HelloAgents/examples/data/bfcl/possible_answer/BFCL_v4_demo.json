@@ -1,0 +1,5 @@
+{"id":"demo_simple_0","ground_truth":[{"calculate_triangle_area":{"base":[10],"height":[5]}}]}
+{"id":"demo_multiple_0","ground_truth":[{"send_email":{"recipient":["Ada"],"subject":["Hello"]}}]}
+{"id":"demo_parallel_0","ground_truth":[{"get_weather":{"city":["Beijing"]}},{"get_weather":{"city":["Shanghai"]}}]}
+{"id":"demo_irrelevance_0","ground_truth":[]}
+{"id":"demo_simple_1","ground_truth":[{"get_weather":{"city":["Beijing"]}}]}
