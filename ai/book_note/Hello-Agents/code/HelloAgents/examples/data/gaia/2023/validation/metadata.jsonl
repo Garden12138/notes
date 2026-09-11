@@ -1,0 +1,6 @@
+{"task_id":"demo_gaia_001","Question":"A demo receipt lists 1,200 and 34.5. What is the total?","Level":1,"Final answer":"1234.5","file_name":"","file_path":"","Annotator Metadata":{"Number of steps":1,"Tools":["calculator"]}}
+{"task_id":"demo_gaia_002","Question":"What is Earth's largest ocean?","Level":1,"Final answer":"Pacific Ocean","file_name":"","file_path":"","Annotator Metadata":{"Number of steps":1,"Tools":[]}}
+{"task_id":"demo_gaia_003","Question":"Return these city names alphabetically as a comma-separated list: London, Paris, Berlin.","Level":2,"Final answer":"Berlin, London, Paris","file_name":"","file_path":"","Annotator Metadata":{"Number of steps":2,"Tools":[]}}
+{"task_id":"demo_gaia_004","Question":"According to the attached demo note, what is the project code?","Level":2,"Final answer":"HARBOR-7","file_name":"sample_notes.txt","file_path":"","Annotator Metadata":{"Number of steps":2,"Tools":["file_reader"]}}
+{"task_id":"demo_gaia_005","Question":"A synthetic multi-step calculation in this demo has the expected result 42. Return the result.","Level":3,"Final answer":"42","file_name":"","file_path":"","Annotator Metadata":{"Number of steps":4,"Tools":["calculator"]}}
+

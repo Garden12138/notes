@@ -2,7 +2,9 @@
 
 > 阅读资料：[《Hello-Agents》第十二章 12.1：智能体评估基础](https://datawhalechina.github.io/hello-agents/#/./chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0?id=_121-%e6%99%BA%E8%83%BD%E4%BD%93%E8%AF%84%E4%BC%B0%E5%9F%BA%E7%A1%80)、[12.2：BFCL——工具调用能力评估](https://datawhalechina.github.io/hello-agents/#/./chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0?id=_122-bfcl%ef%bc%9a%e5%b7%a5%e5%85%b7%e8%b0%83%e7%94%a8%e8%83%bd%e5%8a%9b%e8%af%84%e4%bc%b0)
 >
-> 本文先建立评估底座，再实现 BFCL 数据加载、调用抽取、结构匹配、指标、报告和官方结果导出。
+> 补充阅读：[12.3：GAIA——通用 AI 助手能力评估](https://datawhalechina.github.io/hello-agents/#/./chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0?id=_123-gaia%ef%bc%9a%e9%80%9a%e7%94%a8-ai-%e5%8a%a9%e6%89%8b%e8%83%bd%e5%8a%9b%e8%af%84%e4%bc%b0)
+>
+> 本文先建立评估底座，再实现 BFCL 的工具调用评估与 GAIA 的通用任务评估。
 
 ### 为什么需要评估
 
@@ -534,6 +536,235 @@ bfcl evaluate \
 
 原文使用 `SimpleAgent` 复现文本调用协议，这适合观察 Prompt 和解析器。若改用原生 Function Calling，不能只调用当前 `FunctionCallAgent.run()`：它会执行工具并返回最终文本，原始 `tool_calls` 已不在返回值中。正式适配时应在执行前捕获 SDK 的结构化调用，再交给 BFCL 对应模型 Handler，避免把“工具执行后的回答”当成“待评分的函数调用”。
 
+### GAIA：通用 AI 助手能力评估
+
+BFCL 把能力范围收窄到“能否生成正确的函数调用”；GAIA 关注的是 Agent 能否在真实问题中组合推理、检索、网页浏览、文件处理和工具调用，并给出一个可核验的短答案。GAIA 论文共设计了 466 道题，问题对人类通常不难，但对需要自行选择工具和组织步骤的系统更有区分度。
+
+| 对比项 | BFCL | GAIA |
+| --- | --- | --- |
+| 主要对象 | 一次或多次函数调用 | 完整问题解决过程 |
+| 输入 | 用户请求、函数 Schema | 问题，部分题目带附件 |
+| 关键能力 | 选函数、填参数、判断是否调用 | 推理、搜索、文件处理、工具协作 |
+| 核心输出 | 结构化调用 | 简短最终答案 |
+| 主要评分 | AST / 结构匹配 | 准精确匹配与分级准确率 |
+
+#### 三个难度级别
+
+| Level | 特征 | 对 Agent 的要求 |
+| --- | --- | --- |
+| 1 | 路径直接，步骤少 | 理解问题并完成少量检索或计算 |
+| 2 | 需要多步信息组合 | 拆解问题，协调多个工具，处理中间结果 |
+| 3 | 路径长、附件或信息源复杂 | 自主规划、纠错、跨模态处理与证据核验 |
+
+Level 不是按题目文字长度划分。一个问题可能只有一句话，却要先定位网页、再读取表格、换算单位并交叉验证。真正增加的是工具选择和状态管理难度。章节使用的 2023 版验证集共有 165 条，Level 1、2、3 分别为 53、62、50 条；测试集答案不公开，用于排行榜评估。
+
+#### 数据结构与受限访问
+
+每条记录的主干字段是：
+
+~~~text
+task_id              稳定样本 ID
+Question             问题
+Level                难度 1 / 2 / 3
+Final answer         验证集参考答案；测试集可能为空
+file_name/file_path  可选附件
+Annotator Metadata   标注步骤、耗时和所需工具
+~~~
+
+GAIA 是 Gated Dataset。使用前要在 Hugging Face 接受数据条款并配置 `HF_TOKEN`，验证集和测试集内容不能复制到公开仓库。本次代码只提交自编的五条固定样例，不包含 GAIA 原题。
+
+原文章节按 `2023/{validation,test}/metadata.jsonl` 讲解。官方仓库在 2025 年 10 月增加了 `metadata.parquet` 及各 Level 的 Parquet 文件，列名和附件相对路径保持不变。因此 [dataset.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/gaia/dataset.py) 同时支持旧 JSONL 和当前 Parquet；后者需要 `pandas` 与 `pyarrow`。
+
+下载不会在构造对象时自动发生。这样本地 Demo 和模块导入不会意外访问受限数据；只有 `auto_download=True` 或命令行显式传入 `--download` 时，加载器才调用 `snapshot_download`。
+
+#### 评估流程
+
+~~~mermaid
+flowchart LR
+    D["GAIA metadata<br/>问题 + Level + 参考答案"] --> L["GAIADataset<br/>加载、过滤、解析附件路径"]
+    F["可选附件<br/>PDF / 图片 / 表格等"] --> L
+    L --> P["构造问题与附件提示"]
+    P --> A["Agent<br/>规划 + 浏览 + 文件工具 + 计算"]
+    A --> X["提取最后一个<br/>FINAL ANSWER"]
+    X --> N["按参考答案类型归一化"]
+    N --> M["准精确匹配"]
+    M --> R["整体与分级指标"]
+    R --> O["JSONL + Markdown 报告"]
+~~~
+
+加载器只负责把附件解析为受数据目录约束的绝对路径，并标记文件是否存在。真正的图片识别、PDF 阅读或表格分析仍要由被测 Agent 的工具完成；把路径拼进 Prompt 不等于已经读取附件。
+
+每条题目相互独立，评估器在运行前调用 `clear_history()`，避免上一题污染下一题。Agent 最终应输出：
+
+~~~text
+FINAL ANSWER: [answer]
+~~~
+
+评估器取最后一个 `FINAL ANSWER`，防止模型在推理说明中先复述格式模板。没有该标记时，才尝试“最终答案”“Answer”等备用标记，最后退回到末尾非空行。
+
+#### 准精确匹配
+
+准精确匹配不是模糊语义判断，而是先归一化，再做严格相等。令 $\mathcal{N}$ 为归一化函数，则第 $i$ 条样本的得分可写为：
+
+$$
+m_i=\mathbf{1}\!\left[\mathcal{N}(A_{\mathrm{pred},i})
+=\mathcal{N}(A_{\mathrm{true},i})\right]
+$$
+
+| 答案类型 | 归一化规则 | 示例 |
+| --- | --- | --- |
+| 数字 | 去千位分隔符、货币符号和百分号，统一小数尾零 | `$1,234.50` → `1234.5` |
+| 字符串 | Unicode 归一化、转小写、去开头冠词、多余空白和末尾标点 | `The Pacific Ocean.` → `pacific ocean` |
+| 列表 | 逗号切分，逐项归一化，再排序 | `Paris, Berlin, London` → `berlin,london,paris` |
+
+这里有一个容易漏掉的边界：`$1,234.56` 含逗号，但它是数字，不是列表。如果先执行“见逗号就切分”，会得到错误结果。[quasi_exact_match.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/gaia/quasi_exact_match.py) 会根据参考答案确定类型，并优先尝试数字解析。
+
+准精确匹配便宜、确定、可复现，适合 GAIA 的短答案设计；它不会把“42”和“四十二”自动视为相同，也不能判断较长解释是否语义等价。代码额外提供了列表项或文本 Token 的 `partial_match_score`，仅用于定位“部分正确”的本地诊断，不能当作 GAIA 官方分数。
+
+#### 指标与边界
+
+可评分样本的整体匹配率为：
+
+$$
+\operatorname{ExactMatchRate}
+=\frac{1}{N}\sum_{i=1}^{N}m_i
+$$
+
+各 Level 分别计算准确率。难度递进下降率用于观察能力随难度增加的衰减：
+
+$$
+\operatorname{DropRate}_{\ell\rightarrow\ell+1}
+=\frac{\operatorname{Accuracy}_{\ell}
+-\operatorname{Accuracy}_{\ell+1}}
+{\operatorname{Accuracy}_{\ell}}
+$$
+
+若较低 Level 没有样本或准确率为 0，分母无意义，代码返回 `None`。下降率也可能为负，表示当前样本上高 Level 的准确率反而更高，不应强行截断为 0。
+
+平均推理步骤只统计回答正确且 Agent 明确暴露 `last_run_steps` 的样本。`Annotator Metadata` 中的步骤是人工给出的参考路径，不是模型实际走过的步骤，用它冒充 Agent 步数会让效率指标失真。没有实际轨迹时，该指标和覆盖率保持为空。
+
+测试集参考答案可能不可见。[metrics.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/gaia/metrics.py) 会把这类记录标为不可评分，仍允许生成预测文件，但不会把空答案算成错误或产生一个假的 0 分。
+
+### GAIA 代码实践
+
+#### 实现结构
+
+~~~text
+hello_agents/evaluation/benchmarks/gaia/
+├── dataset.py
+├── quasi_exact_match.py
+├── metrics.py
+└── evaluator.py
+
+hello_agents/tools/builtin/
+└── gaia_evaluation_tool.py
+
+examples/
+├── gaia_evaluation_demo.py
+├── gaia_evaluate.py
+└── data/gaia/2023/validation/
+    ├── metadata.jsonl
+    └── sample_notes.txt
+~~~
+
+- [evaluator.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/gaia/evaluator.py) 负责样本隔离、Prompt 构造、答案提取、匹配、导出和报告。
+- [gaia_evaluation_tool.py](./code/HelloAgents/hello_agents/tools/builtin/gaia_evaluation_tool.py) 把 `Dataset → Evaluator → Metrics → Artifacts` 接入统一 `Tool.run(parameters)` 接口。
+- [gaia_evaluation_demo.py](./code/HelloAgents/examples/gaia_evaluation_demo.py) 使用本地固定 Agent 和原创样例验证流程，不调用模型和网络。
+- [gaia_evaluate.py](./code/HelloAgents/examples/gaia_evaluate.py) 是真实模型入口，网络调用和受限数据下载都由命令行显式触发。
+
+直接使用加载器和评估器：
+
+~~~python
+from hello_agents import GAIADataset, GAIAEvaluator
+
+dataset = GAIADataset(
+    split="validation",
+    level=1,
+    local_data_dir="./data/gaia",
+    auto_download=False,
+)
+result = GAIAEvaluator(dataset, level=1).evaluate(agent, max_samples=5)
+print(result["exact_match_rate"])
+~~~
+
+通过 Tool 运行完整流程：
+
+~~~python
+from hello_agents import GAIAEvaluationTool
+
+result_json = GAIAEvaluationTool("./data/gaia").run({
+    "agent": agent,
+    "split": "validation",
+    "level": 1,
+    "max_samples": 5,
+    "output_dir": "./evaluation_results",
+    "download": False,
+})
+~~~
+
+首次获取官方数据时，先在 Hugging Face 页面接受条款，再显式下载：
+
+~~~bash
+pip install huggingface_hub
+# 官方当前的 Parquet 数据还需要：pip install pandas pyarrow
+export HF_TOKEN="your_huggingface_token"
+PYTHONPATH=. python examples/gaia_evaluate.py \
+  --data-dir ./data/gaia \
+  --split validation \
+  --level 1 \
+  --max-samples 5 \
+  --download
+~~~
+
+`HF_TOKEN` 只放在运行环境，不写入代码或提交到仓库。当前真实入口使用 `SimpleAgent` 演示评估管线，本身没有配置浏览器、文件解析器和搜索工具，因此不能代表一个完整 GAIA Agent；正式测评前还要按任务需求接入这些工具，并固定最大步骤、超时和重试策略。
+
+#### 本地实践结果
+
+运行确定性 Demo：
+
+~~~bash
+cd code/HelloAgents
+PYTHONPATH=. python examples/gaia_evaluation_demo.py
+~~~
+
+控制台输出：
+
+~~~text
+=== 12.3 GAIA 通用助手评估实践 ===
+samples: 5
+attachments: 1
+exact_match_rate: 80.00%
+partial_match_rate: 80.00%
+level_accuracy:
+  level_1: 100.00%
+  level_2: 100.00%
+  level_3: 0.00%
+difficulty_drop_rates:
+  level_1_to_2: 0.00%
+  level_2_to_3: 100.00%
+average_reasoning_steps: 1.50
+numeric_comma_match: True
+normalized_list: berlin,london,paris
+gaia_jsonl_records: 5
+report_generated: True
+submission_guide_generated: True
+official_submission: not_run
+~~~
+
+五条样例覆盖数字、短文本、无序列表和附件路径，并故意让一条 Level 3 样例答错，因此整体为 4/5。Level 1 与 Level 2 都通过，Level 3 为 0%，所以两级之间的下降率分别为 0% 和 100%。`average_reasoning_steps=1.50` 来自固定 Agent 为四条正确样例记录的实际步骤数 $1、1、2、2$。
+
+`numeric_comma_match=True` 验证带千位分隔符的数字不会误判为列表。Demo 生成五条 JSONL、Markdown 报告和提交检查说明，但全部写入系统临时目录，不污染仓库。
+
+#### 本地结果与官方成绩
+
+这次 80% 只说明本地实现的加载、附件传递、答案抽取、归一化、分级统计和导出能连通，不是任何真实模型的 GAIA 成绩。导出的章节兼容格式为：
+
+~~~json
+{"task_id":"demo_gaia_001","model_answer":"$1,234.50","reasoning_trace":"..."}
+~~~
+
+生成文件不等于已向排行榜提交。提交前仍应查看当前 [GAIA 官方排行榜](https://huggingface.co/spaces/gaia-benchmark/leaderboard) 的格式和流程，记录数据版本、模型版本、Prompt、全部工具、搜索日期、最大步骤及失败处理，并遵守数据集不可公开转发的条款。
+
 ### 参考资料
 
 - [《Hello-Agents》第十二章：智能体性能评估源文件](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0.md)
@@ -544,10 +775,12 @@ bfcl evaluate \
 - [ToolLLM / ToolBench 论文](https://arxiv.org/abs/2307.16789)
 - [API-Bank 论文](https://arxiv.org/abs/2304.08244)
 - [GAIA 论文](https://arxiv.org/abs/2311.12983)
+- [GAIA 官方数据集与格式说明](https://huggingface.co/datasets/gaia-benchmark/GAIA)
+- [GAIA 官方排行榜](https://huggingface.co/spaces/gaia-benchmark/leaderboard)
 - [AgentBench 论文](https://arxiv.org/abs/2308.03688)
 - [WebArena 论文](https://arxiv.org/abs/2307.13854)
 - [SOTOPIA 论文](https://arxiv.org/abs/2310.11667)
 
 ### 小结
 
-Agent 评估要在固定任务、环境和运行配置下收集可比较的证据。通用底座负责样本、运行、重试、计时和用量；具体基准负责定义“什么算正确”。BFCL 把工具调用归一化为函数名和参数结构，再检查调用选择、参数候选、调用数量及无需调用等行为。本节代码补齐了 BFCL 的 JSONL 加载、调用抽取、安全常量解析、无序结构匹配、分类指标、报告和官方结果导出，并用确定性样例验证流程。80% 是本地回归样例的结果，不代表真实模型成绩；可对外比较的分数仍须由固定版本的 BFCL 官方评估器产生。
+Agent 评估要在固定任务、环境和运行配置下收集可比较的证据，具体基准负责定义“什么算正确”。BFCL 检查函数调用结构，GAIA 则把问题、附件和工具执行汇成一个短答案，再用准精确匹配与分级准确率评估。本章代码补齐了两类基准的数据加载、样本隔离、匹配、指标、报告和结果导出，并用确定性样例验证流程。Demo 中的 80% 都是本地回归结果，不代表真实模型成绩；对外比较仍要使用固定版本的官方数据、规则和提交流程。

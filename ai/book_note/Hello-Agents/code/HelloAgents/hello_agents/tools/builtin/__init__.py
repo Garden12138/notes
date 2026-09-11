@@ -14,12 +14,14 @@ from .terminal_tool import TerminalTool
 from .protocol_tools import A2ATool, ANPTool, MCPTool
 from .rl_training_tool import RLTrainingTool
 from .bfcl_evaluation_tool import BFCLEvaluationTool
+from .gaia_evaluation_tool import GAIAEvaluationTool
 
 __all__ = [
     "A2ATool",
     "ANPTool",
     "CalculatorTool",
     "BFCLEvaluationTool",
+    "GAIAEvaluationTool",
     "MCPTool",
     "MemoryTool",
     "NoteTool",
