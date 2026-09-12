@@ -14,7 +14,7 @@ def main() -> None:
     assert len(snapshot["layers"]) == 4
     assert len(registry) == 4
     assert len(snapshot["data_flow"]) == 8
-    assert snapshot["scope"] == "chapter_13_1_to_13_2_data_models"
+    assert snapshot["scope"] == "chapter_13_1_to_13_4_mcp_integration"
 
     print("=== 13.1 智能旅行助手架构实践 ===")
     print(f"layers: {len(snapshot['layers'])}")
@@ -23,8 +23,10 @@ def main() -> None:
         print(f"  {role.name}: {role.display_name}")
     print(f"data_flow_steps: {len(snapshot['data_flow'])}")
     print("frontend_backend_contract: ready")
+    print("collaboration_workflow: ready")
+    print("mcp_integration: ready")
     print("external_api_calls: 0")
-    print("trip_plan_generation: deferred_to_later_sections")
+    print("production_trip_plan_generation: configured_when_credentials_exist")
 
 
 if __name__ == "__main__":

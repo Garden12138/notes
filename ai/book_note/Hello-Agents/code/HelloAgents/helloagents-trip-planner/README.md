@@ -1,6 +1,6 @@
 # HelloAgents 智能旅行助手
 
-这是第十三章持续实践目录。13.1 完成前后端骨架，13.2 增加统一的请求、行程、天气、预算、POI 与路线模型。真实 Agent、MCP 调用、地图和导出仍按后续小节逐步补充。
+这是第十三章持续实践目录。13.1 完成前后端骨架，13.2 增加统一数据模型，13.3 实现四个 Agent 的固定协作流程，13.4 接入共享的高德 MCP 工具和 Unsplash 图片服务。地图交互与导出仍按后续小节逐步补充。
 
 ## 目录
 
@@ -9,11 +9,19 @@ helloagents-trip-planner/
 ├── backend/
 │   ├── app/
 │   │   ├── agents/
+│   │   │   ├── prompts.py
+│   │   │   └── trip_planner.py
 │   │   ├── api/routes/trip.py
 │   │   ├── models/schemas.py
 │   │   ├── services/
+│   │   │   ├── agent_runtime.py
+│   │   │   ├── architecture.py
+│   │   │   ├── mcp_integration.py
+│   │   │   └── unsplash.py
 │   │   └── config.py
 │   ├── architecture_demo.py
+│   ├── collaboration_demo.py
+│   ├── mcp_integration_demo.py
 │   ├── model_demo.py
 │   ├── requirements.txt
 │   └── run.py
@@ -33,7 +41,7 @@ cd backend
 python architecture_demo.py
 ```
 
-该命令不需要依赖、密钥或网络。
+该命令不需要模型或外部服务的密钥与网络。
 
 ## 离线数据模型验证
 
@@ -46,6 +54,24 @@ python model_demo.py
 
 脚本会构造一次两日旅行计划，验证日期、坐标、温度、预算、嵌套模型和 JSON 往返，并主动捕获三类非法输入。它不会调用 Agent 或外部 API。
 
+## 离线协作流程验证
+
+```bash
+cd backend
+python collaboration_demo.py
+```
+
+脚本使用四个确定性测试 Agent，验证景点、天气和酒店结果确实被传给规划 Agent，最终 JSON 经过 `TripPlan` 和规划规则校验。无效输出会明确失败，不会回退到虚构行程。
+
+## 离线 MCP 集成验证
+
+```bash
+cd backend
+python mcp_integration_demo.py
+```
+
+脚本使用假的 MCP Tool 与 HTTP 响应，验证高德 Server 启动参数、工具自动展开、必要工具检查、三个检索 Agent 共享同一工具，以及 Unsplash 图片补全。它不会启动 `uvx` 子进程，也不会访问高德、Unsplash 或模型 API。
+
 ## 启动后端
 
 ```bash
@@ -54,8 +80,10 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-python run.py
+PYTHONPATH=../.. python run.py
 ```
+
+`PYTHONPATH=../..` 指向同一 `code/HelloAgents/` 目录下持续实现的本地 `hello_agents` 框架，避免改用另一套旅行 Agent 实现。
 
 启动后可访问：
 
@@ -63,6 +91,9 @@ python run.py
 - 健康检查：<http://127.0.0.1:8000/api/system/health>
 - 架构快照：<http://127.0.0.1:8000/api/system/architecture>
 - 请求校验：`POST http://127.0.0.1:8000/api/trip/validate`
+- 行程规划：`POST http://127.0.0.1:8000/api/trip/plan`
+
+首次请求 `/api/trip/plan` 时，后端会启动 `uvx amap-mcp-server` 完成工具发现，并检查 `amap_maps_text_search` 与 `amap_maps_weather` 是否可用。LLM 或高德配置缺失、Server 启动失败、必要工具缺失时返回 `503`；Agent 输出无法通过 `TripPlan` 校验时返回 `502`。规划成功后再调用 Unsplash 补全景点图片，图片失败不会伪造 URL，也不会让有效行程失败。
 
 ## 启动前端
 
@@ -75,4 +106,4 @@ npm run dev
 
 浏览器访问 <http://127.0.0.1:5173>。页面会调用后端架构接口，展示四层架构、Agent 分工、数据流和配置状态。`src/types/trip.ts` 已定义与后端一致的旅行数据契约，后续页面可以直接复用。
 
-`.env` 只保存在本地，不要提交真实密钥。当前页面不会调用 LLM、高德地图或 Unsplash，也不会生成虚构的旅行计划。`/api/trip/validate` 只负责规范化和校验请求，真正的 `/plan` 接口留给 Agent 协作章节。
+`.env` 只保存在本地，不要提交真实密钥。运行真实规划需要配置 `LLM_API_KEY`、`LLM_MODEL_ID`、`LLM_BASE_URL` 和 `AMAP_MAPS_API_KEY`；`UNSPLASH_ACCESS_KEY` 可选，未配置时只是不补充景点图片。三个检索 Agent 共享一个 `MCPTool` 门面，行程规划 Agent 不注册外部工具。

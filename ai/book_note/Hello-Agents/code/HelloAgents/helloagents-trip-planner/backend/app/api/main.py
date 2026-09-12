@@ -34,6 +34,7 @@ def create_app() -> FastAPI:
             "docs": "/docs",
             "health": f"{settings.api_prefix}/system/health",
             "trip_validation": f"{settings.api_prefix}/trip/validate",
+            "trip_plan": f"{settings.api_prefix}/trip/plan",
         }
 
     return application

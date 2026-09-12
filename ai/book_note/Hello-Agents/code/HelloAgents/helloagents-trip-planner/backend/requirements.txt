@@ -1,5 +1,10 @@
 fastapi>=0.110,<1
+fastmcp>=2,<3
+httpx>=0.27,<1
+openai>=1,<2
 pydantic>=2.6,<3
 pydantic-settings>=2.2,<3
 python-dotenv>=1,<2
+PyYAML>=6,<7
 uvicorn[standard]>=0.29,<1
+uv>=0.4,<1
