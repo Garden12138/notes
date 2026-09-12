@@ -1,8 +1,8 @@
 ## 智能旅行助手
 
-> 阅读资料：[13.1 项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_131-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)、[13.2 数据模型设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_132-%e6%95%b0%e6%8d%ae%e6%a8%a1%e5%9e%8b%e8%ae%be%e8%ae%a1)、[13.3 多智能体协作设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_133-%e5%a4%9a%e6%99%ba%e8%83%bd%e4%bd%93%e5%8d%8f%e4%bd%9c%e8%ae%be%e8%ae%a1)、[13.4 MCP 工具集成详解](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_134-mcp-%e5%b7%a5%e5%85%b7%e9%9b%86%e6%88%90%e8%af%a6%e8%a7%a3)、[13.5 前端开发详解](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_135-%e5%89%8d%e7%ab%af%e5%bc%80%e5%8f%91%e8%af%a6%e8%a7%a3)
+> 阅读资料：[13.1 项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_131-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)、[13.2 数据模型设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_132-%e6%95%b0%e6%8d%ae%e6%a8%a1%e5%9e%8b%e8%ae%be%e8%ae%a1)、[13.3 多智能体协作设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_133-%e5%a4%9a%e6%99%ba%e8%83%bd%e4%bd%93%e5%8d%8f%e4%bd%9c%e8%ae%be%e8%ae%a1)、[13.4 MCP 工具集成详解](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_134-mcp-%e5%b7%a5%e5%85%b7%e9%9b%86%e6%88%90%e8%af%a6%e8%a7%a3)、[13.5 前端开发详解](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_135-%e5%89%8d%e7%ab%af%e5%bc%80%e5%8f%91%e8%af%a6%e8%a7%a3)、[13.6 功能实现详解](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_136-%e5%8a%9f%e8%83%bd%e5%ae%9e%e7%8e%b0%e8%af%a6%e8%a7%a3)
 >
-> 13.1 确定产品边界，13.2 固定数据协议，13.3 实现四个 Agent 的协作流程，13.4 接入高德 MCP 和 Unsplash，13.5 完成需求表单、结果展示、地图与导出。
+> 13.1 确定产品边界，13.2 固定数据协议，13.3 实现四个 Agent 的协作流程，13.4 接入高德 MCP 和 Unsplash，13.5 完成前端主页面，13.6 补齐预算、编辑、导出和长页导航。
 
 ### 从原型走向完整应用
 
@@ -170,6 +170,7 @@ helloagents-trip-planner/
     │   ├── router/
     │   ├── services/
     │   │   ├── api.ts
+    │   │   ├── trip-editor.ts
     │   │   ├── trip-storage.ts
     │   │   └── trip.ts
     │   ├── types/
@@ -237,6 +238,7 @@ frontend_backend_contract: ready
 collaboration_workflow: ready
 mcp_integration: ready
 frontend_trip_workflow: ready
+feature_interactions: ready
 external_api_calls: 0
 production_trip_plan_generation: configured_when_credentials_exist
 ~~~
@@ -265,7 +267,7 @@ npm install
 npm run dev
 ~~~
 
-访问 `http://127.0.0.1:5173` 后，首页把表单转换为 `TripRequest` 请求 `/api/trip/plan`，成功后进入 `/result`。13.5 已实现地图与导出，行程编辑按原文章节留给 13.6。
+访问 `http://127.0.0.1:5173` 后，首页把表单转换为 `TripRequest` 请求 `/api/trip/plan`，成功后进入 `/result`。13.5 完成地图与导出，13.6 在同一结果页中补上编辑、侧边导航和导出降级处理。
 
 ### 为什么需要统一数据模型
 
@@ -849,11 +851,82 @@ npm run build
 npm audit
 ~~~
 
-实际结果为 TypeScript 检查和 Vite 生产构建通过，`3487 modules transformed`，最后一次构建耗时 9.47 秒。结果页、`html2canvas` 和 `jsPDF` 已拆成独立分块；主分块仍为 860.30 kB（gzip 后 276.23 kB），Vite 会给出超过 500 kB 的提示。这不影响本次构建，但说明 Ant Design Vue 还可继续按页面拆分。
+13.5 阶段的 TypeScript 检查和 Vite 生产构建通过，`3487 modules transformed`。结果页、`html2canvas` 和 `jsPDF` 已拆成独立分块；当时主分块为 860.30 kB（gzip 后 276.23 kB），Vite 会给出超过 500 kB 的提示。这不影响构建，但说明 Ant Design Vue 还可继续按页面拆分。
 
 原参考项目使用 jsPDF 3.x，当前安装时 `npm audit` 报告了已知问题，因此实践代码使用 4.2.1。升级后审计结果为 `found 0 vulnerabilities`。
 
 浏览器检查中，首页的响应式表单可正常渲染，直接访问没有缓存数据的 `/result` 会显示空状态和“创建旅行计划”入口。本次没有配置真实模型或高德 Key，因此这些结果不代表真实行程生成、地图加载和跨域图片导出已通过联网验证。
+
+### 核心功能的职责划分
+
+13.6 没有增加新的 Agent，而是将已有结果变成可交互的应用。五项功能分布在不同位置：
+
+| 功能 | 实现位置 | 关键点 |
+| --- | --- | --- |
+| 预算计算 | Planner Agent 与 Pydantic 模型 | Agent 估算分项，`Budget` 验证总额等于分项之和 |
+| 加载进度 | `HomeView.vue` | 只描述等待阶段，不冒充服务端真实进度 |
+| 行程编辑 | `ResultView.vue` 与 `trip-editor.ts` | 先留快照，再允许修改、排序和删除 |
+| 图片与 PDF 导出 | `ResultView.vue` | 捕获文字行程，避开动态地图 Canvas |
+| 侧边导航 | `ResultView.vue` | 通过锚点定位长页面中的不同区域 |
+
+预算的原始语义仍由 Planner Agent 负责，前端不重复估算酒店、餐饮和交通价格。但用户在编辑中删除景点时，门票价是确定的，因此会从 `total_attractions` 扣除该景点的 `ticket_price`，然后重新汇总 `total`。
+
+### 行程编辑是一个可回滚的状态流程
+
+直接修改 `tripPlan` 会丢失取消机会。进入编辑模式时，页面先建立完整快照；实践中优先使用 `structuredClone`，并保留 JSON 深拷贝作为兼容处理。两者的目的与原文一致：让原始计划和正在编辑的计划不共享引用。
+
+~~~mermaid
+stateDiagram-v2
+    [*] --> View: 读取 sessionStorage
+    View --> Edit: 创建原始快照
+    Edit --> Edit: 修改地址或描述
+    Edit --> Edit: 上移 / 下移景点
+    Edit --> Edit: 删除景点并更新门票预算
+    Edit --> View: 取消，恢复快照
+    Edit --> Validate: 保存
+    Validate --> Edit: 字段不合法
+    Validate --> View: 写入 sessionStorage<br/>重建地图标记
+~~~
+
+[trip-editor.ts](./code/HelloAgents/helloagents-trip-planner/frontend/src/services/trip-editor.ts) 把纯数组操作从 Vue 组件中拆出：
+
+~~~typescript
+const targetIndex =
+  direction === "up" ? attractionIndex - 1 : attractionIndex + 1;
+
+[attractions[attractionIndex], attractions[targetIndex]] = [
+  attractions[targetIndex],
+  attractions[attractionIndex],
+];
+~~~
+
+移动操作会检查数组边界；删除操作会拒绝删除某天最后一个景点。保存前还会检查地址、描述和 10–480 分钟的游览时长。保存成功后更新会话缓存并重建高德地图；取消则使用快照恢复整个计划。
+
+原文 13.6.3 实际给出的交互是修改已有景点、上下移和删除，没有定义“搜索并添加新 POI”的数据源与接口。实践代码因此不伪造新景点，保留这个明确边界。
+
+### 导出时为什么暂时隐藏地图
+
+高德地图内部包含 Canvas、图块和跨域资源，`html2canvas` 无法稳定还原完整动态地图。导出前将 `exportMode` 设为 `true`，通过 `v-show` 暂时隐藏地图；捕获结束后在 `finally` 中恢复，即使导出失败也不会把页面留在隐藏状态。
+
+当前 PNG 与 PDF 都导出行程概览、预算、每日计划和天气，不包含动态地图。如果后续需要完整地图，可以按原文建议改用高德静态地图、服务端截图或地图与行程分别导出。
+
+### 侧边导航与锚点
+
+结果页使用 Ant Design Vue `Menu` 列出行程概览、预算、地图、每日行程和天气。点击菜单项后，浏览器通过 `scrollIntoView({ behavior: "smooth" })` 平滑滚动到对应 `id`。侧栏在宽屏上使用 `position: sticky`，小屏幕隐藏后仍可使用回到顶部按钮，避免导航挤压行程卡片。
+
+### 13.6 实践结果
+
+编辑逻辑使用确定性数据验证，没有启动后端或调用外部 API：
+
+~~~text
+snapshot_restore: ready
+move_up_down: ready
+delete_guard: ready
+edit_validation: ready
+budget_recalculation: ready
+~~~
+
+`npm run build` 再次通过 TypeScript 检查和 Vite 构建，本轮共转换 3488 个模块。增加编辑组件后，主分块为 907.74 kB（gzip 后 289.17 kB），仍有超过 500 kB 的非阻断性提示。
 
 ### 实践边界
 
@@ -863,10 +936,13 @@ npm audit
 - 三个信息检索步骤按原文串行执行，尚未加入并发、重试和部分结果降级；
 - `/api/trip/plan` 在配置或必要工具不可用时返回 `503`，不会生成占位计划；
 - Unsplash 是非关键增强，失败时保留行程并让 `image_url` 为空；
-- 前端已实现表单、结果展示、地图和导出，但未配置真实外部服务进行端到端调用；
+- 前端已实现表单、结果展示、地图、编辑和导出，但未配置真实外部服务进行端到端调用；
 - 加载进度是模拟的等待反馈，不是 Agent 执行阶段的服务端推送；
 - 地图缺少前端 Key 或行程缺少有效坐标时会降级为文本提示；
-- 行程编辑、重新排序与路线联动属于 13.6，本节不提前改变数据模型。
+- 编辑结果只保存在当前浏览器会话，没有用户账号、数据库和多端同步；
+- 保存编辑会重建地图标记，但当前章节没有定义前端路径规划接口，因此不会伪造路线联动；
+- 编辑范围是已有景点的属性、顺序和删除；通过 POI 搜索添加新景点仍需要额外接口；
+- 导出会暂时隐藏动态地图，保证文字行程的稳定导出。
 
 按章节顺序保留这些边界，可以让当前代码直接成为后续实现的基线，而不是先写一套新方案，再随着阅读反复推倒。
 
@@ -890,4 +966,4 @@ npm audit
 
 ### 小结
 
-智能旅行助手把分散的信息查询、个性化规划和结果展示放进同一应用。13.1 固定四层架构，13.2 建立 Pydantic 与 TypeScript 协议，13.3 由协调器串联四个 Agent，13.4 通过 `MCPTool` 为检索角色接入高德工具，再用普通 HTTP 服务补全景点图片。13.5 用 Vue 表单生成精确的 `TripRequest`，将结果通过会话缓存交给结果页，并完成行程、预算、天气、地图与导出。现在的主链路已贯通到页面层；真实行程生成和地图效果仍需在配置模型与高德 Key 后验证，行程编辑则保留给后续章节。
+智能旅行助手把分散的信息查询、个性化规划和结果展示放进同一应用。13.1 固定四层架构，13.2 建立 Pydantic 与 TypeScript 协议，13.3 串联四个 Agent，13.4 接入高德 MCP 和 Unsplash，13.5 完成表单、结果页、地图与导出。13.6 进一步把行程变成可回滚的编辑状态：修改、排序和删除只作用于当前副本，取消恢复快照，保存才更新会话缓存并重建地图。预算仍由 Planner Agent 估算并由模型校验，仅在删除景点时扣减确定的门票费。侧边锚点解决长页定位，导出则为了稳定性排除动态地图。真实行程生成和地图效果仍需在配置模型与高德 Key 后验证。

@@ -1,6 +1,6 @@
 # HelloAgents 智能旅行助手
 
-这是第十三章持续实践目录。13.1 完成前后端骨架，13.2 增加统一数据模型，13.3 实现四个 Agent 的固定协作流程，13.4 接入共享的高德 MCP 工具和 Unsplash 图片服务，13.5 完成需求表单、行程结果、地图和导出页面。
+这是第十三章持续实践目录。13.1 完成前后端骨架，13.2 增加统一数据模型，13.3 实现四个 Agent 的固定协作流程，13.4 接入共享的高德 MCP 工具和 Unsplash 图片服务，13.5 完成前端主页面，13.6 补齐行程编辑、预算联动、导出和侧边导航。
 
 ## 目录
 
@@ -31,6 +31,7 @@ helloagents-trip-planner/
     │   ├── router/
     │   ├── services/
     │   │   ├── api.ts
+    │   │   ├── trip-editor.ts
     │   │   ├── trip-storage.ts
     │   │   └── trip.ts
     │   ├── types/trip.ts
@@ -112,7 +113,9 @@ npm run dev
 
 浏览器访问 <http://127.0.0.1:5173>。`src/types/trip.ts` 定义了与后端一致的旅行数据契约。
 
-首页会把目的地、日期、出行方式和偏好转换为 `TripRequest`，调用 `POST /api/trip/plan`。成功后结果保存到 `sessionStorage` 并跳转 `/result`，展示行程、预算、天气和地图，也可导出 PNG 或 PDF。
+首页会把目的地、日期、出行方式和偏好转换为 `TripRequest`，调用 `POST /api/trip/plan`。成功后结果保存到 `sessionStorage` 并跳转 `/result`，展示行程、预算、天气和地图。结果页支持修改景点地址、描述和游览时长，也能调整顺序、删除景点、取消恢复、保存并重建地图。
+
+导出支持 PNG 和分页 PDF。为避免高德 Canvas 和跨域图块导致截图失败，导出内容不包含动态地图。长页在宽屏显示锚点侧栏，小屏则保留回到顶部按钮。
 
 `.env` 中的 `VITE_API_BASE_URL` 默认指向本地后端；如需地图，还要填写高德 JS API 使用的 `VITE_AMAP_WEB_KEY`。它与后端 MCP 的 `AMAP_MAPS_API_KEY` 用途不同，不要混用。
 
@@ -123,6 +126,6 @@ npm run build
 npm audit
 ```
 
-13.5 实践中两条命令均通过，审计结果为 0 个已知漏洞。行程编辑与路线联动保留给 13.6。
+13.6 实践中两条命令均通过，审计结果为 0 个已知漏洞。本节只编辑已有景点；通过 POI 搜索添加新景点需要另行定义接口。
 
 `.env` 只保存在本地，不要提交真实密钥。运行真实规划需要配置 `LLM_API_KEY`、`LLM_MODEL_ID`、`LLM_BASE_URL` 和 `AMAP_MAPS_API_KEY`；`UNSPLASH_ACCESS_KEY` 可选，未配置时只是不补充景点图片。三个检索 Agent 共享一个 `MCPTool` 门面，行程规划 Agent 不注册外部工具。

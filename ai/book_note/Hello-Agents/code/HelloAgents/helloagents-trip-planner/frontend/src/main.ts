@@ -1,5 +1,6 @@
 import { createApp } from "vue";
 import {
+  BackTop,
   Button,
   Card,
   Checkbox,
@@ -11,6 +12,7 @@ import {
   Empty,
   Form,
   Input,
+  InputNumber,
   Layout,
   Menu,
   Progress,
@@ -38,6 +40,7 @@ const app = createApp(App).use(router);
   Empty,
   Form,
   Input,
+  InputNumber,
   Layout,
   Menu,
   Progress,
@@ -47,4 +50,5 @@ const app = createApp(App).use(router);
   Tag,
 ].forEach((component) => app.use(component));
 
+app.component("ABackTop", BackTop);
 app.mount("#app");

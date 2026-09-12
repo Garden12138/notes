@@ -49,7 +49,7 @@ def build_architecture_snapshot(
     status = dict(integration_status or {})
     return {
         "project": "helloagents-trip-planner",
-        "scope": "chapter_13_1_to_13_5_frontend",
+        "scope": "chapter_13_1_to_13_6_features",
         "layers": list(LAYERS),
         "agents": [role.to_dict() for role in build_agent_registry()],
         "external_integrations": {
@@ -81,8 +81,11 @@ def build_architecture_snapshot(
             "旅行需求表单与请求状态",
             "行程、预算、天气与地图展示",
             "PNG 与 PDF 导出",
+            "行程编辑、取消恢复与会话保存",
+            "景点排序、删除与地图重建",
+            "侧边导航与锚点跳转",
         ],
         "deferred_capabilities": [
-            "行程编辑与路线联动",
+            "通过 POI 搜索添加新景点",
         ],
     }
