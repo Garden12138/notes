@@ -15,6 +15,8 @@ from .protocol_tools import A2ATool, ANPTool, MCPTool
 from .rl_training_tool import RLTrainingTool
 from .bfcl_evaluation_tool import BFCLEvaluationTool
 from .gaia_evaluation_tool import GAIAEvaluationTool
+from .llm_judge_tool import LLMJudgeTool
+from .win_rate_tool import WinRateTool
 
 __all__ = [
     "A2ATool",
@@ -22,6 +24,7 @@ __all__ = [
     "CalculatorTool",
     "BFCLEvaluationTool",
     "GAIAEvaluationTool",
+    "LLMJudgeTool",
     "MCPTool",
     "MemoryTool",
     "NoteTool",
@@ -29,6 +32,7 @@ __all__ = [
     "RLTrainingTool",
     "SearchTool",
     "TerminalTool",
+    "WinRateTool",
     "calculate",
     "create_calculator_registry",
     "my_calculate",

@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "description": "Original synthetic fixtures for the offline 12.4 demo"
+  },
+  "problems": [
+    {
+      "problem_id": "reference_001",
+      "problem": "How many two-digit positive integers have digits whose sum is 9?",
+      "answer": "9",
+      "solution": "The tens digit can be 1 through 9, and the units digit is then fixed.",
+      "topic": "Combinatorics",
+      "source": "helloagents_offline_fixture"
+    },
+    {
+      "problem_id": "reference_002",
+      "problem": "For positive integer n, the sum 1+2+...+n equals 78. Find n.",
+      "answer": "12",
+      "solution": "Solve n(n+1)/2=78 to obtain n=12.",
+      "topic": "Algebra",
+      "source": "helloagents_offline_fixture"
+    },
+    {
+      "problem_id": "reference_003",
+      "problem": "What is the remainder when 2^10 is divided by 31?",
+      "answer": "1",
+      "topic": "Number Theory",
+      "source": "helloagents_offline_fixture"
+    }
+  ]
+}

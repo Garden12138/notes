@@ -16,6 +16,9 @@ from .models import (
 )
 from .runner import EvaluationRunner
 from .benchmarks import (
+    AIDataset,
+    AIMEGenerator,
+    AIME_TOPICS,
     BFCLDataset,
     BFCLEvaluator,
     BFCLMetrics,
@@ -23,6 +26,12 @@ from .benchmarks import (
     GAIAEvaluator,
     GAIAMetrics,
     GAIA_SYSTEM_PROMPT,
+    HumanVerificationStore,
+    HumanVerificationUI,
+    LLMJudgeEvaluator,
+    SCORE_DIMENSIONS,
+    VERIFICATION_STATUSES,
+    WinRateEvaluator,
     extract_final_answer,
     extract_function_calls,
     match_function_calls,
@@ -32,6 +41,9 @@ from .benchmarks import (
 )
 
 __all__ = [
+    "AIDataset",
+    "AIMEGenerator",
+    "AIME_TOPICS",
     "BFCLDataset",
     "BFCLEvaluator",
     "BFCLMetrics",
@@ -39,6 +51,12 @@ __all__ = [
     "GAIAEvaluator",
     "GAIAMetrics",
     "GAIA_SYSTEM_PROMPT",
+    "HumanVerificationStore",
+    "HumanVerificationUI",
+    "LLMJudgeEvaluator",
+    "SCORE_DIMENSIONS",
+    "VERIFICATION_STATUSES",
+    "WinRateEvaluator",
     "EvaluationCase",
     "EvaluationRecord",
     "EvaluationReport",

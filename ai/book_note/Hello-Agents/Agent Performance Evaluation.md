@@ -2,9 +2,9 @@
 
 > 阅读资料：[《Hello-Agents》第十二章 12.1：智能体评估基础](https://datawhalechina.github.io/hello-agents/#/./chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0?id=_121-%e6%99%BA%E8%83%BD%E4%BD%93%E8%AF%84%E4%BC%B0%E5%9F%BA%E7%A1%80)、[12.2：BFCL——工具调用能力评估](https://datawhalechina.github.io/hello-agents/#/./chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0?id=_122-bfcl%ef%bc%9a%e5%b7%a5%e5%85%b7%e8%b0%83%e7%94%a8%e8%83%bd%e5%8a%9b%e8%af%84%e4%bc%b0)
 >
-> 补充阅读：[12.3：GAIA——通用 AI 助手能力评估](https://datawhalechina.github.io/hello-agents/#/./chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0?id=_123-gaia%ef%bc%9a%e9%80%9a%e7%94%a8-ai-%e5%8a%a9%e6%89%8b%e8%83%bd%e5%8a%9b%e8%af%84%e4%bc%b0)
+> 补充阅读：[12.3：GAIA——通用 AI 助手能力评估](https://datawhalechina.github.io/hello-agents/#/./chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0?id=_123-gaia%ef%bc%9a%e9%80%9a%e7%94%a8-ai-%e5%8a%a9%e6%89%8b%e8%83%bd%e5%8a%9b%e8%af%84%e4%bc%b0)、[12.4：数据生成质量评估](https://datawhalechina.github.io/hello-agents/#/./chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0?id=_124-%e6%95%b0%e6%8d%ae%e7%94%9f%e6%88%90%e8%b4%a8%e9%87%8f%e8%af%84%e4%bc%b0)
 >
-> 本文先建立评估底座，再实现 BFCL 的工具调用评估与 GAIA 的通用任务评估。
+> 本文先建立评估底座，再实现 BFCL 工具调用评估、GAIA 通用任务评估和 AIME 风格数据生成质量评估。
 
 ### 为什么需要评估
 
@@ -705,7 +705,7 @@ result_json = GAIAEvaluationTool("./data/gaia").run({
 首次获取官方数据时，先在 Hugging Face 页面接受条款，再显式下载：
 
 ~~~bash
-pip install huggingface_hub
+pip install huggingface_hub pandas pyarrow
 # 官方当前的 Parquet 数据还需要：pip install pandas pyarrow
 export HF_TOKEN="your_huggingface_token"
 PYTHONPATH=. python examples/gaia_evaluate.py \
@@ -765,6 +765,229 @@ official_submission: not_run
 
 生成文件不等于已向排行榜提交。提交前仍应查看当前 [GAIA 官方排行榜](https://huggingface.co/spaces/gaia-benchmark/leaderboard) 的格式和流程，记录数据版本、模型版本、Prompt、全部工具、搜索日期、最大步骤及失败处理，并遵守数据集不可公开转发的条款。
 
+### 数据生成质量评估
+
+前面的 BFCL 和 GAIA 都在评估 Agent 做题或调用工具的能力，12.4 换了一个对象：模型生成的数据本身。章节以 AIME 风格数学题为例，希望生成可用于训练或评测的新题。此时“JSON 能解析”只是格式合格，还要继续检查题目是否正确、清楚、达到目标难度，解答能否支撑答案。
+
+AIME 的最终答案是 $0$ 到 $999$ 的整数。实践把目标难度设在 AIME 第 6～9 题附近，主题限定为 Algebra、Geometry、Number Theory、Combinatorics 和 Probability。生成时可从历年题目中取一题作为风格参考，评估时则换用独立的 AIME 2025 参考集，避免用同一批样本既引导生成又判断质量。
+
+#### 三层评估闭环
+
+单一评分很难覆盖数据质量，因此原文组合了三种方法：LLM Judge 负责规模化绝对评分，Win Rate 负责相对比较，人工审核处理高风险和有争议的样本。
+
+~~~mermaid
+flowchart LR
+    H["历年 AIME 参考题<br/>仅提供风格与难度"] --> G["AIMEGenerator<br/>生成全新题目"]
+    G --> V["Schema 校验<br/>题目 + 整数答案 + 解答 + 主题"]
+    V --> D["生成数据集"]
+    D --> J["LLM Judge<br/>四维绝对评分"]
+    D --> W["Win Rate<br/>与 AIME 2025 成对比较"]
+    R["独立真实参考集"] --> W
+    D --> U["人工审核<br/>通过 / 驳回 / 待修改"]
+    J --> C["综合报告"]
+    W --> C
+    U --> C
+~~~
+
+这三层回答的问题不同：
+
+| 方法 | 主要问题 | 优点 | 主要风险 |
+| --- | --- | --- | --- |
+| LLM Judge | 单题在各维度达到什么水平 | 快，能给理由，适合批量筛查 | 评分尺度、模型偏好和 Prompt 会影响结果 |
+| Win Rate | 生成题相对真实题哪一个更好 | 相对判断通常比绝对打分稳定 | 位置偏差、配对抽样和字段不对称 |
+| 人工审核 | 这条数据最终能否进入下游 | 能发现隐蔽数学错误与歧义 | 慢、成本高，也存在评审差异 |
+
+LLM Judge 和 Win Rate 都只是筛查证据，不是数学证明；要进入高质量训练集，关键样本仍需人工或确定性验证器复核。
+
+#### AIME 风格题目生成
+
+[aime_generator.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/data_generation/aime_generator.py) 保留原文的生成逻辑：随机抽取参考题、要求模型生成完全不同的新题、解析 JSON、定期保存检查点，最后输出完整数据集。生成结果统一为：
+
+~~~json
+{
+  "problem_id": "gen_aime_0001",
+  "problem": "...",
+  "answer": "207",
+  "solution": "...",
+  "topic": "Probability",
+  "reference_problem_id": "real_0042",
+  "generated_at": "2026-09-11T10:00:00+08:00"
+}
+~~~
+
+完整实现增加了几项必要约束：
+
+- `answer` 必须能解析成 $[0,999]$ 内的整数；
+- 四个核心字段不能为空，`topic` 必须属于指定主题；
+- 每道题生成前清空 Agent 历史，避免上一题进入下一题上下文；
+- 参考集下载默认关闭，只有显式传入 `download_reference=True` 才访问网络；
+- 检查点只属于本次输出文件，不清理其他运行留下的数据；
+- 时间使用包含时区的 RFC 3339 格式。
+
+数学表达式还会暴露一个工程问题：模型可能在 JSON 字符串里直接输出 `\frac`、`\theta`，单反斜杠会被 JSON 当成转义符。[解析器](./code/HelloAgents/hello_agents/evaluation/benchmarks/data_generation/aime_generator.py) 在解码前识别这类 LaTeX 命令并补齐转义，同时保留合法的 JSON 转义。修复解析只保证文本不损坏，并不验证公式推导正确。
+
+[dataset.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/data_generation/dataset.py) 将本地 JSON、JSONL 和 Parquet 统一成同一结构。构造对象不会自动下载数据；真实运行可显式使用 `TianHongZXY/aime-1983-2025` 作为生成参考，使用 `math-ai/aime25` 作为相对评估参考。
+
+#### LLM Judge 绝对评分
+
+[llm_judge.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/data_generation/llm_judge.py) 按原文从四个维度给出 1～5 分：
+
+| 维度 | 检查内容 |
+| --- | --- |
+| `correctness` | 题目、答案和推导是否正确 |
+| `clarity` | 条件和问题是否清楚、无歧义 |
+| `difficulty_match` | 是否接近目标 AIME 难度 |
+| `completeness` | 解答是否完整并可复核 |
+
+第 $i$ 道题的平均分为：
+
+$$
+S_i=\frac{1}{4}\sum_{d=1}^{4}s_{i,d}
+$$
+
+设样本数为 $N$，章节采用 $3.5$ 作为通过阈值、$4.5$ 作为优秀阈值：
+
+$$
+\operatorname{PassRate}
+=\frac{1}{N}\sum_{i=1}^{N}\mathbf{1}[S_i\ge 3.5]
+$$
+
+$$
+\operatorname{ExcellentRate}
+=\frac{1}{N}\sum_{i=1}^{N}\mathbf{1}[S_i\ge 4.5]
+$$
+
+这两个阈值是当前实践规则，不是所有数据生成任务的通用标准。实现会分别记录成功评分和解析失败；如果所有 Judge 响应都失败，均分和比例返回空值，不用 0 冒充质量得分。
+
+[llm_judge_tool.py](./code/HelloAgents/hello_agents/tools/builtin/llm_judge_tool.py) 将加载、评分、JSON 结果和 Markdown 报告接入 `Tool.run(parameters)`。绝对评分只需要生成题，不再加载一份实际没有参与计算的参考数据。
+
+#### Win Rate 成对比较
+
+[win_rate.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/data_generation/win_rate.py) 将生成题记为 A、真实参考题记为 B，Judge 返回 `A`、`B` 或 `Tie`。在成功完成的 $M$ 组比较中：
+
+$$
+\operatorname{WinRate}=\frac{N_A}{M},\qquad
+\operatorname{LossRate}=\frac{N_B}{M},\qquad
+\operatorname{TieRate}=\frac{N_{Tie}}{M}
+$$
+
+胜率接近 50% 可以作为“与参考题大致相当”的信号，但前提是 Judge、抽样、Prompt 和位置策略固定。胜率很高也不一定更好，可能是生成题偏简单、Judge 偏好某种表达，或 A/B 顺序造成位置偏差。当前实现明确保留原文的“生成题固定为 A”策略，并在报告中记录，正式实验应再交换位置复评。
+
+`math-ai/aime25` 的记录可能只有题目和答案，没有官方解答。成对 Prompt 会明确说明该字段未提供，避免仅因 B 缺少 `solution` 就判它较差。缺失字段仍会降低完整性维度的可比性，必要时应补齐同源解答或把比较范围收窄到双方共有字段。
+
+[win_rate_tool.py](./code/HelloAgents/hello_agents/tools/builtin/win_rate_tool.py) 负责加载两组数据、固定随机种子、配对、汇总和生成报告。参考数据缺失时直接报错，除非调用者显式允许下载。
+
+#### 人工验证
+
+[human_verification.py](./code/HelloAgents/hello_agents/evaluation/benchmarks/data_generation/human_verification.py) 保存相同四维评分、审核状态、备注和时间：
+
+~~~json
+{
+  "problem_id": "gen_aime_0001",
+  "scores": {
+    "correctness": 5,
+    "clarity": 5,
+    "difficulty_match": 4,
+    "completeness": 4
+  },
+  "average_score": 4.5,
+  "status": "approved",
+  "comments": "答案和推导可以复核。",
+  "verified_at": "2026-09-11T10:00:00+08:00"
+}
+~~~
+
+状态只能是 `approved`、`rejected` 或 `needs_revision`。同一 `problem_id` 再次提交会更新记录，结果默认写入 `<原数据名>_verifications.json`。[human_verification_ui.py](./code/HelloAgents/examples/human_verification_ui.py) 提供可选的 Gradio 逐题审核界面；存储逻辑独立于界面，也可以在其他应用中直接调用。
+
+### 数据生成评估代码实践
+
+#### 实现结构
+
+~~~text
+hello_agents/evaluation/benchmarks/data_generation/
+├── dataset.py
+├── aime_generator.py
+├── llm_judge.py
+├── win_rate.py
+└── human_verification.py
+
+hello_agents/tools/builtin/
+├── llm_judge_tool.py
+└── win_rate_tool.py
+
+examples/
+├── data_generation_evaluation_demo.py
+├── data_generation_evaluate.py
+├── human_verification_ui.py
+└── data/data_generation/reference_aime.json
+~~~
+
+- [data_generation_evaluation_demo.py](./code/HelloAgents/examples/data_generation_evaluation_demo.py) 使用原创固定样例验证完整闭环，不调用模型和网络；
+- [data_generation_evaluate.py](./code/HelloAgents/examples/data_generation_evaluate.py) 是真实生成与评估入口，结果按运行时间写入独立目录；
+- [reference_aime.json](./code/HelloAgents/examples/data/data_generation/reference_aime.json) 只用于离线回归，不包含 AIME 原题。
+
+真实流程需要模型配置；参考集下载由命令行单独授权：
+
+~~~bash
+cd code/HelloAgents
+pip install huggingface_hub
+PYTHONPATH=. python examples/data_generation_evaluate.py \
+  --num-problems 10 \
+  --download-generation-reference \
+  --download-evaluation-reference
+~~~
+
+这会发生真实模型调用和 Hugging Face 下载。若参考数据已在本地，应改传 `--generation-reference-path` 与 `--evaluation-reference-path`，便于固定数据版本。
+可通过 `--judge-model` 指定独立评审模型；未指定时沿用生成模型，但评审温度固定为 0。
+
+生成人工审核页面需要额外安装 Gradio：
+
+~~~bash
+pip install gradio
+PYTHONPATH=. python examples/human_verification_ui.py \
+  ./data_generation_results/<运行时间>/generated_data/generated_aime.json
+~~~
+
+#### 本地实践结果
+
+确定性 Demo 的运行方式：
+
+~~~bash
+cd code/HelloAgents
+PYTHONPATH=. python examples/data_generation_evaluation_demo.py
+~~~
+
+控制台输出：
+
+~~~text
+=== 12.4 数据生成质量评估实践 ===
+generated: 3/3
+llm_judge_average: 4.00/5
+llm_judge_pass_rate: 66.67%
+llm_judge_excellent_rate: 33.33%
+pairwise_win_rate: 33.33%
+pairwise_loss_rate: 33.33%
+pairwise_tie_rate: 33.33%
+human_verification_progress: 1/3
+latex_json_escape_repaired: True
+network_calls: 0
+real_model_calls: 0
+artifacts_location: temporary_directory
+~~~
+
+固定 Judge 分别给三题 $5、4、3$ 分，因此总均分为 $4$；两题达到 $3.5$，一题达到 $4.5$。三组成对结果固定为一胜、一负、一平，用来验证聚合分母和字段映射。人工部分只审核第一题，所以进度为 $1/3$。所有产物写入系统临时目录，以上数字只是实现回归结果，不代表真实模型的数据生成质量。
+
+#### 真实评估边界
+
+- 生成参考集与评估参考集要分开，并记录数据版本，避免泄漏和训练集污染；
+- Judge 模型、温度、Prompt、阈值、随机种子和 A/B 位置都属于实验条件；
+- 同一 Judge 既生成又评分容易自我偏好，条件允许时应换模型或使用多 Judge；
+- 数学正确性最好增加符号计算、数值代入或独立求解器验证，LLM 分数不能代替证明；
+- 先用小批量检查 JSON、成本和评分稳定性，再扩大样本；
+- 报告应保留失败响应和人工修改意见，不能只保留最终均分。
+
+章节中展示的平均分、通过率和胜率是流程示例，不能当作本项目的实测结果。本次真实模型和官方数据评估没有运行，也没有据此生成成绩。
+
 ### 参考资料
 
 - [《Hello-Agents》第十二章：智能体性能评估源文件](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter12/%E7%AC%AC%E5%8D%81%E4%BA%8C%E7%AB%A0%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%80%A7%E8%83%BD%E8%AF%84%E4%BC%B0.md)
@@ -777,10 +1000,12 @@ official_submission: not_run
 - [GAIA 论文](https://arxiv.org/abs/2311.12983)
 - [GAIA 官方数据集与格式说明](https://huggingface.co/datasets/gaia-benchmark/GAIA)
 - [GAIA 官方排行榜](https://huggingface.co/spaces/gaia-benchmark/leaderboard)
+- [TianHongZXY/aime-1983-2025 数据集](https://huggingface.co/datasets/TianHongZXY/aime-1983-2025)
+- [math-ai/aime25 数据集](https://huggingface.co/datasets/math-ai/aime25)
 - [AgentBench 论文](https://arxiv.org/abs/2308.03688)
 - [WebArena 论文](https://arxiv.org/abs/2307.13854)
 - [SOTOPIA 论文](https://arxiv.org/abs/2310.11667)
 
 ### 小结
 
-Agent 评估要在固定任务、环境和运行配置下收集可比较的证据，具体基准负责定义“什么算正确”。BFCL 检查函数调用结构，GAIA 则把问题、附件和工具执行汇成一个短答案，再用准精确匹配与分级准确率评估。本章代码补齐了两类基准的数据加载、样本隔离、匹配、指标、报告和结果导出，并用确定性样例验证流程。Demo 中的 80% 都是本地回归结果，不代表真实模型成绩；对外比较仍要使用固定版本的官方数据、规则和提交流程。
+Agent 评估要在固定任务、环境和运行配置下收集可比较的证据，具体基准负责定义“什么算正确”。BFCL 检查函数调用结构，GAIA 评估完整问题解决，数据生成评估则组合四维绝对评分、成对胜率和人工审核。本章代码补齐了三类场景的数据加载、样本隔离、匹配、指标、报告和导出，并用确定性样例验证流程。所有 Demo 分数都只是本地回归结果；对外比较仍要固定官方数据版本、模型、Prompt、工具和评分规则。
