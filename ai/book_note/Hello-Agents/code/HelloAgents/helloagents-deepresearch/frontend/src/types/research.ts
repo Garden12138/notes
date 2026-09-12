@@ -28,6 +28,7 @@ export type ResearchEventType =
   | "status"
   | "tasks"
   | "task"
+  | "tool_call"
   | "report"
   | "done"
   | "error";

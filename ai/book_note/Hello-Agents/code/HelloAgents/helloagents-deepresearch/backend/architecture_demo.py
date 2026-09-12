@@ -1,18 +1,18 @@
-"""Offline verification of the section 14.1 architecture contract."""
+"""Offline verification of the section 14.1–14.3 architecture contract."""
 
 from src.architecture import build_architecture_snapshot
 
 
 def main() -> None:
     snapshot = build_architecture_snapshot()
-    assert snapshot.scope == "chapter_14_1_to_14_2_todo_research"
+    assert snapshot.scope == "chapter_14_1_to_14_3_agent_system"
     assert len(snapshot.layers) == 4
     assert len(snapshot.agents) == 3
     assert len(snapshot.tools) == 2
     assert len(snapshot.data_flow) == 8
     assert [step.order for step in snapshot.data_flow] == list(range(1, 9))
 
-    print("=== 14.1–14.2 深度研究助手架构实践 ===")
+    print("=== 14.1–14.3 深度研究助手架构实践 ===")
     print(f"layers: {len(snapshot.layers)}")
     print(f"agents: {len(snapshot.agents)}")
     print(f"tools: {len(snapshot.tools)}")
@@ -20,6 +20,7 @@ def main() -> None:
     print(f"stream_endpoint: {snapshot.endpoint}")
     print("architecture_contract: ready")
     print("todo_research_workflow: ready")
+    print("agent_system_design: ready")
     print("external_api_calls: 0")
 
 

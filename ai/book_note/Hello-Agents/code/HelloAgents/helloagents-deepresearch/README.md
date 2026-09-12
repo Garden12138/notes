@@ -1,6 +1,6 @@
 # HelloAgents 自动化深度研究助手
 
-这是第十四章的持续实践目录。14.1 实现前后端工程骨架、四层架构契约和 SSE 通道；14.2 在此基础上补全 TODO 草案、任务编号、三阶段状态以及“搜索—总结—记录”的顺序执行流程。真实模型、搜索、笔记与报告服务将在后续小节逐步接入。
+这是第十四章的持续实践目录。14.1 实现前后端工程骨架、四层架构契约和 SSE 通道；14.2 补全 TODO 草案、任务编号及三阶段顺序流程；14.3 实现规划、总结、报告三个 Agent 服务，以及工具调用监听和事件桥接。搜索与笔记的具体实现将在后续小节接入。
 
 ## 当前结构
 
@@ -13,8 +13,16 @@ helloagents-deepresearch/
 │   │   ├── config.py
 │   │   ├── main.py
 │   │   ├── models.py
-│   │   └── streaming.py
+│   │   ├── prompts.py
+│   │   ├── streaming.py
+│   │   ├── tool_events.py
+│   │   └── services/
+│   │       ├── planner.py
+│   │       ├── summarizer.py
+│   │       ├── reporter.py
+│   │       └── factory.py
 │   ├── .env.example
+│   ├── agent_system_demo.py
 │   ├── architecture_demo.py
 │   ├── workflow_demo.py
 │   └── pyproject.toml
@@ -40,6 +48,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e .
 cp .env.example .env
+export PYTHONPATH=../..
 python src/main.py
 ```
 
@@ -57,9 +66,12 @@ python src/main.py
 ```bash
 PYTHONDONTWRITEBYTECODE=1 python architecture_demo.py
 PYTHONDONTWRITEBYTECODE=1 python workflow_demo.py
+PYTHONDONTWRITEBYTECODE=1 python agent_system_demo.py
 ```
 
-`workflow_demo.py` 使用确定性测试替身验证规划日期、系统编号、搜索后端传递、任务状态、来源保留、失败状态和调用顺序，不访问模型、搜索引擎或文件系统。
+`workflow_demo.py` 验证 14.2 的 TODO 数据流；`agent_system_demo.py` 验证三个角色 Prompt、JSON 解析、来源上下文、报告交接、历史隔离、工具调用事件和顺序协作。两者均使用确定性测试替身，不访问模型、搜索引擎或文件系统。
+
+`ToolAwareSimpleAgent` 位于同级 HelloAgents 框架的 `hello_agents/agents/tool_aware_simple_agent.py`，在 `SimpleAgent` 原有行为上增加完成后监听，不改变工具执行协议。`PYTHONPATH=../..` 让后端优先使用这份随章节持续完善的本地框架代码。
 
 ## 前端
 

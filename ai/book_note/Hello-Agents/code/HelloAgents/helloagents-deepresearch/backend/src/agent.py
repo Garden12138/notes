@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterator, Sequence
 from datetime import date
-from typing import Protocol
+from typing import Any, Protocol
 
 try:
     from .models import (
@@ -60,6 +60,10 @@ class Reporter(Protocol):
     def write(self, topic: str, tasks: Sequence[TodoItem]) -> str: ...
 
 
+class ToolEventSource(Protocol):
+    def drain(self) -> list[dict[str, Any]]: ...
+
+
 class DeepResearchAgent:
     """Run the eight-step research flow against injected concrete services."""
 
@@ -73,6 +77,7 @@ class DeepResearchAgent:
         reporter: Reporter,
         clock: Callable[[], date] = date.today,
         max_results: int = 5,
+        tool_event_source: ToolEventSource | None = None,
     ) -> None:
         self._planner = planner
         self._searcher = searcher
@@ -80,6 +85,7 @@ class DeepResearchAgent:
         self._note_writer = note_writer
         self._reporter = reporter
         self._clock = clock
+        self._tool_event_source = tool_event_source
         if max_results < 1:
             raise ValueError("max_results 必须大于 0")
         self._max_results = max_results
@@ -87,6 +93,29 @@ class DeepResearchAgent:
     @staticmethod
     def _snapshot(task: TodoItem) -> TodoItem:
         return task.model_copy(deep=True)
+
+    def _drain_tool_call_events(
+        self,
+        *,
+        phase: ResearchPhase,
+        progress: int,
+    ) -> list[ResearchEvent]:
+        if self._tool_event_source is None:
+            return []
+        events: list[ResearchEvent] = []
+        for call in self._tool_event_source.drain():
+            agent_name = str(call.get("agent_name", "unknown"))
+            tool_name = str(call.get("tool_name", "unknown"))
+            events.append(
+                ResearchEvent(
+                    type="tool_call",
+                    phase=phase,
+                    message=f"{agent_name} 调用工具：{tool_name}",
+                    progress=progress,
+                    detail=call,
+                )
+            )
+        return events
 
     def run_stream(
         self,
@@ -106,7 +135,18 @@ class DeepResearchAgent:
             progress=0,
             detail={"current_date": current_date},
         )
-        drafts = self._planner.plan(normalized_topic, current_date)
+        try:
+            drafts = self._planner.plan(normalized_topic, current_date)
+        except Exception:
+            yield from self._drain_tool_call_events(
+                phase=ResearchPhase.FAILED,
+                progress=0,
+            )
+            raise
+        yield from self._drain_tool_call_events(
+            phase=ResearchPhase.PLANNING,
+            progress=5,
+        )
         if not 3 <= len(drafts) <= 5:
             raise ValueError("TODO Planner 必须生成 3–5 个子任务")
         normalized_queries = {draft.query.casefold() for draft in drafts}
@@ -157,11 +197,23 @@ class DeepResearchAgent:
                     detail={"task_id": task.id, "source_count": len(results)},
                 )
                 task.summary = self._summarizer.summarize(task, results).strip()
+                yield from self._drain_tool_call_events(
+                    phase=ResearchPhase.EXECUTION,
+                    progress=10 + int((index - 0.5) / len(tasks) * 75),
+                )
                 if not task.summary:
                     raise ValueError(f"任务“{task.title}”没有生成总结")
                 task.note_id = self._note_writer.record(self._snapshot(task))
+                yield from self._drain_tool_call_events(
+                    phase=ResearchPhase.EXECUTION,
+                    progress=10 + int(index / len(tasks) * 75),
+                )
                 task.status = TodoStatus.COMPLETED
             except Exception:
+                yield from self._drain_tool_call_events(
+                    phase=ResearchPhase.FAILED,
+                    progress=10 + int((index - 0.5) / len(tasks) * 75),
+                )
                 task.status = TodoStatus.FAILED
                 yield ResearchEvent(
                     type="task",
@@ -185,10 +237,21 @@ class DeepResearchAgent:
             message="正在生成最终报告",
             progress=90,
         )
-        report = self._reporter.write(
-            normalized_topic,
-            [self._snapshot(task) for task in tasks],
-        ).strip()
+        try:
+            report = self._reporter.write(
+                normalized_topic,
+                [self._snapshot(task) for task in tasks],
+            ).strip()
+        except Exception:
+            yield from self._drain_tool_call_events(
+                phase=ResearchPhase.FAILED,
+                progress=90,
+            )
+            raise
+        yield from self._drain_tool_call_events(
+            phase=ResearchPhase.REPORTING,
+            progress=95,
+        )
         if not report:
             raise ValueError("Report Writer 没有生成报告")
         yield ResearchEvent(

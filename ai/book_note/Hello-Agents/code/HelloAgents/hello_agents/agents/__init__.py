@@ -5,6 +5,7 @@ from .plan_solve_agent import Executor, PlanAndSolveAgent, Planner
 from .react_agent import ReActAgent
 from .reflection_agent import Memory, ReflectionAgent
 from .simple_agent import SimpleAgent
+from .tool_aware_simple_agent import ToolAwareSimpleAgent, ToolCallInfo
 
 __all__ = [
     "Executor",
@@ -15,4 +16,6 @@ __all__ = [
     "ReActAgent",
     "ReflectionAgent",
     "SimpleAgent",
+    "ToolAwareSimpleAgent",
+    "ToolCallInfo",
 ]

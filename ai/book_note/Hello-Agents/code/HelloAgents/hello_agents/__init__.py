@@ -85,6 +85,8 @@ from .agents import (
     ReActAgent,
     ReflectionAgent,
     SimpleAgent,
+    ToolAwareSimpleAgent,
+    ToolCallInfo,
 )
 from .applications import (
     CodebaseMaintainer,
@@ -210,6 +212,8 @@ __all__ = [
     "WinRateTool",
     "SemanticMemory",
     "SimpleAgent",
+    "ToolAwareSimpleAgent",
+    "ToolCallInfo",
     "Tool",
     "ToolChain",
     "ToolChainManager",

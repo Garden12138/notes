@@ -127,6 +127,7 @@ ResearchEventType = Literal[
     "status",
     "tasks",
     "task",
+    "tool_call",
     "report",
     "done",
     "error",

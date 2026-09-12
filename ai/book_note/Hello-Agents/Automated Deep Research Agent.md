@@ -1,8 +1,8 @@
 ## 自动化深度研究智能体
 
-> 阅读资料：[14.1 项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_141-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)、[14.2 TODO 驱动的研究范式](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_142-todo-%e9%a9%b1%e5%8a%a8%e7%9a%84%e7%a0%94%e7%a9%b6%e8%8c%83%e5%bc%8f)
+> 阅读资料：[14.1 项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_141-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)、[14.2 TODO 驱动的研究范式](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_142-todo-%e9%a9%b1%e5%8a%a8%e7%9a%84%e7%a0%94%e7%a9%b6%e8%8c%83%e5%bc%8f)、[14.3 智能体系统设计](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_143-%e6%99%ba%e8%83%bd%e4%bd%93%e7%b3%bb%e7%bb%9f%e8%ae%be%e8%ae%a1)
 >
-> 14.1 确定产品目标、四层架构和数据流；14.2 用 TODO 把开放问题转成可执行、可跟踪、可整合的研究任务。
+> 14.1 确定产品目标、四层架构和数据流；14.2 用 TODO 组织研究过程；14.3 再把规划、总结和报告交给三个窄职责 Agent。
 
 ### 深度研究不等于多搜几次
 
@@ -152,6 +152,58 @@ Report Writer 的输入是研究主题和全部已完成 TODO，而不是重新�
 
 这种线性流程容易理解和调试，任务状态也很清楚；代价是规划质量决定了研究上限，而且前一任务失败会阻断后续任务。动态补充查询、失败重试、并行执行和断点恢复都很有价值，但不属于 14.2 当前描述的流程，因此本次代码没有提前加入。
 
+### 智能体系统设计：按产物拆分角色
+
+`SimpleAgent` 足以处理一次问答，但深度研究同时存在三种差异明显的输出：机器可解析的计划、带局部引用的任务总结，以及跨任务整合的报告。让一个 Agent 反复切换身份，会让 Prompt 越来越长，也容易把某一阶段的格式带入下一阶段。
+
+14.3 因此按产物拆成三个 Agent，而不是笼统地设置“研究员、专家、审核员”等称号：
+
+| Agent | 必须关注 | 明确不负责 |
+| --- | --- | --- |
+| TODO Planner | 主题覆盖、任务边界、查询可执行性、JSON 格式 | 搜索资料、撰写正文 |
+| Task Summarizer | 当前任务意图、搜索结果、关键数据、局部引用 | 修改计划、推断其他任务结论 |
+| Report Writer | 跨任务排序、去重、统一结构和参考资料 | 重新搜索、补写无来源事实 |
+
+职责边界最终要落实到输入和输出。Planner 的输出是 `TodoDraft`；Summarizer 的输出写回对应 `TodoItem.summary`；Report Writer 只接收状态为 `completed` 的任务。三个 Agent 不直接互发自然语言消息，协调器才是状态和执行顺序的唯一管理者。
+
+#### Prompt 是角色之间的接口契约
+
+三个 Prompt 的侧重点不同：
+
+- Planner 注入当前日期和研究主题，要求只返回包含 `title`、`intent`、`query` 的 JSON；
+- Summarizer 同时看到任务标题、意图、查询和编号后的来源，使用 `[1]`、`[2]` 建立局部引用；
+- Report Writer 接收按任务组织的总结与来源，输出标题、概述、详细分析、总结和参考资料。
+
+只在 Prompt 里写“必须返回 JSON”仍不够。代码还要解析和校验模型输出：规划服务寻找第一个有效 JSON 对象或数组，再用 `TodoDraft` 检查字段；协调器继续检查数量和重复查询。格式要求由 Prompt 引导，确定性约束由程序兜底。
+
+每个角色完成一次调用后都会清空自己的会话历史。本次请求需要的上下文已经完整写入 Prompt，不应让上一个研究主题悄悄影响下一个主题。三个 Agent 可以共享同一个 LLM 客户端，但不能共享对话历史。
+
+### ToolAwareSimpleAgent：为工具调用增加观察点
+
+`ToolAwareSimpleAgent` 不是第四种研究角色，也没有改变 `SimpleAgent` 的思考与工具调用协议。它只重写 `_execute_tool_call()`：先解析参数，复用父类完成工具调用，再把 Agent 名称、工具名、参数和结果交给监听器，最后原样返回结果。
+
+~~~mermaid
+sequenceDiagram
+    participant A as ToolAwareSimpleAgent
+    participant R as ToolRegistry
+    participant T as Tool
+    participant L as tool_call_listener
+    participant C as DeepResearchAgent
+    participant V as 前端
+
+    A->>R: tool_name + parameters
+    R->>T: 执行工具
+    T-->>R: result
+    R-->>A: result
+    A->>L: agent / tool / parameters / result
+    L->>C: 暂存调用元数据
+    C-->>V: SSE · tool_call
+~~~
+
+监听发生在工具执行之后，因此拿到的是实际结果，不是模型“准备调用工具”的意图。监听数据适合调试、过程日志、行为分析和进度展示，但需要控制暴露范围：本次 SSE 只发送 Agent、工具和参数，不把可能很长或含敏感信息的工具结果直接推给前端。
+
+回调本身不能 `yield` SSE 事件，所以代码使用共享的 `ToolCallRecorder` 暂存调用元数据；协调器在规划、总结和报告完成后依次排空记录器。它仍是顺序协作，没有引入后台线程或并发队列。
+
 ### 一次研究请求怎样流转
 
 ~~~mermaid
@@ -201,6 +253,8 @@ data: {"type":"status","message":"正在规划研究任务","progress":0}
 
 data: {"type":"tasks","tasks":[...],"progress":10}
 
+data: {"type":"tool_call","message":"研究助手调用工具：example_tool"}
+
 data: {"type":"report","report_markdown":"# ...","progress":98}
 
 data: {"type":"done","message":"研究完成","progress":100}
@@ -223,8 +277,16 @@ helloagents-deepresearch/
 │   │   ├── config.py
 │   │   ├── main.py
 │   │   ├── models.py
-│   │   └── streaming.py
+│   │   ├── prompts.py
+│   │   ├── streaming.py
+│   │   ├── tool_events.py
+│   │   └── services/
+│   │       ├── planner.py
+│   │       ├── summarizer.py
+│   │       ├── reporter.py
+│   │       └── factory.py
 │   ├── .env.example
+│   ├── agent_system_demo.py
 │   ├── architecture_demo.py
 │   ├── workflow_demo.py
 │   └── pyproject.toml
@@ -246,13 +308,17 @@ helloagents-deepresearch/
 - [architecture.py](./code/HelloAgents/helloagents-deepresearch/backend/src/architecture.py) 定义四层架构、Agent、工具和八步数据流；
 - [models.py](./code/HelloAgents/helloagents-deepresearch/backend/src/models.py) 区分 Planner 生成的 `TodoDraft` 与系统维护的 `TodoItem`，并固定搜索、阶段和 SSE 事件结构；
 - [agent.py](./code/HelloAgents/helloagents-deepresearch/backend/src/agent.py) 校验规划结果并执行“规划—逐项搜索、总结、记录—报告”；
+- [prompts.py](./code/HelloAgents/helloagents-deepresearch/backend/src/prompts.py) 定义三个角色的输入、输出和事实边界；
+- [services](./code/HelloAgents/helloagents-deepresearch/backend/src/services/) 实现规划 JSON 解析、来源格式化和报告上下文组装；
+- [tool_aware_simple_agent.py](./code/HelloAgents/hello_agents/agents/tool_aware_simple_agent.py) 在框架层扩展工具调用监听；
+- [tool_events.py](./code/HelloAgents/helloagents-deepresearch/backend/src/tool_events.py) 将监听回调桥接为协调器可以发送的事件；
 - [main.py](./code/HelloAgents/helloagents-deepresearch/backend/src/main.py) 暴露健康检查、架构信息和流式研究入口；
 - [useResearch.ts](./code/HelloAgents/helloagents-deepresearch/frontend/src/composables/useResearch.ts) 解析 POST 返回的 SSE 数据帧；
 - [ResearchModal.vue](./code/HelloAgents/helloagents-deepresearch/frontend/src/components/ResearchModal.vue) 展示任务、日志、进度和报告。
 
 #### 用接口固定协作边界
 
-14.2 讲清了组件怎样协作，但真实模型 Prompt、搜索适配器和 NoteTool 会在后续小节展开。当前协调器依赖协议，不绑定具体供应商：
+14.2 先固定组件协议，14.3 再用三个 Agent 服务实现规划、总结和报告；搜索适配器与 NoteTool 仍留给后续小节。协调器只依赖协议，不绑定具体 Agent 或供应商：
 
 ~~~python
 class Planner(Protocol):
@@ -292,6 +358,42 @@ results = self._searcher.search(
 
 这样既保留原文的顺序工作流，也确保前端选择的搜索后端真正传到 Searcher。FastAPI 通过 `runner_factory` 注入协调器；全局应用没有装配具体服务时，`POST /research/stream` 返回 `503`，而不是生成没有搜索来源的占位报告。
 
+#### 三个角色服务与监听扩展
+
+`PlanningService`、`SummarizationService`、`ReportingService` 分别实现协调器的三个协议。`build_role_services()` 为它们创建独立的 `ToolAwareSimpleAgent`，共享 LLM、工具注册表和监听器：
+
+~~~python
+return RoleServices(
+    planner=PlanningService(
+        create_agent("TODO Planner", TODO_PLANNER_SYSTEM_PROMPT)
+    ),
+    summarizer=SummarizationService(
+        create_agent("Task Summarizer", TASK_SUMMARIZER_SYSTEM_PROMPT)
+    ),
+    reporter=ReportingService(
+        create_agent("Report Writer", REPORT_WRITER_SYSTEM_PROMPT)
+    ),
+)
+~~~
+
+监听扩展仍然复用父类的工具执行逻辑：
+
+~~~python
+def _execute_tool_call(self, tool_name: str, parameters: str) -> str:
+    parsed_parameters = self._parse_listener_parameters(tool_name, parameters)
+    result = super()._execute_tool_call(tool_name, parameters)
+    if self._tool_call_listener is not None:
+        self._tool_call_listener({
+            "agent_name": self.name,
+            "tool_name": tool_name,
+            "parsed_parameters": parsed_parameters,
+            "result": result,
+        })
+    return result
+~~~
+
+这里没有把规划、总结和报告塞回协调器，也没有为三个角色各写一套 LLM 客户端。服务负责准备上下文和解析输出，Agent 负责模型交互，协调器只负责顺序与状态。
+
 #### 配置只报告是否存在
 
 [.env.example](./code/HelloAgents/helloagents-deepresearch/backend/.env.example) 包含模型、搜索后端、跨域和工作区配置，所有密钥保持为空。`/healthz` 只检查配置是否存在，不访问外部服务，也不会返回密钥内容：
@@ -316,6 +418,7 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e .
 cp .env.example .env
+export PYTHONPATH=../..
 python src/main.py
 ~~~
 
@@ -334,7 +437,7 @@ npm run dev
 架构 Demo 验证四层、三个 Agent、两个工具、八个数据流步骤和 TODO 工作流契约：
 
 ~~~text
-=== 14.1–14.2 深度研究助手架构实践 ===
+=== 14.1–14.3 深度研究助手架构实践 ===
 layers: 4
 agents: 3
 tools: 2
@@ -342,6 +445,7 @@ data_flow_steps: 8
 stream_endpoint: POST /research/stream
 architecture_contract: ready
 todo_research_workflow: ready
+agent_system_design: ready
 external_api_calls: 0
 ~~~
 
@@ -365,12 +469,31 @@ external_api_calls: 0
 
 这 17 个事件由 1 个规划状态、1 个任务列表、每项任务 4 个事件、1 个报告状态、1 个报告事件和 1 个完成事件组成。测试替身只验证编排逻辑，输出不是一次真实研究结果。
 
+14.3 的 Agent 服务验证继续使用固定响应，但走过真实的 Prompt 组装、JSON 解析、角色历史清理、协调器交接和工具事件排空逻辑：
+
+~~~text
+=== 14.3 智能体系统设计离线验证 ===
+role_agents: 3
+todo_tasks: 3
+stream_events: 22
+planner_json_contract: ready
+summarizer_source_context: ready
+reporter_task_handoff: ready
+role_history_isolation: ready
+tool_call_listener_bridge: ready
+sequential_collaboration: ready
+external_api_calls: 0
+~~~
+
+为了验证监听桥接，测试替身分别模拟了 Planner 1 次、Summarizer 3 次和 Report Writer 1 次工具调用，所以比 14.2 多出 5 个事件。这里用脚本化 Agent 代替真实 LLM，验证的是角色协作和观察链路，不是报告内容质量。
+
 前端 `vue-tsc` 与 Vite 生产构建通过，共转换 14 个模块；入口脚本为 72.96 kB（gzip 后 29.52 kB）。`npm audit` 返回 `found 0 vulnerabilities`。
 
 ### 实践边界
 
-- 当前完成 14.1 的架构基线和 14.2 的 TODO 顺序工作流，不包含后续小节的真实 Prompt、搜索适配和 NoteTool 持久化；
-- `DeepResearchAgent` 已实现三阶段编排、任务状态与失败事件，但全局 FastAPI 应用尚未注入生产服务；
+- 当前完成 14.1 的架构基线、14.2 的 TODO 工作流和 14.3 的三个 Agent 服务；搜索适配与 NoteTool 持久化仍属于后续小节；
+- `DeepResearchAgent` 已实现三阶段编排、任务状态、工具调用事件与失败事件，但全局 FastAPI 应用尚未注入生产服务；
+- Prompt 约束不能保证模型始终按格式输出；规划结果仍会经过 JSON、Pydantic、数量和重复查询四层检查；
 - 当前任务按顺序执行；失败后不自动重试、跳过或重新规划；
 - SSE 保证进度可见，不保证任务断线后自动恢复；恢复需要持久化研究状态和事件游标；
 - 搜索摘要不是原文全文，关键结论仍应回到来源核验；
@@ -389,4 +512,4 @@ external_api_calls: 0
 
 ### 小结
 
-深度研究助手不是搜索框外面再套一层 LLM，而是一条可观测的研究流水线。14.1 固定四层边界、数据模型和 SSE 协议，14.2 再用 TODO 串起规划、执行和报告三个阶段。Planner 只生成 `title`、`intent`、`query`，系统负责编号和状态；每项任务都留下总结与结构化来源，Report Writer 只整合已完成任务。这个线性版本简单、可审计，也暴露了规划上限、失败阻断和无法动态补查等边界，为后续服务实现和流程增强留下了清楚的扩展点。
+深度研究助手不是搜索框外面再套一层 LLM，而是一条可观测的研究流水线。14.1 固定四层边界和 SSE 协议，14.2 用 TODO 串起规划、执行和报告，14.3 再把三类产物交给三个独立 Agent。角色之间通过结构化状态交接，不直接对话；Prompt 负责表达任务，程序负责格式和状态兜底。`ToolAwareSimpleAgent` 则在不改变原有工具协议的前提下补上监听点，让工具行为可以进入日志和 SSE。当前仍是简单、可审计的顺序版本，真实搜索与笔记持久化留在后续小节实现。
