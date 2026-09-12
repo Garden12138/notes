@@ -1,5 +1,11 @@
 export type SearchAPI = "duckduckgo" | "tavily" | "perplexity" | "searxng";
 export type TodoStatus = "pending" | "in_progress" | "completed" | "failed";
+export type ResearchPhase =
+  | "planning"
+  | "execution"
+  | "reporting"
+  | "completed"
+  | "failed";
 
 export interface SearchResult {
   title: string;
@@ -28,6 +34,7 @@ export type ResearchEventType =
 
 export interface ResearchEvent {
   type: ResearchEventType;
+  phase?: ResearchPhase;
   message?: string;
   progress?: number;
   tasks?: TodoItem[];
@@ -40,4 +47,3 @@ export interface ResearchRequest {
   topic: string;
   search_api?: SearchAPI;
 }
-

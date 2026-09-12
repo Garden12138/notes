@@ -1,4 +1,4 @@
-"""Serializable description of the section 14.1 architecture."""
+"""Serializable description of the section 14.1–14.2 architecture."""
 
 from __future__ import annotations
 
@@ -82,10 +82,10 @@ DATA_FLOW = [
 
 
 def build_architecture_snapshot() -> ArchitectureSnapshot:
-    """Build the stable architecture contract implemented in section 14.1."""
+    """Build the architecture contract implemented through sections 14.1–14.2."""
     return ArchitectureSnapshot(
         project="helloagents-deepresearch",
-        scope="chapter_14_1_architecture",
+        scope="chapter_14_1_to_14_2_todo_research",
         layers=LAYERS,
         agents=AGENTS,
         tools=TOOLS,
@@ -100,6 +100,11 @@ def build_architecture_snapshot() -> ArchitectureSnapshot:
             "POST 流式响应通道",
             "Vue 研究输入与全屏结果面板",
             "前端流式事件解析与取消请求",
+            "Planner 草案校验与稳定任务编号",
+            "规划、执行、报告三阶段状态流转",
+            "搜索后端和结果上限向执行层传递",
+            "逐任务搜索、总结、来源记录与状态事件",
+            "失败任务标记和重复查询保护",
         ],
         deferred_capabilities=[
             "真实 HelloAgents LLM 初始化",
@@ -108,4 +113,3 @@ def build_architecture_snapshot() -> ArchitectureSnapshot:
             "面向生产的规划、总结和报告服务",
         ],
     )
-

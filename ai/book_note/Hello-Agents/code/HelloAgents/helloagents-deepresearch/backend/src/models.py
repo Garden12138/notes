@@ -58,9 +58,16 @@ class HealthResponse(APIModel):
     integrations: dict[str, bool]
 
 
+class SearchAPI(str, Enum):
+    DUCKDUCKGO = "duckduckgo"
+    TAVILY = "tavily"
+    PERPLEXITY = "perplexity"
+    SEARXNG = "searxng"
+
+
 class ResearchRequest(APIModel):
     topic: str = Field(min_length=2, max_length=500)
-    search_api: str | None = None
+    search_api: SearchAPI | None = None
 
     @field_validator("topic")
     @classmethod
@@ -72,9 +79,9 @@ class ResearchRequest(APIModel):
 
 
 class SearchResult(APIModel):
-    title: str
-    url: str
-    snippet: str
+    title: str = Field(min_length=1)
+    url: str = Field(min_length=1)
+    snippet: str = Field(min_length=1)
 
 
 class TodoStatus(str, Enum):
@@ -84,11 +91,32 @@ class TodoStatus(str, Enum):
     FAILED = "failed"
 
 
-class TodoItem(APIModel):
+class ResearchPhase(str, Enum):
+    PLANNING = "planning"
+    EXECUTION = "execution"
+    REPORTING = "reporting"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
+class TodoDraft(APIModel):
+    """Planner output before the coordinator assigns stable IDs and status."""
+
+    title: str = Field(min_length=1, max_length=120)
+    intent: str = Field(min_length=1, max_length=500)
+    query: str = Field(min_length=1, max_length=500)
+
+    @field_validator("title", "intent", "query")
+    @classmethod
+    def normalize_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("TODO 字段不能为空")
+        return normalized
+
+
+class TodoItem(TodoDraft):
     id: int = Field(ge=1)
-    title: str
-    intent: str
-    query: str
     status: TodoStatus = TodoStatus.PENDING
     summary: str | None = None
     sources: list[SearchResult] = Field(default_factory=list)
@@ -107,6 +135,7 @@ ResearchEventType = Literal[
 
 class ResearchEvent(APIModel):
     type: ResearchEventType
+    phase: ResearchPhase | None = None
     message: str | None = None
     progress: int | None = Field(default=None, ge=0, le=100)
     tasks: list[TodoItem] | None = None
@@ -119,4 +148,4 @@ class ResearchResult(APIModel):
     topic: str
     todo_items: list[TodoItem]
     report_markdown: str
-
+    phase: ResearchPhase = ResearchPhase.COMPLETED

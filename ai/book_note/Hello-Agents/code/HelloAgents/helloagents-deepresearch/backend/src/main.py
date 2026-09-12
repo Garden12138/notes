@@ -1,4 +1,4 @@
-"""FastAPI entry point for the section 14.1 application skeleton."""
+"""FastAPI entry point for the chapter 14 deep-research application."""
 
 from __future__ import annotations
 
@@ -12,13 +12,18 @@ try:
     from .agent import DeepResearchAgent
     from .architecture import build_architecture_snapshot
     from .config import Settings, get_settings
-    from .models import HealthResponse, ResearchEvent, ResearchRequest
+    from .models import HealthResponse, ResearchEvent, ResearchPhase, ResearchRequest
     from .streaming import encode_sse
 except ImportError:  # Allow ``python src/main.py`` as shown in the chapter.
     from agent import DeepResearchAgent  # type: ignore[no-redef]
     from architecture import build_architecture_snapshot  # type: ignore[no-redef]
     from config import Settings, get_settings  # type: ignore[no-redef]
-    from models import HealthResponse, ResearchEvent, ResearchRequest  # type: ignore[no-redef]
+    from models import (  # type: ignore[no-redef]
+        HealthResponse,
+        ResearchEvent,
+        ResearchPhase,
+        ResearchRequest,
+    )
     from streaming import encode_sse  # type: ignore[no-redef]
 
 
@@ -49,14 +54,14 @@ def create_app(
     def root() -> dict[str, str]:
         return {
             "project": "helloagents-deepresearch",
-            "scope": "chapter_14_1_architecture",
+            "scope": "chapter_14_1_to_14_2_todo_research",
             "docs": "/docs",
         }
 
     @app.get("/healthz", response_model=HealthResponse)
     def health() -> HealthResponse:
         return HealthResponse(
-            scope="chapter_14_1_architecture",
+            scope="chapter_14_1_to_14_2_todo_research",
             workflow_ready=runner_factory is not None,
             integrations=current_settings.integration_status(),
         )
@@ -72,19 +77,20 @@ def create_app(
                 status_code=503,
                 detail=(
                     "研究通道已建立，但真实 Planner、SearchTool、Summarizer、"
-                    "NoteTool 和 Reporter 尚未在 14.1 装配"
+                    "NoteTool 和 Reporter 尚未装配具体实现"
                 ),
             )
         runner = runner_factory(payload)
 
         def event_iterator() -> Iterator[str]:
             try:
-                for event in runner.run_stream(payload.topic):
+                for event in runner.run_stream(payload.topic, payload.search_api):
                     yield encode_sse(event)
             except Exception as exc:
                 yield encode_sse(
                     ResearchEvent(
                         type="error",
+                        phase=ResearchPhase.FAILED,
                         message="研究流程执行失败",
                         detail={"reason": str(exc)},
                     )
@@ -115,4 +121,3 @@ if __name__ == "__main__":
         port=runtime_settings.port,
         log_level="info",
     )
-
