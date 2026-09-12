@@ -1,8 +1,8 @@
 ## 智能旅行助手
 
-> 阅读资料：[13.1 项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_131-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)、[13.2 数据模型设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_132-%e6%95%b0%e6%8d%ae%e6%a8%a1%e5%9e%8b%e8%ae%be%e8%ae%a1)、[13.3 多智能体协作设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_133-%e5%a4%9a%e6%99%ba%e8%83%bd%e4%bd%93%e5%8d%8f%e4%bd%9c%e8%ae%be%e8%ae%a1)、[13.4 MCP 工具集成详解](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_134-mcp-%e5%b7%a5%e5%85%b7%e9%9b%86%e6%88%90%e8%af%a6%e8%a7%a3)
+> 阅读资料：[13.1 项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_131-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)、[13.2 数据模型设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_132-%e6%95%b0%e6%8d%ae%e6%a8%a1%e5%9e%8b%e8%ae%be%e8%ae%a1)、[13.3 多智能体协作设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_133-%e5%a4%9a%e6%99%ba%e8%83%bd%e4%bd%93%e5%8d%8f%e4%bd%9c%e8%ae%be%e8%ae%a1)、[13.4 MCP 工具集成详解](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_134-mcp-%e5%b7%a5%e5%85%b7%e9%9b%86%e6%88%90%e8%af%a6%e8%a7%a3)、[13.5 前端开发详解](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_135-%e5%89%8d%e7%ab%af%e5%bc%80%e5%8f%91%e8%af%a6%e8%a7%a3)
 >
-> 13.1 确定产品边界，13.2 固定数据协议，13.3 实现四个 Agent 的协作流程，13.4 再把高德 MCP 和 Unsplash 图片服务接入现有流程。
+> 13.1 确定产品边界，13.2 固定数据协议，13.3 实现四个 Agent 的协作流程，13.4 接入高德 MCP 和 Unsplash，13.5 完成需求表单、结果展示、地图与导出。
 
 ### 从原型走向完整应用
 
@@ -165,15 +165,19 @@ helloagents-trip-planner/
 │   ├── requirements.txt
 │   └── run.py
 └── frontend/
+    ├── package-lock.json
     ├── src/
     │   ├── router/
     │   ├── services/
     │   │   ├── api.ts
+    │   │   ├── trip-storage.ts
     │   │   └── trip.ts
     │   ├── types/
     │   │   ├── architecture.ts
     │   │   └── trip.ts
-    │   └── views/HomeView.vue
+    │   └── views/
+    │       ├── HomeView.vue
+    │       └── ResultView.vue
     └── package.json
 ~~~
 
@@ -185,7 +189,8 @@ helloagents-trip-planner/
 - [schemas.py](./code/HelloAgents/helloagents-trip-planner/backend/app/models/schemas.py) 定义旅行请求、领域对象和 API 响应；
 - [main.py](./code/HelloAgents/helloagents-trip-planner/backend/app/api/main.py) 创建 FastAPI、配置 CORS 并注册路由；
 - [trip.ts](./code/HelloAgents/helloagents-trip-planner/frontend/src/types/trip.ts) 提供与后端对应的 TypeScript 类型；
-- [HomeView.vue](./code/HelloAgents/helloagents-trip-planner/frontend/src/views/HomeView.vue) 调用后端接口并展示分层、角色、数据流和配置状态。
+- [HomeView.vue](./code/HelloAgents/helloagents-trip-planner/frontend/src/views/HomeView.vue) 收集目的地、日期、出行方式和偏好；
+- [ResultView.vue](./code/HelloAgents/helloagents-trip-planner/frontend/src/views/ResultView.vue) 展示行程、预算、天气、地图，并支持图片与 PDF 导出。
 
 13.1 的后端骨架提供三个基础入口：
 
@@ -231,6 +236,7 @@ data_flow_steps: 8
 frontend_backend_contract: ready
 collaboration_workflow: ready
 mcp_integration: ready
+frontend_trip_workflow: ready
 external_api_calls: 0
 production_trip_plan_generation: configured_when_credentials_exist
 ~~~
@@ -259,7 +265,7 @@ npm install
 npm run dev
 ~~~
 
-访问 `http://127.0.0.1:5173` 后，页面会请求 `/api/system/architecture`。当前页面用于验证前后端分离和接口契约；地图交互、编辑和导出继续由后续小节实现。
+访问 `http://127.0.0.1:5173` 后，首页把表单转换为 `TripRequest` 请求 `/api/trip/plan`，成功后进入 `/result`。13.5 已实现地图与导出，行程编辑按原文章节留给 13.6。
 
 ### 为什么需要统一数据模型
 
@@ -753,6 +759,102 @@ external_api_calls: 0
 
 这次结果覆盖启动参数、环境变量传递、密钥脱敏、工具展开、必要工具检查、共享关系和图片后处理。`amap_maps_geo` 只用于证明 Server 可以提供更多能力，当前三个检索 Agent 实际依赖的仍是文本搜索和天气两个工具。图片地址来自假的 HTTP 响应，只验证字段写入，不是一次真实图片搜索结果。
 
+### 前端的职责与技术栈
+
+13.5 将前面的数据协议和规划接口落到浏览器。前端不参与 Agent 编排，只负责四件事：收集需求、发起请求、呈现结果和处理页面交互。
+
+| 技术 | 在项目中的作用 |
+| --- | --- |
+| Vue 3 Composition API | 组织表单、派生状态和页面生命周期 |
+| TypeScript | 复用后端数据契约，提前暴露字段错误 |
+| Vue Router | 分离需求表单和行程结果页 |
+| Ant Design Vue | 提供表单、日期、折叠面板和反馈组件 |
+| Axios | 统一 API 基址、超时和错误转换 |
+| 高德 JS API | 在结果页标记每日景点 |
+| html2canvas、jsPDF | 导出长图和分页 PDF |
+
+`App.vue` 提供共用页头和页脚，路由仅保留 `/` 与 `/result` 两个业务页面。结果页、地图加载器和导出库都采用动态导入，避免用户刚进入表单时就下载全部功能。
+
+### 数据契约要以当前后端为准
+
+原文个别片段中出现过 `days`、单个字符串形式的 `preferences` 和 `budget`，但本项目 13.2 已经确定了完整契约。因此页面发送的是 `travel_days`，偏好保持为 `string[]`，后端则返回 `TripPlanResponse` 包装：
+
+~~~typescript
+interface TripRequest {
+  city: string;
+  start_date: string;
+  end_date: string;
+  travel_days: number;
+  transportation: string;
+  accommodation: string;
+  preferences?: string[];
+  free_text_input?: string | null;
+}
+
+interface TripPlanResponse {
+  success: boolean;
+  message: string;
+  data: TripPlan | null;
+}
+~~~
+
+这个调整没有改变文章的前端流程，只是让 13.5 与前面已实现的 Pydantic 模型保持一致。类型集中在 [trip.ts](./code/HelloAgents/helloagents-trip-planner/frontend/src/types/trip.ts)，请求逻辑集中在 [api.ts](./code/HelloAgents/helloagents-trip-planner/frontend/src/services/api.ts) 和 [services/trip.ts](./code/HelloAgents/helloagents-trip-planner/frontend/src/services/trip.ts)。
+
+Agent 规划可能需要较长时间，Axios 超时设为 120 秒。超时、后端 `detail` 错误和 FastAPI 字段校验错误都会转换成用户可读的消息，不直接把 Axios 异常对象显示在页面上。
+
+### 首页表单与请求状态
+
+[HomeView.vue](./code/HelloAgents/helloagents-trip-planner/frontend/src/views/HomeView.vue) 将表单分成目的地与日期、旅行方式、兴趣偏好和补充需求四组。日期区间改变时，页面自动计算包含起止日的 `travel_days`，并限制在 1–30 天；过去日期、早于开始日的结束日不可选。
+
+~~~mermaid
+flowchart LR
+    INPUT["填写城市、日期与偏好"] --> CHECK["表单校验<br/>计算 travel_days"]
+    CHECK --> REQUEST["POST /api/trip/plan"]
+    REQUEST --> WAIT["显示等待阶段"]
+    WAIT --> RESPONSE{"success 且 data 存在?"}
+    RESPONSE -- 否 --> ERROR["保留表单并显示错误"]
+    RESPONSE -- 是 --> STORE["写入 sessionStorage"]
+    STORE --> RESULT["跳转 /result"]
+~~~
+
+等待时的进度条只是前端反馈：它在请求返回前最多走到 90%，成功后才到 100%。这不是后端任务的实时进度，页面中也明确写出了这一点。组件卸载时会清理计时器，避免离开页面后继续更新状态。
+
+### 结果页的状态交接
+
+规划结果保存在 `sessionStorage`，而不是只放在路由 `state` 中。这样用户刷新 `/result` 时仍能看到本次会话的行程，关闭标签页后又不会把临时结果当成长期数据。[trip-storage.ts](./code/HelloAgents/helloagents-trip-planner/frontend/src/services/trip-storage.ts) 在读取时做最基本的结构检查；JSON 破损或字段不完整时会删除缓存，并让结果页显示“先创建行程”的空状态。
+
+[ResultView.vue](./code/HelloAgents/helloagents-trip-planner/frontend/src/views/ResultView.vue) 按数据层次展示：
+
+- 顶部是城市、日期、总天数和整体建议；
+- 预算区分别展示景点、酒店、餐饮、交通与总额；
+- 地图汇总所有有效坐标，为景点创建标记并自适应视野；
+- 每日行程用折叠面板展开，内含景点、住宿和餐饮；
+- 天气卡片使用同一个 `WeatherInfo` 模型，不在页面内再解析第三方响应。
+
+地图只在存在坐标且配置 `VITE_AMAP_WEB_KEY` 时初始化，离开页面后调用 `destroy()` 释放实例。浏览器端 JS Key 与后端 MCP 使用的 Web 服务 Key 不是同一种用途，不能把 `AMAP_MAPS_API_KEY` 直接填到前端。前端 Key 会出现在浏览器中，应在高德控制台限制可用域名。
+
+### 图片与 PDF 导出
+
+导出功能对结果容器使用 `html2canvas`，图片模式直接下载 PNG；PDF 模式则根据 A4 页面宽度缩放画布，超过一页时逐页添加同一长图的不同偏移区域。文件名会过滤城市中不适合路径的字符。
+
+这种方式保留了原文的“所见即所得”方案，但有两个实际限制：跨域景点图片如果没有允许 CORS，画布可能无法导出；长页面生成的画布占用内存较高。更复杂的排版可以在后续改为服务端 PDF，但不属于 13.5 的实现范围。
+
+### 前端实践结果
+
+安装依赖后执行：
+
+~~~bash
+cd code/HelloAgents/helloagents-trip-planner/frontend
+npm run build
+npm audit
+~~~
+
+实际结果为 TypeScript 检查和 Vite 生产构建通过，`3487 modules transformed`，最后一次构建耗时 9.47 秒。结果页、`html2canvas` 和 `jsPDF` 已拆成独立分块；主分块仍为 860.30 kB（gzip 后 276.23 kB），Vite 会给出超过 500 kB 的提示。这不影响本次构建，但说明 Ant Design Vue 还可继续按页面拆分。
+
+原参考项目使用 jsPDF 3.x，当前安装时 `npm audit` 报告了已知问题，因此实践代码使用 4.2.1。升级后审计结果为 `found 0 vulnerabilities`。
+
+浏览器检查中，首页的响应式表单可正常渲染，直接访问没有缓存数据的 `/result` 会显示空状态和“创建旅行计划”入口。本次没有配置真实模型或高德 Key，因此这些结果不代表真实行程生成、地图加载和跨域图片导出已通过联网验证。
+
 ### 实践边界
 
 - 配置状态只是凭据存在性检查，不会验证额度、权限和网络；
@@ -761,7 +863,10 @@ external_api_calls: 0
 - 三个信息检索步骤按原文串行执行，尚未加入并发、重试和部分结果降级；
 - `/api/trip/plan` 在配置或必要工具不可用时返回 `503`，不会生成占位计划；
 - Unsplash 是非关键增强，失败时保留行程并让 `image_url` 为空；
-- 地图、页面编辑和导出分别留给服务与前端章节。
+- 前端已实现表单、结果展示、地图和导出，但未配置真实外部服务进行端到端调用；
+- 加载进度是模拟的等待反馈，不是 Agent 执行阶段的服务端推送；
+- 地图缺少前端 Key 或行程缺少有效坐标时会降级为文本提示；
+- 行程编辑、重新排序与路线联动属于 13.6，本节不提前改变数据模型。
 
 按章节顺序保留这些边界，可以让当前代码直接成为后续实现的基线，而不是先写一套新方案，再随着阅读反复推倒。
 
@@ -771,6 +876,9 @@ external_api_calls: 0
 - [HelloAgents 智能旅行助手参考项目](https://github.com/datawhalechina/hello-agents/tree/main/code/chapter13/helloagents-trip-planner)
 - [官方 `trip_planner_agent.py`](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter13/helloagents-trip-planner/backend/app/agents/trip_planner_agent.py)
 - [官方 `unsplash_service.py`](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter13/helloagents-trip-planner/backend/app/services/unsplash_service.py)
+- [官方前端 `Home.vue`](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter13/helloagents-trip-planner/frontend/src/views/Home.vue)
+- [官方前端 `Result.vue`](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter13/helloagents-trip-planner/frontend/src/views/Result.vue)
+- [jsPDF GHSA-wfv2-pwc8-crg5](https://github.com/advisories/GHSA-wfv2-pwc8-crg5)
 - [Model Context Protocol](https://modelcontextprotocol.io/)
 - [FastMCP](https://gofastmcp.com/)
 - [FastAPI 官方文档](https://fastapi.tiangolo.com/)
@@ -782,4 +890,4 @@ external_api_calls: 0
 
 ### 小结
 
-智能旅行助手把分散的信息查询、个性化规划和联动调整放进同一应用。13.1 固定四层架构，13.2 建立 Pydantic 与 TypeScript 数据协议，13.3 由协调器串联四个 Agent，13.4 再通过 `MCPTool` 把高德的文本搜索和天气能力交给前三个角色。`auto_expand` 负责工具发现、命名和包装，Agent 只使用展开后的工具；共享运行时复用 LLM 与 MCP 门面，请求内 Agent 则保持历史隔离。Unsplash 属于确定性的结果增强，继续使用普通 HTTP 服务。当前后端已经形成“请求校验—MCP 检索—多 Agent 规划—结果验收—图片补全”的完整主链路，真实效果仍需在自行配置密钥后验证。
+智能旅行助手把分散的信息查询、个性化规划和结果展示放进同一应用。13.1 固定四层架构，13.2 建立 Pydantic 与 TypeScript 协议，13.3 由协调器串联四个 Agent，13.4 通过 `MCPTool` 为检索角色接入高德工具，再用普通 HTTP 服务补全景点图片。13.5 用 Vue 表单生成精确的 `TripRequest`，将结果通过会话缓存交给结果页，并完成行程、预算、天气、地图与导出。现在的主链路已贯通到页面层；真实行程生成和地图效果仍需在配置模型与高德 Key 后验证，行程编辑则保留给后续章节。

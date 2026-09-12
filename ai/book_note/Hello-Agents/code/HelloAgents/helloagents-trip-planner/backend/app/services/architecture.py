@@ -49,7 +49,7 @@ def build_architecture_snapshot(
     status = dict(integration_status or {})
     return {
         "project": "helloagents-trip-planner",
-        "scope": "chapter_13_1_to_13_4_mcp_integration",
+        "scope": "chapter_13_1_to_13_5_frontend",
         "layers": list(LAYERS),
         "agents": [role.to_dict() for role in build_agent_registry()],
         "external_integrations": {
@@ -78,8 +78,11 @@ def build_architecture_snapshot(
             "行程规划 API 与依赖注入边界",
             "高德 MCP 工具发现与共享运行时装配",
             "Unsplash 景点图片补全",
+            "旅行需求表单与请求状态",
+            "行程、预算、天气与地图展示",
+            "PNG 与 PDF 导出",
         ],
         "deferred_capabilities": [
-            "行程编辑、地图展示和导出",
+            "行程编辑与路线联动",
         ],
     }
