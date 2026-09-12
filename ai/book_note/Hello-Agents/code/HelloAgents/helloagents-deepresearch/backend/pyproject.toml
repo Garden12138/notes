@@ -1,0 +1,28 @@
+[project]
+name = "helloagents-deepresearch"
+version = "0.1.0"
+description = "Chapter 14 automated deep research assistant"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "pydantic>=2.9,<3",
+    "pydantic-settings>=2.5,<3",
+    "uvicorn[standard]>=0.32,<1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "httpx>=0.27,<1",
+]
+
+[build-system]
+requires = ["setuptools>=73", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"

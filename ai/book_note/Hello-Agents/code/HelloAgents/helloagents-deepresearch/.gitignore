@@ -1,0 +1,9 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+*.egg-info/
+backend/.env
+backend/.venv/
+backend/workspace/
+frontend/node_modules/
+frontend/dist/
