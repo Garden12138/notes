@@ -14,7 +14,7 @@ def main() -> None:
     assert len(snapshot["layers"]) == 4
     assert len(registry) == 4
     assert len(snapshot["data_flow"]) == 8
-    assert snapshot["scope"] == "chapter_13_1_architecture_bootstrap"
+    assert snapshot["scope"] == "chapter_13_1_to_13_2_data_models"
 
     print("=== 13.1 智能旅行助手架构实践 ===")
     print(f"layers: {len(snapshot['layers'])}")
@@ -29,4 +29,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

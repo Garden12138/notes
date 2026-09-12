@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from ..config import get_settings
-from .routes import system_router
+from .routes import system_router, trip_router
 
 
 def create_app() -> FastAPI:
@@ -25,6 +25,7 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
     application.include_router(system_router, prefix=settings.api_prefix)
+    application.include_router(trip_router, prefix=settings.api_prefix)
 
     @application.get("/", tags=["system"])
     def root() -> dict[str, str]:
@@ -32,10 +33,10 @@ def create_app() -> FastAPI:
             "name": settings.app_name,
             "docs": "/docs",
             "health": f"{settings.api_prefix}/system/health",
+            "trip_validation": f"{settings.api_prefix}/trip/validate",
         }
 
     return application
 
 
 app = create_app()
-

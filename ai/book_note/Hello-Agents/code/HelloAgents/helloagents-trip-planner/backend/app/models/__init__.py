@@ -1,2 +1,43 @@
-"""Travel domain models will be added while studying section 13.2."""
+"""Public travel-assistant request and response models."""
 
+from .schemas import (
+    Attraction,
+    Budget,
+    DayPlan,
+    ErrorResponse,
+    Hotel,
+    Location,
+    Meal,
+    POIInfo,
+    POISearchRequest,
+    POISearchResponse,
+    RouteInfo,
+    RouteRequest,
+    RouteResponse,
+    TripPlan,
+    TripPlanResponse,
+    TripRequest,
+    WeatherInfo,
+    WeatherResponse,
+)
+
+__all__ = [
+    "Attraction",
+    "Budget",
+    "DayPlan",
+    "ErrorResponse",
+    "Hotel",
+    "Location",
+    "Meal",
+    "POIInfo",
+    "POISearchRequest",
+    "POISearchResponse",
+    "RouteInfo",
+    "RouteRequest",
+    "RouteResponse",
+    "TripPlan",
+    "TripPlanResponse",
+    "TripRequest",
+    "WeatherInfo",
+    "WeatherResponse",
+]

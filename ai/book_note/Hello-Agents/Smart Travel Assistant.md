@@ -1,8 +1,8 @@
 ## 智能旅行助手
 
-> 阅读资料：[《Hello-Agents》第十三章 13.1：项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_131-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)
+> 阅读资料：[13.1 项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_131-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)、[13.2 数据模型设计](https://datawhalechina.github.io/hello-agents/#/./chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B?id=_132-%e6%95%b0%e6%8d%ae%e6%a8%a1%e5%9e%8b%e8%ae%be%e8%ae%a1)
 >
-> 本节先确定产品范围、技术分层和模块边界。数据模型、真实 Agent、MCP 服务和完整页面在后续小节中逐步实现。
+> 13.1 确定产品范围、技术分层和模块边界；13.2 用统一数据模型固定各层之间的输入与输出。真实 Agent、MCP 服务和完整页面继续留给后续小节。
 
 ### 从原型走向完整应用
 
@@ -117,7 +117,7 @@ sequenceDiagram
     V-->>U: 展示行程、预算、地图和天气
 ~~~
 
-前端请求和后端响应需要稳定的数据协议，外部响应则要先转换后再进入规划环节。原文把这部分放在 13.2 的数据模型设计中，因此本节代码不提前定义一个可能与后文冲突的 `TripPlan`。
+前端请求和后端响应需要稳定的数据协议，外部响应则要先转换后再进入规划环节。13.2 用 Pydantic 建立这套协议，使后续 Agent 和服务都围绕同一组对象工作。
 
 ### 技术选型与运行条件
 
@@ -146,18 +146,25 @@ helloagents-trip-planner/
 │   │   ├── agents/registry.py
 │   │   ├── api/
 │   │   │   ├── main.py
-│   │   │   └── routes/system.py
-│   │   ├── models/
+│   │   │   └── routes/
+│   │   │       ├── system.py
+│   │   │       └── trip.py
+│   │   ├── models/schemas.py
 │   │   ├── services/architecture.py
 │   │   └── config.py
 │   ├── architecture_demo.py
+│   ├── model_demo.py
 │   ├── requirements.txt
 │   └── run.py
 └── frontend/
     ├── src/
     │   ├── router/
-    │   ├── services/api.ts
-    │   ├── types/architecture.ts
+    │   ├── services/
+    │   │   ├── api.ts
+    │   │   └── trip.ts
+    │   ├── types/
+    │   │   ├── architecture.ts
+    │   │   └── trip.ts
     │   └── views/HomeView.vue
     └── package.json
 ~~~
@@ -165,10 +172,12 @@ helloagents-trip-planner/
 - [项目 README](./code/HelloAgents/helloagents-trip-planner/README.md) 记录离线验证与前后端启动方式；
 - [registry.py](./code/HelloAgents/helloagents-trip-planner/backend/app/agents/registry.py) 声明四个 Agent 的输入、输出、职责和外部能力；
 - [architecture.py](./code/HelloAgents/helloagents-trip-planner/backend/app/services/architecture.py) 生成前后端共用的架构快照；
+- [schemas.py](./code/HelloAgents/helloagents-trip-planner/backend/app/models/schemas.py) 定义旅行请求、领域对象和 API 响应；
 - [main.py](./code/HelloAgents/helloagents-trip-planner/backend/app/api/main.py) 创建 FastAPI、配置 CORS 并注册路由；
+- [trip.ts](./code/HelloAgents/helloagents-trip-planner/frontend/src/types/trip.ts) 提供与后端对应的 TypeScript 类型；
 - [HomeView.vue](./code/HelloAgents/helloagents-trip-planner/frontend/src/views/HomeView.vue) 调用后端接口并展示分层、角色、数据流和配置状态。
 
-后端提供三个基础入口：
+13.1 的后端骨架提供三个基础入口：
 
 | 地址 | 作用 |
 | --- | --- |
@@ -240,11 +249,148 @@ npm run dev
 
 访问 `http://127.0.0.1:5173` 后，页面会请求 `/api/system/architecture`。当前页面用于验证前后端分离和接口契约；旅行表单、地图、编辑、预算和导出不会在 13.1 中提前实现。
 
+### 为什么需要统一数据模型
+
+如果各模块直接传递字典，同一个值很容易出现多种写法：经纬度可能是字符串、列表或两个字段，温度可能是 `16`、`"16"` 或 `"16°C"`，日期也可能缺少统一格式。字典本身不会阻止漏字段、拼写错误和类型漂移，问题通常要到页面渲染或预算计算时才暴露。
+
+Pydantic 模型把数据边界前移：输入进入业务逻辑前先完成解析与校验，输出也必须满足约定结构。
+
+~~~mermaid
+flowchart LR
+    FORM["前端表单 JSON"] --> REQUEST["TripRequest<br/>校验日期与旅行天数"]
+    REQUEST --> SERVICE["服务与 Agent"]
+    API["地图 / 天气 API"] --> ADAPTER["外部数据转换"]
+    ADAPTER --> SERVICE
+    SERVICE --> DOMAIN["Location / Attraction / Hotel<br/>DayPlan / WeatherInfo / Budget"]
+    DOMAIN --> PLAN["TripPlan"]
+    PLAN --> RESPONSE["统一响应模型"]
+    RESPONSE --> TS["TypeScript 类型<br/>页面渲染"]
+~~~
+
+数据模型不是数据库表，也不负责调用 API。它解决的是各层如何准确表达同一份旅行数据。
+
+### 模型分层
+
+实践代码补齐了原文和官方示例中的 18 个模型，并按用途分成四组：
+
+| 分组 | 模型 | 作用 |
+| --- | --- | --- |
+| 请求 | `TripRequest`、`POISearchRequest`、`RouteRequest` | 接收旅行需求、POI 检索和路线规划参数 |
+| 基础对象 | `Location`、`Attraction`、`Meal`、`Hotel`、`WeatherInfo`、`POIInfo`、`RouteInfo` | 统一外部服务与业务层的数据形状 |
+| 聚合对象 | `DayPlan`、`Budget`、`TripPlan` | 从单日安排逐层组成完整行程 |
+| 响应 | `TripPlanResponse`、`POISearchResponse`、`RouteResponse`、`WeatherResponse`、`ErrorResponse` | 为 API 提供稳定的成功与失败结构 |
+
+对象之间是组合关系：
+
+~~~mermaid
+flowchart BT
+    LOCATION["Location"] --> ATTRACTION["Attraction"]
+    LOCATION --> MEAL["Meal"]
+    LOCATION --> HOTEL["Hotel"]
+    LOCATION --> POI["POIInfo"]
+    ATTRACTION & MEAL & HOTEL --> DAY["DayPlan"]
+    DAY --> PLAN["TripPlan"]
+    WEATHER["WeatherInfo"] --> PLAN
+    BUDGET["Budget"] --> PLAN
+    PLAN --> PLAN_RESPONSE["TripPlanResponse"]
+    POI --> POI_RESPONSE["POISearchResponse"]
+    ROUTE["RouteInfo"] --> ROUTE_RESPONSE["RouteResponse"]
+~~~
+
+这种自底向上的结构让 `TripPlan` 不必重复描述景点、酒店和坐标字段，也方便前端按日渲染。
+
+### 请求模型与业务一致性
+
+原文片段把旅行请求称为 `TripPlanRequest`，官方项目最终使用 `TripRequest`，本地实现跟随后者，避免同一概念出现两个名称。字段包括城市、起止日期、旅行天数、交通、住宿、偏好和自由文本。
+
+类型约束只能保证 `travel_days` 是 1 到 30 的整数，还不能保证它与日期相符，因此增加模型级校验：
+
+~~~python
+@model_validator(mode="after")
+def validate_date_range(self) -> "TripRequest":
+    start = date.fromisoformat(self.start_date)
+    end = date.fromisoformat(self.end_date)
+    if end < start:
+        raise ValueError("end_date 不能早于 start_date")
+    expected_days = (end - start).days + 1
+    if self.travel_days != expected_days:
+        raise ValueError(f"travel_days 应为 {expected_days}")
+    return self
+~~~
+
+旅行天数按首尾日期都计入，例如 9 月 20 日到 9 月 21 日是两天。偏好列表在校验后去除空字符串和重复项，防止后续 Prompt 重复强调同一偏好。
+
+### 基础模型的规范化
+
+`Location` 是景点、餐饮、酒店和 POI 的共同依赖。模型对经度使用 `[-180, 180]`、纬度使用 `[-90, 90]` 的范围约束，并把高德常见的 `"经度,纬度"` 字符串以及 `lng`、`lon`、`lat` 别名统一成两个浮点数字段：
+
+~~~python
+Location.model_validate("116.397128,39.916527")
+Location.model_validate({"lng": 116.397128, "lat": 39.916527})
+~~~
+
+`WeatherInfo` 保留原文的温度转换逻辑：去掉 `°C`、`℃` 等单位后转为整数，转换失败时回退为 `0`。这个策略适合作为演示中的容错，但 `0°C` 本身也是合法温度，正式接入时应同时记录解析告警，否则无法区分真实零度与脏数据。
+
+可选列表字段都使用 `Field(default_factory=list)`，完整行程的 `days` 则保持必填且至少包含一天。这比直接写 `[]` 更清楚，也延续了普通 Python 数据类处理可变默认值的安全习惯。公共基类还启用了 `extra="forbid"`，字段拼错时直接报错，而不是悄悄丢弃输入。
+
+### 行程、预算与响应
+
+`DayPlan` 聚合当天的酒店、景点和餐饮，`TripPlan` 再组合日期范围内的每日安排、天气、预算和总体建议。除了嵌套类型，本地实现还检查：
+
+- `days` 必须覆盖完整旅行日期，每日日期不能越界或重复；
+- `day_index` 从 `0` 开始，并与日期相对开始日的偏移一致；
+- 天气日期不能越界或重复；
+- `Budget.total` 为零时按四个分项自动汇总，显式给出的非零总额必须与分项一致；
+- `TripPlanResponse.success=True` 时必须包含 `data`。
+
+这些规则属于数据本身的一致性，不依赖 LLM，也不应该交给 Prompt 反复提醒。
+
+### 前后端共用契约
+
+后端模型位于 [schemas.py](./code/HelloAgents/helloagents-trip-planner/backend/app/models/schemas.py)，前端对应类型位于 [trip.ts](./code/HelloAgents/helloagents-trip-planner/frontend/src/types/trip.ts)。两边保持相同字段名和嵌套关系，避免页面使用 `camelCase`、后端返回 `snake_case` 时再维护一层隐式映射。
+
+[trip.py](./code/HelloAgents/helloagents-trip-planner/backend/app/api/routes/trip.py) 暂时只提供一个校验入口：
+
+~~~python
+@router.post("/validate", response_model=TripRequest)
+def validate_trip_request(request: TripRequest) -> TripRequest:
+    return request
+~~~
+
+请求经过 FastAPI 后会自动转换为 `TripRequest`，校验成功就返回规范化结果。校验失败时，FastAPI 默认返回 `422 Unprocessable Entity`，并不是原文示例描述的 `400`。真正生成行程的 `/plan` 需要调用后续 Agent 编排，本节不先返回模拟计划。
+
+### 数据模型实践结果
+
+[model_demo.py](./code/HelloAgents/helloagents-trip-planner/backend/model_demo.py) 不依赖网络，用固定数据构造请求、两天行程、天气和预算，再完成 JSON 序列化与反序列化：
+
+~~~bash
+cd code/HelloAgents/helloagents-trip-planner/backend
+python3 model_demo.py
+~~~
+
+实际输出：
+
+~~~text
+=== 13.2 旅行助手数据模型实践 ===
+schema_models: 18
+travel_days: 2
+preferences: 历史文化, 美食
+location: 116.397128,39.916527
+weather_temperature: 16
+budget_total: 960
+trip_days: 2
+json_round_trip: True
+validation_failures_caught: 3
+external_api_calls: 0
+~~~
+
+三次失败分别来自越界经度、日期范围与旅行天数不一致、预算总额与分项不一致。`json_round_trip: True` 表示序列化后重新解析得到的 `TripPlan` 与原对象一致；它验证了数据契约，不代表 Agent 已生成过真实行程。
+
 ### 实践边界
 
 - 配置状态只是凭据存在性检查，不会验证额度、权限和网络；
 - 四个 Agent 当前是职责注册表，还没有创建 LLM 或 MCP 客户端；
-- 规划数据不能继续用随意拼接的字典，需要在 13.2 建立统一模型；
+- 13.2 已完成请求、领域对象和响应模型，但外部 API 响应适配器尚未接入；
 - Agent 调用顺序、失败恢复与结果整合属于 13.3 的协作实现；
 - 地图、页面编辑和导出分别留给服务与前端章节。
 
@@ -255,10 +401,12 @@ npm run dev
 - [《Hello-Agents》第十三章：智能旅行助手源文件](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter13/%E7%AC%AC%E5%8D%81%E4%B8%89%E7%AB%A0%20%E6%99%BA%E8%83%BD%E6%97%85%E8%A1%8C%E5%8A%A9%E6%89%8B.md)
 - [HelloAgents 智能旅行助手参考项目](https://github.com/datawhalechina/hello-agents/tree/main/code/chapter13/helloagents-trip-planner)
 - [FastAPI 官方文档](https://fastapi.tiangolo.com/)
+- [Pydantic Models](https://docs.pydantic.dev/latest/concepts/models/)
+- [FastAPI Request Body](https://fastapi.tiangolo.com/tutorial/body/)
 - [Vue 3 官方文档](https://vuejs.org/)
 - [高德开放平台](https://lbs.amap.com/)
 - [Unsplash Developers](https://unsplash.com/developers)
 
 ### 小结
 
-智能旅行助手把分散的信息查询、个性化规划和联动调整放进同一应用。13.1 的重点是先固定前端、后端、智能体和外部服务四层边界，再明确景点、天气、酒店和行程规划四个 Agent 的职责。本节实践完成了可启动的前后端骨架、架构接口和离线验证，但不伪造尚未接入的数据；后续可以在这个目录中按章节逐步补上数据模型、协作流程、MCP 服务和完整页面。
+智能旅行助手把分散的信息查询、个性化规划和联动调整放进同一应用。13.1 固定前端、后端、智能体和外部服务四层边界，并明确四个 Agent 的职责；13.2 再用 Pydantic 和 TypeScript 固定输入、领域对象与响应结构。数据模型负责尽早拦截日期、坐标、预算和嵌套关系错误，但不替代业务编排。当前实践已经具备可启动骨架、18 个模型、前后端类型契约和离线校验，真实 Agent 与外部服务继续按后续章节接入。

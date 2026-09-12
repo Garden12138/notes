@@ -49,7 +49,7 @@ def build_architecture_snapshot(
     status = dict(integration_status or {})
     return {
         "project": "helloagents-trip-planner",
-        "scope": "chapter_13_1_architecture_bootstrap",
+        "scope": "chapter_13_1_to_13_2_data_models",
         "layers": list(LAYERS),
         "agents": [role.to_dict() for role in build_agent_registry()],
         "external_integrations": {
@@ -71,12 +71,12 @@ def build_architecture_snapshot(
             "前后端连通",
             "配置状态检查",
             "四层架构与四个 Agent 的职责声明",
+            "统一请求与响应数据模型",
+            "FastAPI 请求校验入口",
         ],
         "deferred_capabilities": [
-            "旅行请求与响应数据模型",
             "真实 Agent 编排",
             "MCP 与外部服务调用",
             "行程编辑、地图展示和导出",
         ],
     }
-
