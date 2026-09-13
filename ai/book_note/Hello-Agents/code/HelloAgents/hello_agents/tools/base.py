@@ -32,7 +32,7 @@ class Tool(ABC):
         self.expandable = expandable
 
     @abstractmethod
-    def run(self, parameters: Dict[str, Any]) -> str:
+    def run(self, parameters: Dict[str, Any]) -> Any:
         """Execute the tool with structured parameters."""
         raise NotImplementedError
 

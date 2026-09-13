@@ -1,4 +1,9 @@
-export type SearchAPI = "duckduckgo" | "tavily" | "perplexity" | "searxng";
+export type SearchAPI =
+  | "duckduckgo"
+  | "tavily"
+  | "perplexity"
+  | "searxng"
+  | "advanced";
 export type TodoStatus = "pending" | "in_progress" | "completed" | "failed";
 export type ResearchPhase =
   | "planning"

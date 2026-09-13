@@ -4,11 +4,14 @@ version = "0.1.0"
 description = "Chapter 14 automated deep research assistant"
 requires-python = ">=3.10"
 dependencies = [
+    "ddgs>=9.6.1,<10",
     "fastapi>=0.115,<1",
     "openai>=1.12,<3",
     "pydantic>=2.9,<3",
     "pydantic-settings>=2.5,<3",
     "python-dotenv>=1,<2",
+    "pyyaml>=6,<7",
+    "tavily-python>=0.5,<1",
     "uvicorn[standard]>=0.32,<1",
 ]
 

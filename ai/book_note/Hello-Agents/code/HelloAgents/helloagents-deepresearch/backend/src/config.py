@@ -7,6 +7,11 @@ from functools import lru_cache
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+try:
+    from .models import SearchAPI
+except ImportError:  # Support direct imports with ``backend/src`` on sys.path.
+    from models import SearchAPI  # type: ignore[no-redef]
+
 
 class Settings(BaseSettings):
     """Runtime settings shared by the API and later service implementations."""
@@ -22,7 +27,7 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_base_url: str = ""
 
-    search_api: str = "duckduckgo"
+    search_api: SearchAPI = SearchAPI.DUCKDUCKGO
     tavily_api_key: str = ""
     perplexity_api_key: str = ""
     searxng_url: str = ""
@@ -43,12 +48,13 @@ class Settings(BaseSettings):
 
     def integration_status(self) -> dict[str, bool]:
         """Report configuration presence only; no external request is made."""
-        search_api = self.search_api.strip().lower()
+        search_api = self.search_api.value
         search_ready = {
             "duckduckgo": True,
             "tavily": bool(self.tavily_api_key),
             "perplexity": bool(self.perplexity_api_key),
             "searxng": bool(self.searxng_url),
+            "advanced": True,
         }.get(search_api, False)
         return {
             "llm": bool(self.llm_model_id and self.llm_api_key),
@@ -61,4 +67,3 @@ class Settings(BaseSettings):
 def get_settings() -> Settings:
     """Create one settings object per process."""
     return Settings()
-

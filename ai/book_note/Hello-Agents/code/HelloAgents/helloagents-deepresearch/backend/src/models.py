@@ -63,6 +63,7 @@ class SearchAPI(str, Enum):
     TAVILY = "tavily"
     PERPLEXITY = "perplexity"
     SEARXNG = "searxng"
+    ADVANCED = "advanced"
 
 
 class ResearchRequest(APIModel):
@@ -149,4 +150,5 @@ class ResearchResult(APIModel):
     topic: str
     todo_items: list[TodoItem]
     report_markdown: str
+    report_path: str | None = None
     phase: ResearchPhase = ResearchPhase.COMPLETED

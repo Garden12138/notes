@@ -68,13 +68,14 @@ function closeModal(): void {
         <option value="tavily">Tavily</option>
         <option value="perplexity">Perplexity</option>
         <option value="searxng">SearXNG</option>
+        <option value="advanced">Advanced（组合可用来源）</option>
       </select>
 
       <button class="primary-button" type="submit" :disabled="running || topic.trim().length < 2">
         {{ running ? "研究进行中" : "开始研究" }}
       </button>
       <p class="scope-note">
-        14.1 已打通界面与 SSE 协议；真实研究服务将在后续小节装配。
+        已打通界面、SSE 与工具层；生产服务装配将在后续小节完成。
       </p>
     </form>
 
@@ -92,4 +93,3 @@ function closeModal(): void {
     />
   </main>
 </template>
-

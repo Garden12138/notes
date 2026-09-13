@@ -60,6 +60,10 @@ class Reporter(Protocol):
     def write(self, topic: str, tasks: Sequence[TodoItem]) -> str: ...
 
 
+class ReportStore(Protocol):
+    def save_report(self, topic: str, report_markdown: str) -> str: ...
+
+
 class ToolEventSource(Protocol):
     def drain(self) -> list[dict[str, Any]]: ...
 
@@ -78,6 +82,7 @@ class DeepResearchAgent:
         clock: Callable[[], date] = date.today,
         max_results: int = 5,
         tool_event_source: ToolEventSource | None = None,
+        report_store: ReportStore | None = None,
     ) -> None:
         self._planner = planner
         self._searcher = searcher
@@ -86,6 +91,7 @@ class DeepResearchAgent:
         self._reporter = reporter
         self._clock = clock
         self._tool_event_source = tool_event_source
+        self._report_store = report_store
         if max_results < 1:
             raise ValueError("max_results 必须大于 0")
         self._max_results = max_results
@@ -237,11 +243,19 @@ class DeepResearchAgent:
             message="正在生成最终报告",
             progress=90,
         )
+        report_path: str | None = None
         try:
             report = self._reporter.write(
                 normalized_topic,
                 [self._snapshot(task) for task in tasks],
             ).strip()
+            if not report:
+                raise ValueError("Report Writer 没有生成报告")
+            if self._report_store is not None:
+                report_path = self._report_store.save_report(
+                    normalized_topic,
+                    report,
+                )
         except Exception:
             yield from self._drain_tool_call_events(
                 phase=ResearchPhase.FAILED,
@@ -252,13 +266,16 @@ class DeepResearchAgent:
             phase=ResearchPhase.REPORTING,
             progress=95,
         )
-        if not report:
-            raise ValueError("Report Writer 没有生成报告")
         yield ResearchEvent(
             type="report",
             phase=ResearchPhase.REPORTING,
             report_markdown=report,
             progress=98,
+            detail=(
+                {"report_path": report_path}
+                if report_path is not None
+                else None
+            ),
         )
         yield ResearchEvent(
             type="done",
@@ -275,6 +292,7 @@ class DeepResearchAgent:
         """Collect the streaming workflow into one result object."""
         tasks: list[TodoItem] = []
         report = ""
+        report_path: str | None = None
         for event in self.run_stream(topic, search_api):
             if event.type == "task" and event.task is not None:
                 current = event.task
@@ -286,8 +304,11 @@ class DeepResearchAgent:
                     tasks.append(current)
             elif event.type == "report" and event.report_markdown:
                 report = event.report_markdown
+                if event.detail and event.detail.get("report_path"):
+                    report_path = str(event.detail["report_path"])
         return ResearchResult(
             topic=topic.strip(),
             todo_items=tasks,
             report_markdown=report,
+            report_path=report_path,
         )

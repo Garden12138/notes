@@ -1,4 +1,4 @@
-"""Serializable description of the section 14.1–14.3 architecture."""
+"""Serializable description of the architecture implemented through 14.4."""
 
 from __future__ import annotations
 
@@ -82,10 +82,10 @@ DATA_FLOW = [
 
 
 def build_architecture_snapshot() -> ArchitectureSnapshot:
-    """Build the architecture contract implemented through sections 14.1–14.3."""
+    """Build the architecture contract implemented through section 14.4."""
     return ArchitectureSnapshot(
         project="helloagents-deepresearch",
-        scope="chapter_14_1_to_14_3_agent_system",
+        scope="chapter_14_1_to_14_4_tool_system",
         layers=LAYERS,
         agents=AGENTS,
         tools=TOOLS,
@@ -109,11 +109,14 @@ def build_architecture_snapshot() -> ArchitectureSnapshot:
             "角色 Prompt 与结构化交接",
             "ToolAwareSimpleAgent 调用监听",
             "工具调用事件向 SSE 协议桥接",
+            "多搜索后端与 Advanced 组合模式",
+            "搜索结果统一结构、URL 去重与摘要限长",
+            "NoteTool 任务笔记与最终报告持久化",
+            "SearchTool、NoteTool 统一注册与协调器适配",
         ],
         deferred_capabilities=[
             "真实 HelloAgents LLM 初始化",
-            "搜索引擎适配器",
-            "NoteTool 持久化",
             "面向生产的规划、总结和报告服务",
+            "研究状态恢复与搜索缓存",
         ],
     )
