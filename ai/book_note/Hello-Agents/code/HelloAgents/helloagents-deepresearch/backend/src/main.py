@@ -13,6 +13,7 @@ try:
     from .architecture import build_architecture_snapshot
     from .config import Settings, get_settings
     from .models import HealthResponse, ResearchEvent, ResearchPhase, ResearchRequest
+    from .services.composition import build_runner_factory_if_ready
     from .streaming import encode_sse
 except ImportError:  # Allow ``python src/main.py`` as shown in the chapter.
     from agent import DeepResearchAgent  # type: ignore[no-redef]
@@ -23,6 +24,9 @@ except ImportError:  # Allow ``python src/main.py`` as shown in the chapter.
         ResearchEvent,
         ResearchPhase,
         ResearchRequest,
+    )
+    from services.composition import (  # type: ignore[no-redef]
+        build_runner_factory_if_ready,
     )
     from streaming import encode_sse  # type: ignore[no-redef]
 
@@ -54,14 +58,14 @@ def create_app(
     def root() -> dict[str, str]:
         return {
             "project": "helloagents-deepresearch",
-            "scope": "chapter_14_1_to_14_4_tool_system",
+            "scope": "chapter_14_1_to_14_5_service_layer",
             "docs": "/docs",
         }
 
     @app.get("/healthz", response_model=HealthResponse)
     def health() -> HealthResponse:
         return HealthResponse(
-            scope="chapter_14_1_to_14_4_tool_system",
+            scope="chapter_14_1_to_14_5_service_layer",
             workflow_ready=runner_factory is not None,
             integrations=current_settings.integration_status(),
         )
@@ -76,8 +80,8 @@ def create_app(
             raise HTTPException(
                 status_code=503,
                 detail=(
-                    "研究通道已建立，但真实 Planner、SearchTool、Summarizer、"
-                    "NoteTool 和 Reporter 尚未装配具体实现"
+                    "研究服务已实现，但 LLM、搜索或笔记配置尚未全部就绪；"
+                    "请检查 /healthz 与 .env"
                 ),
             )
         runner = runner_factory(payload)
@@ -108,7 +112,11 @@ def create_app(
     return app
 
 
-app = create_app()
+_runtime_settings = get_settings()
+app = create_app(
+    settings=_runtime_settings,
+    runner_factory=build_runner_factory_if_ready(_runtime_settings),
+)
 
 
 if __name__ == "__main__":

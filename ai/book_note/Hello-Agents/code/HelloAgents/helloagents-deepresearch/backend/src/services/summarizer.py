@@ -25,6 +25,15 @@ class SummarizationService:
         task: TodoItem,
         search_results: Sequence[SearchResult],
     ) -> str:
+        summary, _ = self.summarize_task(task, search_results)
+        return summary
+
+    def summarize_task(
+        self,
+        task: TodoItem,
+        search_results: Sequence[SearchResult],
+    ) -> tuple[str, list[str]]:
+        """Return the task summary together with its traceable source URLs."""
         prompt = TASK_SUMMARIZER_INSTRUCTIONS.format(
             task_title=task.title,
             task_intent=task.intent,
@@ -37,7 +46,8 @@ class SummarizationService:
             self._agent.clear_history()
         if not response:
             raise ValueError(f"任务“{task.title}”没有生成总结")
-        return response
+        source_urls = [result.url for result in search_results]
+        return response, source_urls
 
     @staticmethod
     def format_sources(search_results: Sequence[SearchResult]) -> str:

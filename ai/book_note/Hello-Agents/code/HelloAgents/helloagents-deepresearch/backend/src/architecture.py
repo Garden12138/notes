@@ -1,4 +1,4 @@
-"""Serializable description of the architecture implemented through 14.4."""
+"""Serializable description of the architecture implemented through 14.5."""
 
 from __future__ import annotations
 
@@ -82,10 +82,10 @@ DATA_FLOW = [
 
 
 def build_architecture_snapshot() -> ArchitectureSnapshot:
-    """Build the architecture contract implemented through section 14.4."""
+    """Build the architecture contract implemented through section 14.5."""
     return ArchitectureSnapshot(
         project="helloagents-deepresearch",
-        scope="chapter_14_1_to_14_4_tool_system",
+        scope="chapter_14_1_to_14_5_service_layer",
         layers=LAYERS,
         agents=AGENTS,
         tools=TOOLS,
@@ -113,10 +113,16 @@ def build_architecture_snapshot() -> ArchitectureSnapshot:
             "搜索结果统一结构、URL 去重与摘要限长",
             "NoteTool 任务笔记与最终报告持久化",
             "SearchTool、NoteTool 统一注册与协调器适配",
+            "规划 JSON 解析、字段校验与启发式质量评分",
+            "任务总结与来源 URL 的结构化交接",
+            "报告上下文组装与非空结果校验",
+            "搜索调度、二次去重、摘要限长与错误边界",
+            "搜索结果缓存校验与原子写入",
+            "按配置装配完整研究服务",
         ],
         deferred_capabilities=[
-            "真实 HelloAgents LLM 初始化",
-            "面向生产的规划、总结和报告服务",
-            "研究状态恢复与搜索缓存",
+            "研究状态恢复与 SSE 游标续传",
+            "失败重试、动态补充查询与并行任务",
+            "前端安全 Markdown 渲染与报告导出",
         ],
     )

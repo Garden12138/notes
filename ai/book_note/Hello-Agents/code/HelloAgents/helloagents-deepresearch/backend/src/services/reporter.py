@@ -26,9 +26,33 @@ class ReportingService:
         if any(task.status != TodoStatus.COMPLETED for task in tasks):
             raise ValueError("Report Writer 只能接收已完成任务")
 
+        task_summaries = [
+            (
+                task,
+                task.summary or "",
+                [source.url for source in task.sources],
+            )
+            for task in tasks
+        ]
+        return self.generate_report(topic, task_summaries)
+
+    def generate_report(
+        self,
+        research_topic: str,
+        task_summaries: Sequence[tuple[TodoItem, str, Sequence[str]]],
+    ) -> str:
+        """Generate one report from the chapter's task-summary tuples."""
+        normalized_topic = research_topic.strip()
+        if not normalized_topic:
+            raise ValueError("研究主题不能为空")
+        if not task_summaries:
+            raise ValueError("没有可用于生成报告的任务总结")
+        if any(not summary.strip() for _, summary, _ in task_summaries):
+            raise ValueError("Report Writer 只能接收非空任务总结")
+
         prompt = REPORT_WRITER_INSTRUCTIONS.format(
-            research_topic=topic,
-            task_summaries=self.format_tasks(tasks),
+            research_topic=normalized_topic,
+            task_summaries=self.format_summaries(task_summaries),
         )
         try:
             response = self._agent.run(prompt).strip()
@@ -40,19 +64,33 @@ class ReportingService:
 
     @staticmethod
     def format_tasks(tasks: Sequence[TodoItem]) -> str:
-        """Keep summaries and their source lists in the same task block."""
+        """Compatibility helper for callers that already hold TodoItem values."""
+        task_summaries = [
+            (
+                task,
+                task.summary or "暂无可用信息",
+                [source.url for source in task.sources],
+            )
+            for task in tasks
+        ]
+        return ReportingService.format_summaries(task_summaries)
+
+    @staticmethod
+    def format_summaries(
+        task_summaries: Sequence[tuple[TodoItem, str, Sequence[str]]],
+    ) -> str:
+        """Keep each summary and its source URLs in one numbered task block."""
         blocks: list[str] = []
-        for index, task in enumerate(tasks, start=1):
-            summary = task.summary or "暂无可用信息"
-            sources = "\n".join(
-                f"  - [{source.title}]({source.url})"
-                for source in task.sources
-            ) or "  - 暂无来源"
+        for index, (task, summary, source_urls) in enumerate(
+            task_summaries,
+            start=1,
+        ):
+            sources = "\n".join(f"  - {url}" for url in source_urls)
+            sources = sources or "  - 暂无来源"
             blocks.append(
                 f"## 任务 {index}：{task.title}\n"
                 f"意图：{task.intent}\n"
-                f"查询：{task.query}\n\n"
-                f"{summary}\n\n"
+                f"{summary.strip()}\n\n"
                 f"来源：\n{sources}"
             )
         return "\n\n".join(blocks)

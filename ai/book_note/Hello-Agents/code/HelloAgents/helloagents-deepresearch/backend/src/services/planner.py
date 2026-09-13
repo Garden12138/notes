@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from typing import Any
 
 try:
@@ -22,9 +23,16 @@ class PlanningService:
         self._agent = agent
 
     def plan(self, topic: str, current_date: str) -> list[TodoDraft]:
+        normalized_topic = topic.strip()
+        normalized_date = current_date.strip()
+        if not normalized_topic:
+            raise ValueError("研究主题不能为空")
+        if not normalized_date:
+            raise ValueError("当前日期不能为空")
+
         prompt = TODO_PLANNER_INSTRUCTIONS.format(
-            current_date=current_date,
-            research_topic=topic,
+            current_date=normalized_date,
+            research_topic=normalized_topic,
         )
         try:
             response = self._agent.run(prompt)
@@ -42,6 +50,29 @@ class PlanningService:
                 raise ValueError("TODO Planner 的每项任务都必须是 JSON 对象")
             tasks.append(TodoDraft.model_validate(raw_task))
         return tasks
+
+    @staticmethod
+    def evaluate_plan(todo_items: Sequence[TodoDraft]) -> dict[str, Any]:
+        """Apply the chapter's deterministic plan-quality heuristic."""
+        score = 100
+        suggestions: list[str] = []
+
+        if len(todo_items) < 3:
+            score -= 20
+            suggestions.append("子任务数量过少，可能遗漏重要信息")
+        elif len(todo_items) > 5:
+            score -= 10
+            suggestions.append("子任务数量过多，可能存在冗余")
+
+        for task in todo_items:
+            if len(task.query.split()) < 2:
+                score -= 10
+                suggestions.append(f"任务「{task.title}」的查询过于简单")
+
+        return {
+            "score": max(0, min(100, score)),
+            "suggestions": suggestions,
+        }
 
     @staticmethod
     def _extract_json(response: str) -> dict[str, Any] | list[Any]:

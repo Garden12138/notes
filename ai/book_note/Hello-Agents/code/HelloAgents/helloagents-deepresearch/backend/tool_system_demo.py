@@ -115,7 +115,11 @@ def main() -> None:
     )
     with TemporaryDirectory(prefix="helloagents-deepresearch-") as temporary:
         toolset = build_research_toolset(
-            Settings(search_api="advanced", notes_workspace=temporary),
+            Settings(
+                search_api="advanced",
+                notes_workspace=temporary,
+                search_cache_dir=f"{temporary}/cache/search",
+            ),
             search_tool=search_tool,
             max_tokens_per_source=5,
         )

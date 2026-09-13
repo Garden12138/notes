@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     port: int = Field(default=8000, ge=1, le=65535)
     cors_origins: str = "http://localhost:5174"
     notes_workspace: str = "./workspace"
+    search_cache_dir: str = "./cache/search"
 
     @property
     def cors_origin_list(self) -> list[str]:

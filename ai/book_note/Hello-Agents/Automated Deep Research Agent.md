@@ -1,8 +1,8 @@
 ## 自动化深度研究智能体
 
-> 阅读资料：[14.1 项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_141-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)、[14.2 TODO 驱动的研究范式](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_142-todo-%e9%a9%b1%e5%8a%a8%e7%9a%84%e7%a0%94%e7%a9%b6%e8%8c%83%e5%bc%8f)、[14.3 智能体系统设计](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_143-%e6%99%ba%e8%83%bd%e4%bd%93%e7%b3%bb%e7%bb%9f%e8%ae%be%e8%ae%a1)、[14.4 工具系统集成](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_144-%e5%b7%a5%e5%85%b7%e7%b3%bb%e7%bb%9f%e9%9b%86%e6%88%90)
+> 阅读资料：[14.1 项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_141-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)、[14.2 TODO 驱动的研究范式](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_142-todo-%e9%a9%b1%e5%8a%a8%e7%9a%84%e7%a0%94%e7%a9%b6%e8%8c%83%e5%bc%8f)、[14.3 智能体系统设计](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_143-%e6%99%ba%e8%83%bd%e4%bd%93%e7%b3%bb%e7%bb%9f%e8%ae%be%e8%ae%a1)、[14.4 工具系统集成](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_144-%e5%b7%a5%e5%85%b7%e7%b3%bb%e7%bb%9f%e9%9b%86%e6%88%90)、[14.5 服务层实现](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_145-%e6%9c%8d%e5%8a%a1%e5%b1%82%e5%ae%9e%e7%8e%b0)
 >
-> 14.1 确定产品目标、四层架构和数据流；14.2 用 TODO 组织研究过程；14.3 把三类产物交给三个窄职责 Agent；14.4 统一搜索、笔记和工具调用边界。
+> 14.1 确定产品目标、四层架构和数据流；14.2 用 TODO 组织研究过程；14.3 把三类产物交给三个窄职责 Agent；14.4 统一搜索、笔记和工具调用边界；14.5 用服务层封装 Prompt、解析、检索清洗和缓存。
 
 ### 深度研究不等于多搜几次
 
@@ -328,6 +328,130 @@ sequenceDiagram
 
 把解析职责写清楚很重要：注册表不是 Prompt 解析器，也不决定研究流程；它只是工具对象的目录和执行边界。
 
+### 服务层：连接 Agent、工具与协调器
+
+工具层解决“能力怎样调用”，Agent 解决“内容怎样生成”，服务层则把二者整理成稳定的业务接口。协调器不需要理解 Prompt，也不用处理各搜索后端的返回差异，只按 `plan → search → summarize → write` 调用四个服务。
+
+~~~mermaid
+flowchart LR
+    C["DeepResearchAgent<br/>维护顺序与状态"]
+
+    subgraph S["服务层"]
+        PS["PlanningService<br/>构造 Prompt / 解析计划"]
+        SS["SearchService<br/>调度 / 清洗 / 缓存"]
+        US["SummarizationService<br/>格式化来源 / 生成总结"]
+        RS["ReportingService<br/>组装上下文 / 生成报告"]
+    end
+
+    P["TODO Planner"]
+    T["SearchTool"]
+    U["Task Summarizer"]
+    R["Report Writer"]
+
+    C --> PS --> P
+    C --> SS --> T
+    C --> US --> U
+    C --> RS --> R
+~~~
+
+服务层不是多加一层转发。它集中处理模型和外部服务最容易变化的部分：输入格式、输出解析、字段校验、缓存以及失败边界。
+
+#### PlanningService：把不稳定文本收敛成任务草案
+
+规划服务把当前日期和研究主题填入 Prompt，调用 TODO Planner，再把响应转换为 `TodoDraft`。原文用贪婪正则 `\[.*\]` 提取数组；当回复里出现多个方括号或其他示例时，可能截取过多内容。实践代码改用 `json.JSONDecoder.raw_decode()`：从每个 `{` 或 `[` 开始尝试，取第一个合法 JSON 对象或数组，同时兼容纯数组和 `{"tasks": [...]}` 两种返回。
+
+~~~python
+for index, character in enumerate(response.strip()):
+    if character not in "[{":
+        continue
+    try:
+        payload, _ = json.JSONDecoder().raw_decode(response[index:])
+    except json.JSONDecodeError:
+        continue
+    if isinstance(payload, (dict, list)):
+        return payload
+~~~
+
+解析成功不代表计划可用。每项任务还要通过 `TodoDraft` 校验，确保 `title`、`intent`、`query` 存在、非空且长度合理；任务数量与重复查询继续由协调器检查。这样，服务负责单项格式，协调器负责整个计划的不变量。
+
+原文给出的质量评分从 100 分开始：少于 3 项扣 20 分，多于 5 项扣 10 分；每个按空白切分后少于两个词项的查询再扣 10 分。实践保留了这套规则，并把分数限制在 0–100：
+
+~~~python
+evaluation = planner.evaluate_plan(todo_items)
+# {"score": 60, "suggestions": [...]}
+~~~
+
+它只是确定性启发式，不是语义评估。尤其中文查询通常没有空格，`query.split()` 会把整句视为一个词，因此实践中的查询刻意写成“服务层 测试”这种可分词形式。若要判断覆盖度、逻辑关系和语义重复，还需要单独的规则或评审模型，不能把这个分数当成计划质量真值。
+
+#### SummarizationService：总结与来源一起交接
+
+总结服务先把每条搜索结果编号，并保留标题、URL 和摘要，再连同任务标题、意图、查询交给 Task Summarizer。局部编号让正文中的 `[1]` 可以回到本任务的第一条来源，而不会和其他 TODO 的编号混在一起。
+
+`summarize_task()` 返回 `(summary, source_urls)`，对应原文的服务接口；`summarize()` 只返回总结文本，用来适配现有协调器。二者共享一次模型调用，不会重复总结。模型返回空字符串时直接报错，每次调用结束后清理角色历史，避免上一个 TODO 污染下一个 TODO。
+
+这里提取的 URL 来自结构化搜索结果，而不是从模型正文反向解析。模型可能漏写引用编号，但原始来源列表仍然存在，后续报告和笔记可以继续核对。
+
+#### ReportingService：只整合已完成任务
+
+报告服务接收研究主题，以及 `(任务, 总结, 来源 URL)` 三元组。每个任务块固定包含编号、标题、意图、总结和来源，再交给 Report Writer 统一排序、去重和组织 Markdown。
+
+~~~text
+## 任务 1：服务职责
+意图：梳理服务层边界
+……任务总结……
+
+来源：
+  - https://example.invalid/source-1
+~~~
+
+协调器调用的 `write()` 会先检查所有任务都处于 `completed`，再转换为原文的三元组接口 `generate_report()`；空主题、空任务列表或空总结都会被拒绝。Report Writer 因而只能整合已有证据，不能拿失败任务补写一份看似完整的报告。
+
+#### SearchService：显式调度并缓存结构化结果
+
+本节没有让 `SimpleAgent` 自己决定是否搜索，而是由协调器显式调用 SearchService。原因很实际：查询已经由 Planner 生成，搜索属于确定的执行步骤；把工具结果直接交给总结服务，Agent 只需处理资料，不必再花一次模型调用决定要不要调用工具。
+
+~~~mermaid
+flowchart TD
+    Q["query + backend + max_results"] --> K["生成缓存键"]
+    K --> HIT{"有效缓存存在？"}
+    HIT -->|是| CACHE["校验并返回 SearchResult"]
+    HIT -->|否| CALL["SearchTool structured 模式"]
+    CALL --> VALIDATE["校验 results 列表和字段"]
+    VALIDATE --> DEDUP["按 URL 去重"]
+    DEDUP --> LIMIT["按近似 Token 上限截断摘要"]
+    LIMIT --> NONEMPTY{"结果非空？"}
+    NONEMPTY -->|是| SAVE["原子写入缓存"]
+    NONEMPTY -->|否| EMPTY["返回空列表并保留错误诊断"]
+    SAVE --> OUT["SearchResult 列表"]
+    EMPTY --> OUT
+~~~
+
+缓存键包含规范化查询、搜索后端、结果上限和单条摘要上限。原文示例用 MD5；实践使用 SHA-256，但用途相同，只是生成稳定文件名，不涉及密码安全。把后端和限制参数纳入键中，可以避免切换 Tavily、DuckDuckGo 或截断长度后误读旧结果。
+
+缓存文件在读取时重新经过 `SearchResult` 校验；损坏或结构不合法就忽略并重新搜索。只有非空结果才会写入，且先写临时文件再替换正式文件，防止进程中断留下半份 JSON。缓存目前没有 TTL，所以适合减少同一次学习实践里的重复调用；对天气、价格、新闻等时效数据，后续应增加过期策略或关闭 `use_cache`。
+
+搜索失败沿用原文行为：记录日志后返回 `[]`。实践额外保留 `last_error`、`last_notices`、`last_backend`、`last_answer` 和 `last_cache_hit`，便于观察失败原因。需要注意，空列表既可能表示“没有结果”，也可能表示“搜索失败”；当前线性流程允许 Summarizer 基于“暂无搜索结果”继续生成说明，若业务要求证据缺失即失败，应由协调器再增加明确策略。
+
+#### 组合入口：配置就绪才开放真实研究
+
+`composition.py` 是服务层的装配点。进程只创建一次 LLM 客户端；每个研究请求重新创建三个角色 Agent、SearchService、NotesService 和工具事件记录器，避免不同请求共享对话历史或诊断状态。
+
+~~~python
+toolset = build_research_toolset(settings)
+roles = build_role_services(llm, tool_call_listener=recorder)
+
+return DeepResearchAgent(
+    planner=roles.planner,
+    searcher=toolset.searcher,
+    summarizer=roles.summarizer,
+    note_writer=toolset.notes,
+    reporter=roles.reporter,
+    report_store=toolset.notes,
+)
+~~~
+
+LLM、搜索和笔记配置全部就绪时，全局 FastAPI 应用自动注入这个工厂；否则 `/healthz` 仍可检查配置，研究接口返回 `503`。这一设计不会在应用导入时发起模型或搜索请求，也不会用占位内容伪装成真实报告。
+
 ### 一次研究请求怎样流转
 
 ~~~mermaid
@@ -406,14 +530,17 @@ helloagents-deepresearch/
 │   │   ├── tool_events.py
 │   │   ├── tooling.py
 │   │   └── services/
+│   │       ├── composition.py
 │   │       ├── notes.py
 │   │       ├── planner.py
+│   │       ├── search.py
 │   │       ├── summarizer.py
 │   │       ├── reporter.py
 │   │       └── factory.py
 │   ├── .env.example
 │   ├── agent_system_demo.py
 │   ├── architecture_demo.py
+│   ├── service_layer_demo.py
 │   ├── tool_system_demo.py
 │   ├── workflow_demo.py
 │   └── pyproject.toml
@@ -436,11 +563,14 @@ helloagents-deepresearch/
 - [models.py](./code/HelloAgents/helloagents-deepresearch/backend/src/models.py) 区分 Planner 生成的 `TodoDraft` 与系统维护的 `TodoItem`，并固定搜索、阶段和 SSE 事件结构；
 - [agent.py](./code/HelloAgents/helloagents-deepresearch/backend/src/agent.py) 校验规划结果并执行“规划—逐项搜索、总结、记录—报告”；
 - [search_tool.py](./code/HelloAgents/hello_agents/tools/builtin/search_tool.py) 实现多搜索后端、统一返回、Advanced 合并、去重和摘要限长；
-- [tooling.py](./code/HelloAgents/helloagents-deepresearch/backend/src/tooling.py) 创建工具注册表，并把结构化搜索结果转换成协调器的数据模型；
+- [search.py](./code/HelloAgents/helloagents-deepresearch/backend/src/services/search.py) 调度 SearchTool，完成结果校验、二次清洗、错误记录和缓存；
+- [tooling.py](./code/HelloAgents/helloagents-deepresearch/backend/src/tooling.py) 创建 SearchService、NoteTool、NotesService 和工具注册表；
 - [notes.py](./code/HelloAgents/helloagents-deepresearch/backend/src/services/notes.py) 通过 NoteTool 保存任务笔记，并写入最终报告；
 - [tool_system_demo.py](./code/HelloAgents/helloagents-deepresearch/backend/tool_system_demo.py) 用固定搜索响应验证工具层，不调用外部 API；
+- [service_layer_demo.py](./code/HelloAgents/helloagents-deepresearch/backend/service_layer_demo.py) 用固定 Agent 和搜索响应验证四个服务及缓存；
 - [prompts.py](./code/HelloAgents/helloagents-deepresearch/backend/src/prompts.py) 定义三个角色的输入、输出和事实边界；
-- [services](./code/HelloAgents/helloagents-deepresearch/backend/src/services/) 实现规划 JSON 解析、来源格式化和报告上下文组装；
+- [services](./code/HelloAgents/helloagents-deepresearch/backend/src/services/) 实现规划、搜索调度、总结、报告、笔记和组合入口；
+- [composition.py](./code/HelloAgents/helloagents-deepresearch/backend/src/services/composition.py) 在配置就绪时建立请求级研究工作流；
 - [tool_aware_simple_agent.py](./code/HelloAgents/hello_agents/agents/tool_aware_simple_agent.py) 在框架层扩展工具调用监听；
 - [tool_events.py](./code/HelloAgents/helloagents-deepresearch/backend/src/tool_events.py) 将监听回调桥接为协调器可以发送的事件；
 - [main.py](./code/HelloAgents/helloagents-deepresearch/backend/src/main.py) 暴露健康检查、架构信息和流式研究入口；
@@ -449,7 +579,7 @@ helloagents-deepresearch/
 
 #### 用接口固定协作边界
 
-14.2 先固定组件协议，14.3 用三个 Agent 服务实现规划、总结和报告，14.4 再用适配器实现搜索与持久化协议。协调器仍不绑定具体 Agent、搜索供应商或文件工具：
+14.2 先固定组件协议，14.3 用三个 Agent 服务实现规划、总结和报告，14.4 接入搜索与持久化工具，14.5 再把清洗、缓存和装配放进服务层。协调器仍不绑定具体 Agent、搜索供应商或文件工具：
 
 ~~~python
 class Planner(Protocol):
@@ -490,13 +620,13 @@ results = self._searcher.search(
 )
 ~~~
 
-这样既保留原文的顺序工作流，也确保前端选择的搜索后端真正传到 Searcher。`SearchToolAdapter` 负责把工具字典校验成 `SearchResult`，`NotesService` 同时实现 `NoteWriter` 和 `ReportStore`。FastAPI 通过 `runner_factory` 注入协调器；全局应用没有装配完整服务时，`POST /research/stream` 返回 `503`，而不是生成没有搜索来源的占位报告。
+这样既保留原文的顺序工作流，也确保前端选择的搜索后端真正传到 Searcher。`SearchService` 负责把工具字典校验成 `SearchResult` 并管理缓存，`NotesService` 同时实现 `NoteWriter` 和 `ReportStore`。FastAPI 通过 `runner_factory` 注入协调器；配置完整时自动装配真实服务，配置不足时 `POST /research/stream` 返回 `503`。
 
-工具层的组合入口只做创建和注册：
+服务层的组合入口把角色、工具和协调器接起来：
 
 ~~~python
 toolset = build_research_toolset(settings)
-roles = build_role_services(llm, tool_registry=toolset.registry)
+roles = build_role_services(llm, tool_call_listener=recorder)
 
 coordinator = DeepResearchAgent(
     planner=roles.planner,
@@ -505,6 +635,7 @@ coordinator = DeepResearchAgent(
     note_writer=toolset.notes,
     reporter=roles.reporter,
     report_store=toolset.notes,
+    tool_event_source=recorder,
 )
 ~~~
 
@@ -546,7 +677,7 @@ def _execute_tool_call(self, tool_name: str, parameters: str) -> str:
 
 #### 配置只报告是否存在
 
-[.env.example](./code/HelloAgents/helloagents-deepresearch/backend/.env.example) 包含模型、搜索后端、跨域和工作区配置，所有密钥保持为空。`/healthz` 只检查配置是否存在，不访问外部服务，也不会返回密钥内容：
+[.env.example](./code/HelloAgents/helloagents-deepresearch/backend/.env.example) 包含模型、搜索后端、跨域、工作区和 `SEARCH_CACHE_DIR` 配置，所有密钥保持为空。`/healthz` 只检查配置是否存在，不访问外部服务，也不会返回密钥内容：
 
 ~~~python
 return {
@@ -556,7 +687,7 @@ return {
 }
 ~~~
 
-“已填写”不等于“调用成功”。真实连通性、额度、超时与重试要在对应服务接入后验证。
+“已填写”不等于“调用成功”。只有实际执行研究请求，才能验证网络、额度、超时和返回格式。
 
 #### 运行方式
 
@@ -572,10 +703,10 @@ export PYTHONPATH=../..
 python src/main.py
 ~~~
 
-不配置密钥也可以先验证 14.4 工具链：
+不配置密钥也可以验证 14.5 服务层；脚本使用固定响应和临时目录：
 
 ~~~bash
-PYTHONDONTWRITEBYTECODE=1 python tool_system_demo.py
+PYTHONDONTWRITEBYTECODE=1 python service_layer_demo.py
 ~~~
 
 前端要求 Node.js 16+ 和 npm 8+；实际还要满足当前 Vite 版本的 Node.js 要求：
@@ -593,7 +724,7 @@ npm run dev
 架构 Demo 验证四层、三个 Agent、两个工具、八个数据流步骤和 TODO 工作流契约：
 
 ~~~text
-=== 14.1–14.4 深度研究助手架构实践 ===
+=== 14.1–14.5 深度研究助手架构实践 ===
 layers: 4
 agents: 3
 tools: 2
@@ -603,6 +734,7 @@ architecture_contract: ready
 todo_research_workflow: ready
 agent_system_design: ready
 tool_system_integration: ready
+service_layer: ready
 external_api_calls: 0
 ~~~
 
@@ -661,17 +793,37 @@ external_api_calls: 0
 
 四个适配器中有两个返回同一 URL，最终只保留一条；40 个字符的测试摘要在 5 个近似 Token 的限制下截为 20 个字符加省略号。协调器随后为三个 TODO 分别创建笔记，并把报告写入临时目录中的 `reports/final_report.md`。这验证的是工具协议、清洗和落盘链路，不代表真实搜索质量。
 
-前端 `vue-tsc` 与 Vite 生产构建通过，共转换 14 个模块；入口脚本为 73.02 kB（gzip 后 29.56 kB）。上一次依赖审计返回 `found 0 vulnerabilities`；本节没有变更前端依赖。
+14.5 使用脚本化 Planner、Summarizer、Report Writer 和计数搜索工具，走完四个服务及完整协调流程：
+
+~~~text
+=== 14.5 服务层实现离线验证 ===
+core_services: 4
+plan_quality_score: 60
+planner_robust_json: ready
+summary_source_urls: ready
+report_context: ready
+search_deduplication: ready
+search_token_limit: ready
+search_cache_hit: ready
+request_scoped_workflow: ready
+external_api_calls: 0
+~~~
+
+规划响应前后故意带有说明文字，服务仍提取出合法 JSON；两项、且查询都没有空格的弱计划按原文规则得到 60 分。搜索工具返回一个重复 URL 和 40 字符摘要，服务去重后保留两条来源，并在 2 个近似 Token 的限制下截为 8 个字符加省略号；同一查询只触发一次工具调用，第二次从临时缓存读取。完整流程生成 3 条任务笔记和 1 份最终报告，但内容均为固定测试数据，不代表真实研究质量。
+
+前端 `vue-tsc` 与 Vite 生产构建通过，共转换 14 个模块；入口脚本为 73.02 kB（gzip 后 29.54 kB）。上一次依赖审计返回 `found 0 vulnerabilities`；本节没有变更前端依赖。
 
 ### 实践边界
 
-- 当前完成 14.1 的架构基线、14.2 的 TODO 工作流、14.3 的三个 Agent 服务，以及 14.4 的搜索与笔记工具集成；
-- `DeepResearchAgent` 已实现三阶段编排、任务状态、工具调用事件与失败事件，但全局 FastAPI 应用尚未注入生产服务；
+- 当前完成 14.1 的架构基线、14.2 的 TODO 工作流、14.3 的三个 Agent、14.4 的工具系统，以及 14.5 的四个业务服务与组合入口；
+- `DeepResearchAgent` 已实现三阶段编排、任务状态、工具调用事件与失败事件；配置就绪后，全局 FastAPI 应用会装配真实服务；
 - Prompt 约束不能保证模型始终按格式输出；规划结果仍会经过 JSON、Pydantic、数量和重复查询四层检查；
 - 当前任务按顺序执行；失败后不自动重试、跳过或重新规划；
 - NoteTool 已保存任务产物，SSE 也能展示进度，但断线恢复仍需要重建任务状态和事件游标；
 - 搜索摘要不是原文全文，关键结论仍应回到来源核验；
-- 配置检查不发起联网请求，不能证明模型或搜索 API 可用；
+- 搜索缓存没有 TTL，不适合直接复用强时效查询；
+- SearchService 沿用原文的空列表错误协议，调用方若要区分“无结果”和“请求失败”，还需检查诊断状态或改为显式异常；
+- 配置检查和离线 Demo 都不发起联网请求，不能证明模型或搜索 API 可用；
 - 没有使用真实密钥，也没有调用收费模型或搜索服务；
 - 前端目前按纯文本保留 Markdown，安全渲染、引用跳转和报告导出留给后续界面实现。
 
@@ -680,6 +832,9 @@ external_api_calls: 0
 - [《Hello-Agents》第十四章：自动化深度研究智能体](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93.md)
 - [官方深度研究助手项目](https://github.com/datawhalechina/hello-agents/tree/main/code/chapter14/helloagents-deepresearch)
 - [官方搜索调度代码](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter14/helloagents-deepresearch/backend/src/services/search.py)
+- [官方规划服务代码](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter14/helloagents-deepresearch/backend/src/services/planner.py)
+- [官方总结服务代码](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter14/helloagents-deepresearch/backend/src/services/summarizer.py)
+- [官方报告服务代码](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter14/helloagents-deepresearch/backend/src/services/reporter.py)
 - [官方 FastAPI 入口](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter14/helloagents-deepresearch/backend/src/main.py)
 - [FastAPI StreamingResponse](https://fastapi.tiangolo.com/advanced/custom-response/#streamingresponse)
 - [MDN：使用可读流](https://developer.mozilla.org/zh-CN/docs/Web/API/Streams_API/Using_readable_streams)
@@ -687,4 +842,4 @@ external_api_calls: 0
 
 ### 小结
 
-深度研究助手不是搜索框外面再套一层 LLM，而是一条可观测、可落盘的研究流水线。14.1 固定四层边界和 SSE 协议，14.2 用 TODO 串起规划、执行和报告，14.3 把三类产物交给三个独立 Agent，14.4 再以统一协议接入多种搜索后端、NoteTool 和 ToolRegistry。Agent 只处理研究判断，工具处理外部能力，协调器维护状态与顺序。当前版本已经能保存任务证据和最终报告，但生产服务装配、缓存及真正的断点恢复仍需后续完成。
+深度研究助手不是搜索框外面再套一层 LLM，而是一条可观测、可落盘的研究流水线。14.1 固定四层边界和 SSE 协议，14.2 用 TODO 串起规划、执行和报告，14.3 把三类产物交给三个独立 Agent，14.4 以统一协议接入搜索与笔记工具，14.5 再用服务层收住 Prompt、解析、结果清洗、缓存和装配。Agent 处理研究内容，工具提供外部能力，服务稳定两者的输入输出，协调器维护状态与顺序。当前版本已经能在配置就绪后运行完整后端流程；断点恢复、缓存过期、失败重试和动态补充查询仍需后续完善。

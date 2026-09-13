@@ -75,7 +75,7 @@ function closeModal(): void {
         {{ running ? "研究进行中" : "开始研究" }}
       </button>
       <p class="scope-note">
-        已打通界面、SSE 与工具层；生产服务装配将在后续小节完成。
+        服务层已接入；后端配置就绪后即可执行完整研究流程。
       </p>
     </form>
 
