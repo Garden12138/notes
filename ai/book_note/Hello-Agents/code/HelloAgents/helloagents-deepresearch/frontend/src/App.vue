@@ -11,6 +11,7 @@ const modalOpen = ref(false);
 
 const {
   cancelResearch,
+  cancelled,
   error,
   events,
   progress,
@@ -50,7 +51,7 @@ function closeModal(): void {
     </section>
 
     <form class="research-card" @submit.prevent="submitResearch">
-      <div class="card-number">14.1</div>
+      <div class="card-number">14.6</div>
       <label for="topic">研究主题</label>
       <textarea
         id="topic"
@@ -75,7 +76,7 @@ function closeModal(): void {
         {{ running ? "研究进行中" : "开始研究" }}
       </button>
       <p class="scope-note">
-        服务层已接入；后端配置就绪后即可执行完整研究流程。
+        支持实时进度、任务状态、来源与 Markdown 报告展示。
       </p>
     </form>
 
@@ -83,6 +84,7 @@ function closeModal(): void {
       :open="modalOpen"
       :topic="topic.trim()"
       :running="running"
+      :cancelled="cancelled"
       :error="error"
       :progress="progress"
       :events="events"

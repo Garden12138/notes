@@ -1,5 +1,6 @@
 import { computed, ref } from "vue";
 
+import { consumeResearchSSE } from "../lib/sse";
 import type {
   ResearchEvent,
   ResearchRequest,
@@ -15,47 +16,33 @@ function errorMessage(payload: unknown, fallback: string): string {
   if (payload && typeof payload === "object" && "detail" in payload) {
     const detail = (payload as { detail?: unknown }).detail;
     if (typeof detail === "string") return detail;
+    if (Array.isArray(detail)) {
+      const messages = detail
+        .map((item) => {
+          if (!item || typeof item !== "object" || !("msg" in item)) return "";
+          const message = (item as { msg?: unknown }).msg;
+          return typeof message === "string" ? message : "";
+        })
+        .filter(Boolean);
+      if (messages.length) return messages.join("；");
+    }
   }
   return fallback;
 }
 
-async function consumeSSE(
-  response: Response,
-  onEvent: (event: ResearchEvent) => void,
-): Promise<void> {
-  if (!response.body) {
-    throw new Error("浏览器没有提供可读取的流式响应体");
+function requestFailureMessage(reason: unknown): string {
+  if (
+    reason instanceof TypeError &&
+    /fetch|network|load/i.test(reason.message)
+  ) {
+    return "无法连接研究服务，请确认后端已经启动";
   }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  while (true) {
-    const { done, value } = await reader.read();
-    buffer += decoder.decode(value, { stream: !done }).replace(/\r\n/g, "\n");
-
-    let boundary = buffer.indexOf("\n\n");
-    while (boundary >= 0) {
-      const frame = buffer.slice(0, boundary);
-      buffer = buffer.slice(boundary + 2);
-      const data = frame
-        .split("\n")
-        .filter((line) => line.startsWith("data:"))
-        .map((line) => line.slice(5).trimStart())
-        .join("\n");
-      if (data) {
-        onEvent(JSON.parse(data) as ResearchEvent);
-      }
-      boundary = buffer.indexOf("\n\n");
-    }
-
-    if (done) break;
-  }
+  return reason instanceof Error ? reason.message : "研究请求失败";
 }
 
 export function useResearch() {
   const running = ref(false);
+  const cancelled = ref(false);
   const error = ref("");
   const events = ref<ResearchEvent[]>([]);
   const tasks = ref<TodoItem[]>([]);
@@ -88,16 +75,23 @@ export function useResearch() {
   }
 
   async function startResearch(topic: string, searchApi?: SearchAPI): Promise<void> {
+    const normalizedTopic = topic.trim();
+    if (normalizedTopic.length < 2) {
+      error.value = "研究主题至少需要两个字符";
+      return;
+    }
+
     controller?.abort();
     const currentController = new AbortController();
     controller = currentController;
     running.value = true;
+    cancelled.value = false;
     error.value = "";
     events.value = [];
     tasks.value = [];
     reportMarkdown.value = "";
 
-    const payload: ResearchRequest = { topic: topic.trim() };
+    const payload: ResearchRequest = { topic: normalizedTopic };
     if (searchApi) payload.search_api = searchApi;
 
     try {
@@ -111,10 +105,20 @@ export function useResearch() {
         const body = await response.json().catch(() => null);
         throw new Error(errorMessage(body, `研究请求失败（HTTP ${response.status}）`));
       }
-      await consumeSSE(response, applyEvent);
+      let terminalEventReceived = false;
+      await consumeResearchSSE(response, (event) => {
+        if (controller !== currentController) return;
+        applyEvent(event);
+        if (event.type === "done" || event.type === "error") {
+          terminalEventReceived = true;
+        }
+      });
+      if (!terminalEventReceived) {
+        throw new Error("研究连接在完成事件前结束");
+      }
     } catch (reason) {
       if (reason instanceof DOMException && reason.name === "AbortError") return;
-      error.value = reason instanceof Error ? reason.message : "研究请求失败";
+      error.value = requestFailureMessage(reason);
     } finally {
       if (controller === currentController) {
         controller = null;
@@ -124,6 +128,8 @@ export function useResearch() {
   }
 
   function cancelResearch(): void {
+    if (!controller) return;
+    cancelled.value = true;
     controller?.abort();
     controller = null;
     running.value = false;
@@ -131,6 +137,7 @@ export function useResearch() {
 
   return {
     cancelResearch,
+    cancelled,
     error,
     events,
     progress,
@@ -140,4 +147,3 @@ export function useResearch() {
     tasks,
   };
 }
-

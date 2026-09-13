@@ -1,6 +1,6 @@
 # HelloAgents 自动化深度研究助手
 
-这是第十四章的持续实践目录。14.1 实现前后端工程骨架、四层架构契约和 SSE 通道；14.2 补全 TODO 草案、任务编号及三阶段顺序流程；14.3 实现规划、总结、报告三个 Agent 服务，以及工具调用监听和事件桥接；14.4 接入多后端 `SearchTool`、`NoteTool` 和 `ToolRegistry`；14.5 完成四个业务服务、搜索缓存和生产组合入口。
+这是第十四章的持续实践目录。14.1 实现前后端工程骨架、四层架构契约和 SSE 通道；14.2 补全 TODO 草案、任务编号及三阶段顺序流程；14.3 实现规划、总结、报告三个 Agent 服务，以及工具调用监听和事件桥接；14.4 接入多后端 `SearchTool`、`NoteTool` 和 `ToolRegistry`；14.5 完成四个业务服务、搜索缓存和生产组合入口；14.6 补齐全屏研究界面、流式事件解析和安全 Markdown 渲染。
 
 ## 当前结构
 
@@ -36,6 +36,8 @@ helloagents-deepresearch/
     ├── src/
     │   ├── components/ResearchModal.vue
     │   ├── composables/useResearch.ts
+    │   ├── lib/markdown.ts
+    │   ├── lib/sse.ts
     │   ├── types/research.ts
     │   ├── App.vue
     │   ├── main.ts
@@ -95,7 +97,11 @@ npm install
 npm run dev
 ```
 
-默认访问 <http://localhost:5174>。前端通过 `fetch()` 发送带请求体的 `POST /research/stream`，再从响应体逐帧解析 `text/event-stream`；这与只能发起 GET 的原生 `EventSource` 不同。
+默认访问 <http://localhost:5174>。前端通过 `fetch()` 发送带请求体的 `POST /research/stream`，再用增量解码器处理可能跨网络分块的 `text/event-stream`；这与不能携带 JSON 请求体的原生 `EventSource` 不同。
+
+提交主题后会打开全屏研究面板。页面把 SSE 事件映射为阶段进度、TODO 状态、过程日志和最终报告；用户可用取消按钮、关闭按钮、遮罩或 `Esc` 终止进行中的请求。模态框打开时锁定页面滚动并限制键盘焦点，关闭后恢复原焦点；窄屏下任务区和报告区改为纵向排列。
+
+报告先由 `marked` 转换为 GFM HTML，再经 `DOMPurify` 清洗后交给 `v-html`。报告内链接统一在新标签页打开并附带 `noopener noreferrer`；任务来源只接受 `http` 与 `https` URL。
 
 构建和依赖审计：
 

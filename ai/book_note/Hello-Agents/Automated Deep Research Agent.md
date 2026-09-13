@@ -1,8 +1,8 @@
 ## 自动化深度研究智能体
 
-> 阅读资料：[14.1 项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_141-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)、[14.2 TODO 驱动的研究范式](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_142-todo-%e9%a9%b1%e5%8a%a8%e7%9a%84%e7%a0%94%e7%a9%b6%e8%8c%83%e5%bc%8f)、[14.3 智能体系统设计](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_143-%e6%99%ba%e8%83%bd%e4%bd%93%e7%b3%bb%e7%bb%9f%e8%ae%be%e8%ae%a1)、[14.4 工具系统集成](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_144-%e5%b7%a5%e5%85%b7%e7%b3%bb%e7%bb%9f%e9%9b%86%e6%88%90)、[14.5 服务层实现](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_145-%e6%9c%8d%e5%8a%a1%e5%b1%82%e5%ae%9e%e7%8e%b0)
+> 阅读资料：[14.1 项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_141-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)、[14.2 TODO 驱动的研究范式](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_142-todo-%e9%a9%b1%e5%8a%a8%e7%9a%84%e7%a0%94%e7%a9%b6%e8%8c%83%e5%bc%8f)、[14.3 智能体系统设计](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_143-%e6%99%ba%e8%83%bd%e4%bd%93%e7%b3%bb%e7%bb%9f%e8%ae%be%e8%ae%a1)、[14.4 工具系统集成](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_144-%e5%b7%a5%e5%85%b7%e7%b3%bb%e7%bb%9f%e9%9b%86%e6%88%90)、[14.5 服务层实现](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_145-%e6%9c%8d%e5%8a%a1%e5%b1%82%e5%ae%9e%e7%8e%b0)、[14.6 前端交互设计](https://datawhalechina.github.io/hello-agents/#/./chapter14/%E7%AC%AC%E5%8D%81%E5%9B%9B%E7%AB%A0%20%E8%87%AA%E5%8A%A8%E5%8C%96%E6%B7%B1%E5%BA%A6%E7%A0%94%E7%A9%B6%E6%99%BA%E8%83%BD%E4%BD%93?id=_146-%e5%89%8d%e7%ab%af%e4%ba%a4%e4%ba%92%e8%ae%be%e8%ae%a1)
 >
-> 14.1 确定产品目标、四层架构和数据流；14.2 用 TODO 组织研究过程；14.3 把三类产物交给三个窄职责 Agent；14.4 统一搜索、笔记和工具调用边界；14.5 用服务层封装 Prompt、解析、检索清洗和缓存。
+> 14.1 确定产品目标、四层架构和数据流；14.2 用 TODO 组织研究过程；14.3 把三类产物交给三个窄职责 Agent；14.4 统一搜索、笔记和工具调用边界；14.5 用服务层封装 Prompt、解析、检索清洗和缓存；14.6 把流式研究状态变成可操作的全屏界面。
 
 ### 深度研究不等于多搜几次
 
@@ -510,6 +510,70 @@ data: {"type":"done","message":"研究完成","progress":100}
 
 本项目需要在请求体中提交主题和搜索后端，因此前端使用 `fetch()` 发起 POST，再读取 `ReadableStream`；原生 `EventSource` 只适合 GET，不能直接承载这里的 JSON 请求体。
 
+### 前端交互设计：把后台过程变成界面状态
+
+研究过程中既有任务列表，又有持续增长的日志和报告。全屏模态框能把这些信息集中在一个稳定视区：顶部显示主题、阶段与总进度；左侧放 TODO 和事件时间线；右侧在执行时展示当前任务，完成后切换为报告；底部保留状态与取消操作。
+
+| 界面区域 | 展示内容 | 交互 |
+| --- | --- | --- |
+| Header | 研究主题、关闭按钮 | 关闭时中止尚未完成的请求 |
+| Progress | 阶段、百分比、最新消息 | 使用 `aria-live` 播报状态变化 |
+| Sidebar | TODO、完成数、过程日志 | 自动跟随进行中的任务，也可手动切换 |
+| Content | 当前任务、来源或最终报告 | 安全渲染 Markdown，外链新窗口打开 |
+| Footer | 当前状态、取消按钮 | `AbortController` 终止流式请求 |
+
+界面状态随事件推进，而不是用定时器猜测进度：
+
+~~~mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> Running: 提交主题并打开模态框
+    Running --> Running: status / tasks / task / tool_call
+    Running --> Completed: report + done
+    Running --> Failed: error 或解析失败
+    Running --> Cancelled: 取消、关闭、Esc
+    Completed --> Idle: 关闭或重新研究
+    Failed --> Idle: 关闭或重新研究
+    Cancelled --> Idle: 关闭或重新研究
+~~~
+
+#### POST SSE 的正确读取方式
+
+原文先给出了 FastAPI 的 `POST /api/research`，前端示例却用 `new EventSource(url?topic=...)` 建立连接。`EventSource` 构造器没有请求方法和请求体参数，无法直接提交本项目需要的 JSON。因此实践保留文章的 SSE 思路，但按现有接口使用 `fetch()`：
+
+~~~typescript
+const response = await fetch(`${API_BASE_URL}/research/stream`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ topic, search_api: searchApi }),
+  signal: controller.signal,
+});
+
+await consumeResearchSSE(response, applyEvent);
+~~~
+
+网络分块不等于 SSE 事件边界：一段 JSON 可能被拆成两个 chunk，也可能一个 chunk 中带有多条事件。[sse.ts](./code/HelloAgents/helloagents-deepresearch/frontend/src/lib/sse.ts) 使用缓冲区逐步处理 `\r\n`、空行分帧、多行 `data:` 和最后一段残留，再把 JSON 交给 [research.ts](./code/HelloAgents/helloagents-deepresearch/frontend/src/types/research.ts) 检查事件类型、进度范围和必要字段。连接若在 `done` 或 `error` 前结束，会明确报错，不把半份报告当成完成结果。
+
+| SSE 类型 | 页面变化 |
+| --- | --- |
+| `status` | 更新阶段、进度和日志 |
+| `tasks` | 建立 TODO 列表 |
+| `task` | 按 ID 更新任务状态、总结和来源 |
+| `tool_call` | 记录实际工具调用 |
+| `report` | 将内容区切换为最终报告 |
+| `done` | 标记请求正常结束 |
+| `error` | 展示错误并结束本次流 |
+
+取消请求时，`AbortController` 会中断读取。组合式函数还会比较当前控制器，忽略旧请求晚到的事件，防止连续提交时把两次研究状态混在一起。
+
+#### Markdown 不能直接交给 `v-html`
+
+报告来自模型输出，Markdown 中可能混入 HTML。实践使用 [markdown.ts](./code/HelloAgents/helloagents-deepresearch/frontend/src/lib/markdown.ts) 先由 `marked` 解析 GFM 和换行，再用 `DOMPurify` 清洗 HTML，最后才交给 `v-html`。报告链接统一增加 `target="_blank"` 和 `rel="noopener noreferrer"`，TODO 来源还会拒绝非 `http`、`https` 协议。
+
+#### 模态框不只是加一层遮罩
+
+[ResearchModal.vue](./code/HelloAgents/helloagents-deepresearch/frontend/src/components/ResearchModal.vue) 通过 `Teleport` 挂到 `body`，打开时锁住页面滚动、保存原焦点，并把键盘焦点限制在对话框内；关闭后恢复滚动与焦点。关闭按钮、点击遮罩和 `Esc` 使用同一关闭路径，研究尚未结束时会先取消请求。布局在 860px 以下改为上下分区，600px 以下取消圆角和外边距，占满移动端视口；同时尊重 `prefers-reduced-motion`。
+
 ### 代码实践
 
 #### 当前工程结构
@@ -548,6 +612,8 @@ helloagents-deepresearch/
     ├── src/
     │   ├── components/ResearchModal.vue
     │   ├── composables/useResearch.ts
+    │   ├── lib/markdown.ts
+    │   ├── lib/sse.ts
     │   ├── types/research.ts
     │   ├── App.vue
     │   ├── main.ts
@@ -574,8 +640,12 @@ helloagents-deepresearch/
 - [tool_aware_simple_agent.py](./code/HelloAgents/hello_agents/agents/tool_aware_simple_agent.py) 在框架层扩展工具调用监听；
 - [tool_events.py](./code/HelloAgents/helloagents-deepresearch/backend/src/tool_events.py) 将监听回调桥接为协调器可以发送的事件；
 - [main.py](./code/HelloAgents/helloagents-deepresearch/backend/src/main.py) 暴露健康检查、架构信息和流式研究入口；
-- [useResearch.ts](./code/HelloAgents/helloagents-deepresearch/frontend/src/composables/useResearch.ts) 解析 POST 返回的 SSE 数据帧；
-- [ResearchModal.vue](./code/HelloAgents/helloagents-deepresearch/frontend/src/components/ResearchModal.vue) 展示任务、日志、进度和报告。
+- [App.vue](./code/HelloAgents/helloagents-deepresearch/frontend/src/App.vue) 收集主题和搜索后端，并管理研究面板生命周期；
+- [useResearch.ts](./code/HelloAgents/helloagents-deepresearch/frontend/src/composables/useResearch.ts) 管理请求、取消、终止事件和页面状态；
+- [sse.ts](./code/HelloAgents/helloagents-deepresearch/frontend/src/lib/sse.ts) 增量解析 POST 返回的 SSE 数据帧；
+- [markdown.ts](./code/HelloAgents/helloagents-deepresearch/frontend/src/lib/markdown.ts) 解析并清洗 Markdown；
+- [ResearchModal.vue](./code/HelloAgents/helloagents-deepresearch/frontend/src/components/ResearchModal.vue) 展示任务、日志、来源、进度和报告，并处理焦点与键盘操作；
+- [style.css](./code/HelloAgents/helloagents-deepresearch/frontend/src/style.css) 实现全屏面板、报告排版、响应式布局和低动态模式。
 
 #### 用接口固定协作边界
 
@@ -709,7 +779,7 @@ python src/main.py
 PYTHONDONTWRITEBYTECODE=1 python service_layer_demo.py
 ~~~
 
-前端要求 Node.js 16+ 和 npm 8+；实际还要满足当前 Vite 版本的 Node.js 要求：
+前端使用 Vite 6，要求 Node.js 18+：
 
 ~~~bash
 cd code/HelloAgents/helloagents-deepresearch/frontend
@@ -724,7 +794,7 @@ npm run dev
 架构 Demo 验证四层、三个 Agent、两个工具、八个数据流步骤和 TODO 工作流契约：
 
 ~~~text
-=== 14.1–14.5 深度研究助手架构实践 ===
+=== 14.1–14.6 深度研究助手架构实践 ===
 layers: 4
 agents: 3
 tools: 2
@@ -735,6 +805,7 @@ todo_research_workflow: ready
 agent_system_design: ready
 tool_system_integration: ready
 service_layer: ready
+frontend_interaction: ready
 external_api_calls: 0
 ~~~
 
@@ -811,11 +882,20 @@ external_api_calls: 0
 
 规划响应前后故意带有说明文字，服务仍提取出合法 JSON；两项、且查询都没有空格的弱计划按原文规则得到 60 分。搜索工具返回一个重复 URL 和 40 字符摘要，服务去重后保留两条来源，并在 2 个近似 Token 的限制下截为 8 个字符加省略号；同一查询只触发一次工具调用，第二次从临时缓存读取。完整流程生成 3 条任务笔记和 1 份最终报告，但内容均为固定测试数据，不代表真实研究质量。
 
-前端 `vue-tsc` 与 Vite 生产构建通过，共转换 14 个模块；入口脚本为 73.02 kB（gzip 后 29.54 kB）。上一次依赖审计返回 `found 0 vulnerabilities`；本节没有变更前端依赖。
+14.6 的前端生产构建通过，`vue-tsc` 没有发现类型错误，Vite 共转换 19 个模块。加入 `marked` 和 `DOMPurify` 后，入口脚本为 152.44 kB（gzip 后 56.40 kB），样式为 8.30 kB（gzip 后 2.72 kB）；`npm audit` 返回 `found 0 vulnerabilities`。
+
+流式解码器还用三个连续输入块验证了 CRLF 跨块、一个块包含多帧，以及最后一帧没有空行的情况：
+
+~~~text
+sse_incremental_frames: ready
+decoded_events: 3
+~~~
+
+浏览器中检查了首屏、全屏模态框、`Esc` 关闭和后端未启动时的中文错误提示。上述结果只覆盖前端交互、类型、打包和已知依赖漏洞，不代表真实模型与搜索接口已经联调。
 
 ### 实践边界
 
-- 当前完成 14.1 的架构基线、14.2 的 TODO 工作流、14.3 的三个 Agent、14.4 的工具系统，以及 14.5 的四个业务服务与组合入口；
+- 当前完成 14.1 的架构基线、14.2 的 TODO 工作流、14.3 的三个 Agent、14.4 的工具系统、14.5 的四个业务服务与组合入口，以及 14.6 的前端交互；
 - `DeepResearchAgent` 已实现三阶段编排、任务状态、工具调用事件与失败事件；配置就绪后，全局 FastAPI 应用会装配真实服务；
 - Prompt 约束不能保证模型始终按格式输出；规划结果仍会经过 JSON、Pydantic、数量和重复查询四层检查；
 - 当前任务按顺序执行；失败后不自动重试、跳过或重新规划；
@@ -825,7 +905,7 @@ external_api_calls: 0
 - SearchService 沿用原文的空列表错误协议，调用方若要区分“无结果”和“请求失败”，还需检查诊断状态或改为显式异常；
 - 配置检查和离线 Demo 都不发起联网请求，不能证明模型或搜索 API 可用；
 - 没有使用真实密钥，也没有调用收费模型或搜索服务；
-- 前端目前按纯文本保留 Markdown，安全渲染、引用跳转和报告导出留给后续界面实现。
+- 前端已完成流式进度、任务切换、取消、焦点管理和安全 Markdown 渲染；报告导出尚未实现。
 
 ### 参考资料
 
@@ -836,10 +916,14 @@ external_api_calls: 0
 - [官方总结服务代码](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter14/helloagents-deepresearch/backend/src/services/summarizer.py)
 - [官方报告服务代码](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter14/helloagents-deepresearch/backend/src/services/reporter.py)
 - [官方 FastAPI 入口](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter14/helloagents-deepresearch/backend/src/main.py)
+- [官方 Vue 前端实现](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter14/helloagents-deepresearch/frontend/src/App.vue)
 - [FastAPI StreamingResponse](https://fastapi.tiangolo.com/advanced/custom-response/#streamingresponse)
 - [MDN：使用可读流](https://developer.mozilla.org/zh-CN/docs/Web/API/Streams_API/Using_readable_streams)
+- [MDN：EventSource](https://developer.mozilla.org/zh-CN/docs/Web/API/EventSource/EventSource)
+- [Marked 文档](https://marked.js.org/)
+- [DOMPurify](https://github.com/cure53/DOMPurify)
 - [Vue 3 官方文档](https://vuejs.org/)
 
 ### 小结
 
-深度研究助手不是搜索框外面再套一层 LLM，而是一条可观测、可落盘的研究流水线。14.1 固定四层边界和 SSE 协议，14.2 用 TODO 串起规划、执行和报告，14.3 把三类产物交给三个独立 Agent，14.4 以统一协议接入搜索与笔记工具，14.5 再用服务层收住 Prompt、解析、结果清洗、缓存和装配。Agent 处理研究内容，工具提供外部能力，服务稳定两者的输入输出，协调器维护状态与顺序。当前版本已经能在配置就绪后运行完整后端流程；断点恢复、缓存过期、失败重试和动态补充查询仍需后续完善。
+深度研究助手是一条可观测、可落盘、可操作的研究流水线。14.1 固定四层边界和 SSE 协议，14.2 用 TODO 串起规划、执行和报告，14.3 将三类产物交给三个独立 Agent，14.4 以统一协议接入搜索与笔记工具，14.5 用服务层收住 Prompt、解析、清洗、缓存和装配，14.6 再把流式事件映射为进度、任务、日志与安全渲染的报告。当前版本已形成完整前后端链路；断点恢复、缓存过期、失败重试、动态补充查询和报告导出仍需完善。

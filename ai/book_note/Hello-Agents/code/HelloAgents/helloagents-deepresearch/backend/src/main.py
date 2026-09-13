@@ -58,14 +58,14 @@ def create_app(
     def root() -> dict[str, str]:
         return {
             "project": "helloagents-deepresearch",
-            "scope": "chapter_14_1_to_14_5_service_layer",
+            "scope": "chapter_14_1_to_14_6_frontend_interaction",
             "docs": "/docs",
         }
 
     @app.get("/healthz", response_model=HealthResponse)
     def health() -> HealthResponse:
         return HealthResponse(
-            scope="chapter_14_1_to_14_5_service_layer",
+            scope="chapter_14_1_to_14_6_frontend_interaction",
             workflow_ready=runner_factory is not None,
             integrations=current_settings.integration_status(),
         )

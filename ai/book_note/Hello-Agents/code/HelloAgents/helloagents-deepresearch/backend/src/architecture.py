@@ -1,4 +1,4 @@
-"""Serializable description of the architecture implemented through 14.5."""
+"""Serializable description of the architecture implemented through 14.6."""
 
 from __future__ import annotations
 
@@ -24,7 +24,12 @@ LAYERS = [
     ArchitectureLayer(
         name="frontend",
         technology="Vue 3 + TypeScript",
-        responsibilities=["研究主题输入", "全屏研究面板", "Markdown 结果展示"],
+        responsibilities=[
+            "研究主题输入",
+            "全屏研究面板",
+            "SSE 进度与任务展示",
+            "安全 Markdown 结果展示",
+        ],
     ),
     ArchitectureLayer(
         name="backend",
@@ -82,10 +87,10 @@ DATA_FLOW = [
 
 
 def build_architecture_snapshot() -> ArchitectureSnapshot:
-    """Build the architecture contract implemented through section 14.5."""
+    """Build the architecture contract implemented through section 14.6."""
     return ArchitectureSnapshot(
         project="helloagents-deepresearch",
-        scope="chapter_14_1_to_14_5_service_layer",
+        scope="chapter_14_1_to_14_6_frontend_interaction",
         layers=LAYERS,
         agents=AGENTS,
         tools=TOOLS,
@@ -119,10 +124,15 @@ def build_architecture_snapshot() -> ArchitectureSnapshot:
             "搜索调度、二次去重、摘要限长与错误边界",
             "搜索结果缓存校验与原子写入",
             "按配置装配完整研究服务",
+            "POST SSE 增量分帧与运行时事件校验",
+            "进度、任务、日志和报告联动展示",
+            "全屏模态框键盘操作与焦点管理",
+            "GFM Markdown 清洗、渲染与安全外链",
+            "桌面和移动端响应式布局",
         ],
         deferred_capabilities=[
             "研究状态恢复与 SSE 游标续传",
             "失败重试、动态补充查询与并行任务",
-            "前端安全 Markdown 渲染与报告导出",
+            "研究报告导出",
         ],
     )
