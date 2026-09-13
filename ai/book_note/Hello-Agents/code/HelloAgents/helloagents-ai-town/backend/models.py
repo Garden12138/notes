@@ -62,10 +62,58 @@ class NPCListResponse(APIModel):
     total: int = Field(ge=0)
 
 
+class NPCPosition(APIModel):
+    x: float
+    y: float
+
+
+class NPCStateInfo(APIModel):
+    npc_id: str
+    npc_name: str
+    npc_title: str
+    position: NPCPosition
+    is_busy: bool
+    current_action: str
+    busy_player_id: str | None
+    last_interaction: datetime | None
+    background_dialogue: str | None
+
+
+class NPCStatusResponse(APIModel):
+    npcs: list[NPCStateInfo]
+    dialogues: dict[str, str]
+    last_update: datetime | None
+    next_update_in: int = Field(ge=0)
+    update_interval: int = Field(ge=1)
+    scheduler_running: bool
+
+
+class NPCStateRefreshResponse(APIModel):
+    message: str
+    dialogues: dict[str, str]
+    last_update: datetime
+
+
+class AffinityInfoResponse(APIModel):
+    npc_name: str
+    player_id: str
+    score: float = Field(ge=0, le=100)
+    level: AffinityLevelName
+    modifier: str
+    interaction_count: int = Field(ge=0)
+    updated_at: datetime | None
+
+
+class AffinityListResponse(APIModel):
+    player_id: str
+    affinities: dict[str, AffinityInfoResponse]
+
+
 class HealthResponse(APIModel):
     status: Literal["ok"] = "ok"
     scope: str
     conversation_ready: bool
+    state_scheduler_running: bool
     integrations: dict[str, bool]
     detail: str | None = None
 

@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     memory_path: str = "./memory_data"
     qdrant_url: str = "http://127.0.0.1:6333"
     sqlite_path: str = "./data/cyber_town.db"
+    log_path: str = "./logs"
+    npc_update_interval: int = Field(default=30, ge=1)
 
     @property
     def cors_origin_list(self) -> list[str]:

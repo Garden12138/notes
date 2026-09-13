@@ -6,7 +6,9 @@
 > - [15.2 NPC 智能体系统](https://datawhalechina.github.io/hello-agents/#/./chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87?id=_152-npc-%e6%99%ba%e8%83%bd%e4%bd%93%e7%b3%bb%e7%bb%9f)
 > - [15.3 好感度系统设计](https://datawhalechina.github.io/hello-agents/#/./chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87?id=_153-%e5%a5%bd%e6%84%9f%e5%ba%a6%e7%b3%bb%e7%bb%9f%e8%ae%be%e8%ae%a1)
 >
-> 15.1 确定四层边界；15.2 实现 NPC 的角色、记忆和两种对话模式；15.3 用好感度描述每一组玩家—NPC 关系，并让当前关系影响下一轮回复。
+> - [15.4 后端服务实现](https://datawhalechina.github.io/hello-agents/#/./chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87?id=_154-%e5%90%8e%e7%ab%af%e6%9c%8d%e5%8a%a1%e5%ae%9e%e7%8e%b0)
+>
+> 15.1 确定四层边界；15.2 实现 NPC 的角色、记忆和两种对话模式；15.3 加入玩家—NPC 好感度；15.4 用 FastAPI 把对话、状态、定时更新和日志串成后端服务。
 
 ### 为什么要把 Agent 放进游戏
 
@@ -32,7 +34,7 @@
 | 游戏化交互 | 在 2D 办公室移动和交谈 | Godot 场景、碰撞、输入和 UI |
 | 实时日志 | 回看对话和状态变化 | 结构化时间、错误和调用日志 |
 
-这些能力存在先后关系：游戏产生对话请求，Agent 结合记忆和当前关系生成回复，好感度系统再处理互动结果，最后由状态与日志组件记录整条链路。当前已实现到好感度；NPC 自主状态和日志仍属于后续小节。
+这些能力存在先后关系：游戏产生请求，后端先占用 NPC，Agent 再结合记忆和当前关系生成回复，好感度系统处理互动结果，最后释放状态并记录日志。15.4 已把这条后端链路接通；好感度面板和背景气泡的前端展示仍留给后续章节。
 
 ### 四层技术架构
 
@@ -48,7 +50,8 @@ flowchart TB
         API["HTTP API"]
         COORDINATOR["请求校验与对话协调"]
         RELATION["玩家—NPC 关系"]
-        STATE["自主状态与日志"]
+        STATE["忙碌状态与背景对白缓存"]
+        LOGGER["每日对话日志"]
     end
 
     subgraph A["智能体层 · HelloAgents"]
@@ -61,23 +64,26 @@ flowchart TB
     subgraph E["外部能力"]
         LLM["LLM API"]
         STORE["SQLite / 可替换向量存储"]
+        LOG_FILE["dialogue_YYYY-MM-DD.log"]
     end
 
     PLAYER --> NPC_VIEW --> DIALOGUE --> API
-    API --> COORDINATOR --> MANAGER --> AGENTS --> LLM
+    API --> COORDINATOR
+    COORDINATOR <--> STATE
+    COORDINATOR --> MANAGER --> AGENTS --> LLM
     MANAGER <--> MEMORY --> STORE
     MANAGER <--> RELATION --> STORE
     RELATION --> LLM
-    COORDINATOR -.后续章节.-> STATE
-    BATCH --> LLM
-    BATCH -.定时更新留待后续.-> STATE
+    STATE --> BATCH --> LLM
+    COORDINATOR --> LOGGER --> LOG_FILE
+    STATE --> LOGGER
     API --> DIALOGUE
 ~~~
 
 | 层次 | 主要职责 | 不应承担的职责 |
 | --- | --- | --- |
 | Godot 前端 | 画面、移动、碰撞、输入、对话展示 | 保存模型密钥、计算权威关系状态 |
-| FastAPI 后端 | 请求校验、NPC 定位、对话协调、关系持久化 | 阻塞游戏帧循环、控制场景节点 |
+| FastAPI 后端 | 请求校验、状态占用、对话协调、定时更新、日志 | 阻塞游戏帧循环、控制场景节点 |
 | HelloAgents | 角色扮演、记忆组织、关系分析、批量对白 | 直接移动玩家或修改场景树 |
 | 外部能力 | 模型推理、检索和持久化 | 决定交互顺序与游戏规则 |
 
@@ -185,7 +191,7 @@ flowchart LR
 
 这里减少的是请求次数：三次独立背景生成合并为一次。费用不一定严格降到三分之一，因为仍要计算完整 Prompt 和三段输出的 Token。批量内容也不能拿来回答玩家，否则回复无法结合具体问题和个人记忆。
 
-当前只实现可调用的批量生成器，没有提前加入无限循环和状态缓存。每五分钟调度、缓存背景对白并推送到前端，需要依赖后续的 NPC 状态管理。
+15.4 将批量生成器接入状态管理器：服务启动时先生成一次，之后按配置间隔刷新缓存。这里更新的是 NPC 背景对白，玩家发起的即时对话仍走独立 Agent。
 
 ### 好感度表示一对关系
 
@@ -273,6 +279,96 @@ sequenceDiagram
 
 一次玩家对话现在通常产生两次模型调用：第一次由 NPC Agent 生成回复，第二次由分析 Agent 评估好感度。角色回复和关系判断职责分开了，但延迟与 Token 成本也随之增加；后续可以换成更小的分类模型或规则与模型结合，接口无需变化。
 
+### 后端是编排层，不是第四个 Agent
+
+15.4 的重点不是再增加一种推理能力，而是把前三节的对象组织成稳定服务。各模块只处理一类状态：
+
+| 模块 | 负责什么 | 状态存放位置 |
+| --- | --- | --- |
+| `NPCAgentManager` | 角色回复、记忆检索与保存 | 每个 NPC 的 MemoryManager |
+| `RelationshipManager` | 玩家—NPC 分数、等级与更新 | SQLite |
+| `NPCStateManager` | 忙碌状态、当前动作、背景对白缓存 | 进程内存 |
+| `DialogueLogger` | 对话、关系变化、状态刷新和错误 | 控制台与日志文件 |
+| FastAPI `main.py` | 校验请求、调用以上模块、转换 HTTP 错误 | 不长期保存业务数据 |
+
+原文片段使用 `@app.on_event("startup")`，官方完整工程已经改用 `lifespan`。当前实践也使用 `lifespan`：启动时开启状态调度器，关闭时取消后台任务、关闭记忆数据库和日志句柄。资源的创建和销毁由同一处管理，测试时也能注入 Fake LLM、临时状态管理器和临时日志目录。
+
+### NPC 状态包含交互与环境两部分
+
+[state_manager.py](./code/HelloAgents/helloagents-ai-town/backend/state_manager.py) 中的状态分为两组：
+
+- 交互状态：位置、`is_busy`、`current_action`、正在交谈的 `player_id` 和最后互动时间；
+- 环境状态：三名 NPC 当前的背景对白、上次批量更新时间和下次更新倒计时。
+
+它们都不是好感度。好感度描述长期关系，需要持久化；忙碌状态只在请求执行期间有效；背景对白是可重新生成的缓存。把三者混成一个字典，会让一次对话失败时很难判断应该恢复哪部分数据。
+
+正文先调用 `is_npc_busy()`，再调用 `set_npc_busy(True)`。并发请求可能同时通过第一次检查，因此实践将两步合并为加锁的 `try_begin_dialogue()`：只有一个请求能把 NPC 从空闲切换为忙碌，其余请求得到 `409 Conflict`。
+
+~~~mermaid
+sequenceDiagram
+    actor P as 玩家
+    participant F as FastAPI
+    participant S as NPCStateManager
+    participant A as NPCAgentManager
+    participant L as DialogueLogger
+
+    P->>F: POST /chat
+    F->>S: try_begin_dialogue(npc, player)
+    alt NPC 已忙碌
+        S-->>F: false
+        F-->>P: 409 Conflict
+    else 成功占用
+        S-->>F: true
+        F->>A: 生成回复并更新关系、记忆
+        alt 处理成功
+            A-->>F: reply + affinity
+            F->>L: 记录完整对话
+            F-->>P: 200 OK
+        else 模型或存储失败
+            A-->>F: exception
+            F->>L: 记录错误
+            F-->>P: 502 Bad Gateway
+        end
+        F->>S: finally 释放 NPC
+    end
+~~~
+
+`finally` 很重要：释放动作不依赖 Agent 是否成功。如果只在正常返回前设置空闲，一次模型超时就会让 NPC 永久停在忙碌状态。
+
+### 定时批量更新与生命周期
+
+状态管理器启动后立即调用一次 `NPCBatchGenerator` 填充缓存，再按 `NPC_UPDATE_INTERVAL` 周期刷新。默认 30 秒意味着每小时约 120 次批量请求；这是成本配置，不是越短越好。启动服务本身也会产生一次真实模型调用。
+
+~~~mermaid
+flowchart LR
+    START["FastAPI lifespan 启动"] --> FIRST["立即批量生成一次"]
+    FIRST --> CACHE["原子替换背景对白缓存"]
+    CACHE --> WAIT["等待配置间隔"]
+    WAIT --> GENERATE["在线程中执行同步 LLM 调用"]
+    GENERATE -->|成功| CACHE
+    GENERATE -->|失败| KEEP["记录错误并保留旧缓存"]
+    KEEP --> WAIT
+    STOP["FastAPI lifespan 关闭"] --> CANCEL["取消并等待后台任务"]
+~~~
+
+批量生成器是同步接口，直接放进异步循环会阻塞 FastAPI 事件循环。实践通过 `asyncio.to_thread()` 执行模型调用；状态写入仍由锁保护。手动刷新与定时刷新共用同一把异步锁，不会同时覆盖缓存。
+
+### 每日对话日志
+
+[logger.py](./code/HelloAgents/helloagents-ai-town/backend/logger.py) 中的 `DialogueLogger` 同时输出到控制台和 `LOG_PATH/dialogue_YYYY-MM-DD.log`。一条成功日志包含 NPC、玩家、双方消息、近期/相关记忆数量、好感度实际变化、原因、情感和评分是否有效；状态刷新与异常也进入同一日志。日志按本地日期切换文件，但不会记录模型密钥。
+
+~~~bash
+python view_logs.py --lines 80
+python view_logs.py --follow
+python view_logs.py --date 2026-09-13
+~~~
+
+[view_logs.py](./code/HelloAgents/helloagents-ai-town/backend/view_logs.py) 默认读取当天文件，可以指定日期、末尾行数或持续跟踪。这里的日志主要用于开发追踪，不等于完整的生产可观测性。高并发服务还需要请求 ID、结构化 JSON、敏感文本脱敏和集中式日志采集。
+
+### 场景与节点是下一步前端实现的基础
+
+15.4.4 用节点和场景解释 Godot 的组织方式。节点承担单一功能，并按父子关系组成场景树；场景则是可保存、可复用和可实例化的节点树。当前工程已经把 Player、NPC 和 DialogueUI 拆成独立场景，再由 Main 场景组合。这个小节是 15.5 前端开发的概念铺垫，本次没有重复创建另一套 Godot 文件。
+
 ### 工程实现
 
 代码继续放在 `code/HelloAgents/helloagents-ai-town/`：
@@ -284,9 +380,12 @@ helloagents-ai-town/
 │   ├── batch_generator.py        # 一次调用生成三段背景对白
 │   ├── architecture.py           # 当前实现范围
 │   ├── config.py                 # 环境变量
+│   ├── logger.py                 # 控制台与每日文件日志
 │   ├── main.py                   # FastAPI 接口
 │   ├── models.py                 # 请求与响应模型
 │   ├── relationship_manager.py   # 好感度分析、分级与 SQLite 持久化
+│   ├── state_manager.py          # 忙碌状态、背景对白缓存与定时器
+│   ├── view_logs.py              # 日志查看命令
 │   ├── .env.example
 │   ├── architecture_demo.py      # Fake LLM 离线验证
 │   └── pyproject.toml
@@ -337,18 +436,25 @@ affinity = relationship_manager.analyze_and_update_affinity(
 
 关系先按旧状态影响回复，随后才更新。更新与情景记忆保存都在同一个 NPC 的对话锁内，避免该 NPC 的并发请求交叉覆盖；不同 NPC 仍能分别处理。
 
-#### FastAPI 对话入口
+#### FastAPI 接口与生命周期
 
-[main.py](./code/HelloAgents/helloagents-ai-town/backend/main.py) 保留 15.1 的接口，并把 `/chat` 从占位状态接到真实管理器：
+[main.py](./code/HelloAgents/helloagents-ai-town/backend/main.py) 通过依赖注入组装 Agent、状态和日志组件。`lifespan` 启停后台调度器，路由只处理协议和流程：
+
+正文示意接口名是 `/dialogue`，官方完整工程和当前 Godot 客户端使用 `/chat`。实践保留 `/chat`，避免为同一流程维护两套路由。
 
 | 接口 | 当前行为 |
 | --- | --- |
-| `GET /healthz` | 返回 LLM 配置与 `conversation_ready` |
-| `GET /architecture` | 返回当前四层架构和十步数据流 |
-| `GET /npcs` | 返回三名 NPC 的角色资料 |
-| `POST /chat` | 读取关系、生成回复、更新好感度并保存互动 |
+| `GET /healthz` | 返回对话与状态调度器是否就绪 |
+| `GET /architecture` | 返回当前四层架构和十三步数据流 |
+| `GET /npcs` | 返回三名 NPC，并按忙碌状态计算 `available` |
+| `GET /npcs/status` | 返回全部状态、背景对白和下次更新倒计时 |
+| `GET /npcs/{npc_name}/status` | 返回单个 NPC 的位置、动作与忙碌状态 |
+| `POST /npcs/status/refresh` | 立即执行一次批量背景对白更新 |
+| `GET /npcs/{npc_name}/affinity` | 查询一组玩家—NPC 关系 |
+| `GET /affinities` | 查询指定玩家与全部 NPC 的关系 |
+| `POST /chat` | 占用 NPC，生成回复，更新关系与记忆，写日志后释放 |
 
-未配置三项 LLM 参数时返回 `503`；NPC 不存在返回 `404`；模型或记忆处理失败返回 `502`。服务不会用静态台词伪装成成功响应。
+未配置三项 LLM 参数或没有批量生成器时返回 `503`；NPC 不存在返回 `404`；NPC 已被占用返回 `409`；模型、记忆或刷新处理失败返回 `502`。服务不会用静态台词伪装成成功响应。
 
 返回结构保留 Godot 已使用的 `message`，并加入完整的关系更新结果：
 
@@ -378,7 +484,7 @@ Godot 端继续使用 15.1 的场景和异步 `HTTPRequest`：
 - [api_client.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/api_client.gd) 发送 `npc_name`、`player_id` 和 `message`，读取响应中的 `message`；
 - [main.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/main.gd) 连接 NPC、玩家、UI 与 API 信号。
 
-当前 Godot UI 只显示回复文本，新增的好感度字段会被安全忽略；关系已经通过 Prompt 改变回复语气，但分数面板仍留给后续前端章节。
+当前 Godot UI 只调用 `/healthz` 和 `/chat`，新增的好感度字段会被安全忽略；状态与背景对白接口已经就绪，但前端尚未轮询和显示这些数据。
 
 ### 运行方式
 
@@ -400,6 +506,8 @@ LLM_API_KEY=""
 LLM_BASE_URL=""
 MEMORY_PATH="./memory_data"
 SQLITE_PATH="./data/cyber_town.db"
+NPC_UPDATE_INTERVAL="30"
+LOG_PATH="./logs"
 ~~~
 
 然后启动：
@@ -408,7 +516,7 @@ SQLITE_PATH="./data/cyber_town.db"
 python main.py
 ~~~
 
-访问 `http://127.0.0.1:8000/docs` 可以直接测试 `/chat`。真实调用会产生模型费用，在 `MEMORY_PATH` 下创建 NPC 记忆数据库，并在 `SQLITE_PATH` 保存关系分数。
+访问 `http://127.0.0.1:8000/docs` 可以测试全部接口。真实运行会在启动时和每次状态刷新时调用模型，在 `MEMORY_PATH` 下创建 NPC 记忆数据库，在 `SQLITE_PATH` 保存关系分数，并把日志写入 `LOG_PATH`。
 
 游戏端使用 Godot 4.2 或更高版本导入：
 
@@ -420,26 +528,25 @@ code/HelloAgents/helloagents-ai-town/helloagents-ai-town/project.godot
 
 ### 实践结果
 
-后端使用 Fake LLM 和临时 SQLite 目录完成了离线验证。在保留 15.2 记忆与批量生成测试的基础上，新增了五档边界、初始关系、动态 Prompt、结构化分析、上下限、玩家隔离、数据库重启恢复和 HTTP 响应字段检查。
+后端使用 Fake LLM、临时 SQLite 和临时日志目录完成离线验证。除了保留 Agent、记忆和好感度回归测试，还检查了原子忙碌状态、`409` 冲突、`finally` 释放、生命周期启停、启动/手动状态刷新、状态与好感度接口以及每日文件日志。
 
 ~~~text
-=== 15.3 好感度系统离线验证 ===
-affinity_levels: 5_boundaries_ready
-initial_relationship: 0_stranger
-dynamic_prompt: stranger_to_familiar_ready
-structured_analysis: valid_and_invalid_ready
-score_clamping: 0_to_100_ready
-relationship_isolation: npc_and_player_ready
+=== 15.4 后端服务离线验证 ===
+npc_agents_memory_affinity: regression_ready
+busy_state: atomic_409_and_finally_release_ready
+background_scheduler: startup_and_manual_refresh_ready
+state_api: list_single_and_cache_ready
+affinity_api: single_compatibility_and_all_ready
+daily_dialogue_log: console_file_contract_ready
+lifespan: scheduler_start_stop_ready
 sqlite_persistence: restart_ready
-chat_response: affinity_fields_ready
-memory_and_batch_regression: ready
 external_api_calls: 0
 ~~~
 
 Godot 静态验证检查了场景资源、WASD/E 键，以及前后端约定的请求字段和响应处理：
 
 ~~~text
-=== 15.1～15.3 Godot 对话契约静态验证 ===
+=== 15.1～15.4 Godot 对话契约静态验证 ===
 required_files: 11
 resource_references: 8
 main_scene_contract: ready
@@ -449,15 +556,17 @@ godot_runtime: not_executed
 external_api_calls: 0
 ~~~
 
-本机没有安装 Godot，所以第二组结果不能证明 GDScript 已通过引擎解析，也不能替代主场景运行。离线 Fake LLM 只验证控制流、记忆与关系隔离、分值更新和接口契约，没有证明真实模型的角色表现或评分质量。
+本机没有安装 Godot，所以第二组结果不能证明 GDScript 已通过引擎解析，也不能替代主场景运行。离线 Fake LLM 只验证控制流、状态、日志和接口契约，没有证明真实模型的角色表现、好感度判断质量或线上调度稳定性。
 
 ### 实践边界
 
 - 已实现三个独立 `SimpleAgent`、角色 Prompt、短期/情景记忆和即时 `/chat`；
 - 已实现五档好感度、结构化分析、动态对话修饰、NPC—玩家隔离和 SQLite 持久化；
-- 已实现批量背景对白生成器，但尚未加入定时调度、缓存和前端气泡；
+- 已实现 NPC 忙碌状态、原子占用、`409` 冲突和异常后的释放；
+- 已实现批量背景对白的启动刷新、定时调度、缓存查询与手动刷新；
+- 已实现控制台与每日文件日志，并提供 `view_logs.py`；
 - 当前记忆后端是 SQLite + TF-IDF，不是原文生产方案中的 Qdrant；
-- NPC 自主状态、好感度 UI 和实时日志属于后续小节，本节不提前实现；
+- Godot 尚未轮询背景对白，也没有好感度 UI，这些属于后续前端小节；
 - LLM 负责提出关系变化，确定性代码负责校验、限幅和持久化，位置与碰撞仍由游戏维护；
 - `.env.example` 不含真实密钥，验证没有访问模型或其他外部服务。
 
@@ -465,10 +574,12 @@ external_api_calls: 0
 
 - [《Hello-Agents》第十五章：构建赛博小镇](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87.md)
 - [官方赛博小镇项目](https://github.com/datawhalechina/hello-agents/tree/main/code/chapter15/Helloagents-AI-Town)
+- [官方 `state_manager.py`](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter15/Helloagents-AI-Town/backend/state_manager.py)
+- [官方 `logger.py`](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter15/Helloagents-AI-Town/backend/logger.py)
 - [Godot 4 官方文档](https://docs.godotengine.org/zh-cn/4.x/)
 - [FastAPI 官方文档](https://fastapi.tiangolo.com/)
 - [SQLite 官方文档](https://www.sqlite.org/docs.html)
 
 ### 小结
 
-赛博小镇现在形成了角色、记忆和关系三层上下文：角色定义 NPC 是谁，记忆说明双方谈过什么，好感度决定当前交流距离。每轮先用旧关系生成回复，再让独立分析 Agent 提出变化，最后由代码校验、限幅并写入 SQLite；新关系从下一轮开始生效。这样既保留 LLM 对自然语言的判断能力，又不把分数边界和持久状态交给模型自由决定。
+15.4 把前三节的对象变成了可运行的服务：FastAPI 负责协议和编排，状态管理器原子占用 NPC 并缓存定时生成的背景对白，Agent 负责回复、记忆和关系更新，日志器记录完整结果，生命周期统一启动和回收资源。LLM 仍只生成开放式内容；并发冲突、状态释放、分值边界和持久化都由确定性代码控制。

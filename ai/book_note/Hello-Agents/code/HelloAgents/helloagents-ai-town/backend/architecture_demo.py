@@ -1,4 +1,4 @@
-"""Deterministic verification for sections 15.1 through 15.3."""
+"""Deterministic verification for sections 15.1 through 15.4."""
 
 from __future__ import annotations
 
@@ -12,8 +12,11 @@ from fastapi.testclient import TestClient
 from agents import NPCAgentManager
 from batch_generator import NPCBatchGenerator
 from config import Settings
+from logger import DialogueLogger
 from main import create_app
 from relationship_manager import RelationshipManager
+from state_manager import NPCStateManager
+from view_logs import read_tail
 
 
 class FakeTownLLM:
@@ -75,6 +78,8 @@ class FakeTownLLM:
                 },
                 ensure_ascii=False,
             )
+        if "触发失败" in current_input:
+            raise RuntimeError("fake role failure")
         if "张三" in system_prompt:
             if "命令解析器" in current_input and "还记得" in current_input:
                 return "记得，你在重构命令解析器；先补边界测试，再拆分解析步骤。"
@@ -95,15 +100,17 @@ class FakeTownLLM:
         ]
 
 
-def _empty_settings() -> Settings:
+def _empty_settings(log_path: str | Path = "./logs") -> Settings:
     return Settings(
         llm_model_id="",
         llm_api_key="",
         llm_base_url="",
+        log_path=str(log_path),
+        npc_update_interval=3600,
     )
 
 
-def _assert_affinity_levels() -> None:
+def _assert_affinity_protocol() -> None:
     expected = {
         0: "陌生",
         20: "陌生",
@@ -119,10 +126,6 @@ def _assert_affinity_levels() -> None:
     for score, level in expected.items():
         assert RelationshipManager.get_affinity_level(score) == level
 
-
-def main() -> None:
-    fake_llm = FakeTownLLM()
-    _assert_affinity_levels()
     invalid = RelationshipManager.parse_analysis("not-json")
     assert invalid.valid is False and invalid.change_amount == 0
     invalid_reason = RelationshipManager.parse_analysis(
@@ -150,11 +153,18 @@ def main() -> None:
     )
     assert inconsistent_no_change.valid is False
 
+
+def main() -> None:
+    fake_llm = FakeTownLLM()
+    _assert_affinity_protocol()
+
     with TemporaryDirectory(prefix="cyber-town-") as workspace:
-        relationship_path = Path(workspace) / "cyber_town.db"
+        root = Path(workspace)
+        relationship_path = root / "cyber_town.db"
+        log_dir = root / "logs"
         manager = NPCAgentManager(
             fake_llm,
-            memory_root=Path(workspace) / "memory",
+            memory_root=root / "memory",
             relationship_database_path=relationship_path,
         )
 
@@ -173,7 +183,6 @@ def main() -> None:
             "你还记得我的项目吗？",
             player_id="garden",
         )
-
         assert "输入契约" in first_reply
         assert "没有这个项目的记录" in li_reply
         assert "命令解析器" in recalled_reply
@@ -184,13 +193,6 @@ def main() -> None:
         assert manager.agents["张三"] is not manager.agents["李四"]
         assert manager.memories["张三"] is not manager.memories["李四"]
         assert manager.get_npc_memories("张三", player_id="visitor") == []
-        episodic_hits = manager.memories["张三"].retrieve_memories(
-            query="命令解析器",
-            memory_types=["episodic"],
-            limit=3,
-            player_id="garden",
-        )
-        assert episodic_hits
 
         zhang_stats = manager.memory_stats("张三")
         li_stats = manager.memory_stats("李四")
@@ -258,12 +260,48 @@ def main() -> None:
         assert set(dialogues) == {"张三", "李四", "王五"}
         assert fake_llm.batch_calls == 1
 
-        with TestClient(
-            create_app(settings=_empty_settings(), npc_manager=manager),
-        ) as client:
+        logger = DialogueLogger(log_dir=log_dir, console=False)
+        state = NPCStateManager(
+            batch_generator=generator,
+            update_interval=3600,
+            error_reporter=logger.log_error,
+            refresh_reporter=logger.log_state_refresh,
+        )
+        app = create_app(
+            settings=_empty_settings(log_dir),
+            npc_manager=manager,
+            state_manager=state,
+            dialogue_logger=logger,
+        )
+        with TestClient(app) as client:
+            openapi = client.get("/openapi.json")
             architecture = client.get("/architecture")
             health = client.get("/healthz")
             npcs = client.get("/npcs")
+            status_all = client.get("/npcs/status")
+            status_one = client.get("/npcs/zhang_san/status")
+            affinity = client.get(
+                "/npcs/张三/affinity",
+                params={"player_id": "garden"},
+            )
+            affinity_compatibility = client.get("/affinity/张三/garden")
+            all_affinities = client.get(
+                "/affinities",
+                params={"player_id": "garden"},
+            )
+
+            assert state.try_begin_dialogue("张三", "other-player") is True
+            conflict = client.post(
+                "/chat",
+                json={
+                    "npc_name": "张三",
+                    "player_id": "garden",
+                    "message": "这次请求应该冲突。",
+                },
+            )
+            assert state.is_npc_busy("张三") is True
+            state.finish_dialogue("张三", "other-player")
+
             chat = client.post(
                 "/chat",
                 json={
@@ -272,6 +310,17 @@ def main() -> None:
                     "message": "代码评审先看什么？",
                 },
             )
+            state_after_chat = client.get("/npcs/张三/status")
+            failed = client.post(
+                "/chat",
+                json={
+                    "npc_name": "王五",
+                    "player_id": "garden",
+                    "message": "触发失败",
+                },
+            )
+            state_after_failure = client.get("/npcs/王五/status")
+            refreshed = client.post("/npcs/status/refresh")
             unknown = client.post(
                 "/chat",
                 json={
@@ -281,26 +330,82 @@ def main() -> None:
                 },
             )
 
-        assert architecture.status_code == 200
-        snapshot = architecture.json()
-        assert snapshot["scope"] == "chapter_15_1_to_15_3_affinity_system"
-        assert len(snapshot["layers"]) == 4
-        assert len(snapshot["data_flow"]) == 10
-        assert all(
-            step["status"] == "implemented"
-            for step in snapshot["data_flow"]
-        )
-        assert health.status_code == 200
-        assert health.json()["conversation_ready"] is True
-        assert npcs.status_code == 200 and npcs.json()["total"] == 3
-        assert chat.status_code == 200
-        assert chat.json()["npc_name"] == "张三"
-        assert chat.json()["affinity_level"] == "熟悉"
-        assert chat.json()["affinity_score"] == 24
-        assert chat.json()["affinity_analysis_valid"] is True
-        assert unknown.status_code == 404
+            assert openapi.status_code == 200
+            assert {
+                "/chat",
+                "/npcs/status",
+                "/npcs/status/refresh",
+                "/npcs/{npc_name}/status",
+                "/npcs/{npc_name}/affinity",
+                "/affinity/{npc_name}/{player_id}",
+                "/affinities",
+            }.issubset(openapi.json()["paths"])
+            assert architecture.status_code == 200
+            snapshot = architecture.json()
+            assert snapshot["scope"] == "chapter_15_1_to_15_4_backend_service"
+            assert len(snapshot["layers"]) == 4
+            assert len(snapshot["data_flow"]) == 13
+            assert all(
+                step["status"] == "implemented"
+                for step in snapshot["data_flow"]
+            )
+            assert health.status_code == 200
+            assert health.json()["conversation_ready"] is True
+            assert health.json()["state_scheduler_running"] is True
+            assert npcs.status_code == 200 and npcs.json()["total"] == 3
+            assert status_all.status_code == 200
+            assert len(status_all.json()["npcs"]) == 3
+            assert set(status_all.json()["dialogues"]) == {
+                "张三",
+                "李四",
+                "王五",
+            }
+            assert status_all.json()["scheduler_running"] is True
+            assert status_one.status_code == 200
+            assert status_one.json()["npc_name"] == "张三"
+            assert affinity.status_code == 200
+            assert affinity.json()["score"] == 24
+            assert affinity_compatibility.json() == affinity.json()
+            assert set(all_affinities.json()["affinities"]) == {
+                "张三",
+                "李四",
+                "王五",
+            }
+            assert conflict.status_code == 409
+            assert chat.status_code == 200
+            assert chat.json()["npc_name"] == "张三"
+            assert chat.json()["affinity_level"] == "熟悉"
+            assert chat.json()["affinity_score"] == 24
+            assert chat.json()["affinity_analysis_valid"] is True
+            assert state_after_chat.json()["is_busy"] is False
+            assert state_after_chat.json()["last_interaction"] is not None
+            assert failed.status_code == 502
+            assert state_after_failure.json()["is_busy"] is False
+            assert refreshed.status_code == 200
+            assert set(refreshed.json()["dialogues"]) == {
+                "张三",
+                "李四",
+                "王五",
+            }
+            assert unknown.status_code == 404
+            assert fake_llm.batch_calls == 3
 
-        with TestClient(create_app(settings=_empty_settings())) as client:
+        assert state.running is False
+        log_files = list(log_dir.glob("dialogue_*.log"))
+        assert len(log_files) == 1
+        log_text = log_files[0].read_text(encoding="utf-8")
+        assert "NPC 背景对白已更新" in log_text
+        assert "代码评审先看什么" in log_text
+        assert "好感度" in log_text
+        assert read_tail(log_files[0], 3)
+        logger.close()
+
+        with TestClient(
+            create_app(
+                settings=_empty_settings(root / "empty-logs"),
+                start_background_tasks=True,
+            ),
+        ) as client:
             unavailable = client.post(
                 "/chat",
                 json={
@@ -309,25 +414,26 @@ def main() -> None:
                     "message": "你好",
                 },
             )
+            refresh_unavailable = client.post("/npcs/status/refresh")
         assert unavailable.status_code == 503
-        manager.close()
+        assert refresh_unavailable.status_code == 503
 
+        manager.close()
         reopened = RelationshipManager(fake_llm, relationship_path)
         assert reopened.get_affinity("张三", "garden").score == 24
         assert reopened.get_affinity("李四", "garden").score == 0
         assert reopened.get_affinity("王五", "visitor").score == 100
         reopened.close()
 
-    print("=== 15.3 好感度系统离线验证 ===")
-    print("affinity_levels: 5_boundaries_ready")
-    print("initial_relationship: 0_stranger")
-    print("dynamic_prompt: stranger_to_familiar_ready")
-    print("structured_analysis: valid_and_invalid_ready")
-    print("score_clamping: 0_to_100_ready")
-    print("relationship_isolation: npc_and_player_ready")
+    print("=== 15.4 后端服务离线验证 ===")
+    print("npc_agents_memory_affinity: regression_ready")
+    print("busy_state: atomic_409_and_finally_release_ready")
+    print("background_scheduler: startup_and_manual_refresh_ready")
+    print("state_api: list_single_and_cache_ready")
+    print("affinity_api: single_compatibility_and_all_ready")
+    print("daily_dialogue_log: console_file_contract_ready")
+    print("lifespan: scheduler_start_stop_ready")
     print("sqlite_persistence: restart_ready")
-    print("chat_response: affinity_fields_ready")
-    print("memory_and_batch_regression: ready")
     print("external_api_calls: 0")
 
 

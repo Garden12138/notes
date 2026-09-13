@@ -1,7 +1,7 @@
 [project]
 name = "helloagents-ai-town-backend"
-version = "0.3.0"
-description = "Chapter 15.1-15.3 Cyber Town NPC and affinity practice"
+version = "0.4.0"
+description = "Chapter 15.1-15.4 Cyber Town backend practice"
 requires-python = ">=3.10"
 dependencies = [
     "fastapi>=0.115,<1",
@@ -23,9 +23,12 @@ py-modules = [
     "architecture",
     "batch_generator",
     "config",
+    "logger",
     "main",
     "models",
     "relationship_manager",
+    "state_manager",
+    "view_logs",
 ]
 
 [tool.ruff]

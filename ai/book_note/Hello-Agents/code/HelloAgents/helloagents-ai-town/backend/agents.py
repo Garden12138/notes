@@ -47,6 +47,8 @@ class NPCDialogueResult:
     npc: NPCRole
     response: str
     affinity: AffinityUpdate
+    recent_memory_count: int
+    relevant_memory_count: int
 
 
 NPC_ROLES: dict[str, NPCRole] = {
@@ -289,6 +291,8 @@ class NPCAgentManager:
                 npc=role,
                 response=response,
                 affinity=affinity_update,
+                recent_memory_count=len(recent),
+                relevant_memory_count=len(relevant),
             )
 
     @staticmethod
@@ -393,6 +397,21 @@ class NPCAgentManager:
     ) -> AffinitySnapshot:
         name = self.resolve_name(npc_name)
         return self.relationship_manager.get_affinity(name, player_id)
+
+    def get_all_affinities(
+        self,
+        player_id: str = "player",
+    ) -> dict[str, AffinitySnapshot]:
+        normalized_player = player_id.strip()
+        if not normalized_player:
+            raise ValueError("player_id 不能为空")
+        return {
+            name: self.relationship_manager.get_affinity(
+                name,
+                normalized_player,
+            )
+            for name in NPC_ROLES
+        }
 
     def close(self) -> None:
         for manager in self.memories.values():

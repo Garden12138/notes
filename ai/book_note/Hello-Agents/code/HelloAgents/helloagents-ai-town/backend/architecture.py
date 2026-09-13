@@ -1,4 +1,4 @@
-"""Architecture contract implemented through section 15.3."""
+"""Architecture contract implemented through section 15.4."""
 
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ LAYERS = [
     ArchitectureLayer(
         name="backend",
         technology="FastAPI + Python 3.10+",
-        responsibilities=["API 路由", "NPC 定位", "对话协调", "关系持久化"],
+        responsibilities=["API 路由", "并发状态", "对话协调", "日志记录"],
         boundary="校验游戏请求并协调 Agent，不承担画面渲染",
     ),
     ArchitectureLayer(
@@ -93,10 +93,16 @@ COMPONENTS = [
         responsibility="分析互动、限制分值、映射等级并持久化玩家与 NPC 的关系",
     ),
     SystemComponent(
-        name="Autonomous State and Logs",
+        name="NPC State Manager",
         layer="backend",
-        status="deferred",
-        responsibility="更新 NPC 自主状态并记录结构化运行日志",
+        status="implemented",
+        responsibility="原子管理忙碌状态，并定时生成和缓存三名 NPC 的背景对白",
+    ),
+    SystemComponent(
+        name="Dialogue Logger",
+        layer="backend",
+        status="implemented",
+        responsibility="将对话、记忆数量和关系变化同时写入控制台与每日文件",
     ),
 ]
 
@@ -122,42 +128,60 @@ DATA_FLOW = [
     ),
     DataFlowStep(
         order=4,
+        actor="NPCStateManager",
+        action="原子占用 NPC；已忙碌则返回 409",
+        status="implemented",
+    ),
+    DataFlowStep(
+        order=5,
         actor="RelationshipManager",
         action="读取该 NPC 与玩家的当前好感度和对话修饰词",
         status="implemented",
     ),
     DataFlowStep(
-        order=5,
+        order=6,
         actor="Memory",
         action="检索近期与相关历史互动",
         status="implemented",
     ),
     DataFlowStep(
-        order=6,
+        order=7,
         actor="SimpleAgent",
         action="结合角色、关系、记忆和当前消息生成回复",
         status="implemented",
     ),
     DataFlowStep(
-        order=7,
+        order=8,
         actor="AffinityAnalyzer",
         action="分析玩家态度并返回结构化分值变化",
         status="implemented",
     ),
     DataFlowStep(
-        order=8,
+        order=9,
         actor="RelationshipManager",
         action="将好感度限制在 0～100 并写入 SQLite",
         status="implemented",
     ),
     DataFlowStep(
-        order=9,
-        actor="Backend",
-        action="保存带关系元数据的对话记忆并返回结果",
+        order=10,
+        actor="Memory",
+        action="保存带关系元数据的对话记忆",
         status="implemented",
     ),
     DataFlowStep(
-        order=10,
+        order=11,
+        actor="DialogueLogger",
+        action="向控制台和当日日志文件记录完整结果",
+        status="implemented",
+    ),
+    DataFlowStep(
+        order=12,
+        actor="NPCStateManager",
+        action="无论成功或失败都在 finally 中释放 NPC",
+        status="implemented",
+    ),
+    DataFlowStep(
+        order=13,
         actor="Godot",
         action="展示 NPC 回复并恢复输入",
         status="implemented",
@@ -168,7 +192,7 @@ DATA_FLOW = [
 def build_architecture_snapshot() -> ArchitectureSnapshot:
     return ArchitectureSnapshot(
         project="helloagents-ai-town",
-        scope="chapter_15_1_to_15_3_affinity_system",
+        scope="chapter_15_1_to_15_4_backend_service",
         layers=LAYERS,
         components=COMPONENTS,
         data_flow=DATA_FLOW,
@@ -180,11 +204,14 @@ def build_architecture_snapshot() -> ArchitectureSnapshot:
             "一次调用生成三名 NPC 背景内容的批量生成器",
             "五档好感度、结构化 LLM 分析与动态对话风格",
             "NPC-玩家关系隔离、0～100 限幅和 SQLite 持久化",
+            "NPC 忙碌状态的原子占用、409 冲突和 finally 释放",
+            "每 30 秒批量更新一次背景对白，并提供缓存查询和手动刷新",
+            "控制台与按日期文件双通道对话日志",
+            "NPC 状态、单个/全部好感度查询接口",
             "FastAPI 对话响应与 Godot 异步展示链路",
         ],
         deferred_capabilities=[
-            "NPC 自主状态更新与批量生成定时任务",
-            "实时结构化日志",
             "Qdrant 生产向量存储适配",
+            "Godot 好感度面板和背景气泡轮询",
         ],
     )

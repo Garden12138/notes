@@ -1,6 +1,6 @@
 # HelloAgents 赛博小镇
 
-这是第十五章的持续实践目录。15.1 建立四层边界；15.2 接入独立 NPC、角色 Prompt、两类记忆和批量背景对白；15.3 加入玩家—NPC 好感度、动态对话风格与 SQLite 持久化。
+这是第十五章的持续实践目录。15.1 建立四层边界；15.2 接入独立 NPC、角色 Prompt、两类记忆和批量背景对白；15.3 加入玩家—NPC 好感度；15.4 补齐 FastAPI 路由、NPC 状态、定时更新和每日对话日志。
 
 ## 目录
 
@@ -13,7 +13,10 @@ helloagents-ai-town/
 │   ├── config.py
 │   ├── main.py
 │   ├── models.py
+│   ├── logger.py
 │   ├── relationship_manager.py
+│   ├── state_manager.py
+│   ├── view_logs.py
 │   ├── .env.example
 │   ├── architecture_demo.py
 │   └── pyproject.toml
@@ -43,6 +46,14 @@ helloagents-ai-town/
 
 ## 后端
 
+[backend/state_manager.py](backend/state_manager.py) 同时维护 NPC 的忙碌状态和背景对白缓存。`POST /chat` 会原子占用指定 NPC；已被占用时返回 `409`，处理结束后通过 `finally` 释放。服务启动时立即批量生成一次背景对白，此后按 `NPC_UPDATE_INTERVAL` 定时更新。
+
+[backend/logger.py](backend/logger.py) 将对话、记忆数量、好感度变化、状态刷新和错误同时写到控制台与 `LOG_PATH/dialogue_YYYY-MM-DD.log`。查看当日日志：
+
+```bash
+python view_logs.py --lines 80 --follow
+```
+
 ```bash
 cd backend
 python -m venv .venv
@@ -56,10 +67,13 @@ python main.py
 
 可用接口：
 
-- `GET /healthz`：返回对话就绪状态与配置存在性；
-- `GET /architecture`：返回当前四层架构、组件和十步数据流；
+- `GET /healthz`：返回对话与状态调度器是否就绪；
+- `GET /architecture`：返回当前四层架构、组件和十三步数据流；
 - `GET /npcs`：返回三名 NPC 的角色资料；
-- `POST /chat`：即时生成角色化回复，更新好感度并保存记忆。
+- `GET /npcs/status`、`GET /npcs/{npc_name}/status`：查询整体或单个 NPC 状态；
+- `POST /npcs/status/refresh`：立即刷新批量背景对白；
+- `GET /npcs/{npc_name}/affinity`、`GET /affinities`：查询单个或全部关系；
+- `POST /chat`：即时生成回复，更新关系和记忆，并记录日志。
 
 `/chat` 在原有 `message` 外返回好感度分数、等级、实际变化量、原因、情感、分析有效性和互动次数。一次玩家对话通常需要两次模型调用：一次生成 NPC 回复，一次分析好感度。
 
@@ -79,4 +93,4 @@ PYTHONDONTWRITEBYTECODE=1 python project_demo.py
 
 静态脚本检查场景、资源引用、WASD/E 键，以及 Godot 与后端的请求字段。它不能替代 Godot 编辑器的 GDScript 解析和实际运行。
 
-当前不实现 NPC 自主状态、后台定时调度和日志，这些属于后续小节。不要提交真实 `.env`、模型密钥、记忆数据库、关系数据库、运行日志或 Godot 缓存目录。
+当前 Godot 只消费 `/chat` 的回复文本，尚未轮询背景对白或显示好感度。不要提交真实 `.env`、模型密钥、记忆数据库、关系数据库、运行日志或 Godot 缓存目录。
