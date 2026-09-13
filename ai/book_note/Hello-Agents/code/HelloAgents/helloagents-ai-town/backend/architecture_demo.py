@@ -1,8 +1,9 @@
-"""Deterministic verification for the 15.1-15.2 Cyber Town practice."""
+"""Deterministic verification for sections 15.1 through 15.3."""
 
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any
 
@@ -12,6 +13,7 @@ from agents import NPCAgentManager
 from batch_generator import NPCBatchGenerator
 from config import Settings
 from main import create_app
+from relationship_manager import RelationshipManager
 
 
 class FakeTownLLM:
@@ -31,6 +33,38 @@ class FakeTownLLM:
         self.calls.append([dict(message) for message in messages])
         system_prompt = messages[0]["content"]
         current_input = messages[-1]["content"]
+        if "判断一轮 NPC 对话是否应改变好感度" in system_prompt:
+            if "格式测试" in current_input:
+                return "not-json"
+            if any(word in current_input for word in ("谢谢", "请教", "真棒")):
+                return json.dumps(
+                    {
+                        "should_change": True,
+                        "change_amount": 5,
+                        "reason": "友好感谢",
+                        "sentiment": "positive",
+                    },
+                    ensure_ascii=False,
+                )
+            if any(word in current_input for word in ("太差", "讨厌", "攻击")):
+                return json.dumps(
+                    {
+                        "should_change": True,
+                        "change_amount": -8,
+                        "reason": "不友好批评",
+                        "sentiment": "negative",
+                    },
+                    ensure_ascii=False,
+                )
+            return json.dumps(
+                {
+                    "should_change": False,
+                    "change_amount": 0,
+                    "reason": "普通交流",
+                    "sentiment": "neutral",
+                },
+                ensure_ascii=False,
+            )
         if "背景对话生成器" in system_prompt:
             self.batch_calls += 1
             return json.dumps(
@@ -44,10 +78,21 @@ class FakeTownLLM:
         if "张三" in system_prompt:
             if "命令解析器" in current_input and "还记得" in current_input:
                 return "记得，你在重构命令解析器；先补边界测试，再拆分解析步骤。"
+            if "当前与玩家的关系：熟悉" in system_prompt:
+                return "我们已经熟悉了，我可以把评审清单和重构步骤都发给你。"
             return "解析器重构先固定输入契约，再用测试守住每个边界。"
         if "李四" in system_prompt:
             return "我这里还没有这个项目的记录，先说说它解决谁的问题？"
         return "我会先统一信息层级，再调整色彩和留白。"
+
+    def role_calls(self, npc_name: str) -> list[list[dict[str, str]]]:
+        return [
+            call
+            for call in self.calls
+            if npc_name in call[0]["content"]
+            and "判断一轮 NPC 对话是否应改变好感度"
+            not in call[0]["content"]
+        ]
 
 
 def _empty_settings() -> Settings:
@@ -58,10 +103,60 @@ def _empty_settings() -> Settings:
     )
 
 
+def _assert_affinity_levels() -> None:
+    expected = {
+        0: "陌生",
+        20: "陌生",
+        21: "熟悉",
+        40: "熟悉",
+        41: "友好",
+        60: "友好",
+        61: "亲密",
+        80: "亲密",
+        81: "挚友",
+        100: "挚友",
+    }
+    for score, level in expected.items():
+        assert RelationshipManager.get_affinity_level(score) == level
+
+
 def main() -> None:
     fake_llm = FakeTownLLM()
-    with TemporaryDirectory(prefix="cyber-town-memory-") as memory_root:
-        manager = NPCAgentManager(fake_llm, memory_root=memory_root)
+    _assert_affinity_levels()
+    invalid = RelationshipManager.parse_analysis("not-json")
+    assert invalid.valid is False and invalid.change_amount == 0
+    invalid_reason = RelationshipManager.parse_analysis(
+        json.dumps(
+            {
+                "should_change": True,
+                "change_amount": 3,
+                "reason": "这段原因明显超过了十个汉字",
+                "sentiment": "positive",
+            },
+            ensure_ascii=False,
+        ),
+    )
+    assert invalid_reason.valid is False
+    inconsistent_no_change = RelationshipManager.parse_analysis(
+        json.dumps(
+            {
+                "should_change": False,
+                "change_amount": 2,
+                "reason": "普通交流",
+                "sentiment": "neutral",
+            },
+            ensure_ascii=False,
+        ),
+    )
+    assert inconsistent_no_change.valid is False
+
+    with TemporaryDirectory(prefix="cyber-town-") as workspace:
+        relationship_path = Path(workspace) / "cyber_town.db"
+        manager = NPCAgentManager(
+            fake_llm,
+            memory_root=Path(workspace) / "memory",
+            relationship_database_path=relationship_path,
+        )
 
         first_reply = manager.chat(
             "张三",
@@ -82,8 +177,8 @@ def main() -> None:
         assert "输入契约" in first_reply
         assert "没有这个项目的记录" in li_reply
         assert "命令解析器" in recalled_reply
-        zhang_prompt = fake_llm.calls[2][-1]["content"]
-        li_prompt = fake_llm.calls[1][-1]["content"]
+        zhang_prompt = fake_llm.role_calls("张三")[1][-1]["content"]
+        li_prompt = fake_llm.role_calls("李四")[0][-1]["content"]
         assert "玩家说：我正在重构命令解析器。" in zhang_prompt
         assert "命令解析器" not in li_prompt
         assert manager.agents["张三"] is not manager.agents["李四"]
@@ -105,6 +200,58 @@ def main() -> None:
         assert li_stats["episodic"]["count"] == 1
         assert zhang_stats["working"]["capacity"] == 10
         assert zhang_stats["working"]["ttl_minutes"] == 120
+
+        manager.relationship_manager.set_affinity("张三", 19, "garden")
+        positive = manager.chat_with_affinity(
+            "张三",
+            "谢谢你的建议！",
+            player_id="garden",
+        )
+        assert positive.affinity.old_affinity == 19
+        assert positive.affinity.new_affinity == 24
+        assert positive.affinity.old_level == "陌生"
+        assert positive.affinity.new_level == "熟悉"
+        assert "当前与玩家的关系：陌生" in (
+            fake_llm.role_calls("张三")[-1][0]["content"]
+        )
+
+        neutral = manager.chat_with_affinity(
+            "张三",
+            "今天天气不错。",
+            player_id="garden",
+        )
+        assert neutral.affinity.changed is False
+        assert neutral.affinity.new_affinity == 24
+        assert "当前与玩家的关系：熟悉" in (
+            fake_llm.role_calls("张三")[-1][0]["content"]
+        )
+
+        manager.relationship_manager.set_affinity("李四", 2, "garden")
+        negative = manager.chat_with_affinity(
+            "李四",
+            "这个方案太差了。",
+            player_id="garden",
+        )
+        assert negative.affinity.new_affinity == 0
+        assert negative.affinity.change_amount == -2
+
+        manager.relationship_manager.set_affinity("王五", 99, "visitor")
+        upper_bound = manager.chat_with_affinity(
+            "王五",
+            "谢谢你的设计建议。",
+            player_id="visitor",
+        )
+        assert upper_bound.affinity.new_affinity == 100
+        assert upper_bound.affinity.change_amount == 1
+
+        before_invalid = manager.get_affinity("王五", "garden")
+        invalid_update = manager.chat_with_affinity(
+            "王五",
+            "格式测试",
+            player_id="garden",
+        )
+        assert invalid_update.affinity.analysis_valid is False
+        assert invalid_update.affinity.new_affinity == before_invalid.score
 
         generator = NPCBatchGenerator(fake_llm)
         dialogues = generator.generate_batch_dialogues("下午工作时间")
@@ -136,9 +283,9 @@ def main() -> None:
 
         assert architecture.status_code == 200
         snapshot = architecture.json()
-        assert snapshot["scope"] == "chapter_15_1_to_15_2_npc_agents"
+        assert snapshot["scope"] == "chapter_15_1_to_15_3_affinity_system"
         assert len(snapshot["layers"]) == 4
-        assert len(snapshot["data_flow"]) == 8
+        assert len(snapshot["data_flow"]) == 10
         assert all(
             step["status"] == "implemented"
             for step in snapshot["data_flow"]
@@ -148,7 +295,9 @@ def main() -> None:
         assert npcs.status_code == 200 and npcs.json()["total"] == 3
         assert chat.status_code == 200
         assert chat.json()["npc_name"] == "张三"
-        assert chat.json()["success"] is True
+        assert chat.json()["affinity_level"] == "熟悉"
+        assert chat.json()["affinity_score"] == 24
+        assert chat.json()["affinity_analysis_valid"] is True
         assert unknown.status_code == 404
 
         with TestClient(create_app(settings=_empty_settings())) as client:
@@ -163,16 +312,22 @@ def main() -> None:
         assert unavailable.status_code == 503
         manager.close()
 
-    print("=== 15.2 NPC 智能体系统离线验证 ===")
-    print("npc_agents: 3_independent")
-    print("role_prompts: 3_ready")
-    print("memory_isolation: npc_and_player_ready")
-    print("working_memory: capacity_10_ttl_120m")
-    print("episodic_retrieval: ready")
-    print("batch_background_dialogues: 3_in_1_call")
-    print("chat_endpoint: ready")
-    print("unknown_npc: 404")
-    print("unconfigured_llm: 503")
+        reopened = RelationshipManager(fake_llm, relationship_path)
+        assert reopened.get_affinity("张三", "garden").score == 24
+        assert reopened.get_affinity("李四", "garden").score == 0
+        assert reopened.get_affinity("王五", "visitor").score == 100
+        reopened.close()
+
+    print("=== 15.3 好感度系统离线验证 ===")
+    print("affinity_levels: 5_boundaries_ready")
+    print("initial_relationship: 0_stranger")
+    print("dynamic_prompt: stranger_to_familiar_ready")
+    print("structured_analysis: valid_and_invalid_ready")
+    print("score_clamping: 0_to_100_ready")
+    print("relationship_isolation: npc_and_player_ready")
+    print("sqlite_persistence: restart_ready")
+    print("chat_response: affinity_fields_ready")
+    print("memory_and_batch_regression: ready")
     print("external_api_calls: 0")
 
 

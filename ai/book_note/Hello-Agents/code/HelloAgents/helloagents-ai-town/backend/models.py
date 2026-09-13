@@ -8,6 +8,10 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
+AffinityLevelName = Literal["陌生", "熟悉", "友好", "亲密", "挚友"]
+AffinitySentimentName = Literal["positive", "neutral", "negative"]
+
+
 class APIModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -84,6 +88,13 @@ class ChatResponse(APIModel):
     npc_name: str
     npc_title: str
     message: str
+    affinity_score: float = Field(ge=0, le=100)
+    affinity_level: AffinityLevelName
+    affinity_change: int = Field(ge=-15, le=10)
+    affinity_reason: str
+    affinity_sentiment: AffinitySentimentName
+    affinity_analysis_valid: bool
+    interaction_count: int = Field(ge=1)
     success: Literal[True] = True
     timestamp: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),

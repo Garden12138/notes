@@ -1,4 +1,4 @@
-"""Static verification of the Godot-to-15.2-backend contract."""
+"""Static verification of the Godot-to-15.3-backend contract."""
 
 from __future__ import annotations
 
@@ -48,7 +48,7 @@ def main() -> None:
     assert all(key in api_client for key in ("npc_name", "player_id", "message"))
     assert "conversation_ready" in dialogue_ui
 
-    print("=== 15.1～15.2 Godot 对话契约静态验证 ===")
+    print("=== 15.1～15.3 Godot 对话契约静态验证 ===")
     print(f"required_files: {len(required_files)}")
     print(f"resource_references: {resource_count}")
     print("main_scene_contract: ready")

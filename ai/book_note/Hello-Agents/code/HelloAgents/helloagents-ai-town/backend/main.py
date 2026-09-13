@@ -1,4 +1,4 @@
-"""FastAPI entry point for sections 15.1 and 15.2 of Cyber Town."""
+"""FastAPI entry point for sections 15.1 through 15.3 of Cyber Town."""
 
 from __future__ import annotations
 
@@ -35,6 +35,7 @@ def _initialize_manager(
                 api_key=settings.llm_api_key,
                 base_url=settings.llm_base_url,
                 memory_root=settings.memory_path,
+                relationship_database_path=settings.sqlite_path,
             ),
             None,
         )
@@ -61,8 +62,8 @@ def create_app(
 
     app = FastAPI(
         title="赛博小镇 API",
-        version="0.2.0",
-        description="HelloAgents 第十五章 15.1～15.2 实践",
+        version="0.3.0",
+        description="HelloAgents 第十五章 15.1～15.3 实践",
         lifespan=lifespan,
     )
     app.add_middleware(
@@ -77,7 +78,7 @@ def create_app(
     def root() -> dict[str, object]:
         return {
             "project": "helloagents-ai-town",
-            "scope": "chapter_15_1_to_15_2_npc_agents",
+            "scope": "chapter_15_1_to_15_3_affinity_system",
             "docs": "/docs",
             "implemented": [
                 "health",
@@ -85,6 +86,7 @@ def create_app(
                 "npc_catalog",
                 "npc_chat",
                 "npc_memory",
+                "npc_player_affinity",
                 "batch_background_dialogue_generator",
             ],
         }
@@ -93,7 +95,7 @@ def create_app(
     def health() -> HealthResponse:
         ready = manager is not None and manager.ready
         return HealthResponse(
-            scope="chapter_15_1_to_15_2_npc_agents",
+            scope="chapter_15_1_to_15_3_affinity_system",
             conversation_ready=ready,
             integrations=current_settings.integration_status(),
             detail=None if ready else initialization_error,
@@ -116,7 +118,7 @@ def create_app(
             )
         try:
             profile = manager.get_profile(request.npc_name)
-            reply = manager.chat(
+            result = manager.chat_with_affinity(
                 npc_name=request.npc_name,
                 message=request.message,
                 player_id=request.player_id,
@@ -134,7 +136,14 @@ def create_app(
         return ChatResponse(
             npc_name=profile.name,
             npc_title=profile.title,
-            message=reply,
+            message=result.response,
+            affinity_score=result.affinity.new_affinity,
+            affinity_level=result.affinity.new_level,
+            affinity_change=result.affinity.change_amount,
+            affinity_reason=result.affinity.reason,
+            affinity_sentiment=result.affinity.sentiment,
+            affinity_analysis_valid=result.affinity.analysis_valid,
+            interaction_count=result.affinity.interaction_count,
         )
 
     return app
