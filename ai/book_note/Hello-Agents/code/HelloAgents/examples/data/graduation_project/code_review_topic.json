@@ -1,0 +1,30 @@
+{
+  "name": "CodeReviewAgent",
+  "category": "productivity",
+  "problem": "人工代码审查耗时且容易遗漏逻辑、边界、性能和安全问题",
+  "target_users": "需要提高代码审查效率的软件开发者和小型团队",
+  "core_features": [
+    "检查代码风格、命名和注释完整性",
+    "发现逻辑错误、边界条件和资源泄漏",
+    "识别性能瓶颈并给出优化建议",
+    "检查 SQL 注入和 XSS 等常见安全风险",
+    "结合语言特性给出最佳实践与修改示例"
+  ],
+  "expected_outcome": "通过可运行脚本或 Notebook 审查 Python 和 JavaScript 代码，并生成结构化 Markdown 报告",
+  "timebox_weeks": 6,
+  "weekly_hours": 8,
+  "ratings": {
+    "practicality": {
+      "score": 5,
+      "evidence": "代码审查是持续发生且可观察节省时间的开发任务"
+    },
+    "feasibility": {
+      "score": 3,
+      "evidence": "六周可完成核心流程，但双语言和五类检查需要分阶段实现"
+    },
+    "demonstrability": {
+      "score": 5,
+      "evidence": "可以展示输入代码、结构化问题、定位信息和修改建议"
+    }
+  }
+}

@@ -1,8 +1,8 @@
 ## 毕业设计：构建属于你的多智能体应用
 
-> 阅读资料：[16.1 毕业设计的意义](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_161-%e6%af%95%e4%b8%9a%e8%ae%be%e8%ae%a1%e7%9a%84%e6%84%8f%e4%b9%89)
+> 阅读资料：[16.1 毕业设计的意义](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_161-%e6%af%95%e4%b8%9a%e8%ae%be%e8%ae%a1%e7%9a%84%e6%84%8f%e4%b9%89)、[16.2 项目选题指南](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_162-%e9%a1%b9%e7%9b%ae%e9%80%89%e9%a2%98%e6%8c%87%e5%8d%97)
 >
-> 这一节不是再学一个 Agent 模块，而是把前面的知识收束成一个可运行、可检查、可展示的开源项目。
+> 这两节不是再学一个 Agent 模块，而是把前面的知识收束成一个可运行、可检查、可展示的开源项目。
 
 ### 毕业设计检验的是综合能力
 
@@ -133,6 +133,140 @@ artifacts_location: temporary_directory
 
 这个结果只证明校验逻辑能区分完整和缺失交付物的目录。它不会执行用户项目，也不能判断 Agent 效果、README 的解释质量或 PR 是否能通过人工 Review。这些仍需要单元测试、任务评估和真实评审。
 
+### 好选题是三个条件的交集
+
+原文给出了三个直接标准：解决真实问题，能在有限时间和资源内完成，能清楚展示自己的技术能力。三者少一个，项目都容易失控：
+
+| 标准 | 要回答的问题 | 常见偏差 |
+| --- | --- | --- |
+| 实用性 | 谁在什么场景下遇到什么问题？ | 先决定技术栈，再为它寻找用途 |
+| 可行性 | 在给定周期和每周时间内能交付哪些核心能力？ | 把所有想法都放进第一版 |
+| 展示性 | 如何用输入、输出和指标证明效果？ | 只能演示一段对话，无法验收 |
+
+~~~mermaid
+flowchart TB
+    U["实用性<br/>真实用户与问题"]
+    F["可行性<br/>时间、资源与范围"]
+    D["展示性<br/>可演示与可评估"]
+    U --> T["值得实现的选题"]
+    F --> T
+    D --> T
+    T --> MVP["先交付最小完整闭环"]
+~~~
+
+这三项不适合用总分完全互相抵消。一个项目即使看起来很酷，只要无法在现有资源内完成，仍应缩小范围，而不是用展示性的高分掩盖可行性的低分。
+
+### 五类方向只是起点
+
+原文将参考选题分为五类：
+
+| 方向 | 参考选题 | 更适合展示的能力 |
+| --- | --- | --- |
+| 生产力工具 | 代码审查、文档生成、会议、邮件助手 | 工具调用、结构化输出、工作流 |
+| 学习辅助 | 学习伙伴、论文助手、编程导师、语言学习 | RAG、记忆、个性化反馈 |
+| 创意娱乐 | 故事生成、游戏 NPC、音乐推荐、菜谱助手 | 角色 Prompt、多轮状态、内容生成 |
+| 数据分析 | 数据分析师、股票分析、舆情监控、竞品分析 | 检索、代码执行、可视化和报告 |
+| 生活服务 | 健康、理财、购物、智能家居助手 | 外部 API、约束处理和安全边界 |
+
+分类本身不会产生好选题。“智能学习伙伴”仍然太宽；“根据一组 LangGraph 笔记生成每周练习，并按错题安排复习”才同时指向用户、输入、任务和结果。
+
+### 如何拆解 CodeReviewAgent 示例
+
+原文的选题示例是智能代码审查助手。它不是从“我想用 LLM 审查代码”开始，而是先描述人工审查耗时、容易遗漏，传统静态分析又难以理解业务语义的问题。
+
+核心功能可分为五类：
+
+1. 检查代码风格、命名和注释；
+2. 发现逻辑错误、边界条件和资源泄漏；
+3. 识别性能瓶颈并给出优化建议；
+4. 检查 SQL 注入、XSS 等常见安全风险；
+5. 结合语言特性和设计模式提供最佳实践。
+
+预期交付物是可运行的 Python 脚本或 Notebook，最终支持 Python 和 JavaScript，生成带问题分类、定位、原因、修改建议和代码示例的 Markdown 报告。若时间受限，可先以 Python 完成从输入到报告的整个闭环，再扩展 JavaScript；这是分阶段交付，不是删掉原文的最终目标。
+
+~~~mermaid
+flowchart LR
+    CODE["Python / JavaScript 代码"] --> REVIEW["代码审查流程"]
+    REVIEW --> QUALITY["质量与规范"]
+    REVIEW --> BUG["潜在 Bug"]
+    REVIEW --> PERF["性能"]
+    REVIEW --> SECURITY["安全"]
+    REVIEW --> PRACTICE["最佳实践"]
+    QUALITY --> REPORT["结构化 Markdown 报告"]
+    BUG --> REPORT
+    PERF --> REPORT
+    SECURITY --> REPORT
+    PRACTICE --> REPORT
+~~~
+
+### 代码实践：选题方案与评估规则
+
+本节没有进入 CodeReviewAgent 的具体 Agent 实现，因此代码聚焦在选题阶段：先用 `TopicProposal` 完整表达问题、用户、功能、预期成果和时间盒，再记录三项评分及其证据。
+
+~~~text
+graduation_project/
+├── submission.py
+└── topic_selection.py                  # 选题模型、评分与排序
+
+examples/
+├── graduation_project_topic_check.py   # JSON 选题检查 CLI
+├── graduation_project_topic_demo.py    # 确定性对比实践
+└── data/graduation_project/
+    └── code_review_topic.json           # 原文示例的结构化方案
+~~~
+
+[topic_selection.py](./code/HelloAgents/graduation_project/topic_selection.py) 使用下面的本地 rubric：
+
+$$
+S=20\times(0.35P+0.35F+0.30D)
+$$
+
+其中 $P$、$F$、$D$ 分别代表实用性、可行性和展示性，每项取 1～5 分。总分达到 80 且三项都不低于 3 时标记为 `recommended`；总分不足时建议 `narrow_scope`；任意一项低于 3 则返回 `rework`。
+
+权重、80 分门槛和 3 分下限是本地实践规则，不是原文或 Hello-Agents 社区的官方评审标准。每个分数必须附证据，它的作用是迫使提案者说清判断依据，而不是用公式代替人工决策。
+
+用 [code_review_topic.json](./code/HelloAgents/examples/data/graduation_project/code_review_topic.json) 运行命令行评估：
+
+~~~bash
+cd code/HelloAgents
+PYTHONPATH=. python examples/graduation_project_topic_check.py \
+  examples/data/graduation_project/code_review_topic.json
+~~~
+
+输出：
+
+~~~text
+项目：CodeReviewAgent
+类别：生产力工具
+总分：86.0/100
+  practicality: 5/5
+  feasibility: 3/5
+  demonstrability: 5/5
+预计投入：48 小时
+建议：recommended
+~~~
+
+`feasibility` 只有 3 分，原因是六周内同时支持两种语言和五类检查存在范围风险。它仍然达到最低下限，但这个证据会直接提醒开发时采用分阶段交付。
+
+#### 本地实践结果
+
+[graduation_project_topic_demo.py](./code/HelloAgents/examples/graduation_project_topic_demo.py) 还加入了一个“为所有人解决所有日常任务”的宽泛方案，用于验证单项下限和排序：
+
+~~~text
+=== 16.2 毕业设计选题评估实践 ===
+code_review_score: 86.0
+code_review_recommendation: recommended
+code_review_feature_count: 5
+broad_idea_score: 33.0
+broad_idea_recommendation: rework
+broad_idea_risks: practicality_below_floor,feasibility_below_floor,demonstrability_below_floor
+ranking_first: CodeReviewAgent
+network_calls: 0
+model_calls: 0
+~~~
+
+这里的 86 分是对示例中人工填写分数的确定性汇总，不是模型自动判断，也不代表 CodeReviewAgent 已经实现或质量达标。真正开发前还需要与目标用户确认问题，并把功能拆成可验收的里程碑。
+
 ### 参考资料
 
 - [《Hello-Agents》第十六章：毕业设计](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1.md)
@@ -141,4 +275,4 @@ artifacts_location: temporary_directory
 
 ### 小结
 
-毕业设计的价值在于把分散知识变成完整交付：从真实问题出发，选择必要的 Agent 能力，补齐错误处理和验证，最后以可运行代码、依赖、README 和 PR 接受检查。16.1 的实践代码没有提前决定选题，而是将最低交付物固化为可重复执行的结构检查，为后续项目迭代保留稳定入口。
+毕业设计要把分散知识变成完整交付：从真实问题出发，在实用性、可行性和展示性的交集中确定选题，再选择必要的 Agent 能力。16.1 的交付自检器固化文件契约；16.2 的结构化方案和评分器则保留选题依据。分数只辅助暴露范围风险，最终选择仍要回到用户需求、实际资源和可验收结果。
