@@ -5,10 +5,10 @@
 > - [15.1 项目概述与架构设计](https://datawhalechina.github.io/hello-agents/#/./chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87?id=_151-%e9%a1%b9%e7%9b%ae%e6%a6%82%e8%bf%b0%e4%b8%8e%e6%9e%b6%e6%9e%84%e8%ae%be%e8%ae%a1)
 > - [15.2 NPC 智能体系统](https://datawhalechina.github.io/hello-agents/#/./chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87?id=_152-npc-%e6%99%ba%e8%83%bd%e4%bd%93%e7%b3%bb%e7%bb%9f)
 > - [15.3 好感度系统设计](https://datawhalechina.github.io/hello-agents/#/./chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87?id=_153-%e5%a5%bd%e6%84%9f%e5%ba%a6%e7%b3%bb%e7%bb%9f%e8%ae%be%e8%ae%a1)
->
 > - [15.4 后端服务实现](https://datawhalechina.github.io/hello-agents/#/./chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87?id=_154-%e5%90%8e%e7%ab%af%e6%9c%8d%e5%8a%a1%e5%ae%9e%e7%8e%b0)
+> - [15.5 Godot 游戏场景构建](https://datawhalechina.github.io/hello-agents/#/./chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87?id=_155-godot-%e6%b8%b8%e6%88%8f%e5%9c%ba%e6%99%af%e6%9e%84%e5%bb%ba)
 >
-> 15.1 确定四层边界；15.2 实现 NPC 的角色、记忆和两种对话模式；15.3 加入玩家—NPC 好感度；15.4 用 FastAPI 把对话、状态、定时更新和日志串成后端服务。
+> 15.1 确定四层边界；15.2 实现 NPC 的角色、记忆和两种对话模式；15.3 加入玩家—NPC 好感度；15.4 串起后端服务；15.5 用 Godot 四个场景承接移动、巡逻和交互。
 
 ### 为什么要把 Agent 放进游戏
 
@@ -365,9 +365,123 @@ python view_logs.py --date 2026-09-13
 
 [view_logs.py](./code/HelloAgents/helloagents-ai-town/backend/view_logs.py) 默认读取当天文件，可以指定日期、末尾行数或持续跟踪。这里的日志主要用于开发追踪，不等于完整的生产可观测性。高并发服务还需要请求 ID、结构化 JSON、敏感文本脱敏和集中式日志采集。
 
-### 场景与节点是下一步前端实现的基础
+### 为什么用 Godot 承接游戏前端
 
-15.4.4 用节点和场景解释 Godot 的组织方式。节点承担单一功能，并按父子关系组成场景树；场景则是可保存、可复用和可实例化的节点树。当前工程已经把 Player、NPC 和 DialogueUI 拆成独立场景，再由 Main 场景组合。这个小节是 15.5 前端开发的概念铺垫，本次没有重复创建另一套 Godot 文件。
+这一节选择 Godot 4.5，原因很直接：项目是俯视角 2D 场景，核心需求正好对应 `CharacterBody2D`、`AnimatedSprite2D`、`Area2D` 和场景实例化；GDScript 与 Python 接近；内置 HTTP 能与 FastAPI 分开开发。它不是因为“更智能”，而是因为节点、物理和信号适合表达这类游戏交互。
+
+当前实践不引入像素素材包，背景用 `GradientTexture2D + Sprite2D` 生成，角色和办公室分区用 `Polygon2D` 保留可见占位，同时把原文要求的动画、碰撞、相机和音频节点全部建好。以后替换背景纹理、`SpriteFrames` 和音频流即可，不需要改移动与交互代码。
+
+### 四个场景如何组合
+
+场景是可复用的节点树。`Player`、`NPC` 和 `DialogueUI` 各自保存为 `.tscn`，`Main` 只负责实例化和连接；张三、李四、王五共用同一份 NPC 场景，仅覆盖名字、职业和出生位置。
+
+| 场景 | 根节点 | 主要子节点 | 职责 |
+| --- | --- | --- | --- |
+| Main | `Node2D` | Background、Player、NPCs、Walls、HUD、DialogueUI、BGM | 组合世界并编排信号 |
+| Player | `CharacterBody2D` | AnimatedSprite2D、CollisionShape2D、Camera2D、两个 AudioStreamPlayer | 输入、移动、碰撞和发起交互 |
+| NPC | `CharacterBody2D` | AnimatedSprite2D、CollisionShape2D、InteractionArea、名称与气泡标签 | 巡逻、近距离检测和气泡展示 |
+| DialogueUI | `CanvasLayer` | Panel、NPCName、NPCTitle、DialogueText、PlayerInput、两个按钮 | 对话输入与请求状态 |
+
+~~~mermaid
+flowchart TB
+    MAIN["Main · Node2D"]
+    PLAYER["Player 实例"]
+    NPCS["NPCs · Node2D"]
+    ZHANG["NPC_Zhang"]
+    LI["NPC_Li"]
+    WANG["NPC_Wang"]
+    UI["DialogueUI 实例"]
+    WALLS["Walls · StaticBody2D"]
+    HUD["HUD 与后端状态"]
+    BGM["BackgroundMusic"]
+
+    MAIN --> PLAYER
+    MAIN --> NPCS
+    NPCS --> ZHANG
+    NPCS --> LI
+    NPCS --> WANG
+    MAIN --> UI
+    MAIN --> WALLS
+    MAIN --> HUD
+    MAIN --> BGM
+    ZHANG -. "共享 NPC.tscn" .-> LI
+    LI -. "共享 NPC.tscn" .-> WANG
+~~~
+
+关键点不是节点数量，而是职责边界：NPC 不直接打开 UI，UI 不直接移动玩家，Main 也不实现巡逻。这样修改 NPC 模板会同步影响三个实例，场景之间则通过信号和公开方法协作。
+
+### 玩家移动、朝向与交互锁
+
+[player.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/player.gd) 每个物理帧读取 WASD 或方向键，将输入向量归一化后乘以速度，再交给 `move_and_slide()`。Player 和 NPC 都使用适合俯视角的 `MOTION_MODE_FLOATING`。归一化避免斜向移动比横向更快；墙体碰撞负责阻挡，边界限制再防止角色因场景配置错误跑出画面。
+
+~~~gdscript
+var input_direction := _get_input_direction()
+velocity = input_direction * speed
+move_and_slide()
+_update_animation(input_direction)
+_update_running_sound(input_direction)
+~~~
+
+朝向按绝对值较大的轴判断，优先播放 `walk_up`、`walk_down`、`walk_left`、`walk_right`，缺少对应素材时回退到 `walk`；静止时回到 `idle`。两个 `AudioStreamPlayer` 节点是可选资源，没有配置音频流时不会调用播放。
+
+玩家只保存一个 `nearby_npc`。按 E 或 Enter 后，Player 发出 `interaction_requested` 信号；Main 将玩家和当前 NPC 都切到 `is_interacting=true`。对话期间物理进程仍然存在，但速度被置零，关闭窗口后再恢复，这比临时关闭整个场景的处理更局部。
+
+### NPC 巡逻、近距离检测与气泡
+
+原来的简化场景把 NPC 根节点写成 `Area2D`，只能检测靠近，不能使用 `move_and_slide()` 巡逻。现在根节点改为 `CharacterBody2D`，实体碰撞与交互范围分开：根节点碰撞体负责移动和阻挡，子节点 `InteractionArea` 只监听玩家进入与离开。
+
+NPC 以出生点为巡逻中心，每隔 3～8 秒选择随机偏移量，并把目标限制在办公室边界内：
+
+~~~text
+wander_target = clamp(spawn_position + random_offset, movement_bounds)
+velocity = direction_to(wander_target) × move_speed
+~~~
+
+到达目标、撞墙或进入对话时，NPC 停止并播放 `idle`。玩家进入 `InteractionArea` 后，NPC 调用玩家的 `set_nearby_npc(self)` 并显示“按 E 交互”；离开时清空引用。`update_dialogue()` 把后端回复显示在头顶 10 秒，并用递增版本号避免旧计时器提前隐藏刚更新的气泡。
+
+~~~mermaid
+stateDiagram-v2
+    [*] --> 巡逻
+    巡逻 --> 可交互: 玩家进入 InteractionArea
+    可交互 --> 对话中: 玩家按 E / Enter
+    对话中 --> 可交互: 关闭 DialogueUI
+    可交互 --> 巡逻: 玩家离开 InteractionArea
+    对话中 --> 显示气泡: 收到 NPC 回复
+    显示气泡 --> 对话中: 10 秒后隐藏
+~~~
+
+### 场景之间的消息链
+
+一次交互没有让节点互相查找和修改内部 UI，而是沿着固定链路传递：
+
+~~~mermaid
+sequenceDiagram
+    actor P as 玩家
+    participant Player
+    participant NPC
+    participant Main
+    participant UI as DialogueUI
+    participant API as APIClient
+
+    P->>NPC: 进入 InteractionArea
+    NPC->>Player: set_nearby_npc(self)
+    P->>Player: 按 E
+    Player-->>Main: interaction_requested(npc)
+    Main->>Player: set_interacting(true)
+    Main->>NPC: set_interacting(true)
+    Main->>UI: show_npc(...)
+    P->>UI: 输入并发送
+    UI-->>API: message_submitted
+    API-->>Main: chat_completed(success, message)
+    Main->>UI: show_response(...)
+    Main->>NPC: update_dialogue(message)
+    P->>UI: 关闭
+    UI-->>Main: closed
+    Main->>Player: set_interacting(false)
+    Main->>NPC: set_interacting(false)
+~~~
+
+15.5 重点到场景、移动和交互为止。当前信号链沿用之前已经存在的 `/healthz` 与 `/chat` 客户端，保证可以继续联调；轮询 `/npcs/status`、展示定时背景对白属于下一节的前后端通信，不在这里提前扩展。
 
 ### 工程实现
 
@@ -390,11 +504,20 @@ helloagents-ai-town/
 │   ├── architecture_demo.py      # Fake LLM 离线验证
 │   └── pyproject.toml
 ├── helloagents-ai-town/
-│   ├── assets/
 │   ├── scenes/
+│   │   ├── main.tscn             # 办公室、墙体和场景实例
+│   │   ├── player.tscn           # 玩家物理体、相机、动画和音频节点
+│   │   ├── npc.tscn              # NPC 物理体、交互区和气泡
+│   │   └── dialogue_ui.tscn      # 对话输入界面
 │   ├── scripts/
+│   │   ├── main.gd               # 场景信号编排
+│   │   ├── player.gd             # 移动、朝向和交互锁
+│   │   ├── npc.gd                # 巡逻、靠近检测和气泡
+│   │   ├── dialogue_ui.gd        # 对话 UI 状态
+│   │   ├── api_client.gd         # 异步后端请求
+│   │   └── config.gd             # API 地址
 │   └── project.godot
-├── project_demo.py               # Godot 契约静态验证
+├── project_demo.py               # 15.5 Godot 契约静态验证
 └── README.md
 ~~~
 
@@ -477,12 +600,13 @@ affinity = relationship_manager.analyze_and_update_affinity(
 
 #### Godot 对话链路
 
-Godot 端继续使用 15.1 的场景和异步 `HTTPRequest`：
+Godot 端由四个独立场景组合，并继续使用异步 `HTTPRequest`：
 
-- [npc.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/npc.gd) 检测玩家进入范围并发出交互信号；
+- [player.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/player.gd) 处理移动、动画和按键，在有附近 NPC 时发出交互信号；
+- [npc.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/npc.gd) 随机巡逻，由 `InteractionArea` 设置玩家的附近 NPC，并管理头顶气泡；
 - [dialogue_ui.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/dialogue_ui.gd) 根据健康检查启用输入，管理请求中的禁用状态；
 - [api_client.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/api_client.gd) 发送 `npc_name`、`player_id` 和 `message`，读取响应中的 `message`；
-- [main.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/main.gd) 连接 NPC、玩家、UI 与 API 信号。
+- [main.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/main.gd) 锁定/恢复当前角色，并连接玩家、NPC、UI 与 API 信号。
 
 当前 Godot UI 只调用 `/healthz` 和 `/chat`，新增的好感度字段会被安全忽略；状态与背景对白接口已经就绪，但前端尚未轮询和显示这些数据。
 
@@ -518,13 +642,13 @@ python main.py
 
 访问 `http://127.0.0.1:8000/docs` 可以测试全部接口。真实运行会在启动时和每次状态刷新时调用模型，在 `MEMORY_PATH` 下创建 NPC 记忆数据库，在 `SQLITE_PATH` 保存关系分数，并把日志写入 `LOG_PATH`。
 
-游戏端使用 Godot 4.2 或更高版本导入：
+原文使用 Godot 4.5；当前脚本没有依赖 4.5 独占接口，可用 Godot 4.2 或更高版本导入：
 
 ~~~text
 code/HelloAgents/helloagents-ai-town/helloagents-ai-town/project.godot
 ~~~
 
-运行主场景后用 WASD 移动，靠近 NPC 按 E，按 Esc 关闭对话框。API 地址默认是 `http://127.0.0.1:8000`，也可以通过 `CYBER_TOWN_API_URL` 修改。
+运行主场景后用 WASD 或方向键移动，靠近 NPC 按 E/Enter，按 Esc 关闭对话框。API 地址默认是 `http://127.0.0.1:8000`，也可以通过 `CYBER_TOWN_API_URL` 修改。正式美术和音频需要在编辑器中填入现有的 `AnimatedSprite2D`、`InteractSound`、`RunningSound` 与 `BackgroundMusic` 节点。
 
 ### 实践结果
 
@@ -543,15 +667,17 @@ sqlite_persistence: restart_ready
 external_api_calls: 0
 ~~~
 
-Godot 静态验证检查了场景资源、WASD/E 键，以及前后端约定的请求字段和响应处理：
+Godot 静态验证检查了四场景组合、节点类型、三个 NPC 实例、资源引用、玩家移动、NPC 巡逻、交互锁、信号链和后端字段：
 
 ~~~text
-=== 15.1～15.4 Godot 对话契约静态验证 ===
+=== 15.5 Godot 场景与交互契约静态验证 ===
 required_files: 11
 resource_references: 8
-main_scene_contract: ready
-movement_and_interaction_contract: ready
-chat_request_and_response_contract: ready
+four_scene_composition: ready
+player_movement_animation_collision: ready
+npc_wander_proximity_bubble: ready
+dialogue_lock_and_signal_chain: ready
+backend_chat_contract: ready
 godot_runtime: not_executed
 external_api_calls: 0
 ~~~
@@ -565,8 +691,11 @@ external_api_calls: 0
 - 已实现 NPC 忙碌状态、原子占用、`409` 冲突和异常后的释放；
 - 已实现批量背景对白的启动刷新、定时调度、缓存查询与手动刷新；
 - 已实现控制台与每日文件日志，并提供 `view_logs.py`；
+- 已实现 Main、Player、NPC、DialogueUI 四个 Godot 场景，以及玩家移动、墙体碰撞、NPC 巡逻、接近提示、交互锁和回复气泡；
 - 当前记忆后端是 SQLite + TF-IDF，不是原文生产方案中的 Qdrant；
-- Godot 尚未轮询背景对白，也没有好感度 UI，这些属于后续前端小节；
+- 当前角色与办公室使用程序化几何占位，动画名和音频节点已预留，但没有冒充已经导入正式像素素材和音效；
+- Godot 尚未轮询背景对白，也没有好感度 UI，这些属于后续前后端通信与界面小节；
+- NPC 巡逻是出生点附近的随机直线移动和碰撞回避，不包含寻路网格；复杂地图需要再接入 `NavigationAgent2D`；
 - LLM 负责提出关系变化，确定性代码负责校验、限幅和持久化，位置与碰撞仍由游戏维护；
 - `.env.example` 不含真实密钥，验证没有访问模型或其他外部服务。
 
@@ -577,9 +706,11 @@ external_api_calls: 0
 - [官方 `state_manager.py`](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter15/Helloagents-AI-Town/backend/state_manager.py)
 - [官方 `logger.py`](https://github.com/datawhalechina/hello-agents/blob/main/code/chapter15/Helloagents-AI-Town/backend/logger.py)
 - [Godot 4 官方文档](https://docs.godotengine.org/zh-cn/4.x/)
+- [Godot `CharacterBody2D`](https://docs.godotengine.org/zh-cn/4.x/classes/class_characterbody2d.html)
+- [Godot `Area2D`](https://docs.godotengine.org/zh-cn/4.x/classes/class_area2d.html)
 - [FastAPI 官方文档](https://fastapi.tiangolo.com/)
 - [SQLite 官方文档](https://www.sqlite.org/docs.html)
 
 ### 小结
 
-15.4 把前三节的对象变成了可运行的服务：FastAPI 负责协议和编排，状态管理器原子占用 NPC 并缓存定时生成的背景对白，Agent 负责回复、记忆和关系更新，日志器记录完整结果，生命周期统一启动和回收资源。LLM 仍只生成开放式内容；并发冲突、状态释放、分值边界和持久化都由确定性代码控制。
+前四节完成了 Agent、记忆、关系和后端服务，15.5 则把它们放进可交互的游戏外壳。四个 Godot 场景各管一件事：Player 处理输入，NPC 处理巡逻与靠近检测，DialogueUI 处理输入状态，Main 用信号串起角色和 API。模型仍只生成开放式对话；位置、碰撞、交互范围和锁定状态由游戏代码确定。

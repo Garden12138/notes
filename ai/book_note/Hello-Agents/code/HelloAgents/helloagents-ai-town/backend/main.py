@@ -101,7 +101,7 @@ def create_app(
     app = FastAPI(
         title="赛博小镇 API",
         version="0.4.0",
-        description="HelloAgents 第十五章 15.1～15.4 实践",
+        description="HelloAgents 第十五章 15.1～15.5 实践",
         lifespan=lifespan,
     )
     app.add_middleware(

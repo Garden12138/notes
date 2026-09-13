@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/dialogue_ui.gd" id="1_dialogue"]
 
 [node name="DialogueUI" type="CanvasLayer"]
+layer = 10
 script = ExtResource("1_dialogue")
 
 [node name="Overlay" type="ColorRect" parent="."]
@@ -12,6 +13,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 1
 color = Color(0.03, 0.06, 0.09, 0.78)
 
 [node name="Panel" type="PanelContainer" parent="Overlay"]
@@ -34,32 +36,32 @@ theme_override_constants/margin_right = 28
 theme_override_constants/margin_bottom = 24
 
 [node name="Content" type="VBoxContainer" parent="Overlay/Panel/Margin"]
-theme_override_constants/separation = 14
+theme_override_constants/separation = 10
 
-[node name="Title" type="Label" parent="Overlay/Panel/Margin/Content"]
+[node name="NPCName" type="Label" parent="Overlay/Panel/Margin/Content"]
 theme_override_font_sizes/font_size = 24
 text = "NPC"
 
-[node name="Status" type="Label" parent="Overlay/Panel/Margin/Content"]
+[node name="NPCTitle" type="Label" parent="Overlay/Panel/Margin/Content"]
 theme_override_colors/font_color = Color(0.55, 0.66, 0.63, 1)
-text = "正在检查后端状态"
+text = "小镇居民"
 
-[node name="Reply" type="RichTextLabel" parent="Overlay/Panel/Margin/Content"]
+[node name="DialogueText" type="RichTextLabel" parent="Overlay/Panel/Margin/Content"]
 custom_minimum_size = Vector2(0, 120)
 bbcode_enabled = false
 fit_content = true
 text = "NPC 回复会显示在这里。"
 
-[node name="Message" type="LineEdit" parent="Overlay/Panel/Margin/Content"]
+[node name="PlayerInput" type="LineEdit" parent="Overlay/Panel/Margin/Content"]
 placeholder_text = "输入想对 NPC 说的话"
 
 [node name="Actions" type="HBoxContainer" parent="Overlay/Panel/Margin/Content"]
 alignment = 2
 theme_override_constants/separation = 10
 
-[node name="Close" type="Button" parent="Overlay/Panel/Margin/Content/Actions"]
+[node name="CloseButton" type="Button" parent="Overlay/Panel/Margin/Content/Actions"]
 text = "关闭"
 
-[node name="Send" type="Button" parent="Overlay/Panel/Margin/Content/Actions"]
+[node name="SendButton" type="Button" parent="Overlay/Panel/Margin/Content/Actions"]
 disabled = true
 text = "发送"

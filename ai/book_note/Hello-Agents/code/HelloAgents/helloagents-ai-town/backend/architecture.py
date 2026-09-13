@@ -1,4 +1,4 @@
-"""Architecture contract implemented through section 15.4."""
+"""Architecture contract implemented through section 15.5."""
 
 from __future__ import annotations
 
@@ -57,10 +57,12 @@ LAYERS = [
 
 COMPONENTS = [
     SystemComponent(
-        name="Godot Scene Baseline",
+        name="Godot Scene System",
         layer="game_frontend",
         status="implemented",
-        responsibility="承载玩家、三个 NPC、交互提示和对话面板",
+        responsibility=(
+            "组合四个场景，处理玩家移动、NPC 巡逻、交互提示、碰撞和对话面板"
+        ),
     ),
     SystemComponent(
         name="API Client",
@@ -192,7 +194,7 @@ DATA_FLOW = [
 def build_architecture_snapshot() -> ArchitectureSnapshot:
     return ArchitectureSnapshot(
         project="helloagents-ai-town",
-        scope="chapter_15_1_to_15_4_backend_service",
+        scope="chapter_15_1_to_15_5_godot_scene",
         layers=LAYERS,
         components=COMPONENTS,
         data_flow=DATA_FLOW,
@@ -209,6 +211,7 @@ def build_architecture_snapshot() -> ArchitectureSnapshot:
             "控制台与按日期文件双通道对话日志",
             "NPC 状态、单个/全部好感度查询接口",
             "FastAPI 对话响应与 Godot 异步展示链路",
+            "Godot 四场景、玩家移动、NPC 巡逻、交互锁和回复气泡",
         ],
         deferred_capabilities=[
             "Qdrant 生产向量存储适配",

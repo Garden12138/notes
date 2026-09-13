@@ -342,7 +342,7 @@ def main() -> None:
             }.issubset(openapi.json()["paths"])
             assert architecture.status_code == 200
             snapshot = architecture.json()
-            assert snapshot["scope"] == "chapter_15_1_to_15_4_backend_service"
+            assert snapshot["scope"] == "chapter_15_1_to_15_5_godot_scene"
             assert len(snapshot["layers"]) == 4
             assert len(snapshot["data_flow"]) == 13
             assert all(

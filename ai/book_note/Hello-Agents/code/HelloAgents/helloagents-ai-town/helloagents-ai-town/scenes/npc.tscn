@@ -1,50 +1,113 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/npc.gd" id="1_npc"]
+
+[sub_resource type="RectangleShape2D" id="NPCShape"]
+size = Vector2(28, 36)
 
 [sub_resource type="CircleShape2D" id="InteractionShape"]
 radius = 70.0
 
-[node name="NPC" type="Area2D"]
-collision_layer = 0
-collision_mask = 1
-monitoring = true
+[sub_resource type="SpriteFrames" id="NPCFrames"]
+animations = [{
+"frames": [],
+"loop": true,
+"name": &"idle",
+"speed": 5.0
+}, {
+"frames": [],
+"loop": true,
+"name": &"walk",
+"speed": 8.0
+}, {
+"frames": [],
+"loop": true,
+"name": &"walk_down",
+"speed": 8.0
+}, {
+"frames": [],
+"loop": true,
+"name": &"walk_left",
+"speed": 8.0
+}, {
+"frames": [],
+"loop": true,
+"name": &"walk_right",
+"speed": 8.0
+}, {
+"frames": [],
+"loop": true,
+"name": &"walk_up",
+"speed": 8.0
+}]
+
+[node name="NPC" type="CharacterBody2D"]
+collision_layer = 2
+collision_mask = 5
+motion_mode = 1
 script = ExtResource("1_npc")
 
-[node name="InteractionShape" type="CollisionShape2D" parent="."]
-shape = SubResource("InteractionShape")
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("NPCShape")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("NPCFrames")
+animation = &"idle"
 
 [node name="Body" type="Polygon2D" parent="."]
 polygon = PackedVector2Array(-14, -18, 14, -18, 14, 18, -14, 18)
 color = Color(0.91, 0.38, 0.27, 1)
 
+[node name="InteractionArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 1
+monitoring = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="InteractionArea"]
+shape = SubResource("InteractionShape")
+
 [node name="NameLabel" type="Label" parent="."]
-offset_left = -44.0
-offset_top = -52.0
-offset_right = 44.0
-offset_bottom = -28.0
+offset_left = -54.0
+offset_top = -58.0
+offset_right = 54.0
+offset_bottom = -34.0
 theme_override_colors/font_color = Color(0.95, 0.96, 0.91, 1)
 theme_override_font_sizes/font_size = 16
 text = "NPC"
 horizontal_alignment = 1
 
 [node name="RoleLabel" type="Label" parent="."]
-offset_left = -62.0
+offset_left = -64.0
 offset_top = 26.0
-offset_right = 62.0
+offset_right = 64.0
 offset_bottom = 48.0
 theme_override_colors/font_color = Color(0.65, 0.72, 0.69, 1)
 theme_override_font_sizes/font_size = 12
 text = "小镇居民"
 horizontal_alignment = 1
 
-[node name="Prompt" type="Label" parent="."]
+[node name="DialogueLabel" type="Label" parent="."]
+visible = false
+offset_left = -100.0
+offset_top = -116.0
+offset_right = 100.0
+offset_bottom = -64.0
+theme_override_colors/font_color = Color(0.94, 0.96, 0.93, 1)
+theme_override_colors/font_shadow_color = Color(0.02, 0.04, 0.05, 0.9)
+theme_override_constants/shadow_offset_x = 2
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 13
+text = "NPC 对话"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="InteractionPrompt" type="Label" parent="."]
+visible = false
 offset_left = -52.0
-offset_top = -82.0
+offset_top = -86.0
 offset_right = 52.0
-offset_bottom = -58.0
+offset_bottom = -62.0
 theme_override_colors/font_color = Color(0.98, 0.84, 0.38, 1)
 theme_override_font_sizes/font_size = 14
 text = "按 E 交互"
 horizontal_alignment = 1
-
