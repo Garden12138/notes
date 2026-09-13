@@ -60,7 +60,8 @@ func _on_health_completed(
 	var ready := bool(data.get("conversation_ready", false))
 	var message := "后端已连接"
 	if not ready:
-		message += "，NPC 对话将在 15.2 接入"
+		var detail := str(data.get("detail", "NPC 对话服务尚未就绪"))
+		message += "，%s" % detail
 	health_checked.emit(true, ready, message)
 
 

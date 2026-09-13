@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     llm_model_id: str = ""
     llm_api_key: str = ""
     llm_base_url: str = ""
+    memory_path: str = "./memory_data"
     qdrant_url: str = "http://127.0.0.1:6333"
     sqlite_path: str = "./data/cyber_town.db"
 
@@ -38,10 +39,21 @@ class Settings(BaseSettings):
     def integration_status(self) -> dict[str, bool]:
         """Report configuration presence only; no external service is contacted."""
         return {
-            "llm": bool(self.llm_model_id and self.llm_api_key),
+            "llm": self.llm_configured,
             "qdrant": bool(self.qdrant_url.strip()),
             "sqlite": bool(self.sqlite_path.strip()),
         }
+
+    @property
+    def llm_configured(self) -> bool:
+        return all(
+            value.strip()
+            for value in (
+                self.llm_model_id,
+                self.llm_api_key,
+                self.llm_base_url,
+            )
+        )
 
 
 @lru_cache(maxsize=1)

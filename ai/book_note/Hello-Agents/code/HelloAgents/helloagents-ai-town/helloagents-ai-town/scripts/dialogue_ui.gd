@@ -27,8 +27,8 @@ func show_npc(_npc_id: String, display_name: String, role: String, ready: bool) 
 	current_npc_name = display_name
 	conversation_ready = ready
 	title_label.text = "%s · %s" % [display_name, role]
-	status_label.text = "对话服务已就绪" if ready else "15.1 架构基线：对话服务尚未接入"
-	reply_label.text = "你已进入 NPC 的交互范围。\n后续章节会在这里展示带记忆和好感度影响的回复。"
+	status_label.text = "15.2 NPC 对话服务已就绪" if ready else "NPC 对话服务尚未就绪"
+	reply_label.text = "你已进入 NPC 的交互范围。\n服务就绪后，可以与角色进行带记忆的即时对话。"
 	message_edit.clear()
 	message_edit.editable = ready
 	send_button.disabled = not ready

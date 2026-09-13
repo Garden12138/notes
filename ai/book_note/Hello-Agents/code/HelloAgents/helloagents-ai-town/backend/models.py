@@ -1,7 +1,8 @@
-"""Data contracts for the section 15.1 Cyber Town baseline."""
+"""Data contracts for the Cyber Town architecture and NPC dialogue API."""
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -47,6 +48,8 @@ class NPCProfile(APIModel):
     name: str = Field(min_length=1, max_length=40)
     role: str = Field(min_length=1, max_length=80)
     location: str = Field(min_length=1, max_length=80)
+    activity: str = Field(min_length=1, max_length=120)
+    personality: str = Field(min_length=1, max_length=240)
     available: bool = True
 
 
@@ -60,6 +63,7 @@ class HealthResponse(APIModel):
     scope: str
     conversation_ready: bool
     integrations: dict[str, bool]
+    detail: str | None = None
 
 
 class ChatRequest(APIModel):
@@ -74,3 +78,13 @@ class ChatRequest(APIModel):
         if not normalized:
             raise ValueError("字段不能为空")
         return normalized
+
+
+class ChatResponse(APIModel):
+    npc_name: str
+    npc_title: str
+    message: str
+    success: Literal[True] = True
+    timestamp: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+    )

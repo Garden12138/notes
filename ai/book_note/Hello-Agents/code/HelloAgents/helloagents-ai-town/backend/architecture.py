@@ -1,7 +1,8 @@
-"""Architecture contract implemented for section 15.1."""
+"""Architecture contract implemented through section 15.2."""
 
 from __future__ import annotations
 
+from agents import NPC_ROLES
 from models import (
     ArchitectureLayer,
     ArchitectureSnapshot,
@@ -13,23 +14,14 @@ from models import (
 
 NPC_CATALOG = [
     NPCProfile(
-        id="zhang_san",
-        name="张三",
-        role="Python 工程师",
-        location="开发区",
-    ),
-    NPCProfile(
-        id="li_si",
-        name="李四",
-        role="产品经理",
-        location="会议区",
-    ),
-    NPCProfile(
-        id="wang_wu",
-        name="王五",
-        role="UI 设计师",
-        location="设计区",
-    ),
+        id=role.npc_id,
+        name=role.name,
+        role=role.title,
+        location=role.location,
+        activity=role.activity,
+        personality=role.personality,
+    )
+    for role in NPC_ROLES.values()
 ]
 
 
@@ -38,24 +30,26 @@ LAYERS = [
         name="game_frontend",
         technology="Godot 4.5 + GDScript",
         responsibilities=["2D 场景渲染", "玩家移动", "NPC 展示", "对话界面"],
-        boundary="只处理表现和输入，不保存模型密钥，也不决定权威关系状态",
+        boundary=(
+            "只处理表现和输入，不保存模型密钥，也不决定权威关系状态"
+        ),
     ),
     ArchitectureLayer(
         name="backend",
         technology="FastAPI + Python 3.10+",
-        responsibilities=["API 路由", "NPC 状态管理", "对话协调", "日志记录"],
-        boundary="校验游戏请求并维护确定性状态，不承担画面渲染",
+        responsibilities=["API 路由", "NPC 定位", "对话协调", "错误转换"],
+        boundary="校验游戏请求并协调 Agent，不承担画面渲染",
     ),
     ArchitectureLayer(
         name="agents",
         technology="HelloAgents",
-        responsibilities=["NPC 角色扮演", "记忆管理", "好感度计算"],
+        responsibilities=["NPC 角色扮演", "短期记忆", "情景记忆", "批量背景对话"],
         boundary="生成开放式内容，不直接修改 Godot 场景节点",
     ),
     ArchitectureLayer(
         name="external_services",
-        technology="LLM API + Qdrant + SQLite",
-        responsibilities=["模型推理", "向量检索", "结构化持久化"],
+        technology="LLM API + SQLite（Qdrant 可替换）",
+        responsibilities=["模型推理", "记忆检索", "结构化持久化"],
         boundary="提供基础能力，不决定 NPC 的交互流程",
     ),
 ]
@@ -72,67 +66,106 @@ COMPONENTS = [
         name="API Client",
         layer="game_frontend",
         status="implemented",
-        responsibility="检查后端健康状态并预留对话 POST 请求",
-    ),
-    SystemComponent(
-        name="Architecture API",
-        layer="backend",
-        status="implemented",
-        responsibility="暴露健康检查、架构快照和 NPC 目录",
+        responsibility="检查后端健康状态并异步提交对话请求",
     ),
     SystemComponent(
         name="NPC SimpleAgent Manager",
         layer="agents",
-        status="deferred",
-        responsibility="为每个 NPC 建立独立 Agent、Prompt 和会话状态",
+        status="implemented",
+        responsibility="为每个 NPC 建立独立 Agent、Prompt、锁和会话入口",
     ),
     SystemComponent(
-        name="Memory and Affinity",
+        name="Working and Episodic Memory",
         layer="agents",
-        status="deferred",
-        responsibility="检索交互记忆并计算玩家关系变化",
+        status="implemented",
+        responsibility="按 NPC 与玩家隔离近期消息并检索相关历史互动",
     ),
     SystemComponent(
-        name="Persistence and Logs",
-        layer="external_services",
+        name="Batch Background Dialogue Generator",
+        layer="agents",
+        status="implemented",
+        responsibility="通过一次 LLM 调用生成三名 NPC 的背景内容并校验 JSON",
+    ),
+    SystemComponent(
+        name="Affinity, State and Logs",
+        layer="backend",
         status="deferred",
-        responsibility="通过 Qdrant、SQLite 和日志文件保存运行数据",
+        responsibility="计算好感度、更新自主状态并持久化运行日志",
     ),
 ]
 
 
 DATA_FLOW = [
-    DataFlowStep(order=1, actor="Player", action="靠近 NPC 并按 E", status="implemented"),
-    DataFlowStep(order=2, actor="Godot", action="打开对话界面并提交消息", status="implemented"),
-    DataFlowStep(order=3, actor="FastAPI", action="校验请求并定位 NPC", status="deferred"),
-    DataFlowStep(order=4, actor="SimpleAgent", action="接收角色设定和玩家消息", status="deferred"),
-    DataFlowStep(order=5, actor="Memory", action="检索相关历史互动", status="deferred"),
-    DataFlowStep(order=6, actor="LLM", action="生成符合角色的回复", status="deferred"),
-    DataFlowStep(order=7, actor="Backend", action="更新状态与好感度并记录日志", status="deferred"),
-    DataFlowStep(order=8, actor="Godot", action="展示 NPC 回复并恢复输入", status="deferred"),
+    DataFlowStep(
+        order=1,
+        actor="Player",
+        action="靠近 NPC 并按 E",
+        status="implemented",
+    ),
+    DataFlowStep(
+        order=2,
+        actor="Godot",
+        action="打开对话界面并提交消息",
+        status="implemented",
+    ),
+    DataFlowStep(
+        order=3,
+        actor="FastAPI",
+        action="校验请求并定位 NPC",
+        status="implemented",
+    ),
+    DataFlowStep(
+        order=4,
+        actor="SimpleAgent",
+        action="接收角色设定和玩家消息",
+        status="implemented",
+    ),
+    DataFlowStep(
+        order=5,
+        actor="Memory",
+        action="检索近期与相关历史互动",
+        status="implemented",
+    ),
+    DataFlowStep(
+        order=6,
+        actor="LLM",
+        action="生成符合角色的回复",
+        status="implemented",
+    ),
+    DataFlowStep(
+        order=7,
+        actor="Backend",
+        action="保存对话记忆并返回结果",
+        status="implemented",
+    ),
+    DataFlowStep(
+        order=8,
+        actor="Godot",
+        action="展示 NPC 回复并恢复输入",
+        status="implemented",
+    ),
 ]
 
 
 def build_architecture_snapshot() -> ArchitectureSnapshot:
     return ArchitectureSnapshot(
         project="helloagents-ai-town",
-        scope="chapter_15_1_architecture_baseline",
+        scope="chapter_15_1_to_15_2_npc_agents",
         layers=LAYERS,
         components=COMPONENTS,
         data_flow=DATA_FLOW,
         implemented_capabilities=[
-            "四层架构与职责边界",
-            "FastAPI 健康检查、架构快照和 NPC 目录",
-            "严格的对话请求数据模型",
-            "Godot 主场景、玩家、NPC 和对话 UI 骨架",
-            "WASD 移动、E 键交互与后端健康检查",
-            "未实现对话返回 501，不生成伪造回复",
+            "三个独立 SimpleAgent 及角色 Prompt",
+            "容量 10、TTL 120 分钟的工作记忆",
+            "基于 SQLite 与 TF-IDF 检索的情景记忆",
+            "玩家消息的即时个性化回复",
+            "一次调用生成三名 NPC 背景内容的批量生成器",
+            "FastAPI 对话响应与 Godot 异步展示链路",
         ],
         deferred_capabilities=[
-            "HelloAgents NPC 实例与角色 Prompt",
-            "短期记忆和长期记忆",
             "好感度计算和关系状态",
-            "NPC 自主状态更新与实时日志",
-            "真实对话响应与数据持久化",
+            "NPC 自主状态更新与批量生成定时任务",
+            "实时日志和关系数据持久化",
+            "Qdrant 生产向量存储适配",
         ],
     )
