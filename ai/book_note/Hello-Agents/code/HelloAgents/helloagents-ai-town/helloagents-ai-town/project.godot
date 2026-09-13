@@ -9,6 +9,11 @@ config/name="HelloAgents Cyber Town"
 config/features=PackedStringArray("4.2")
 run/main_scene="res://scenes/main.tscn"
 
+[autoload]
+
+Config="*res://scripts/config.gd"
+APIClient="*res://scripts/api_client.gd"
+
 [display]
 
 window/size/viewport_width=960

@@ -7,8 +7,9 @@
 > - [15.3 好感度系统设计](https://datawhalechina.github.io/hello-agents/#/./chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87?id=_153-%e5%a5%bd%e6%84%9f%e5%ba%a6%e7%b3%bb%e7%bb%9f%e8%ae%be%e8%ae%a1)
 > - [15.4 后端服务实现](https://datawhalechina.github.io/hello-agents/#/./chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87?id=_154-%e5%90%8e%e7%ab%af%e6%9c%8d%e5%8a%a1%e5%ae%9e%e7%8e%b0)
 > - [15.5 Godot 游戏场景构建](https://datawhalechina.github.io/hello-agents/#/./chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87?id=_155-godot-%e6%b8%b8%e6%88%8f%e5%9c%ba%e6%99%af%e6%9e%84%e5%bb%ba)
+> - [15.6 前后端通信实现](https://datawhalechina.github.io/hello-agents/#/./chapter15/%E7%AC%AC%E5%8D%81%E4%BA%94%E7%AB%A0%20%E6%9E%84%E5%BB%BA%E8%B5%9B%E5%8D%9A%E5%B0%8F%E9%95%87?id=_156-%e5%89%8d%e5%90%8e%e7%ab%af%e9%80%9a%e4%bf%a1%e5%ae%9e%e7%8e%b0)
 >
-> 15.1 确定四层边界；15.2 实现 NPC 的角色、记忆和两种对话模式；15.3 加入玩家—NPC 好感度；15.4 串起后端服务；15.5 用 Godot 四个场景承接移动、巡逻和交互。
+> 15.1 确定四层边界；15.2 实现 NPC 的角色、记忆和两种对话模式；15.3 加入玩家—NPC 好感度；15.4 串起后端服务；15.5 建立 Godot 场景；15.6 用异步 HTTP 和信号接通两端。
 
 ### 为什么要把 Agent 放进游戏
 
@@ -34,7 +35,7 @@
 | 游戏化交互 | 在 2D 办公室移动和交谈 | Godot 场景、碰撞、输入和 UI |
 | 实时日志 | 回看对话和状态变化 | 结构化时间、错误和调用日志 |
 
-这些能力存在先后关系：游戏产生请求，后端先占用 NPC，Agent 再结合记忆和当前关系生成回复，好感度系统处理互动结果，最后释放状态并记录日志。15.4 已把这条后端链路接通；好感度面板和背景气泡的前端展示仍留给后续章节。
+这些能力存在先后关系：游戏产生请求，后端先占用 NPC，Agent 再结合记忆和当前关系生成回复，好感度系统处理互动结果，最后释放状态并记录日志。15.4 接通后端链路，15.6 再让 Godot 消费即时回复、NPC 列表和背景对白；好感度面板仍留给后续章节。
 
 ### 四层技术架构
 
@@ -469,11 +470,12 @@ sequenceDiagram
     Player-->>Main: interaction_requested(npc)
     Main->>Player: set_interacting(true)
     Main->>NPC: set_interacting(true)
-    Main->>UI: show_npc(...)
+    Main->>UI: start_dialogue(...)
     P->>UI: 输入并发送
-    UI-->>API: message_submitted
-    API-->>Main: chat_completed(success, message)
-    Main->>UI: show_response(...)
+    UI-->>Main: message_submitted
+    Main->>API: send_chat(...)
+    API-->>Main: chat_response_received
+    Main->>UI: on_chat_response_received(...)
     Main->>NPC: update_dialogue(message)
     P->>UI: 关闭
     UI-->>Main: closed
@@ -481,7 +483,120 @@ sequenceDiagram
     Main->>NPC: set_interacting(false)
 ~~~
 
-15.5 重点到场景、移动和交互为止。当前信号链沿用之前已经存在的 `/healthz` 与 `/chat` 客户端，保证可以继续联调；轮询 `/npcs/status`、展示定时背景对白属于下一节的前后端通信，不在这里提前扩展。
+15.5 先完成场景、移动和交互；15.6 再把 UI 信号接到后端，并补上状态轮询。
+
+### 通信边界与接口映射
+
+Godot 只负责发请求和展示结果，模型密钥、记忆、好感度与忙碌状态继续留在 FastAPI。客户端统一使用 JSON，不从 UI 脚本直接拼 URL：
+
+| 客户端动作 | 方法与接口 | 返回后的去向 |
+| --- | --- | --- |
+| 健康检查 | `GET /healthz` | 更新右上角状态，并决定是否允许发送 |
+| 即时对话 | `POST /chat` | 追加到对话历史和当前 NPC 气泡 |
+| 获取 NPC 状态 | `GET /npcs/status` | 按名称刷新三名 NPC 的背景气泡 |
+| 获取 NPC 列表 | `GET /npcs` | 缓存后端角色目录，供后续界面使用 |
+
+原文部分示例使用 `/dialogue`，但官方完整工程和当前后端已经采用 `/chat`。实践继续使用现有接口，避免维护语义相同的重复路由。请求体显式加入 `player_id`，与 15.3 的玩家—NPC 关系隔离保持一致：
+
+~~~json
+{
+  "npc_name": "张三",
+  "player_id": "player",
+  "message": "最近在忙什么？"
+}
+~~~
+
+### Config 与 APIClient 自动加载
+
+[config.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/config.gd) 和 [api_client.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/api_client.gd) 在 `project.godot` 中注册为 AutoLoad。它们在主场景之前进入场景树，因此任何场景都能通过 `Config` 和 `APIClient` 使用同一份地址与客户端状态。
+
+`Config` 集中维护四个 URL、20 秒请求超时和 30 秒状态刷新间隔。API 根地址默认是 `http://127.0.0.1:8000`，也可通过 `CYBER_TOWN_API_URL` 覆盖；派生地址统一去掉末尾斜杠后生成。
+
+APIClient 为健康检查、对话、状态和列表分别创建一个 `HTTPRequest`。分开不是为了多写四份代码，而是因为一个 `HTTPRequest` 在前一个请求结束前不能再发第二个请求。这样 30 秒一次的状态轮询不会阻塞玩家对话，不同类别也可以并行。
+
+~~~gdscript
+func _ready() -> void:
+    http_health = _create_request(_on_health_request_completed)
+    http_chat = _create_request(_on_chat_request_completed)
+    http_status = _create_request(_on_status_request_completed)
+    http_npcs = _create_request(_on_npcs_request_completed)
+~~~
+
+同一类别仍然只允许一个在途请求。状态和列表遇到重复调用会直接跳过；对话重复发送则通过 `chat_error` 明确通知 UI。`request()` 返回 `OK` 只表示请求已成功创建，真正结果要等 `request_completed` 信号。
+
+### 响应不能只检查 HTTP 200
+
+每个回调按三层检查：
+
+1. `result` 判断连接、超时等传输结果；
+2. `response_code` 判断 HTTP 状态；
+3. JSON 类型和必需字段判断业务协议。
+
+对话请求还保存 `pending_chat_npc_name`，响应中的 `npc_name` 必须与它一致，`success` 必须为真，`message` 必须非空。FastAPI 的错误体如果带 `detail`，客户端会将它传给 UI，例如未知 NPC 的 404、忙碌状态的 409 或服务未配置的 503，而不是全部显示成模糊的“网络失败”。
+
+状态响应只接受 `dialogues` 字典中的字符串键和值，NPC 列表则要求 `npcs` 为数组。客户端先校验，再发出 `chat_response_received`、`chat_error`、`npc_status_received` 和 `npc_list_received` 等信号，场景脚本不需要理解 HTTP 回调参数。
+
+### 对话 UI 是一个请求状态机
+
+[dialogue_ui.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/dialogue_ui.gd) 不再用新回复覆盖整块文本，而是按轮次追加玩家与 NPC 消息。`RichTextLabel` 只用 BBCode 渲染固定角色标签，玩家和模型文本通过 `add_text()` 写入，避免输入内容被当作 BBCode 执行。
+
+~~~mermaid
+stateDiagram-v2
+    [*] --> 隐藏
+    隐藏 --> 可输入: start_dialogue 且后端就绪
+    隐藏 --> 不可输入: 后端未就绪
+    可输入 --> 等待响应: 提交非空消息
+    等待响应 --> 可输入: 收到匹配回复
+    等待响应 --> 可输入: 收到错误
+    可输入 --> 隐藏: Close / Esc
+    不可输入 --> 隐藏: Close / Esc
+~~~
+
+等待阶段会禁用输入、发送和关闭按钮，防止重复提交或关闭后把旧响应写进下一段对话。回调还要再次比较 NPC 名称；只有当前窗口仍对应这名 NPC 时才追加文本并恢复焦点。UI 只管理展示状态，玩家和 NPC 的移动锁仍由 Main 统一设置和释放。
+
+### Main 定时刷新背景气泡
+
+[main.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/main.gd) 启动时建立 `npc_name → TownNPC` 映射，连接全部 API 信号，然后并行发起健康检查、NPC 状态和 NPC 列表请求。之后 `_process()` 累计时间，每到 `Config.NPC_STATUS_UPDATE_INTERVAL` 再读取一次状态。
+
+~~~gdscript
+func _process(delta: float) -> void:
+    status_update_timer += delta
+    if status_update_timer >= Config.NPC_STATUS_UPDATE_INTERVAL:
+        status_update_timer = 0.0
+        api_client.get_npc_status()
+~~~
+
+收到 `dialogues` 后，Main 按名字找到 NPC 并调用 `update_dialogue()`。当前正在与玩家交谈的 NPC 会跳过背景更新，避免定时自言自语覆盖即时回复；其他 NPC 仍可正常显示背景气泡。NPC 列表先缓存在 `npc_catalog` 中，本节没有额外制作角色列表界面。
+
+~~~mermaid
+sequenceDiagram
+    actor P as 玩家
+    participant UI as DialogueUI
+    participant M as Main
+    participant C as APIClient
+    participant F as FastAPI
+    participant A as NPC Agent
+    participant N as TownNPC
+
+    P->>UI: 输入消息
+    UI-->>M: message_submitted(name, message)
+    M->>C: send_chat(...)
+    C->>F: POST /chat JSON
+    F->>A: 角色 + 记忆 + 关系
+    A-->>F: NPC 回复
+    F-->>C: ChatResponse
+    C-->>M: chat_response_received
+    M->>UI: 追加回复并恢复输入
+    M->>N: 更新当前 NPC 气泡
+
+    loop 每 30 秒
+        M->>C: get_npc_status()
+        C->>F: GET /npcs/status
+        F-->>C: dialogues
+        C-->>M: npc_status_received
+        M->>N: 更新非交互 NPC 背景气泡
+    end
+~~~
 
 ### 工程实现
 
@@ -517,7 +632,7 @@ helloagents-ai-town/
 │   │   ├── api_client.gd         # 异步后端请求
 │   │   └── config.gd             # API 地址
 │   └── project.godot
-├── project_demo.py               # 15.5 Godot 契约静态验证
+├── project_demo.py               # 15.5～15.6 Godot 契约静态验证
 └── README.md
 ~~~
 
@@ -568,7 +683,7 @@ affinity = relationship_manager.analyze_and_update_affinity(
 | 接口 | 当前行为 |
 | --- | --- |
 | `GET /healthz` | 返回对话与状态调度器是否就绪 |
-| `GET /architecture` | 返回当前四层架构和十三步数据流 |
+| `GET /architecture` | 返回当前四层架构和十五步数据流 |
 | `GET /npcs` | 返回三名 NPC，并按忙碌状态计算 `available` |
 | `GET /npcs/status` | 返回全部状态、背景对白和下次更新倒计时 |
 | `GET /npcs/{npc_name}/status` | 返回单个 NPC 的位置、动作与忙碌状态 |
@@ -600,15 +715,15 @@ affinity = relationship_manager.analyze_and_update_affinity(
 
 #### Godot 对话链路
 
-Godot 端由四个独立场景组合，并继续使用异步 `HTTPRequest`：
+Godot 端由四个独立场景组合，通过 AutoLoad 的 `Config` 和 `APIClient` 共享配置与请求状态：
 
 - [player.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/player.gd) 处理移动、动画和按键，在有附近 NPC 时发出交互信号；
 - [npc.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/npc.gd) 随机巡逻，由 `InteractionArea` 设置玩家的附近 NPC，并管理头顶气泡；
-- [dialogue_ui.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/dialogue_ui.gd) 根据健康检查启用输入，管理请求中的禁用状态；
-- [api_client.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/api_client.gd) 发送 `npc_name`、`player_id` 和 `message`，读取响应中的 `message`；
-- [main.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/main.gd) 锁定/恢复当前角色，并连接玩家、NPC、UI 与 API 信号。
+- [dialogue_ui.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/dialogue_ui.gd) 追加对话历史，根据健康检查和在途请求切换输入状态；
+- [api_client.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/api_client.gd) 以四个独立 `HTTPRequest` 处理健康检查、对话、状态和列表，并校验返回结构；
+- [main.gd](./code/HelloAgents/helloagents-ai-town/helloagents-ai-town/scripts/main.gd) 锁定/恢复当前角色，连接玩家、NPC、UI 与 API 信号，并定时刷新背景气泡。
 
-当前 Godot UI 只调用 `/healthz` 和 `/chat`，新增的好感度字段会被安全忽略；状态与背景对白接口已经就绪，但前端尚未轮询和显示这些数据。
+启动时会同时调用 `/healthz`、`/npcs/status` 和 `/npcs`；玩家发言调用 `/chat`；之后每 30 秒重新读取背景对白。`/chat` 返回的好感度字段当前会被安全忽略，因为本节尚未实现好感度面板。
 
 ### 运行方式
 
@@ -667,17 +782,18 @@ sqlite_persistence: restart_ready
 external_api_calls: 0
 ~~~
 
-Godot 静态验证检查了四场景组合、节点类型、三个 NPC 实例、资源引用、玩家移动、NPC 巡逻、交互锁、信号链和后端字段：
+Godot 静态验证在原有场景与交互契约上，继续检查 AutoLoad、四条 HTTP 通道、请求关联、对话等待状态、NPC 列表和定时气泡更新：
 
 ~~~text
-=== 15.5 Godot 场景与交互契约静态验证 ===
+=== 15.6 Godot 前后端通信契约静态验证 ===
 required_files: 11
-resource_references: 8
-four_scene_composition: ready
-player_movement_animation_collision: ready
-npc_wander_proximity_bubble: ready
-dialogue_lock_and_signal_chain: ready
-backend_chat_contract: ready
+resource_references: 9
+autoload_config_and_api_client: ready
+independent_http_channels: health_chat_status_npcs
+chat_validation_and_correlation: ready
+dialogue_history_and_pending_guard: ready
+periodic_npc_status_bubbles: ready
+npc_list_contract: ready
 godot_runtime: not_executed
 external_api_calls: 0
 ~~~
@@ -692,9 +808,10 @@ external_api_calls: 0
 - 已实现批量背景对白的启动刷新、定时调度、缓存查询与手动刷新；
 - 已实现控制台与每日文件日志，并提供 `view_logs.py`；
 - 已实现 Main、Player、NPC、DialogueUI 四个 Godot 场景，以及玩家移动、墙体碰撞、NPC 巡逻、接近提示、交互锁和回复气泡；
+- 已实现 Config 与 APIClient AutoLoad、四条独立 HTTP 通道、结构化响应校验、对话历史和 30 秒背景对白轮询；
 - 当前记忆后端是 SQLite + TF-IDF，不是原文生产方案中的 Qdrant；
 - 当前角色与办公室使用程序化几何占位，动画名和音频节点已预留，但没有冒充已经导入正式像素素材和音效；
-- Godot 尚未轮询背景对白，也没有好感度 UI，这些属于后续前后端通信与界面小节；
+- Godot 已轮询背景对白，但还没有好感度 UI；
 - NPC 巡逻是出生点附近的随机直线移动和碰撞回避，不包含寻路网格；复杂地图需要再接入 `NavigationAgent2D`；
 - LLM 负责提出关系变化，确定性代码负责校验、限幅和持久化，位置与碰撞仍由游戏维护；
 - `.env.example` 不含真实密钥，验证没有访问模型或其他外部服务。
@@ -708,9 +825,12 @@ external_api_calls: 0
 - [Godot 4 官方文档](https://docs.godotengine.org/zh-cn/4.x/)
 - [Godot `CharacterBody2D`](https://docs.godotengine.org/zh-cn/4.x/classes/class_characterbody2d.html)
 - [Godot `Area2D`](https://docs.godotengine.org/zh-cn/4.x/classes/class_area2d.html)
+- [Godot `HTTPRequest`](https://docs.godotengine.org/zh-cn/4.x/classes/class_httprequest.html)
+- [Godot AutoLoad](https://docs.godotengine.org/zh-cn/4.x/tutorials/scripting/singletons_autoload.html)
+- [Godot 信号](https://docs.godotengine.org/zh-cn/4.x/getting_started/step_by_step/signals.html)
 - [FastAPI 官方文档](https://fastapi.tiangolo.com/)
 - [SQLite 官方文档](https://www.sqlite.org/docs.html)
 
 ### 小结
 
-前四节完成了 Agent、记忆、关系和后端服务，15.5 则把它们放进可交互的游戏外壳。四个 Godot 场景各管一件事：Player 处理输入，NPC 处理巡逻与靠近检测，DialogueUI 处理输入状态，Main 用信号串起角色和 API。模型仍只生成开放式对话；位置、碰撞、交互范围和锁定状态由游戏代码确定。
+15.6 把 Godot 与 FastAPI 真正连成一条异步链路：Config 集中配置地址，APIClient 隔离 HTTP 细节，DialogueUI 管理请求状态，Main 按名称将即时回复和背景对白投递给 NPC。四条请求通道避免定时轮询占用玩家对话，传输、HTTP 和 JSON 三层校验则把失败留在可观测的边界内。模型仍只生成开放式内容，移动、碰撞、关系状态与请求节流由确定性代码负责。

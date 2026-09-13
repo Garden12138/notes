@@ -1,6 +1,6 @@
 # HelloAgents 赛博小镇
 
-这是第十五章的持续实践目录。15.1 建立四层边界；15.2 接入独立 NPC、角色 Prompt、两类记忆和批量背景对白；15.3 加入玩家—NPC 好感度；15.4 补齐 FastAPI 服务；15.5 完成 Godot 四场景、玩家控制、NPC 巡逻和交互信号链。
+这是第十五章的持续实践目录。15.1 建立四层边界；15.2 接入独立 NPC、角色 Prompt、两类记忆和批量背景对白；15.3 加入玩家—NPC 好感度；15.4 补齐 FastAPI 服务；15.5 完成 Godot 场景；15.6 接通异步对话、NPC 列表和定时状态气泡。
 
 ## 目录
 
@@ -68,7 +68,7 @@ python main.py
 可用接口：
 
 - `GET /healthz`：返回对话与状态调度器是否就绪；
-- `GET /architecture`：返回当前四层架构、组件和十三步数据流；
+- `GET /architecture`：返回当前四层架构、组件和十五步数据流；
 - `GET /npcs`：返回三名 NPC 的角色资料；
 - `GET /npcs/status`、`GET /npcs/{npc_name}/status`：查询整体或单个 NPC 状态；
 - `POST /npcs/status/refresh`：立即刷新批量背景对白；
@@ -87,6 +87,8 @@ PYTHONDONTWRITEBYTECODE=1 python architecture_demo.py
 
 使用 Godot 4.2 或更高版本导入 `helloagents-ai-town/project.godot`。Main 实例化 Player、三个 NPC 和 DialogueUI；玩家与 NPC 都使用 `CharacterBody2D`，NPC 的子节点 `InteractionArea` 负责近距离检测。WASD 或方向键控制玩家，靠近 NPC 后按 E/Enter 打开对话框，Esc 关闭。对话期间玩家和当前 NPC 都会停止移动，成功回复还会显示为 NPC 头顶气泡。
 
+`Config` 与 `APIClient` 已在 `project.godot` 注册为 AutoLoad。APIClient 为健康检查、即时对话、NPC 状态和 NPC 列表各维护一个 `HTTPRequest`，因此状态轮询不会占用对话通道。Main 启动时立即读取状态和列表，之后每 30 秒刷新一次背景气泡；同类请求尚未结束时会跳过重复轮询。
+
 场景中的几何图形是无需额外素材即可运行的占位外观；`AnimatedSprite2D` 和两个音频节点已按原文保留，可在 Godot 编辑器中替换为正式精灵帧和音频资源。
 
 Godot 默认连接 `http://127.0.0.1:8000`，可通过 `CYBER_TOWN_API_URL` 修改。
@@ -95,6 +97,6 @@ Godot 默认连接 `http://127.0.0.1:8000`，可通过 `CYBER_TOWN_API_URL` 修�
 PYTHONDONTWRITEBYTECODE=1 python project_demo.py
 ```
 
-静态脚本检查四个场景的节点组成、资源引用、移动/巡逻/交互脚本、信号链，以及 Godot 与后端的请求字段。它不能替代 Godot 编辑器的 GDScript 解析和实际运行。
+静态脚本检查四个场景、AutoLoad、独立 HTTP 通道、请求字段、响应校验、对话等待状态和定时气泡链路。它不能替代 Godot 编辑器的 GDScript 解析和实际运行。
 
-当前 Godot 只消费 `/chat` 的回复文本，尚未轮询背景对白或显示好感度。不要提交真实 `.env`、模型密钥、记忆数据库、关系数据库、运行日志或 Godot 缓存目录。
+当前 Godot 消费 `/chat`、`/npcs/status`、`/npcs` 和 `/healthz`；好感度面板仍未实现。不要提交真实 `.env`、模型密钥、记忆数据库、关系数据库、运行日志或 Godot 缓存目录。

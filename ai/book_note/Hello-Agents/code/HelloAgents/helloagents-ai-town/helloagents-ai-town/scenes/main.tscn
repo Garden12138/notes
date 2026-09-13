@@ -1,7 +1,6 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=11 format=3]
 
 [ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
-[ext_resource type="Script" path="res://scripts/api_client.gd" id="2_api"]
 [ext_resource type="PackedScene" path="res://scenes/player.tscn" id="3_player"]
 [ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="4_npc"]
 [ext_resource type="PackedScene" path="res://scenes/dialogue_ui.tscn" id="5_dialogue"]
@@ -105,9 +104,6 @@ shape = SubResource("VerticalWall")
 [node name="Right" type="CollisionShape2D" parent="Walls"]
 position = Vector2(920, 298)
 shape = SubResource("VerticalWall")
-
-[node name="APIClient" type="Node" parent="."]
-script = ExtResource("2_api")
 
 [node name="Player" parent="." instance=ExtResource("3_player")]
 position = Vector2(480, 450)

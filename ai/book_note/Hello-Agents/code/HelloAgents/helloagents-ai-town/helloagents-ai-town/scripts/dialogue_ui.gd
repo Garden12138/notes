@@ -14,6 +14,7 @@ signal closed
 
 var current_npc_name := ""
 var conversation_ready := false
+var request_pending := false
 
 
 func _ready() -> void:
@@ -23,48 +24,91 @@ func _ready() -> void:
 	player_input.text_submitted.connect(_on_text_submitted)
 
 
-func show_npc(_npc_id: String, npc_name: String, npc_title: String, ready: bool) -> void:
+func start_dialogue(
+	_npc_id: String,
+	npc_name: String,
+	npc_title: String,
+	ready: bool,
+) -> void:
 	current_npc_name = npc_name
 	conversation_ready = ready
 	npc_name_label.text = npc_name
 	npc_title_label.text = npc_title
-	dialogue_text.text = (
-		"可以开始对话。" if ready else "后端已连接，但 NPC 对话服务尚未就绪。"
-	)
+	dialogue_text.clear()
+	dialogue_text.append_text("[color=gray]与 %s 的对话开始……[/color]\n" % npc_name)
+	if not ready:
+		dialogue_text.add_text("NPC 对话服务尚未就绪。\n")
 	player_input.clear()
-	_set_input_enabled(ready)
+	_set_controls_enabled(ready and not request_pending)
 	overlay.visible = true
-	if ready:
+	if ready and not request_pending:
 		player_input.grab_focus()
 	else:
 		close_button.grab_focus()
 
 
-func show_response(success: bool, message: String) -> void:
-	dialogue_text.text = message
-	_set_input_enabled(conversation_ready)
-	if success:
-		player_input.clear()
+func set_connection_state(ready: bool, message: String) -> void:
+	conversation_ready = ready
+	if overlay.visible and not request_pending:
+		_set_controls_enabled(ready)
+		if not ready:
+			dialogue_text.add_text("%s\n" % message)
+
+
+func on_chat_response_received(npc_name: String, response: String) -> void:
+	request_pending = false
+	close_button.disabled = false
+	if npc_name != current_npc_name or not overlay.visible:
+		return
+	dialogue_text.append_text("[color=yellow]%s：[/color] " % npc_name)
+	dialogue_text.add_text(response)
+	dialogue_text.add_text("\n")
+	_set_controls_enabled(conversation_ready)
+	if conversation_ready:
+		player_input.grab_focus()
+
+
+func on_chat_error(npc_name: String, error_message: String) -> void:
+	request_pending = false
+	close_button.disabled = false
+	if npc_name != current_npc_name or not overlay.visible:
+		return
+	dialogue_text.append_text("[color=red]请求失败：[/color] ")
+	dialogue_text.add_text(error_message)
+	dialogue_text.add_text("\n")
+	_set_controls_enabled(conversation_ready)
+	if conversation_ready:
 		player_input.grab_focus()
 
 
 func close() -> void:
-	if not overlay.visible:
+	if not overlay.visible or request_pending:
 		return
 	overlay.visible = false
+	current_npc_name = ""
 	closed.emit()
 
 
 func _submit() -> void:
 	var message := player_input.text.strip_edges()
-	if not conversation_ready or message.is_empty():
+	if (
+		not conversation_ready
+		or request_pending
+		or current_npc_name.is_empty()
+		or message.is_empty()
+	):
 		return
-	_set_input_enabled(false)
-	dialogue_text.text = "正在等待 NPC 回复……"
+	dialogue_text.append_text("[color=cyan]玩家：[/color] ")
+	dialogue_text.add_text(message)
+	dialogue_text.add_text("\n")
+	player_input.clear()
+	request_pending = true
+	_set_controls_enabled(false)
+	close_button.disabled = true
 	message_submitted.emit(current_npc_name, message)
 
 
-func _set_input_enabled(enabled: bool) -> void:
+func _set_controls_enabled(enabled: bool) -> void:
 	player_input.editable = enabled
 	send_button.disabled = not enabled
 

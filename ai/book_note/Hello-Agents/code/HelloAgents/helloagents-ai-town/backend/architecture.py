@@ -1,4 +1,4 @@
-"""Architecture contract implemented through section 15.5."""
+"""Architecture contract implemented through section 15.6."""
 
 from __future__ import annotations
 
@@ -61,14 +61,14 @@ COMPONENTS = [
         layer="game_frontend",
         status="implemented",
         responsibility=(
-            "组合四个场景，处理玩家移动、NPC 巡逻、交互提示、碰撞和对话面板"
+            "组合四个场景，处理移动、巡逻、碰撞、对话面板和定时背景气泡"
         ),
     ),
     SystemComponent(
         name="API Client",
         layer="game_frontend",
         status="implemented",
-        responsibility="检查后端健康状态并异步提交对话请求",
+        responsibility="以独立异步通道处理健康、对话、NPC 状态和 NPC 列表请求",
     ),
     SystemComponent(
         name="NPC SimpleAgent Manager",
@@ -188,13 +188,25 @@ DATA_FLOW = [
         action="展示 NPC 回复并恢复输入",
         status="implemented",
     ),
+    DataFlowStep(
+        order=14,
+        actor="Godot Main",
+        action="启动时并每 30 秒异步获取 NPC 背景对白",
+        status="implemented",
+    ),
+    DataFlowStep(
+        order=15,
+        actor="Godot NPC",
+        action="按 NPC 名称更新头顶背景气泡",
+        status="implemented",
+    ),
 ]
 
 
 def build_architecture_snapshot() -> ArchitectureSnapshot:
     return ArchitectureSnapshot(
         project="helloagents-ai-town",
-        scope="chapter_15_1_to_15_5_godot_scene",
+        scope="chapter_15_1_to_15_6_frontend_backend_communication",
         layers=LAYERS,
         components=COMPONENTS,
         data_flow=DATA_FLOW,
@@ -212,9 +224,10 @@ def build_architecture_snapshot() -> ArchitectureSnapshot:
             "NPC 状态、单个/全部好感度查询接口",
             "FastAPI 对话响应与 Godot 异步展示链路",
             "Godot 四场景、玩家移动、NPC 巡逻、交互锁和回复气泡",
+            "AutoLoad 配置和 API 客户端、独立 HTTP 通道与定时背景气泡",
         ],
         deferred_capabilities=[
             "Qdrant 生产向量存储适配",
-            "Godot 好感度面板和背景气泡轮询",
+            "Godot 好感度面板",
         ],
     )
