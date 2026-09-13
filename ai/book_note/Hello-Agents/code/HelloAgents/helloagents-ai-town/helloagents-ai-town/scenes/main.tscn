@@ -1,0 +1,85 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Script" path="res://scripts/api_client.gd" id="2_api"]
+[ext_resource type="PackedScene" path="res://scenes/player.tscn" id="3_player"]
+[ext_resource type="PackedScene" path="res://scenes/npc.tscn" id="4_npc"]
+[ext_resource type="PackedScene" path="res://scenes/dialogue_ui.tscn" id="5_dialogue"]
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+
+[node name="Background" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, 0, 960, 0, 960, 540, 0, 540)
+color = Color(0.055, 0.09, 0.12, 1)
+
+[node name="OfficeFloor" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(40, 86, 920, 86, 920, 510, 40, 510)
+color = Color(0.09, 0.15, 0.18, 1)
+
+[node name="DevelopmentZone" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(70, 130, 300, 130, 300, 330, 70, 330)
+color = Color(0.12, 0.22, 0.24, 1)
+
+[node name="MeetingZone" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(365, 130, 595, 130, 595, 330, 365, 330)
+color = Color(0.18, 0.17, 0.25, 1)
+
+[node name="DesignZone" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(660, 130, 890, 130, 890, 330, 660, 330)
+color = Color(0.24, 0.15, 0.18, 1)
+
+[node name="APIClient" type="Node" parent="."]
+script = ExtResource("2_api")
+
+[node name="Player" parent="." instance=ExtResource("3_player")]
+position = Vector2(480, 450)
+
+[node name="ZhangSan" parent="." instance=ExtResource("4_npc")]
+position = Vector2(185, 230)
+npc_id = "zhang_san"
+display_name = "张三"
+role = "Python 工程师"
+
+[node name="LiSi" parent="." instance=ExtResource("4_npc")]
+position = Vector2(480, 230)
+npc_id = "li_si"
+display_name = "李四"
+role = "产品经理"
+
+[node name="WangWu" parent="." instance=ExtResource("4_npc")]
+position = Vector2(775, 230)
+npc_id = "wang_wu"
+display_name = "王五"
+role = "UI 设计师"
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Title" type="Label" parent="HUD"]
+offset_left = 32.0
+offset_top = 20.0
+offset_right = 420.0
+offset_bottom = 56.0
+theme_override_colors/font_color = Color(0.96, 0.84, 0.43, 1)
+theme_override_font_sizes/font_size = 24
+text = "HELLOAGENTS · 赛博小镇"
+
+[node name="Help" type="Label" parent="HUD"]
+offset_left = 32.0
+offset_top = 54.0
+offset_right = 420.0
+offset_bottom = 78.0
+theme_override_colors/font_color = Color(0.62, 0.71, 0.69, 1)
+text = "WASD 移动 · 靠近 NPC 后按 E"
+
+[node name="BackendStatus" type="Label" parent="HUD"]
+offset_left = 590.0
+offset_top = 28.0
+offset_right = 928.0
+offset_bottom = 56.0
+theme_override_colors/font_color = Color(0.94, 0.55, 0.45, 1)
+text = "正在检查后端状态……"
+horizontal_alignment = 2
+
+[node name="DialogueUI" parent="." instance=ExtResource("5_dialogue")]
+
