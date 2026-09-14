@@ -1,8 +1,8 @@
 ## 毕业设计：构建属于你的多智能体应用
 
-> 阅读资料：[16.1 毕业设计的意义](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_161-%e6%af%95%e4%b8%9a%e8%ae%be%e8%ae%a1%e7%9a%84%e6%84%8f%e4%b9%89)、[16.2 项目选题指南](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_162-%e9%a1%b9%e7%9b%ae%e9%80%89%e9%a2%98%e6%8c%87%e5%8d%97)、[16.3 开发环境准备](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_163-%e5%bc%80%e5%8f%91%e7%8e%af%e5%a2%83%e5%87%86%e5%a4%87)、[16.4 项目开发指南](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_164-%e9%a1%b9%e7%9b%ae%e5%bc%80%e5%8f%91%e6%8c%87%e5%8d%97)
+> 阅读资料：[16.1 毕业设计的意义](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_161-%e6%af%95%e4%b8%9a%e8%ae%be%e8%ae%a1%e7%9a%84%e6%84%8f%e4%b9%89)、[16.2 项目选题指南](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_162-%e9%a1%b9%e7%9b%ae%e9%80%89%e9%a2%98%e6%8c%87%e5%8d%97)、[16.3 开发环境准备](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_163-%e5%bc%80%e5%8f%91%e7%8e%af%e5%a2%83%e5%87%86%e5%a4%87)、[16.4 项目开发指南](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_164-%e9%a1%b9%e7%9b%ae%e5%bc%80%e5%8f%91%e6%8c%87%e5%8d%97)、[16.5 提交 Pull Request](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_165-%e6%8f%90%e4%ba%a4-pull-request)
 >
-> 这四节不是再学一个 Agent 模块，而是把前面的知识收束成一个可运行、可检查、可展示的开源项目。
+> 这五节不是再学一个 Agent 模块，而是把前面的知识收束成一个可运行、可检查、可展示的开源项目。
 
 ### 毕业设计检验的是综合能力
 
@@ -566,6 +566,162 @@ artifacts_location: temporary_directory
 
 本次结果只验证检查器和示例结构，没有安装 `requirements.txt`、执行 Notebook 或调用模型。README 检查依据标题，只能发现章节缺失，不能评价内容质量；依赖检查也不能自动证明清单覆盖了所有导入。这些边界正是保留人工运行记录和 Review 的原因。
 
+### PR 是一次可审查的变更交付
+
+Pull Request 不是单纯把代码上传到 GitHub。它同时说明变更来自哪里、准备合并到哪里、解决什么问题，以及提交者完成了哪些验证。
+
+~~~mermaid
+flowchart LR
+    CHECK["检查工作区与变更范围"] --> STAGE["暂存项目文件"]
+    STAGE --> COMMIT["生成语义明确的提交"]
+    COMMIT --> PUSH["推送到个人 Fork 的功能分支"]
+    PUSH --> PR["向官方 main 创建 PR"]
+    PR --> REVIEW["社区 Review"]
+    REVIEW -->|"需要修改"| FIX["修改、提交并推送同一分支"]
+    FIX --> REVIEW
+    REVIEW -->|"通过"| MERGE["合并"]
+~~~
+
+这里有两条连续但不同的链路：Git 负责本地提交和远程分支，GitHub PR 负责比较分支、讨论与合并。`git push` 成功只说明远程分支存在，不代表 PR 已经创建。
+
+### 先确认提交范围，再创建 commit
+
+原文从 `git status` 开始，这是为了在暂存前看清新增、修改和未跟踪文件。毕业设计通常只需要提交自己的项目目录，直接 `git add .` 容易带入其他笔记、缓存或本地配置，因此优先使用原文给出的指定目录方式：
+
+~~~bash
+git status
+git diff
+
+git add Co-creation-projects/你的用户名-项目名称/
+git diff --cached
+
+git commit -m "feat: 添加 XXX 毕业设计项目"
+git push origin feature/你的项目名称
+~~~
+
+`git diff` 查看尚未暂存的修改，`git diff --cached` 查看将进入本次 commit 的内容。提交前还要确认没有 `.env`、私钥、模型和大型数据文件。`.gitignore` 能减少误操作，但已经被 Git 跟踪的文件不会因为后来加入忽略规则而自动消失。
+
+### 提交信息描述一次具体变化
+
+原文采用 `类型: 简短描述` 格式：
+
+| 类型 | 用途 |
+| --- | --- |
+| `feat` | 新增功能或毕业设计项目 |
+| `fix` | 修复 Bug 或响应 Review 修改 |
+| `docs` | 文档更新 |
+| `style` | 不影响功能的格式调整 |
+| `refactor` | 重构代码 |
+| `test` | 新增或调整测试 |
+| `chore` | 依赖等其他维护工作 |
+
+初次提交毕业设计使用 `feat`；根据 Review 修复问题通常使用 `fix`。提交信息应描述实际变化，例如 `fix: 处理空代码输入并补充测试`，比 `fix: 修改问题` 更方便评审者理解。
+
+### PR 的四个仓库与分支字段
+
+创建 PR 时最容易混淆的是 base 和 head：
+
+| GitHub 字段 | 本节应选择的值 | 含义 |
+| --- | --- | --- |
+| Base repository | `datawhalechina/hello-agents` | 接收代码的官方仓库 |
+| Base branch | `main` | 计划合入的目标分支 |
+| Head repository | `你的用户名/hello-agents` | 保存提交的个人 Fork |
+| Compare branch | `feature/你的项目名称` | 本次毕业设计功能分支 |
+
+比较方向是 `个人功能分支 → 官方 main`。如果方向选反，页面可能没有预期变更，甚至变成把官方更新合入个人 Fork。
+
+毕业设计 PR 标题固定为：
+
+~~~text
+[毕业设计] 项目名称 - 简短描述
+~~~
+
+例如：
+
+~~~text
+[毕业设计] CodeReviewAgent - 智能代码审查助手
+~~~
+
+统一前缀便于社区检索，项目名称要与目录和 PR 描述保持一致。
+
+### PR 描述是给评审者的导航
+
+原文模板包含项目信息、简介、核心功能、技术亮点、演示效果、自检清单和其他说明。README 面向未来使用者，PR 描述则面向当前评审者，所以应更短，并突出本次提交的范围和验证情况。
+
+自检项只有在确实完成后才能勾选。未提供演示可以写明“未提供”，失败用例或已知限制也应放进“其他说明”，不需要为了让表单看起来完整而隐藏边界。
+
+### Review 修改仍然推送到原分支
+
+PR 创建后，评审者的意见会落在同一个讨论线程中。完成修改后继续提交并推送原功能分支：
+
+~~~bash
+git add Co-creation-projects/你的用户名-项目名称/
+git commit -m "fix: 根据 Review 意见修复 XXX"
+git push origin feature/你的项目名称
+~~~
+
+GitHub 会自动更新原 PR，不需要为每轮修改新建 PR。回复评论时应说明改了什么、对应哪个提交、如何验证；如果暂不采纳，也要说明技术原因，而不是只回复“已修改”。
+
+### 代码实践：PR 就绪检查与描述生成
+
+[pull_request.py](./code/HelloAgents/graduation_project/pull_request.py) 将原文命令和 PR 模板补成可运行实现：
+
+~~~text
+graduation_project/
+└── pull_request.py                 # PR 元数据、描述生成与只读检查
+
+examples/
+├── graduation_project_pr_check.py # 实际仓库检查 CLI
+├── graduation_project_pr_demo.py  # 确定性 Git 模拟
+└── data/graduation_project/
+    └── pr_metadata.example.json    # PR 信息模板
+~~~
+
+`PullRequestMetadata` 负责校验项目名称、作者、项目类型、功能、技术亮点和五项自检，并生成七部分 Markdown 描述。`PullRequestReadinessChecker` 复用 16.4 的质量检查，然后通过只读 Git 命令确认：
+
+- 当前分支符合 `feature/*`，工作区没有遗漏修改；
+- `origin` 指向作者的 Fork，`upstream` 指向官方仓库；
+- 功能分支已经出现在 `origin`；
+- 相对 `upstream/main` 存在提交，最新提交信息使用约定前缀；
+- 变更只位于当前毕业设计目录；
+- 变更中不包含 `.env`、私钥或证书密钥；
+- PR 标题、描述和自检清单完整。
+
+先复制并填写 [pr_metadata.example.json](./code/HelloAgents/examples/data/graduation_project/pr_metadata.example.json) 与 16.4 的人工测试记录，再运行 [graduation_project_pr_check.py](./code/HelloAgents/examples/graduation_project_pr_check.py)：
+
+~~~bash
+cd code/HelloAgents
+PYTHONPATH=. python3 examples/graduation_project_pr_check.py \
+  /path/to/hello-agents \
+  /path/to/pr_metadata.json \
+  --evidence /path/to/development_evidence.json \
+  --write-description /path/to/pr-body.md
+~~~
+
+`--write-description` 只生成可粘贴到 GitHub 的 Markdown 草稿；脚本不会暂存、提交、推送或创建 PR。模板中的自检默认全部为 `false`，需要根据实际结果修改。加 `--json` 可输出检查报告。
+
+#### 本地实践结果
+
+[graduation_project_pr_demo.py](./code/HelloAgents/examples/graduation_project_pr_demo.py) 使用固定 Git 响应模拟一次就绪检查，并生成 PR 描述。随后在变更列表中加入项目目录外的章节文件，检查器会拒绝该提交范围：
+
+~~~text
+=== 16.5 Pull Request 就绪检查实践 ===
+ready_for_pr: True
+required_checks: 12/12
+branch: feature/code-review-agent
+change_scope_valid: True
+sensitive_files_absent: True
+generated_description_sections: 7
+out_of_scope_ready: False
+out_of_scope_failed: change_scope
+simulated_git_commands: 16
+external_git_commands_executed: 0
+network_calls: 0
+artifacts_location: temporary_directory
+~~~
+
+这次结果验证的是本地检查逻辑和 PR 描述生成，没有连接 GitHub，也没有创建真实 commit 或 PR。GitHub 页面中的 base/head 选择、PR 是否已存在、Review 状态和权限仍需人工确认；本地 `origin/feature/*` 引用也只能反映最近一次 Git 操作所知的远程状态。
+
 ### 参考资料
 
 - [《Hello-Agents》第十六章：毕业设计](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1.md)
@@ -574,4 +730,4 @@ artifacts_location: temporary_directory
 
 ### 小结
 
-毕业设计要把分散知识变成完整交付：先从真实问题出发，在实用性、可行性和展示性的交集中确定选题，再准备可复现的环境和协作流程。16.1 固化最低交付契约，16.2 保留选题依据，16.3 检查开发环境，16.4 继续约束 README、依赖、Notebook、测试证据和仓库大小。这些检查只能降低遗漏风险，项目价值和最终质量仍要靠真实需求、运行证据与人工 Review 判断。
+毕业设计要把分散知识变成完整交付：先从真实问题出发，在实用性、可行性和展示性的交集中确定选题，再准备可复现的环境和协作流程。16.1 固化最低交付契约，16.2 保留选题依据，16.3 检查开发环境，16.4 约束项目质量，16.5 则把提交范围、Git 历史和 PR 信息交给社区审查。这些自动检查只能降低遗漏风险，项目价值和最终质量仍要靠真实需求、运行证据与人工 Review 判断。

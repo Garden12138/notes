@@ -13,6 +13,13 @@ from .environment import (
     EnvironmentCheck,
     SubprocessCommandRunner,
 )
+from .pull_request import (
+    PullRequestCheck,
+    PullRequestMetadata,
+    PullRequestReadinessChecker,
+    PullRequestReadinessReport,
+    PullRequestSelfCheck,
+)
 from .submission import (
     GraduationProjectReport,
     GraduationProjectValidator,
@@ -40,6 +47,11 @@ __all__ = [
     "ProjectCheck",
     "ProjectDevelopmentReport",
     "ProjectDevelopmentValidator",
+    "PullRequestCheck",
+    "PullRequestMetadata",
+    "PullRequestReadinessChecker",
+    "PullRequestReadinessReport",
+    "PullRequestSelfCheck",
     "QualityCheck",
     "SubprocessCommandRunner",
     "TopicEvaluation",

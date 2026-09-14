@@ -1,0 +1,25 @@
+{
+  "title": "[毕业设计] CodeReviewAgent - 智能代码审查助手",
+  "project_name": "CodeReviewAgent",
+  "author": "your-github-name",
+  "project_type": "生产力工具",
+  "description": "分析 Python 代码结构和常见问题，并生成 Markdown 审查报告。",
+  "core_features": [
+    "代码结构分析",
+    "风格检查",
+    "审查报告生成"
+  ],
+  "technical_highlights": [
+    "使用 HelloAgents 工具系统组织检查能力",
+    "使用固定样例验证报告结构"
+  ],
+  "demo_url": null,
+  "self_check": {
+    "code_runs": false,
+    "readme_complete": false,
+    "requirements_complete": false,
+    "usage_example_present": false,
+    "comments_appropriate": false
+  },
+  "other_notes": "无"
+}
