@@ -1,8 +1,8 @@
 ## 毕业设计：构建属于你的多智能体应用
 
-> 阅读资料：[16.1 毕业设计的意义](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_161-%e6%af%95%e4%b8%9a%e8%ae%be%e8%ae%a1%e7%9a%84%e6%84%8f%e4%b9%89)、[16.2 项目选题指南](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_162-%e9%a1%b9%e7%9b%ae%e9%80%89%e9%a2%98%e6%8c%87%e5%8d%97)
+> 阅读资料：[16.1 毕业设计的意义](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_161-%e6%af%95%e4%b8%9a%e8%ae%be%e8%ae%a1%e7%9a%84%e6%84%8f%e4%b9%89)、[16.2 项目选题指南](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_162-%e9%a1%b9%e7%9b%ae%e9%80%89%e9%a2%98%e6%8c%87%e5%8d%97)、[16.3 开发环境准备](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_163-%e5%bc%80%e5%8f%91%e7%8e%af%e5%a2%83%e5%87%86%e5%a4%87)
 >
-> 这两节不是再学一个 Agent 模块，而是把前面的知识收束成一个可运行、可检查、可展示的开源项目。
+> 这三节不是再学一个 Agent 模块，而是把前面的知识收束成一个可运行、可检查、可展示的开源项目。
 
 ### 毕业设计检验的是综合能力
 
@@ -267,6 +267,147 @@ model_calls: 0
 
 这里的 86 分是对示例中人工填写分数的确定性汇总，不是模型自动判断，也不代表 CodeReviewAgent 已经实现或质量达标。真正开发前还需要与目标用户确认问题，并把功能拆成可验收的里程碑。
 
+### 开发环境不是只有 Python 依赖
+
+16.3 的准备工作可以分成四层。少装一个包会直接报错，远程仓库或分支配置错误则可能到提交 PR 时才暴露，因此不能只以“程序能启动”判断环境是否完成。
+
+| 层次 | 需要准备的内容 | 解决的问题 |
+| --- | --- | --- |
+| Python | Python 3.10+、`hello-agents[all]` | 能否运行框架和示例 |
+| 开发工具 | Git；Notebook 项目还需要 Jupyter | 能否编辑、调试和记录实验 |
+| GitHub 协作 | Git 身份、Fork、`origin`、`upstream`、`feature/*` 分支 | 代码提交到哪里，如何同步官方仓库 |
+| 项目交付 | `Co-creation-projects` 下的规范目录 | 是否满足共创项目的提交结构 |
+
+按原文安装完整依赖可以写成：
+
+~~~bash
+python3 --version
+python3 -m pip install "hello-agents[all]"
+~~~
+
+如果主要入口是 Notebook，再安装并启动 Jupyter：
+
+~~~bash
+python3 -m pip install jupyterlab
+jupyter lab
+~~~
+
+脚本项目并不强制依赖 Jupyter。这里应该以项目的实际入口选择工具，而不是把所有可选软件都当成必装项。
+
+### Fork、origin 与 upstream 的关系
+
+原文采用标准的 Fork 协作流程：先在 GitHub 上 Fork 官方仓库，再克隆自己的副本，并把官方仓库登记为 `upstream`。
+
+~~~mermaid
+flowchart LR
+    U["官方仓库<br/>datawhalechina/hello-agents<br/>upstream"] -->|"同步更新"| L["本地仓库"]
+    F["个人 Fork<br/>用户名/hello-agents<br/>origin"] <-->|"pull / push"| L
+    L --> B["feature/项目名称"]
+    B -->|"Pull Request"| U
+~~~
+
+对应命令如下，其中用户名和项目名需要替换：
+
+~~~bash
+git config --global user.name "你的名字"
+git config --global user.email "你的邮箱"
+
+git clone git@github.com:你的用户名/hello-agents.git
+cd hello-agents
+git remote add upstream https://github.com/datawhalechina/hello-agents.git
+git checkout -b feature/你的项目名称
+~~~
+
+`origin` 是自己有写权限的 Fork，`upstream` 是官方仓库。开发内容先推送到 `origin` 的功能分支，再向 `upstream` 发起 PR；两者写反会让同步和提交关系变得混乱。
+
+原文推荐用 Ed25519 SSH 密钥连接 GitHub：
+
+~~~bash
+ssh-keygen -t ed25519
+ssh -T git@github.com
+~~~
+
+SSH 不是唯一方案，也可以使用 HTTPS。无论采用哪种方式，都不应把私钥、访问令牌或 `.env` 提交到项目中；`*.pub` 才是可添加到 GitHub 的公钥文件。
+
+### 共创项目的目录边界
+
+项目应直接放在仓库的 `Co-creation-projects` 下，目录名仍采用 `{GitHub用户名}-{项目名称}`。原文给出的推荐结构是：
+
+~~~text
+Co-creation-projects/
+└── 用户名-项目名称/
+    ├── README.md
+    ├── requirements.txt
+    ├── main.ipynb
+    ├── data/                    # 可选：示例数据与测试用例
+    ├── outputs/                 # 可选：报告与截图
+    └── src/                     # 可选：agents、tools、utils 等模块
+~~~
+
+入口也可以是根目录 Python 脚本。`src/` 适合存放逐渐变大的实现，但 README、依赖清单和主入口应保持容易发现。这样既延续 16.1 的最低交付契约，也给后续扩展留出空间。
+
+### 代码实践：只读的开发环境自检
+
+原文主要给出安装和 Git 命令，没有提供可复用程序。本节新增 [environment.py](./code/HelloAgents/graduation_project/environment.py)，把这些要求整理成只读检查，并复用 16.1 的 `GraduationProjectValidator`，避免环境检查和交付检查各自维护一套规则。
+
+~~~text
+graduation_project/
+├── environment.py                         # 环境、Git 与目录检查
+└── submission.py                          # 复用交付物检查
+
+examples/
+├── graduation_project_environment_check.py # 实际环境 CLI
+└── graduation_project_environment_demo.py  # 确定性离线演示
+~~~
+
+检查流程如下：
+
+~~~mermaid
+flowchart LR
+    CLI["仓库目录 + 项目目录"] --> ENV["Python / hello-agents / Jupyter"]
+    CLI --> GIT["Git 身份 / origin / upstream / 分支"]
+    CLI --> DIR["Co-creation-projects 位置"]
+    DIR --> CONTRACT["README / requirements / 入口 / 语法"]
+    ENV --> REPORT["DevelopmentEnvironmentReport"]
+    GIT --> REPORT
+    CONTRACT --> REPORT
+    REPORT -->|"必需项全部通过"| READY["ready = true"]
+~~~
+
+使用 [graduation_project_environment_check.py](./code/HelloAgents/examples/graduation_project_environment_check.py) 检查实际克隆的仓库：
+
+~~~bash
+cd code/HelloAgents
+PYTHONPATH=. python3 examples/graduation_project_environment_check.py \
+  /path/to/hello-agents \
+  /path/to/hello-agents/Co-creation-projects/your-user-CodeReviewAgent \
+  --github-user your-user \
+  --entry-mode notebook
+~~~
+
+脚本会检查 Python 版本、发行包、Git 身份、仓库根目录、两个远程仓库、功能分支、项目位置和交付结构。Notebook 模式下 Jupyter 是必需项，脚本模式下只是提示；SSH 公钥始终是推荐项，因为 HTTPS 同样可用。加 `--json` 可以得到适合 CI 保存的结构化报告。
+
+实现使用参数列表调用只读命令，没有经过 shell，也不会执行安装、生成密钥、克隆、推送或联网测试。Git 姓名和邮箱只报告“已设置”，不回显具体内容。
+
+#### 本地实践结果
+
+[graduation_project_environment_demo.py](./code/HelloAgents/examples/graduation_project_environment_demo.py) 在临时目录创建 Notebook 项目，并用固定响应模拟 Git 和 Jupyter 命令。实际输出为：
+
+~~~text
+=== 16.3 开发环境准备自检实践 ===
+environment_ready: True
+required_checks: 13/13
+python_check: Python 3.12.1
+git_branch: feature/code-review-agent
+project_contract_ready: True
+simulated_command_responses: 8
+external_commands_executed: 0
+network_calls: 0
+artifacts_location: temporary_directory
+~~~
+
+这次演示验证的是检查项之间的组合逻辑，不代表当前电脑已经连接 GitHub。真实环境仍需运行 CLI，并手动确认 Fork 已创建、SSH 公钥已添加且 `ssh -T git@github.com` 能完成认证。自检器只能确认 `hello-agents` 发行包存在，不能证明 `[all]` 中每个可选依赖都可正常调用。
+
 ### 参考资料
 
 - [《Hello-Agents》第十六章：毕业设计](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1.md)
@@ -275,4 +416,4 @@ model_calls: 0
 
 ### 小结
 
-毕业设计要把分散知识变成完整交付：从真实问题出发，在实用性、可行性和展示性的交集中确定选题，再选择必要的 Agent 能力。16.1 的交付自检器固化文件契约；16.2 的结构化方案和评分器则保留选题依据。分数只辅助暴露范围风险，最终选择仍要回到用户需求、实际资源和可验收结果。
+毕业设计要把分散知识变成完整交付：先从真实问题出发，在实用性、可行性和展示性的交集中确定选题，再准备可复现的 Python、GitHub 协作和项目目录环境。16.1 固化交付契约，16.2 保留选题依据，16.3 将环境、远程仓库、分支和目录要求变成可执行检查。评分与自检都只是降低遗漏风险，项目价值和最终质量仍要靠真实需求、运行证据与人工 Review 判断。

@@ -1,5 +1,12 @@
 """Graduation-project delivery helpers for chapter 16."""
 
+from .environment import (
+    CommandResult,
+    DevelopmentEnvironmentChecker,
+    DevelopmentEnvironmentReport,
+    EnvironmentCheck,
+    SubprocessCommandRunner,
+)
 from .submission import (
     GraduationProjectReport,
     GraduationProjectValidator,
@@ -16,10 +23,15 @@ from .topic_selection import (
 
 __all__ = [
     "CATEGORY_LABELS",
+    "CommandResult",
     "CriterionRating",
+    "DevelopmentEnvironmentChecker",
+    "DevelopmentEnvironmentReport",
+    "EnvironmentCheck",
     "GraduationProjectReport",
     "GraduationProjectValidator",
     "ProjectCheck",
+    "SubprocessCommandRunner",
     "TopicEvaluation",
     "TopicEvaluator",
     "TopicProposal",
