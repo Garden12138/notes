@@ -1,5 +1,11 @@
 """Graduation-project delivery helpers for chapter 16."""
 
+from .development import (
+    ManualTestEvidence,
+    ProjectDevelopmentReport,
+    ProjectDevelopmentValidator,
+    QualityCheck,
+)
 from .environment import (
     CommandResult,
     DevelopmentEnvironmentChecker,
@@ -30,7 +36,11 @@ __all__ = [
     "EnvironmentCheck",
     "GraduationProjectReport",
     "GraduationProjectValidator",
+    "ManualTestEvidence",
     "ProjectCheck",
+    "ProjectDevelopmentReport",
+    "ProjectDevelopmentValidator",
+    "QualityCheck",
     "SubprocessCommandRunner",
     "TopicEvaluation",
     "TopicEvaluator",

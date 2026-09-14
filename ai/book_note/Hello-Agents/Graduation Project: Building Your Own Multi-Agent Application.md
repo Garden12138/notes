@@ -1,8 +1,8 @@
 ## 毕业设计：构建属于你的多智能体应用
 
-> 阅读资料：[16.1 毕业设计的意义](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_161-%e6%af%95%e4%b8%9a%e8%ae%be%e8%ae%a1%e7%9a%84%e6%84%8f%e4%b9%89)、[16.2 项目选题指南](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_162-%e9%a1%b9%e7%9b%ae%e9%80%89%e9%a2%98%e6%8c%87%e5%8d%97)、[16.3 开发环境准备](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_163-%e5%bc%80%e5%8f%91%e7%8e%af%e5%a2%83%e5%87%86%e5%a4%87)
+> 阅读资料：[16.1 毕业设计的意义](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_161-%e6%af%95%e4%b8%9a%e8%ae%be%e8%ae%a1%e7%9a%84%e6%84%8f%e4%b9%89)、[16.2 项目选题指南](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_162-%e9%a1%b9%e7%9b%ae%e9%80%89%e9%a2%98%e6%8c%87%e5%8d%97)、[16.3 开发环境准备](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_163-%e5%bc%80%e5%8f%91%e7%8e%af%e5%a2%83%e5%87%86%e5%a4%87)、[16.4 项目开发指南](https://datawhalechina.github.io/hello-agents/#/./chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1?id=_164-%e9%a1%b9%e7%9b%ae%e5%bc%80%e5%8f%91%e6%8c%87%e5%8d%97)
 >
-> 这三节不是再学一个 Agent 模块，而是把前面的知识收束成一个可运行、可检查、可展示的开源项目。
+> 这四节不是再学一个 Agent 模块，而是把前面的知识收束成一个可运行、可检查、可展示的开源项目。
 
 ### 毕业设计检验的是综合能力
 
@@ -408,6 +408,164 @@ artifacts_location: temporary_directory
 
 这次演示验证的是检查项之间的组合逻辑，不代表当前电脑已经连接 GitHub。真实环境仍需运行 CLI，并手动确认 Fork 已创建、SSH 公钥已添加且 `ssh -T git@github.com` 能完成认证。自检器只能确认 `hello-agents` 发行包存在，不能证明 `[all]` 中每个可选依赖都可正常调用。
 
+### README 是项目的使用入口
+
+代码解决“怎么实现”，README 要回答“为什么做、如何运行、结果如何判断”。原文给出的模板可以整理成三组信息：
+
+| 信息层次 | 主要内容 | 读者要解决的问题 |
+| --- | --- | --- |
+| 项目定位 | 项目简介、核心功能、技术栈、亮点 | 这个项目解决什么问题，为什么值得使用？ |
+| 复现路径 | 环境要求、安装依赖、API 密钥、运行命令、使用示例 | 如何在自己的环境中跑起来？ |
+| 项目状态 | 性能评估、未来计划、贡献、许可证、作者、致谢 | 当前效果如何，还有哪些边界？ |
+
+快速开始部分不应只写一句“运行 Notebook”，而要给出能够顺序执行的命令：
+
+~~~bash
+python3 -m pip install -r requirements.txt
+cp .env.example .env
+jupyter lab
+~~~
+
+`.env.example` 只保留变量名和空值，真实密钥放在本地 `.env`，并通过 `.gitignore` 排除。使用示例最好同时包含输入与输出；只有调用代码，没有结果样例，读者仍不知道程序是否运行正确。
+
+README 中的性能数据也必须来自实际评估。如果尚未完成测试，可以明确写“待评估”及评估方案，不能先填入 `XX%` 后把模板值当成结果。
+
+### requirements.txt 只记录真实依赖
+
+原文示例以 `hello-agents[all]>=0.2.7` 为核心，并按需要加入 Matplotlib、Plotly、FastAPI 和 Uvicorn。这里的“按需要”很重要：
+
+~~~text
+# 核心依赖
+hello-agents[all]>=0.2.7
+
+# 只有项目实际使用时才加入
+matplotlib>=3.7.0
+fastapi>=0.109.0
+uvicorn>=0.27.0
+~~~
+
+依赖过少会导致他人无法复现，直接提交完整环境的 `pip freeze` 又容易混入无关包和平台专属依赖。较稳妥的做法是从代码实际导入出发维护最小清单，再在干净环境中重新安装验证。版本下界表示已知兼容的最低版本，不等于版本越新越安全；遇到兼容性敏感的项目，还需要记录经过验证的版本范围。
+
+### Notebook 要展示完整开发链路
+
+原文将 Notebook 分为项目介绍、环境配置、工具定义、智能体构建、功能演示、性能评估、总结与展望七部分。这个顺序对应读者理解和复现实验的路径：
+
+~~~mermaid
+flowchart LR
+    INTRO["项目介绍"] --> ENV["环境配置"]
+    ENV --> TOOL["工具定义"]
+    TOOL --> AGENT["智能体构建"]
+    AGENT --> DEMO["功能演示"]
+    DEMO --> EVAL["性能评估"]
+    EVAL --> REVIEW["总结与展望"]
+~~~
+
+Notebook 不是把一个 `.py` 文件拆成很多单元格。Markdown 单元负责说明目标、输入和结论，代码单元负责产生可验证结果；单元应按从上到下的顺序执行，避免依赖隐藏状态。篇幅增大后，可把 Agent、工具和通用函数放进 `src/`，Notebook 只保留编排、实验与展示。
+
+原文中的 `CustomTool.run()`、用户输入和评估代码都是结构示意，具体项目必须替换成真实实现。16.4 尚未定义 CodeReviewAgent 的业务协议，因此这里不提前虚构工具调用逻辑，而是先保证开发结构能够被检查。
+
+### 测试清单要区分静态检查与真实运行
+
+提交前检查包含代码可运行、文档完整、依赖齐全、示例清晰、输出符合预期、异常得到处理、结构规范和大文件处理。它们不能全部通过读取文件自动证明：
+
+| 检查方式 | 可以确认 | 不能确认 |
+| --- | --- | --- |
+| 静态检查 | 文件存在、Python 语法、Notebook JSON、README 章节、项目大小 | 外部 API 是否可用、回答质量、异常路径是否真的执行 |
+| 实际运行 | 安装是否成功、示例能否完成、输出是否符合预期 | 未覆盖输入下的普遍质量 |
+| 人工审查 | 文档是否清晰、注释是否有价值、结论是否可信 | 所有未来运行环境都兼容 |
+
+因此，`compile()` 通过不能写成“项目运行成功”，Notebook 格式正确也不等于所有单元按顺序执行成功。最少要在干净环境中运行 README 的快速开始和一个完整示例，并保存输入、关键输出和失败处理记录。
+
+### 大文件应该和代码仓库分离
+
+Hello-Agents 共创项目总大小不能超过 5 MB，视频、大型数据集和模型文件不能直接提交。原文给出三种处理方式：
+
+1. 上传到外部平台，在 README 中写明下载地址和放置位置；
+2. 资源较多时建立独立仓库；
+3. 主仓库只保留小于 1 MB 的示例数据，完整数据集使用外部链接。
+
+~~~mermaid
+flowchart TD
+    FILE["项目资源"] --> Q{"适合直接提交？"}
+    Q -->|"代码、小型样例、轻量截图"| REPO["共创项目仓库"]
+    Q -->|"视频、大型数据集、模型"| OUT["外部平台或资源仓库"]
+    OUT --> LINK["README 记录链接、版本与放置路径"]
+    LINK --> REPO
+~~~
+
+外置资源不能只有一个裸链接。还应记录资源用途、版本或更新时间、下载后放到哪个目录，以及程序在资源缺失时给出什么提示。`.gitignore` 是最后一道防误提交措施，但不能代替提交前的文件大小检查。
+
+### 代码实践：开发质量检查器
+
+[development.py](./code/HelloAgents/graduation_project/development.py) 在前三节自检的基础上补充开发阶段检查：
+
+~~~text
+graduation_project/
+├── submission.py                    # 16.1 最低交付契约
+└── development.py                   # 16.4 文档、测试与大文件规则
+
+examples/
+├── graduation_project_development_check.py
+├── graduation_project_development_demo.py
+└── data/graduation_project/
+    └── development_evidence.example.json
+~~~
+
+`ProjectDevelopmentValidator` 会检查：
+
+- 16.1 的目录命名、README、依赖、入口和语法要求；
+- README 的核心章节与建议扩展章节；
+- `requirements.txt` 是否声明 `hello-agents[all]`；
+- `main.ipynb` 是否按核心开发阶段组织，性能评估单独作为建议项；
+- 项目是否不超过 5 MB，是否直接包含视频、模型或超过 1 MB 的数据文件；
+- `.gitignore` 是否覆盖 `.env`、Python 缓存和常见大文件；
+- 无法静态证明的运行、示例、输出、异常和注释检查是否有人工确认记录。
+
+人工测试记录使用明确的布尔字段。示例文件 [development_evidence.example.json](./code/HelloAgents/examples/data/graduation_project/development_evidence.example.json) 默认全部为 `false`，完成对应检查后才能修改，避免未运行代码就得到通过报告。
+
+~~~json
+{
+  "code_runs": true,
+  "usage_example_verified": true,
+  "output_matches_expectation": true,
+  "common_exceptions_handled": true,
+  "comments_reviewed": true
+}
+~~~
+
+运行 [graduation_project_development_check.py](./code/HelloAgents/examples/graduation_project_development_check.py)：
+
+~~~bash
+cd code/HelloAgents
+PYTHONPATH=. python3 examples/graduation_project_development_check.py \
+  /path/to/your-user-CodeReviewAgent \
+  --github-user your-user \
+  --evidence /path/to/development_evidence.json
+~~~
+
+不提供 `--evidence` 时，静态项目即使结构完整也不会被标记为开发检查通过。加 `--json` 可输出结构化报告，但人工勾选仍是责任记录，不是测试日志本身。
+
+#### 本地实践结果
+
+[graduation_project_development_demo.py](./code/HelloAgents/examples/graduation_project_development_demo.py) 在临时目录构造符合原文结构的 README、依赖清单和 Notebook。第一次检查全部通过；随后加入一个内容只有占位符的 `demo.mp4`，即使文件很小也会因视频禁止直接提交而失败：
+
+~~~text
+=== 16.4 项目开发质量检查实践 ===
+ready_project: True
+required_checks: 7/7
+readme_core_complete: True
+notebook_core_complete: True
+manual_evidence_complete: True
+project_size_within_limit: True
+video_added_ready: False
+video_failed: prohibited_assets
+network_calls: 0
+model_calls: 0
+artifacts_location: temporary_directory
+~~~
+
+本次结果只验证检查器和示例结构，没有安装 `requirements.txt`、执行 Notebook 或调用模型。README 检查依据标题，只能发现章节缺失，不能评价内容质量；依赖检查也不能自动证明清单覆盖了所有导入。这些边界正是保留人工运行记录和 Review 的原因。
+
 ### 参考资料
 
 - [《Hello-Agents》第十六章：毕业设计](https://github.com/datawhalechina/hello-agents/blob/main/docs/chapter16/%E7%AC%AC%E5%8D%81%E5%85%AD%E7%AB%A0%20%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1.md)
@@ -416,4 +574,4 @@ artifacts_location: temporary_directory
 
 ### 小结
 
-毕业设计要把分散知识变成完整交付：先从真实问题出发，在实用性、可行性和展示性的交集中确定选题，再准备可复现的 Python、GitHub 协作和项目目录环境。16.1 固化交付契约，16.2 保留选题依据，16.3 将环境、远程仓库、分支和目录要求变成可执行检查。评分与自检都只是降低遗漏风险，项目价值和最终质量仍要靠真实需求、运行证据与人工 Review 判断。
+毕业设计要把分散知识变成完整交付：先从真实问题出发，在实用性、可行性和展示性的交集中确定选题，再准备可复现的环境和协作流程。16.1 固化最低交付契约，16.2 保留选题依据，16.3 检查开发环境，16.4 继续约束 README、依赖、Notebook、测试证据和仓库大小。这些检查只能降低遗漏风险，项目价值和最终质量仍要靠真实需求、运行证据与人工 Review 判断。
